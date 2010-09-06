@@ -38,7 +38,7 @@ public class ParetoQuick {
 
     public <T extends IPoint> Collection<T> pareto(Collection<T> points){
         if(points.size() == 0) return points;
-        return pareto(points, points.iterator().next().getDim());
+        return pareto(points, points.iterator().next().size());
     }
     
     public <T extends IPoint> Collection<T> pareto(Collection<T> points, int dim) {

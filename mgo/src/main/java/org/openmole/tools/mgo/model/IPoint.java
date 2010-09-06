@@ -11,5 +11,5 @@ package org.openmole.tools.mgo.model;
  */
 public interface IPoint extends Comparable<IPoint>{
     Comparable getComparable(int dim);
-    int getDim();
+    int size();
 }

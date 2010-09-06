@@ -27,7 +27,7 @@ public class DominateMinimumStrict extends Dominate {
     
     @Override
     public boolean isDominated(IPoint p1, IPoint p2) {
-        for(int i = 0; i < p1.getDim(); i++) {
+        for(int i = 0; i < p1.size(); i++) {
             if(p1.getComparable(i).compareTo(p2.getComparable(i)) <= 0 )
                 return false;
         }
@@ -39,13 +39,8 @@ public class DominateMinimumStrict extends Dominate {
     @Override
     public DominateType dominated (IPoint p1, IPoint p2) {
         int a1 = 0 , a2 = 0 ,tot = 0;
-
-
-
-       // Iterator<? extends Comparable> p1CoordIt = p1.getComparables().iterator();
-       // Iterator<? extends Comparable> p2CoordIt = p2.getComparables().iterator();
-
-        for(int i = 0; i < p1.getDim(); i++) {
+        
+        for(int i = 0; i < p1.size(); i++) {
             Comparable p1Coord = p1.getComparable(i);
             Comparable p2Coord = p2.getComparable(i);
 
@@ -60,9 +55,7 @@ public class DominateMinimumStrict extends Dominate {
 
             if(a1 != tot && a2 != tot) return DominateType.NONE;
         }
-
-       // if(p1CoordIt.hasNext() != p2CoordIt.hasNext()) return DominateType.NONE;
-
+        
         if(a1==tot)
             return DominateType.RIGHT;
         else if(a2==tot)

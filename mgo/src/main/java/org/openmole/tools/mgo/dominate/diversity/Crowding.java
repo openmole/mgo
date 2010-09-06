@@ -60,30 +60,20 @@ public class Crowding {
                     this.crowding = crowding;
                 }
 
-              /*  @Override
-                public Iterable<? extends Comparable> getComparables() {
-                    return point.getComparables();
-                }*/
-
                 @Override
                 public Comparable getComparable(int dim) {
                     return point.getComparable(dim);
                 }
 
                 @Override
-                public int getDim() {
-                    return point.getDim();
+                public int size() {
+                    return point.size();
                 }
 
                 @Override
                 public int compareTo(IPoint t) {
                     return point.compareTo(((CrowdingInfo)t).point);
                 }
-
-               /* @Override
-                public int compareTo(CrowdingInfo t) {
-                    return Double.compare(t.crowding, crowding);
-                }*/
 
 
             }

@@ -16,10 +16,10 @@ public class TestPointDistance implements IDistanceComputing<TestPoint> {
     @Override
     public double computeDistance(TestPoint p1, TestPoint p2) {
 
-        if(p1.getDim() != p2.getDim()) throw new ArithmeticException("P1 and P2 doesn't have the same dimension " + p1.getDim() + " and " + p2.getDim() + ".");
+        if(p1.size() != p2.size()) throw new ArithmeticException("P1 and P2 doesn't have the same dimension " + p1.size() + " and " + p2.size() + ".");
 
         double distance = 0.0;
-        for(int i = 0; i < p1.getDim(); i++) {
+        for(int i = 0; i < p1.size(); i++) {
             distance += Math.pow(p1.getComparable(i) - p2.getComparable(i),2);
         }
 

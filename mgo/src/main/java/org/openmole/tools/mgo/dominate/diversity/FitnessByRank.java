@@ -40,7 +40,7 @@ public class FitnessByRank {
 
     public <T extends IPoint> Collection<T> selectByFitnessAndCrowdingPareto(Collection<T> toSelect, int resPopSize) {
         if(toSelect.isEmpty()) return toSelect;
-        return selectByFitnessAndCrowdingPareto(toSelect, toSelect.iterator().next().getDim(), resPopSize, Operations.BaseOperations);
+        return selectByFitnessAndCrowdingPareto(toSelect, toSelect.iterator().next().size(), resPopSize, Operations.BaseOperations);
     }
 
     public <T extends IPoint> Collection<T> selectByFitnessAndCrowdingPareto(Collection<T> toSelect,int dim, int resPopSize) {
@@ -49,7 +49,7 @@ public class FitnessByRank {
 
     public <T extends IPoint> Collection<T> selectByFitnessAndCrowding(Collection<T> toSelect, int resPopSize) {
         if(toSelect.isEmpty()) return toSelect;
-        return selectByFitnessAndCrowding(toSelect, toSelect.iterator().next().getDim(), resPopSize);
+        return selectByFitnessAndCrowding(toSelect, toSelect.iterator().next().size(), resPopSize);
     }
 
     public <T extends IPoint> Collection<T> selectByFitnessAndCrowding(Collection<T> toSelect,int dim, int resPopSize) {

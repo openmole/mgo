@@ -47,8 +47,8 @@ public class Individu<T, G extends IPoint> implements IIndividu<T, G>, IPoint {
     }
 
     @Override
-    public int getDim() {
-        return goal.getDim();
+    public int size() {
+        return goal.size();
     }
 
     @Override

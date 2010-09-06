@@ -52,8 +52,8 @@ public class TaggedPoint<T extends IPoint> implements  IPoint {
     }
 
     @Override
-    public int getDim() {
-        return point.getDim();
+    public int size() {
+        return point.size();
     }
 
     @Override
@@ -61,12 +61,5 @@ public class TaggedPoint<T extends IPoint> implements  IPoint {
         TaggedPoint tp = (TaggedPoint) t;
         return point.compareTo(tp.point);
     }
-
-  /*  @Override
-    public Iterable<? extends Comparable> getComparables() {
-        return point.getComparables();
-    }*/
-
-
 
 }

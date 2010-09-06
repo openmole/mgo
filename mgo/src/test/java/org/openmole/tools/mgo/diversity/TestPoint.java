@@ -24,18 +24,13 @@ public class TestPoint extends Point {
         this.coordinates = coordinates;
     }
 
-   /* @Override
-    public Iterable<? extends Comparable> getComparables() {
-        return Arrays.asList(coordinates);
-    }*/
-
     @Override
     public Double getComparable(int dim) {
         return coordinates[dim];
     }
 
     @Override
-    public int getDim() {
+    public int size() {
         return coordinates.length;
     }
 

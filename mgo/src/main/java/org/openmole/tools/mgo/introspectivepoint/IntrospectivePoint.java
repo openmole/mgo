@@ -39,45 +39,13 @@ public class IntrospectivePoint<T> extends Point {
         return object;
     }
 
-  /*  @Override
-    public Iterable<? extends Comparable> getComparables() {
-        return new Iterable<Comparable>() {
-
-            @Override
-            public Iterator<Comparable> iterator() {
-                return new Iterator<Comparable>() {
-
-                    int curFields = 0;
-
-                    @Override
-                    public boolean hasNext() {
-                        return curFields < getDim();
-                    }
-
-                    @Override
-                    public Comparable next() {
-                        Comparable ret = getComparable(curFields);
-                        curFields++;
-                        return ret;
-                    }
-
-                    @Override
-                    public void remove() {
-                        throw new UnsupportedOperationException("Not supported.");
-                    }
-                };
-
-            }
-        };
-    }*/
-
     @Override
     public Comparable getComparable(int dim) {
         return comparables[dim];
     }
 
     @Override
-    public int getDim() {
+    public int size() {
         return comparables.length;
     }
 

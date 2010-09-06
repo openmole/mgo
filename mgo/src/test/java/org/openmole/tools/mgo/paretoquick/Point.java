@@ -29,14 +29,6 @@ public class Point implements IPoint {
         return coordonates.length;
     }
 
-
-    public void afficher (){
-        for(int i=0;i<coordonates.length;i++)
-            System.out.println(coordonates[i]);
-        
-
-    }
-
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -51,11 +43,11 @@ public class Point implements IPoint {
 
     @Override
     public int compareTo(IPoint t) {
-        int compare = getDim() - t.getDim();
+        int compare = size() - t.size();
 
         if(compare != 0) return compare;
 
-        for(int i = 0; i < getDim(); i++) {
+        for(int i = 0; i < size(); i++) {
             compare = getComparable(i).compareTo(t.getComparable(i));
             if(compare != 0) return compare;
         }
@@ -64,16 +56,8 @@ public class Point implements IPoint {
     }
 
     @Override
-    public int getDim() {
+    public int size() {
         return coordonates.length;
     }
-
-   /* @Override
-    public Iterable<Comparable> getComparables() {
-        return new ArrayList<Comparable>(coordonates.length);
-    }*/
-
-
-
 
 }
