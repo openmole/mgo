@@ -38,8 +38,8 @@ public class Statistic {
         max = new ArrayList<Comparable>(first.size());
         
         for(int i = 0 ; i < first.size() ; i++) {
-            min.set(i, first.apply(i));
-            max.set(i, first.apply(i));
+            min.add(i, first.apply(i));
+            max.add(i, first.apply(i));
         }
         
         while(it.hasNext()) {
