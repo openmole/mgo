@@ -61,8 +61,8 @@ public class Crowding {
                 }
 
                 @Override
-                public Comparable getComparable(int dim) {
-                    return point.getComparable(dim);
+                public Comparable apply(int dim) {
+                    return point.apply(dim);
                 }
 
                 @Override
@@ -102,8 +102,8 @@ public class Crowding {
                 T first = firstCrowdingInfo.point;
                 T last = lastCrowdingInfo.point;
 
-                Object min = first.getComparable(obj);
-                Object max = last.getComparable(obj);
+                Object min = first.apply(obj);
+                Object max = last.apply(obj);
 
                 firstCrowdingInfo.crowding = Double.POSITIVE_INFINITY;
                 lastCrowdingInfo.crowding = Double.POSITIVE_INFINITY;
@@ -122,7 +122,7 @@ public class Crowding {
 
                 while (itOpod.hasNext()) {
                     CrowdingInfo ptPlus1 = itOpod.next();
-                    double distance = operation.divide(operation.substract(ptPlus1.getComparable(obj), ptMinus1.getComparable(obj)), maxMinusMin);
+                    double distance = operation.divide(operation.substract(ptPlus1.apply(obj), ptMinus1.apply(obj)), maxMinusMin);
                     pt.crowding += distance;
   
                     ptMinus1 = pt;

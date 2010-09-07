@@ -25,7 +25,7 @@ public class TestPoint extends Point {
     }
 
     @Override
-    public Double getComparable(int dim) {
+    public Double apply(int dim) {
         return coordinates[dim];
     }
 

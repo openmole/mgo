@@ -40,7 +40,7 @@ public class IntrospectivePoint<T> extends Point {
     }
 
     @Override
-    public Comparable getComparable(int dim) {
+    public Comparable apply(int dim) {
         return comparables[dim];
     }
 

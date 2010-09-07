@@ -109,17 +109,17 @@ public class ParetoQuick {
         T elt = it.next();
         archive.add(elt);
 
-        Comparable min = elt.getComparable(0);
+        Comparable min = elt.apply(0);
         //T second = elt;
 
 
 
         while (it.hasNext()) {
             elt = it.next();
-            if ( (min.compareTo(elt.getComparable(0)) >= 0)) { /* || (second.getComparable(1).compareTo(elt.getComparable(1)) == 0)) {*/
+            if ( (min.compareTo(elt.apply(0)) >= 0)) { /* || (second.getComparable(1).compareTo(elt.getComparable(1)) == 0)) {*/
              //   Logger.getLogger(ParetoQuick.class.getName()).info(elt.toString());
 
-                min = elt.getComparable(0);
+                min = elt.apply(0);
                 archive.add(elt);
                // second = elt;
             } 

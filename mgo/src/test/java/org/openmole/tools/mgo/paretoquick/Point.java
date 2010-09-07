@@ -20,8 +20,9 @@ public class Point implements IPoint {
     public Point(Comparable... coordonnes){
          coordonates = coordonnes;
     }
-
-    public Comparable getComparable(int dim){
+    
+    @Override
+    public Comparable apply(int dim){
         return coordonates[dim];
     }
 
@@ -48,7 +49,7 @@ public class Point implements IPoint {
         if(compare != 0) return compare;
 
         for(int i = 0; i < size(); i++) {
-            compare = getComparable(i).compareTo(t.getComparable(i));
+            compare = apply(i).compareTo(t.apply(i));
             if(compare != 0) return compare;
         }
 

@@ -50,7 +50,7 @@ public class OrderPointOneDim {
 
             @Override
             public int compare(IPoint t, IPoint t1) {
-                 int compare = t.getComparable(dim).compareTo(t1.getComparable(dim));
+                 int compare = t.apply(dim).compareTo(t1.apply(dim));
                  if(compare != 0) return compare;
                  return t.compareTo(t1);
             }

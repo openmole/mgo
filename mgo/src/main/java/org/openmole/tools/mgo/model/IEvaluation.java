@@ -23,5 +23,5 @@ package org.openmole.tools.mgo.model;
  */
 public interface IEvaluation<T> {
     T getGenome();
-    IGoal getGoal();
+    IPoint getGoal();
 }

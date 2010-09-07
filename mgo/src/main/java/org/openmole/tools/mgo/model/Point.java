@@ -16,7 +16,7 @@ public abstract class Point implements IPoint {
         int compare;
 
         for(int i = 0; i < size(); i++) {
-            compare = getComparable(i).compareTo(o.getComparable(i));
+            compare = apply(i).compareTo(o.apply(i));
             if(compare != 0) return compare;
         }
 

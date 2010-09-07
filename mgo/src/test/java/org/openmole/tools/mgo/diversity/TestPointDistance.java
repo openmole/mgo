@@ -20,7 +20,7 @@ public class TestPointDistance implements IDistanceComputing<TestPoint> {
 
         double distance = 0.0;
         for(int i = 0; i < p1.size(); i++) {
-            distance += Math.pow(p1.getComparable(i) - p2.getComparable(i),2);
+            distance += Math.pow(p1.apply(i) - p2.apply(i),2);
         }
 
         return Math.sqrt(distance);

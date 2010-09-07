@@ -47,8 +47,8 @@ public class TaggedPoint<T extends IPoint> implements  IPoint {
     }
 
     @Override
-    public Comparable getComparable(int dim) {
-        return point.getComparable(dim);
+    public Comparable apply(int dim) {
+        return point.apply(dim);
     }
 
     @Override

@@ -52,8 +52,8 @@ public class Individu<T, G extends IPoint> implements IIndividu<T, G>, IPoint {
     }
 
     @Override
-    public Comparable getComparable(int dim) {
-        return goal.getComparable(dim);
+    public Comparable apply(int dim) {
+        return goal.apply(dim);
     }
 
     @Override
