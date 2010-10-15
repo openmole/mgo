@@ -15,8 +15,14 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 package org.openmole.tools.mgo.evolution
 
-object NoSelection extends Selection[Any] {
-  override def accept(o: Any): Boolean = true
+import org.openmole.tools.distrng.prng.IPRNG
+
+object Random {
+
+    def getRandom[T](prng: IPRNG[_], elts: IndexedSeq[T]): T = {
+        elts(prng.nextInt(0, elts.size))
+    }
 }

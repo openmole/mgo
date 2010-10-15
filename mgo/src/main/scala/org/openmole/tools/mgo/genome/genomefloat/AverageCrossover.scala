@@ -2,7 +2,7 @@
  *  Copyright (C) 2010 reuillon
  *
  *  This program is free software: you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
+ *  it under the terms of the GNU Affero General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
  *
@@ -20,18 +20,19 @@ package org.openmole.tools.mgo.genome.genomefloat
 
 import org.openmole.tools.mgo.evolution.GenomeOperation
 import org.openmole.tools.distrng.prng.IPRNG
-import org.openmole.tools.distrng.data.RNGData
-import org.openmole.tools.mgo.model.IGenomes
+import GenomeFloat._
 
 class AverageCrossover extends GenomeOperation[GenomeFloat] {
   
-  override def operate(genomes: IGenomes[GenomeFloat], prng: IPRNG[_ <: RNGData]): GenomeFloat = {
-    val genome1 = genomes getRandomGenome(prng)
-    val genome2 = genomes getRandomGenome(prng)
+  override def operate(genomes: IndexedSeq[GenomeFloat], prng: IPRNG[_]): GenomeFloat = {
+    val size = genomes.head.size
+    
+    val genome1 = randomGenome(size, prng)
+    val genome2 = randomGenome(size, prng)
   
     val newGenome = new GenomeFloat(new Array[Float](genome1.size))
 
-    for(i <- 0 until genome1.size) {
+    for(i <- 0 until size) {
       val coef = prng.nextFloat
       newGenome(i) = (genome1(i) * coef + genome2(i) * (1 - coef)) / 2
     }

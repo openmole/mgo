@@ -20,8 +20,7 @@ package org.openmole.tools.mgo.genome.genomefloat
 
 import org.openmole.tools.mgo.evolution.GenomeOperation
 import org.openmole.tools.distrng.prng.IPRNG
-import org.openmole.tools.distrng.data.RNGData
-import org.openmole.tools.mgo.model.IGenomes
+import GenomeFloat._
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
@@ -30,9 +29,10 @@ import java.util.LinkedList
 
 class SegmentMutation extends GenomeOperation[GenomeFloat] {
 
-  override def operate(genomes: IGenomes[GenomeFloat], prng: IPRNG[_ <: RNGData]): GenomeFloat = {
-
-    val genome = genomes getRandomGenome(prng)
+  override def operate(genomes: IndexedSeq[GenomeFloat], prng: IPRNG[_]): GenomeFloat = {
+    val size = genomes.head.size
+    
+    val genome = randomGenome(size, prng)
     val length = prng nextInt(genome.size / 2)
     val tmpValues = new LinkedList[Float]
 
