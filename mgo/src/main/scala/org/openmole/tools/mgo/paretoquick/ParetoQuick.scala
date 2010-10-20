@@ -29,7 +29,6 @@ import scala.collection.mutable.Queue
 
 object ParetoQuick {
 
-  
   def pareto[T, P <: MultiGoal[T]](points: Iterable[P]): IndexedSeq[P] = {
     points.headOption match {
       case None => IndexedSeq.empty[P]
@@ -74,9 +73,6 @@ object ParetoQuick {
         ArraySeq[P](f, it.next)
       } else ArraySeq[P](f)
 
-      Logger.getLogger(ParetoQuick.getClass.getName).info("Decoup: " + vect.toString)
-
-      
       toProceed += vect
     }
     
@@ -86,8 +82,8 @@ object ParetoQuick {
       val archive2 = eliminer[T,P](toProceed.dequeue, curDim)
   
       val merged = new ArrayBuffer[P](archive.size + archive2.size)
-      merged appendAll eliminer[T,P](archive, curDim)
-      merged appendAll eliminer[T,P](archive2, curDim)
+      merged ++= eliminer[T,P](archive, curDim)
+      merged ++= /*eliminer[T,P](*/archive2//, curDim)
 
       toProceed += merged.toIndexedSeq[P]
 
@@ -100,9 +96,12 @@ object ParetoQuick {
  
 
   def eliminer[T, P <: MultiGoal[T]](v: IndexedSeq[P], curDim: Int): IndexedSeq[P] = {
+    
     if (v.isEmpty) {
       return ArraySeq.empty[P]
     }
+    
+    if(v.size == 1) return v.toIndexedSeq
    
     if (v.size == 2) {
       val it = v.iterator
@@ -111,40 +110,52 @@ object ParetoQuick {
       val p2 = it.next
     // Logger.getLogger(ParetoQuick.getClass.getName).info("Domin: " + p1.toString + " " + p2.toString)
 
-      DominateMinimization.dominated(p1, p2) match {       
+      return DominateMinimization.dominated(p1, p2) match {       
         case LEFT => IndexedSeq(p2)
         case RIGHT => IndexedSeq(p1)
         case NONE => IndexedSeq(p1, p2)
-        case _ => IndexedSeq.empty
+        //case _ => IndexedSeq.empty
       }
       
       //Logger.getLogger(ParetoQuick.getClass.getName).info("Domin res: " + ret.toString)
     }
    
     val archive = new ListBuffer[P]
+    
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("V " + v.toString)
+
+    
+    val orderedV = MultiGoal.orderOneDim[T,P](curDim, v)
+    
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("OrderedV " + orderedV.toString)
 
     if (curDim == 1) {
-      archivePareto2D[T,P](MultiGoal.orderOneDim[T,P](curDim, v), archive)
+      archivePareto2D[T,P](orderedV, archive)
       return archive.toIndexedSeq[P]
     }
 
     val half = v.size / 2
 
-    val it = MultiGoal.orderOneDim[T,P](curDim, v).iterator
-
     val vTagged = new ArrayBuffer[Tagged[T,P]](v.size)
 
+    val it = orderedV.iterator
+    
     for (i <- 0 until half) vTagged += new Tagged(it.next, Tag.A)
     for (i <- half until v.size) vTagged += new Tagged(it.next, Tag.B)
-
+    
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("Tagged " + vTagged.map( t => (t.multiGoal, t.tag) ).toString)
+ 
+    
     val orderedVTagged = MultiGoal.orderOneDim[T,Tagged[T,P]](curDim - 1, vTagged)
 
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("orderedVTagged " + orderedVTagged.map( t => (t.multiGoal, t.tag) ).toString)
+
+    
     val testElP = new ListBuffer[P]
     val testElNP = new ListBuffer[P]    
     
   /*  Logger.getLogger(ParetoQuick.getClass.getName).info("EP: " + orderedVTagged.slice(0, vTagged.size / 2).map(_.goals).map( _.map(_.value)).toString)
     eliminerP(orderedVTagged.slice(0, vTagged.size / 2), testElP)
-    Logger.getLogger(ParetoQuick.getClass.getName).info(testElP.toString)
     
     Logger.getLogger(ParetoQuick.getClass.getName).info("ENP: " + orderedVTagged.slice(vTagged.size / 2, vTagged.size).map(_.goals).map( _.map(_.value)).toString)
     eliminerNP(orderedVTagged.slice(vTagged.size / 2, vTagged.size), testElP)
@@ -159,7 +170,7 @@ object ParetoQuick {
     newV ++= procV2
 
     archive ++= eliminer[T,P](newV, curDim - 1)
-
+    
     archive.toIndexedSeq
   }
   
@@ -209,6 +220,12 @@ object ParetoQuick {
       }
     }
 
+    
+ //   Logger.getLogger(ParetoQuick.getClass.getName).info("NP input " + points.map( t => (t.multiGoal, t.tag) ).toString)
+
+ //   Logger.getLogger(ParetoQuick.getClass.getName).info("NP output " + ret.toString)
+
+    
     ret
   }
 
@@ -234,6 +251,11 @@ object ParetoQuick {
 
     }
 
+ //   Logger.getLogger(ParetoQuick.getClass.getName).info("P input " + points.map( t => (t.multiGoal, t.tag) ).toString)
+
+ //   Logger.getLogger(ParetoQuick.getClass.getName).info("P output " + retA.toString)
+
+    
     return retA
   }
 
