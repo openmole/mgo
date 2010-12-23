@@ -50,7 +50,7 @@ object MultiGoal {
           val order = rightGoal.order
           import order._
           
-          order.lt(leftGoal.value, rightGoal.value)
+          leftGoal.value < rightGoal.value
          /* if(compare != 0) return compare
           return right.compareTo(left)*/
         })

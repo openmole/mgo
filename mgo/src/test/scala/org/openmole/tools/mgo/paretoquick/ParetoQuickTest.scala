@@ -23,68 +23,81 @@ import scala.collection.mutable.ArrayBuffer
 
 class ParetoQuickTest {
 
-    @Before
-    def setUp: Unit = {
-    }
+  @Before
+  def setUp: Unit = {
+  }
 
-    @After
-    def tearDown: Unit = {
-    }
+  @After
+  def tearDown: Unit = {
+  }
 
-    @Test
-    def testPareto = {
-        var vectMultiGoalDouble = new ArrayBuffer[MultiGoalDouble](14)
-        // vectMultiGoalDouble+=new MultiGoalDouble( -1, 2., 44));
-        vectMultiGoalDouble += new MultiGoalDouble(-1, 2., 44)
-        vectMultiGoalDouble += new MultiGoalDouble(2, 3.4, 4)
-        vectMultiGoalDouble += new MultiGoalDouble(1, 7., 9)
-        vectMultiGoalDouble += new MultiGoalDouble(0, 2., 0)
-        vectMultiGoalDouble += new MultiGoalDouble(3, 0., 9)
-        vectMultiGoalDouble += new MultiGoalDouble(4, 44., 0)
-        vectMultiGoalDouble += new MultiGoalDouble(1, 7., 9)
-        vectMultiGoalDouble += new MultiGoalDouble(3, 2.8, 1)
-        vectMultiGoalDouble += new MultiGoalDouble(3, 2., 9)
-        vectMultiGoalDouble += new MultiGoalDouble(90, 3.4, 4)
-        vectMultiGoalDouble += new MultiGoalDouble(-2, 7., 9)
-        vectMultiGoalDouble += new MultiGoalDouble(1, 2., 44)
-        vectMultiGoalDouble += new MultiGoalDouble(3, 0., 9)
+  @Test
+  def testPareto = {
+    var vectMultiGoalDouble = new ArrayBuffer[MultiGoalDouble](14)
+    // vectMultiGoalDouble+=new MultiGoalDouble( -1, 2., 44));
+    vectMultiGoalDouble += new MultiGoalDouble(-1, 2., 44)
+    vectMultiGoalDouble += new MultiGoalDouble(2, 3.4, 4)
+    vectMultiGoalDouble += new MultiGoalDouble(1, 7., 9)
+    vectMultiGoalDouble += new MultiGoalDouble(0, 2., 0)
+    vectMultiGoalDouble += new MultiGoalDouble(3, 0., 9)
+    vectMultiGoalDouble += new MultiGoalDouble(4, 44., 0)
+    vectMultiGoalDouble += new MultiGoalDouble(1, 7., 9)
+    vectMultiGoalDouble += new MultiGoalDouble(3, 2.8, 1)
+    vectMultiGoalDouble += new MultiGoalDouble(3, 2., 9)
+    vectMultiGoalDouble += new MultiGoalDouble(90, 3.4, 4)
+    vectMultiGoalDouble += new MultiGoalDouble(-2, 7., 9)
+    vectMultiGoalDouble += new MultiGoalDouble(1, 2., 44)
+    vectMultiGoalDouble += new MultiGoalDouble(3, 0., 9)
 
+    vectMultiGoalDouble.foreach{println _}
     
-        ParetoQuick.pareto[Double, MultiGoalDouble](vectMultiGoalDouble, 3).foreach{
-          println _
-        }
-
-        assertEquals(11, ParetoQuick.pareto[Double, MultiGoalDouble](vectMultiGoalDouble, 3).size);
-
-        vectMultiGoalDouble = new ArrayBuffer[MultiGoalDouble](40)
-        vectMultiGoalDouble += new MultiGoalDouble(0.96, 6, 4)
-        vectMultiGoalDouble += new MultiGoalDouble(0.84000003, 8, 4)
-        vectMultiGoalDouble += new MultiGoalDouble(0.96, 8, 3)
-        vectMultiGoalDouble += new MultiGoalDouble(0.84000003, 9, 3)
-        vectMultiGoalDouble += new MultiGoalDouble(0.96, 9, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 10, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 11, 2)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 11, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 11, 4)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 12, 2)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 12, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 13, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 14, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 21, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 22, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.75, 22, 4)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 22, 2)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 22, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.96, 22, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.8, 25, 4)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.96, 6, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 8, 2)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 8, 3)
-        vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 8, 4)
-
-
-        assertEquals(19, ParetoQuick.pareto[Double, MultiGoalDouble](vectMultiGoalDouble, 3).size)
+    println("----------------")
     
+    ParetoQuick.pareto[Double, MultiGoalDouble](vectMultiGoalDouble, 3).foreach{
+      println _
     }
+
+    assertEquals(8, ParetoQuick.pareto[Double, MultiGoalDouble](vectMultiGoalDouble, 3).size);
+
+    vectMultiGoalDouble = new ArrayBuffer[MultiGoalDouble](40)
+    vectMultiGoalDouble += new MultiGoalDouble(0.96, 6, 4, 0.3)
+    vectMultiGoalDouble += new MultiGoalDouble(0.84000003, 8, 4, 44)
+    vectMultiGoalDouble += new MultiGoalDouble(0.96, 8, 3, -1)
+    vectMultiGoalDouble += new MultiGoalDouble(0.84000003, 9, 3, 2.0)
+    vectMultiGoalDouble += new MultiGoalDouble(0.96, 9, 3, 2.0)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 10, 3, 10)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 11, 2, 1)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 11, 3, 3)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 11, 4, 11)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 12, 2, 110)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 12, 3, 2)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 13, 3, 7)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 14, 3, 1)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 21, 3, 0)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 22, 3, 0.0)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.75, 22, 4, 3)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 22, 2, 2.2)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 22, 3, 2.6)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.96, 22, 3, 2.0)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.8, 25, 4, 5.0)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.96, 6, 3, 6.0)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 8, 2, 9.0)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 8, 3, 1.4)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.84000003, 8, 4, 3.3)
+    vectMultiGoalDouble+=new MultiGoalDouble(0.94000003, 9, 5, 4.3)
+    println   
+    println("----------------")
+    
+    vectMultiGoalDouble.foreach{println _}
+    
+    println("----------------")
+    
+    ParetoQuick.pareto[Double, MultiGoalDouble](vectMultiGoalDouble, 4).foreach{
+      println _
+    }
+
+    assertEquals(21, ParetoQuick.pareto[Double, MultiGoalDouble](vectMultiGoalDouble, 4).size)
+    
+  }
 
 }

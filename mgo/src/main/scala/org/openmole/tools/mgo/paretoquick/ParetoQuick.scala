@@ -26,6 +26,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArraySeq
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Queue
+import scala.collection.IndexedSeqOptimized
 
 object ParetoQuick {
 
@@ -36,153 +37,231 @@ object ParetoQuick {
     }
   }
     
-  def pareto[T, P <: MultiGoal[T]](points: Iterable[P], dim: Int): IndexedSeq[P] = {
+   def pareto[T, P <: MultiGoal[T]](points: Iterable[P], dim: Int): IndexedSeq[P] = {
+     dc[T,P](points.toIndexedSeq, dim - 1)
+   }   
 
-    val curDim = dim - 1
-
-    if (points.isEmpty) {
-      return IndexedSeq.empty
-    }
-    if (curDim == 0) {
-      val paretoPoint = points.head.goals
-      val order = paretoPoint(curDim).order
-      import order._
-      
-      val ret = new ArrayBuffer[P]
-      
-     for(current <- points.tail) {
-        if(order.lt(current.goals(curDim).value, paretoPoint(curDim).value)) {
-          ret.clear
-          ret += current
-        }
-        if(current.goals(curDim).value == paretoPoint(curDim).value) ret += current
-      }
-      
-      return ret.toIndexedSeq[P]
-    }
-
-
-    val toProceed = new Queue[IndexedSeq[P]]
-   
-    val it = points.iterator
-
-    while (it.hasNext) {
-      val f = it.next
-
-      val vect = if(it.hasNext) {
-        ArraySeq[P](f, it.next)
-      } else ArraySeq[P](f)
-
-      toProceed += vect
-    }
+  def dc[T, P <: MultiGoal[T]](z: IndexedSeq[P], dim: Int): IndexedSeq[P] = {
+    //Logger.getLogger(ParetoQuick.getClass.getName).info(z.toString)
     
-    var archive = toProceed.dequeue
-
-    while (!toProceed.isEmpty) {
-      val archive2 = eliminer[T,P](toProceed.dequeue, curDim)
+    if (dim == 1) return archivePareto2D[T,P](z) //DC - 1    
+    if (z.size <= 2) return sc[T,P](z) //DC - 2
+    
+    val splited = MultiGoal.orderOneDim[T,P](dim, z).splitAt(z.size/2) //DC - 3
+    val xx = dc[T,P](splited._2, dim) //DC - 4
+    val yy = dc[T,P](splited._1, dim) //DC - 4
+    val xxxPrime = marry[T,P](xx, yy, dim - 1) //DC - 5 + 6
+    
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("xx = " + xx)
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("yy = " + yy)
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("res = " + (yy ++ xxxPrime))
+    
+    yy ++ xxxPrime //DC - 7
+  } 
   
-      val merged = new ArrayBuffer[P](archive.size + archive2.size)
-      merged ++= eliminer[T,P](archive, curDim)
-      merged ++= /*eliminer[T,P](*/archive2//, curDim)
+   def sc[T, P <: MultiGoal[T]](v: IndexedSeq[P]): IndexedSeq[P] = {
 
-      toProceed += merged.toIndexedSeq[P]
-
-      archive = toProceed.dequeue
-    }
-
-    return eliminer[T,P](archive, curDim)
-  }
-
- 
-
-  def eliminer[T, P <: MultiGoal[T]](v: IndexedSeq[P], curDim: Int): IndexedSeq[P] = {
-    
-    if (v.isEmpty) {
-      return ArraySeq.empty[P]
-    }
-    
-    if(v.size == 1) return v.toIndexedSeq
-   
-    if (v.size == 2) {
+    if(v.isEmpty) return IndexedSeq.empty
+    if(v.size == 1) return v
       val it = v.iterator
 
       val p1 = it.next
       val p2 = it.next
-    // Logger.getLogger(ParetoQuick.getClass.getName).info("Domin: " + p1.toString + " " + p2.toString)
+      // Logger.getLogger(ParetoQuick.getClass.getName).info("Domin: " + p1.toString + " " + p2.toString)
 
       return DominateMinimization.dominated(p1, p2) match {       
         case LEFT => IndexedSeq(p2)
         case RIGHT => IndexedSeq(p1)
-        case NONE => IndexedSeq(p1, p2)
-        //case _ => IndexedSeq.empty
+        case NONE => v
+          //case _ => IndexedSeq.empty
       }
       
       //Logger.getLogger(ParetoQuick.getClass.getName).info("Domin res: " + ret.toString)
-    }
-   
-    val archive = new ListBuffer[P]
-    
-    //Logger.getLogger(ParetoQuick.getClass.getName).info("V " + v.toString)
-
-    
-    val orderedV = MultiGoal.orderOneDim[T,P](curDim, v)
-    
-    //Logger.getLogger(ParetoQuick.getClass.getName).info("OrderedV " + orderedV.toString)
-
-    if (curDim == 1) {
-      archivePareto2D[T,P](orderedV, archive)
-      return archive.toIndexedSeq[P]
-    }
-
-    val half = v.size / 2
-
-    val vTagged = new ArrayBuffer[Tagged[T,P]](v.size)
-
-    val it = orderedV.iterator
-    
-    for (i <- 0 until half) vTagged += new Tagged(it.next, Tag.A)
-    for (i <- half until v.size) vTagged += new Tagged(it.next, Tag.B)
-    
-    //Logger.getLogger(ParetoQuick.getClass.getName).info("Tagged " + vTagged.map( t => (t.multiGoal, t.tag) ).toString)
- 
-    
-    val orderedVTagged = MultiGoal.orderOneDim[T,Tagged[T,P]](curDim - 1, vTagged)
-
-    //Logger.getLogger(ParetoQuick.getClass.getName).info("orderedVTagged " + orderedVTagged.map( t => (t.multiGoal, t.tag) ).toString)
-
-    
-    val testElP = new ListBuffer[P]
-    val testElNP = new ListBuffer[P]    
-    
-  /*  Logger.getLogger(ParetoQuick.getClass.getName).info("EP: " + orderedVTagged.slice(0, vTagged.size / 2).map(_.goals).map( _.map(_.value)).toString)
-    eliminerP(orderedVTagged.slice(0, vTagged.size / 2), testElP)
-    
-    Logger.getLogger(ParetoQuick.getClass.getName).info("ENP: " + orderedVTagged.slice(vTagged.size / 2, vTagged.size).map(_.goals).map( _.map(_.value)).toString)
-    eliminerNP(orderedVTagged.slice(vTagged.size / 2, vTagged.size), testElP)
-    Logger.getLogger(ParetoQuick.getClass.getName).info(testElP.toString)*/
-  
-    val procV1 = eliminerP(orderedVTagged.slice(0, half), archive)
-    val procV2 = eliminerNP(orderedVTagged.slice(half, vTagged.size), archive)
-
-    val newV = new ArrayBuffer[P](procV1.size + procV2.size)
-
-    newV ++= procV1
-    newV ++= procV2
-
-    archive ++= eliminer[T,P](newV, curDim - 1)
-    
-    archive.toIndexedSeq
   }
   
   
-  def archivePareto2D[T, P <: MultiGoal[T]](vect: Seq[P], archive: ListBuffer[P]) {
+//  def pareto[T, P <: MultiGoal[T]](points: Iterable[P], dim: Int): IndexedSeq[P] = {
+//
+//    val curDim = dim - 1
+//
+//    if (points.isEmpty) {
+//      return IndexedSeq.empty
+//    }
+//    if (curDim == 0) {
+//      val paretoPoint = points.head.goals
+//      val order = paretoPoint(curDim).order
+//      import order._
+//      
+//      val ret = new ArrayBuffer[P]
+//      
+//      for(current <- points.tail) {
+//        if(order.lt(current.goals(curDim).value, paretoPoint(curDim).value)) {
+//          ret.clear
+//          ret += current
+//        }
+//        if(current.goals(curDim).value == paretoPoint(curDim).value) ret += current
+//      }
+//      
+//      return ret.toIndexedSeq[P]
+//    }
+//
+//
+//    val toProceed = new Queue[IndexedSeq[P]]
+//   
+//    val it = points.iterator
+//
+//    while (it.hasNext) {
+//      val f = it.next
+//
+//      val vect = if(it.hasNext) {
+//        ArraySeq[P](f, it.next)
+//      } else ArraySeq[P](f)
+//
+//      toProceed += vect
+//    }
+//    
+//    var archive = toProceed.dequeue
+//
+//    while (!toProceed.isEmpty) {
+//      val archive2 = eliminer[T,P](toProceed.dequeue, curDim)
+//  
+//      val merged = new ArrayBuffer[P](archive.size + archive2.size)
+//      merged ++= eliminer[T,P](archive, curDim)
+//      merged ++= /*eliminer[T,P](*/archive2//, curDim)
+//
+//      toProceed += merged.toIndexedSeq[P]
+//
+//      archive = toProceed.dequeue
+//    }
+//
+//    return eliminer[T,P](archive, curDim)
+//  }
+//
+// 
+//  def testSolvable[T, P <: MultiGoal[T]](v: IndexedSeq[P], curDim: Int): Option[IndexedSeq[P]] = {
+//    if (v.size == 2) {
+//      val it = v.iterator
+//
+//      val p1 = it.next
+//      val p2 = it.next
+//      // Logger.getLogger(ParetoQuick.getClass.getName).info("Domin: " + p1.toString + " " + p2.toString)
+//
+//      return DominateMinimization.dominated(p1, p2) match {       
+//        case LEFT => Some(IndexedSeq(p2))
+//        case RIGHT => Some(IndexedSeq(p1))
+//        case NONE => Some(IndexedSeq(p1, p2))
+//          //case _ => IndexedSeq.empty
+//      }
+//      
+//      //Logger.getLogger(ParetoQuick.getClass.getName).info("Domin res: " + ret.toString)
+//    }
+//   
+//    None
+//  }
+//  
+//  
+//  def test2D[T, P <: MultiGoal[T]](orderedV: IndexedSeq[P], curDim: Int): Option[IndexedSeq[P]] = {
+// 
+//    if (curDim == 1) {
+//      val archive = new ListBuffer[P]
+//      archivePareto2D[T,P](orderedV, archive)
+//      return Some(archive.toIndexedSeq[P])
+//    }
+//    
+//    None
+//  }
+//  
+//
+//  def eliminer[T, P <: MultiGoal[T]](v: IndexedSeq[P], curDim: Int): IndexedSeq[P] = {
+//    if (v.isEmpty) return ArraySeq.empty[P]
+//    if(v.size == 1) return v.toIndexedSeq
+//
+//    testSolvable[T,P](v, curDim) match {
+//      case Some(value) => return value
+//      case None =>
+//    }
+//    
+//    val orderedV = MultiGoal.orderOneDim[T,P](curDim, v)
+// 
+//    test2D[T,P](v, curDim) match {
+//      case Some(value) => return value
+//      case None =>
+//    }
+//    
+//    val half = v.size / 2
+//    
+//    val y = orderedV.slice(0, half)
+//    val x = orderedV.slice(half, orderedV.size)
+//    val married = marry[T, P](x, y, curDim - 1)
+//
+//    val union = new ArrayBuffer[P](married.size + y.size)
+//    union ++= married
+//    union ++= y
+//    
+//    return union
+//    
+////    //Logger.getLogger(ParetoQuick.getClass.getName).info("OrderedV " + orderedV.toString)
+////
+////    
+////    
+////
+////  
+////
+////
+////    
+////    
+////    
+////    
+////    val vTagged = new ArrayBuffer[Tagged[T,P]](v.size)
+////
+////    val it = orderedV.iterator
+////    
+////    for (i <- 0 until half) vTagged += new Tagged(it.next, Tag.A)
+////    for (i <- half until v.size) vTagged += new Tagged(it.next, Tag.B)
+////    
+////    //Logger.getLogger(ParetoQuick.getClass.getName).info("Tagged " + vTagged.map( t => (t.multiGoal, t.tag) ).toString)
+//// 
+////    
+////    val orderedVTagged = MultiGoal.orderOneDim[T,Tagged[T,P]](curDim - 1, vTagged)
+////
+////    //Logger.getLogger(ParetoQuick.getClass.getName).info("orderedVTagged " + orderedVTagged.map( t => (t.multiGoal, t.tag) ).toString)
+////
+////    
+////    val testElP = new ListBuffer[P]
+////    val testElNP = new ListBuffer[P]    
+////    
+////    /*  Logger.getLogger(ParetoQuick.getClass.getName).info("EP: " + orderedVTagged.slice(0, vTagged.size / 2).map(_.goals).map( _.map(_.value)).toString)
+////     eliminerP(orderedVTagged.slice(0, vTagged.size / 2), testElP)
+////    
+////     Logger.getLogger(ParetoQuick.getClass.getName).info("ENP: " + orderedVTagged.slice(vTagged.size / 2, vTagged.size).map(_.goals).map( _.map(_.value)).toString)
+////     eliminerNP(orderedVTagged.slice(vTagged.size / 2, vTagged.size), testElP)
+////     Logger.getLogger(ParetoQuick.getClass.getName).info(testElP.toString)*/
+////  
+////    val procV1 = eliminerP(orderedVTagged.slice(0, half), archive)
+////    val procV2 = eliminerNP(orderedVTagged.slice(half, vTagged.size), archive)
+////
+////    val newV = new ArrayBuffer[P](procV1.size + procV2.size)
+////
+////    newV ++= procV1
+////    newV ++= procV2
+////
+////    archive ++= eliminer[T,P](newV, curDim - 1)
+////    
+////    archive.toIndexedSeq
+//  }
+  
+  
+  def archivePareto2D[T, P <: MultiGoal[T]](v: IndexedSeq[P]): IndexedSeq[P] = {
 
     //Logger.getLogger(ParetoQuick.getClass.getName).info(vect.toString)
 
-    
-    if (vect.isEmpty) return
+    if (v.isEmpty) return IndexedSeq.empty
 
-    val it = vect.iterator
+    val orderedV = MultiGoal.orderOneDim[T,P](1, v)
+    
+    val archive = new ListBuffer[P]
+    
+    val it = v.iterator
 
     var elt = it.next
     archive += elt
@@ -202,71 +281,146 @@ object ParetoQuick {
         // second = elt;
       } 
     }
+    archive.toIndexedSeq[P]
   }
-
-  def eliminerNP[T, P <: MultiGoal[T]](points: Iterable[Tagged[T,P]], archive: ListBuffer[P]): Seq[P] = {
-    val ret = new ListBuffer[P]
-
-    //cette classe prend un vecteur de Point dont l'origine vient des deux vecteurs parents
-    //l'objectif de cette classe est d'???limner les Point du 2i???me vecteur qui sont domin???s par le 1ier vecteur
-    // les points qui restent du 2i???me vecteur dans le 1er vecteur sont envoy???s dans l'archive pareto et ???liminer du vecteur en cour
-
-
-    for (p <- points) {
-      if (p.tag == Tag.B) {
-        ret += p.multiGoal
-      } else {
-        archive += p.multiGoal
-      }
-    }
-
-    
- //   Logger.getLogger(ParetoQuick.getClass.getName).info("NP input " + points.map( t => (t.multiGoal, t.tag) ).toString)
-
- //   Logger.getLogger(ParetoQuick.getClass.getName).info("NP output " + ret.toString)
-
-    
-    ret
-  }
-
-  def eliminerP[T, P <: MultiGoal[T]](points: Iterable[Tagged[T, P]], archive: ListBuffer[P]): Seq[P] = {
-    val ret = new ListBuffer[P]
-    val retA = new ListBuffer[P]
-
-    //cette classe prend un vecteur de Point dont l'origine vient des deux vecteurs parents
-    //l'objectif est de cette classe est d'???liminer les Point du 1i???me vecteur qui se trouvent dans le 2ieme vecteur
-
-    for (p <- points) {
-      if (p.tag == Tag.B) {
-        ret += p.multiGoal
-      } else {
-        retA += p.multiGoal
-      }
-    }
-
-    for (val p <- ret) {
-      if (dominatePointList[T,P](p, retA)) {
-        archive += p
-      }
-
-    }
-
- //   Logger.getLogger(ParetoQuick.getClass.getName).info("P input " + points.map( t => (t.multiGoal, t.tag) ).toString)
-
- //   Logger.getLogger(ParetoQuick.getClass.getName).info("P output " + retA.toString)
-
-    
-    return retA
-  }
-
-  def dominatePointList[T, P <: MultiGoal[T]](p: P, points: Iterable[P]): Boolean = {
-
+//
+//  def eliminerNP[T, P <: MultiGoal[T]](points: Iterable[Tagged[T,P]], archive: ListBuffer[P]): Seq[P] = {
+//    val ret = new ListBuffer[P]
+//
+//    //cette classe prend un vecteur de Point dont l'origine vient des deux vecteurs parents
+//    //l'objectif de cette classe est d'???limner les Point du 2i???me vecteur qui sont domin???s par le 1ier vecteur
+//    // les points qui restent du 2i???me vecteur dans le 1er vecteur sont envoy???s dans l'archive pareto et ???liminer du vecteur en cour
+//
+//
+//    for (p <- points) {
+//      if (p.tag == Tag.B) {
+//        ret += p.multiGoal
+//      } else {
+//        archive += p.multiGoal
+//      }
+//    }
+//
+//    
+//    //   Logger.getLogger(ParetoQuick.getClass.getName).info("NP input " + points.map( t => (t.multiGoal, t.tag) ).toString)
+//
+//    //   Logger.getLogger(ParetoQuick.getClass.getName).info("NP output " + ret.toString)
+//
+//    
+//    ret
+//  }
+//
+//  def eliminerP[T, P <: MultiGoal[T]](points: Iterable[Tagged[T, P]], archive: ListBuffer[P]): Seq[P] = {
+//    val ret = new ListBuffer[P]
+//    val retA = new ListBuffer[P]
+//
+//    //cette classe prend un vecteur de Point dont l'origine vient des deux vecteurs parents
+//    //l'objectif est de cette classe est d'???liminer les Point du 1i???me vecteur qui se trouvent dans le 2ieme vecteur
+//
+//    for (p <- points) {
+//      if (p.tag == Tag.B) {
+//        ret += p.multiGoal
+//      } else {
+//        retA += p.multiGoal
+//      }
+//    }
+//
+//    for (val p <- ret) {
+//      if (pointNotDominatedByList[T,P](p, retA)) {
+//        archive += p
+//      }
+//
+//    }
+//
+//    //   Logger.getLogger(ParetoQuick.getClass.getName).info("P input " + points.map( t => (t.multiGoal, t.tag) ).toString)
+//
+//    //   Logger.getLogger(ParetoQuick.getClass.getName).info("P output " + retA.toString)
+//
+//    
+//    return retA
+//  }
+//
+  def pointNotDominatedByList[T, P <: MultiGoal[T]](p: P, points: IndexedSeq[P]): Boolean = {
     for (p1 <- points) {
-      if (DominateMinimization.isDominated(p, p1)) {
-        return false
-      }
+      if (DominateMinimization.isDominated(p, p1)) return false
     }
     return true
-
   }
+  
+ 
+  
+  
+  def notDominatedByPoint[T, P <: MultiGoal[T]](p: P, points: IndexedSeq[P]): IndexedSeq[P] = {
+    (for(p1 <- points ; if(!DominateMinimization.isDominated(p1, p))) yield p1).toIndexedSeq
+  }
+  
+  
+  def marry[T, P <: MultiGoal[T]](x: IndexedSeq[P], y: IndexedSeq[P], curDim: Int): IndexedSeq[P] = {
+    /*if (x.isEmpty) return y
+    if (y.isEmpty) return x*/
+
+    if(x.size == 1) return if(pointNotDominatedByList[T,P](x.head, y)) IndexedSeq(x.head) else IndexedSeq.empty
+    if(y.size == 1) return notDominatedByPoint[T,P](y.head, x)
+    
+    /*if(x.size == 2 && y.size == 2) {
+      paretoPointList[T,P](x(1), paretoPointList[T,P](x(0), y))
+    }*/
+
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("x "  + x)
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("y "  + y)
+   // Logger.getLogger(ParetoQuick.getClass.getName).info("marry2D "  + marry2D[T,P](x,y))
+    
+    if(curDim == 1) return marry2D[T,P](x,y)
+    
+    val orderedX = MultiGoal.orderOneDim[T,P](curDim, x)
+    val orderedY = MultiGoal.orderOneDim[T,P](curDim, y)
+    
+    val middleOfX = x.size / 2
+    val middleOfY = y.size / 2
+    
+    val x1 = orderedX.slice(0, middleOfX)
+    val x2 = orderedX.slice(middleOfX, x.size)
+    
+    val y1 = orderedY.slice(0, middleOfY)
+    val y2 = orderedY.slice(middleOfY, y.size)
+    
+    val xp1 = marry[T,P](x1,y1, curDim)
+    val xp2 = marry[T,P](x2,y2, curDim)
+    
+    val curDimP = curDim - 1
+    val xs2 = marry[T,P](xp2, y1, curDimP)
+    
+    return xp1 ++ xs2
+  }
+  
+  def marry2D[T, P <: MultiGoal[T]](x: IndexedSeq[P], y: IndexedSeq[P]): IndexedSeq[P] = {
+    
+    //Marry2D - 1
+    val marryTagged = new ArrayBuffer[Tagged[T,P]](x.size + y.size) 
+    for (elt <- x) marryTagged += new Tagged(elt, Tag.A)
+    for (elt <- y) marryTagged += new Tagged(elt, Tag.B)
+    
+    //Marry2D - 2
+    val sortedMarryTagged = MultiGoal.orderOneDim[T,Tagged[T,P]](1, marryTagged)
+    var w = sortedMarryTagged.head.multiGoal
+    
+    val order = w.goals(0).order
+    import order._
+    
+    val xPrime = new ListBuffer[P]
+       
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("Tagged "  + marryTagged.map{ e => ""+e.multiGoal + " " + e.tag} )
+    
+    for(elt <- sortedMarryTagged) {
+      
+      //Logger.getLogger(ParetoQuick.getClass.getName).info("Elt "  + elt)
+      //Logger.getLogger(ParetoQuick.getClass.getName).info("W "  + w)
+      if(elt.multiGoal.goals(0).value <= w.goals(0).value || w.goals(1).value == elt.multiGoal.goals(1).value) {
+        if(elt.tag == Tag.A) xPrime += elt.multiGoal
+        else w = elt.multiGoal
+      }
+    }
+      
+    return xPrime.toIndexedSeq 
+  }
+    
 }

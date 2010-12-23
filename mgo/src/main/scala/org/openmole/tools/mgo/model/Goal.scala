@@ -19,5 +19,5 @@ package org.openmole.tools.mgo.model
 
 trait Goal[T] {
   def value: T
-  def order: Ordering[T]
+  implicit val order: Ordering[T]
 }

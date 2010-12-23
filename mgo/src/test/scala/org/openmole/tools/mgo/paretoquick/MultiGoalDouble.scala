@@ -25,7 +25,7 @@ class MultiGoalDouble(g: Double*) extends MultiGoal[Double] {
   override val goals: IndexedSeq[Goal[Double]] =  {
     g.map( d => new Goal[Double] {
         override def value = d
-        override def order = Double
+        override val order = Double
       }).toIndexedSeq
   }
   override def toString = {

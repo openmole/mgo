@@ -18,33 +18,33 @@
 package org.openmole.tools.mgo.dominate.diversity;
 
 import java.util.Vector;
-import no.uib.cipr.matrix.UpperSymmPackMatrix;
+//import no.uib.cipr.matrix.UpperSymmPackMatrix;
 
 /**
  *
  * @author salmamesmoudi
  */
 public class MatriceDistances {
-
-    public <T> UpperSymmPackMatrix matriceRemplissage(Vector<? extends T> vect, IDistanceComputing<T> distance){
-     UpperSymmPackMatrix distanceMatrix = new UpperSymmPackMatrix(vect.size());
-
-     for(int i=0;i<vect.size();i++){
-         for(int j=i;j<vect.size();j++){
-             if(i==j)
-                 distanceMatrix.add(i,j,0);
-             else{
-                 double d=distance.computeDistance(vect.elementAt(i), vect.elementAt(j));
-                 distanceMatrix.set(i, j, d);
-             }
-         }
-     }
-
-
-     return distanceMatrix;
-
-    }
-
-
+//
+//    public <T> UpperSymmPackMatrix matriceRemplissage(Vector<? extends T> vect, IDistanceComputing<T> distance){
+//     UpperSymmPackMatrix distanceMatrix = new UpperSymmPackMatrix(vect.size());
+//
+//     for(int i=0;i<vect.size();i++){
+//         for(int j=i;j<vect.size();j++){
+//             if(i==j)
+//                 distanceMatrix.add(i,j,0);
+//             else{
+//                 double d=distance.computeDistance(vect.elementAt(i), vect.elementAt(j));
+//                 distanceMatrix.set(i, j, d);
+//             }
+//         }
+//     }
+//
+//
+//     return distanceMatrix;
+//
+//    }
+//
+//
 
 }

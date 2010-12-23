@@ -19,56 +19,56 @@ package org.openmole.tools.mgo.dominate.diversity;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.Vector;
-import no.uib.cipr.matrix.UpperSymmPackMatrix;
+//import no.uib.cipr.matrix.UpperSymmPackMatrix;
 
 /**
  *
  * @author salmamesmoudi
  */
 public class SharingDiversity {
-
-    public <T extends Comparable> Map<T, Double> setSimilarities(Vector<? extends T> vect, IDistanceComputing<T> distance, double alpha, double nicheSize) {
-
-        Map<T, Double> ret = new TreeMap<T, Double>();
-        //il faut la prendre comme valeur de densit?, celui qui a la plus grande valeur
-        //est le plus repr?sent?
-
-        UpperSymmPackMatrix dMatrix;
-        MatriceDistances M = new MatriceDistances();
-        dMatrix = M.matriceRemplissage(vect, distance);
-
-
-        // compute similarities
-
-        double sum = 0.0;
-
-        for (int i = 0; i < vect.size(); i++) {
-            sum = 0.0;
-            for (int j = 0; j < vect.size(); j++) {
-                sum += sh(dMatrix.get(i, j), alpha, nicheSize);
-            }
-            ret.put(vect.elementAt(i), sum);
-        }
-        return ret;
-
-    }
-
-    /**
-
-     * Sharing function
-
-     * @param dist the distance value
-
-     */
-    double sh(double dist, double alpha, double nicheSize) {
-        double result;
-        if (dist < nicheSize) {
-            result = 1.0 - Math.pow(dist / nicheSize, alpha);
-        } else {
-            result = 0.0;
-        }
-
-        return result;
-
-    }
+//
+//    public <T extends Comparable> Map<T, Double> setSimilarities(Vector<? extends T> vect, IDistanceComputing<T> distance, double alpha, double nicheSize) {
+//
+//        Map<T, Double> ret = new TreeMap<T, Double>();
+//        //il faut la prendre comme valeur de densit?, celui qui a la plus grande valeur
+//        //est le plus repr?sent?
+//
+//        UpperSymmPackMatrix dMatrix;
+//        MatriceDistances M = new MatriceDistances();
+//        dMatrix = M.matriceRemplissage(vect, distance);
+//
+//
+//        // compute similarities
+//
+//        double sum = 0.0;
+//
+//        for (int i = 0; i < vect.size(); i++) {
+//            sum = 0.0;
+//            for (int j = 0; j < vect.size(); j++) {
+//                sum += sh(dMatrix.get(i, j), alpha, nicheSize);
+//            }
+//            ret.put(vect.elementAt(i), sum);
+//        }
+//        return ret;
+//
+//    }
+//
+//    /**
+//
+//     * Sharing function
+//
+//     * @param dist the distance value
+//
+//     */
+//    double sh(double dist, double alpha, double nicheSize) {
+//        double result;
+//        if (dist < nicheSize) {
+//            result = 1.0 - Math.pow(dist / nicheSize, alpha);
+//        } else {
+//            result = 0.0;
+//        }
+//
+//        return result;
+//
+//    }
 }

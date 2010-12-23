@@ -14,11 +14,11 @@
             <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
+        <!--<dependency>
             <groupId>com.google.code</groupId>
             <artifactId>matrix-toolkits-java</artifactId>
             <version>0.9.9</version>
-        </dependency>
+        </dependency>-->
         <dependency>
             <groupId>net.sourceforge.collections</groupId>
             <artifactId>collections-generic</artifactId>
@@ -42,7 +42,7 @@
     </dependencies>
 
     <properties>
-        <lib.org.scala-lang.scala.version>2.8.1.RC3</lib.org.scala-lang.scala.version>
+        <lib.org.scala-lang.scala.version>2.8.1</lib.org.scala-lang.scala.version>
         <maven.scala.version>${lib.org.scala-lang.scala.version}</maven.scala.version>
     </properties>
 
@@ -98,10 +98,6 @@
                 <configuration>
                     <source>1.6</source>
                     <target>1.6</target>
-          <jvmArgs>
-            <jvmArg>-Xms64m</jvmArg>
-            <jvmArg>-Xmx1024m</jvmArg>
-          </jvmArgs>
                 </configuration>
             </plugin>
             <plugin>
