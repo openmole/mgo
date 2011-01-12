@@ -20,9 +20,8 @@ package org.openmole.tools.mgo.paretoquick
 import org.openmole.tools.mgo.model.MultiGoal
 
 
-class Tagged[T, P <: MultiGoal[T]](val multiGoal: P, val tag: Tag.Value) extends MultiGoal[T] {
+class Tagged[P <: MultiGoal](val multiGoal: P, val tag: Tag.Value) extends MultiGoal(multiGoal.goals) {
 
-  override def goals = multiGoal.goals
   override def toString = goals.toString + " " + tag.toString
   
     /*@Override

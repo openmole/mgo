@@ -23,23 +23,19 @@ import org.openmole.tools.mgo.model.MultiGoal._
 
 object Crowding {
   
-  def orderByDecreasingCrowding[T, MG <: MultiGoal[T]](goals: IndexedSeq[MG], dim: Int)(implicit op: Integral[T]): IndexedSeq[MG] = {
+  def orderByDecreasingCrowding[MG <: MultiGoal](goals: IndexedSeq[MG], dim: Int): IndexedSeq[MG] = {
 
     return if (goals.size <= 2) {
       goals
     } else {         
-      class CrowdingInfo(val multiGoal: MG, var crowding: Double) extends MultiGoal[T] {
-          def goals = multiGoal.goals
-      }
-            
+      class CrowdingInfo(val multiGoal: MG, var crowding: Double) extends MultiGoal(multiGoal.goals)
+      
       val crowding = goals.map( new CrowdingInfo(_, 0.) )
 
       // for each objective
       for (curDim <- 0 until dim) {
-        //trier selon l'objectif
-        import op._
         
-        val curCrowding = orderOneDim[T,CrowdingInfo](curDim, crowding)
+        val curCrowding = orderOneDim(curDim, crowding)
         // OrderPointOneDim<T> opod = new OrderPointOneDim<T>(obj);
         // opod.addAll(points);
 
@@ -49,8 +45,8 @@ object Crowding {
         val first = firstCrowdingInfo.multiGoal
         val last = lastCrowdingInfo.multiGoal
 
-        val min = first.goals(curDim).value
-        val max = last.goals(curDim).value
+        val min = first.goals(curDim).toDouble
+        val max = last.goals(curDim).toDouble
 
         firstCrowdingInfo.crowding = Double.PositiveInfinity
         lastCrowdingInfo.crowding = Double.PositiveInfinity
@@ -63,7 +59,7 @@ object Crowding {
 
         while (itOpod.hasNext) {
           val ptPlus1 = itOpod.next
-          val distance =  (ptPlus1.goals(curDim).value - ptMinus1.goals(curDim).value) / maxMinusMin
+          val distance =  (ptPlus1.goals(curDim).toDouble - ptMinus1.goals(curDim).toDouble) / maxMinusMin
           pt.crowding += distance.toDouble
   
           ptMinus1 = pt

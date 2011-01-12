@@ -30,35 +30,6 @@ object Individual {
   
 }
 
-class Individual[GE, T](val genome: GE, val goals: IndexedSeq[Goal[T]]) extends MultiGoal[T] {
-  
- // val id = Individual.nextId
-  
- /* override def apply(dim: Int): Goal[T] = {
-    goals.apply(dim)
-  }*/
-
- /* override def size = {
-    goal.size
-  }
-
-  override def apply(dim: Int): T = {
-    goal.apply(dim)
-  }
-
-  override def compareTo(other: Individu[GE, T, GO]): Int = {
-    val compare = goal.compareTo(other.goal)
-    if(compare != 0) return compare
-    id - other.id
-  }
-
-  override def toString: String = {
-    val toString = new StringBuilder
-    toString.append(goal.toString)
-    toString.append(' ')
-    toString.append(genome.toString)
-
-    toString.toString
-  }*/
+class Individual[GE, MG <: MultiGoal](val genome: GE, val multiGoal: MG) extends MultiGoal(multiGoal.goals) {
 
 }

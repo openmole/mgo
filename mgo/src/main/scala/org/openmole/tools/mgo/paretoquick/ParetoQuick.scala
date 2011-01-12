@@ -30,27 +30,27 @@ import scala.collection.IndexedSeqOptimized
 
 object ParetoQuick {
 
-  def pareto[T, P <: MultiGoal[T]](points: Iterable[P]): IndexedSeq[P] = {
+  def pareto[P <: MultiGoal](points: Iterable[P]): IndexedSeq[P] = {
     points.headOption match {
       case None => IndexedSeq.empty[P]
-      case Some(p) => pareto[T,P](points, p.goals.size)
+      case Some(p) => pareto(points, p.goals.size)
     }
   }
     
-   def pareto[T, P <: MultiGoal[T]](points: Iterable[P], dim: Int): IndexedSeq[P] = {
-     dc[T,P](points.toIndexedSeq, dim - 1)
+   def pareto[P <: MultiGoal](points: Iterable[P], dim: Int): IndexedSeq[P] = {
+     dc(points.toIndexedSeq, dim - 1)
    }   
 
-  def dc[T, P <: MultiGoal[T]](z: IndexedSeq[P], dim: Int): IndexedSeq[P] = {
+  def dc[P <: MultiGoal](z: IndexedSeq[P], dim: Int): IndexedSeq[P] = {
     //Logger.getLogger(ParetoQuick.getClass.getName).info(z.toString)
     
-    if (dim == 1) return archivePareto2D[T,P](z) //DC - 1    
-    if (z.size <= 2) return sc[T,P](z) //DC - 2
+    if (dim == 1) return archivePareto2D(z) //DC - 1    
+    if (z.size <= 2) return sc(z) //DC - 2
     
-    val splited = MultiGoal.orderOneDim[T,P](dim, z).splitAt(z.size/2) //DC - 3
-    val xx = dc[T,P](splited._2, dim) //DC - 4
-    val yy = dc[T,P](splited._1, dim) //DC - 4
-    val xxxPrime = marry[T,P](xx, yy, dim - 1) //DC - 5 + 6
+    val splited = MultiGoal.orderOneDim(dim, z).splitAt(z.size/2) //DC - 3
+    val xx = dc(splited._2, dim) //DC - 4
+    val yy = dc(splited._1, dim) //DC - 4
+    val xxxPrime = marry(xx, yy, dim - 1) //DC - 5 + 6
     
     //Logger.getLogger(ParetoQuick.getClass.getName).info("xx = " + xx)
     //Logger.getLogger(ParetoQuick.getClass.getName).info("yy = " + yy)
@@ -59,7 +59,7 @@ object ParetoQuick {
     yy ++ xxxPrime //DC - 7
   } 
   
-   def sc[T, P <: MultiGoal[T]](v: IndexedSeq[P]): IndexedSeq[P] = {
+   def sc[P <: MultiGoal](v: IndexedSeq[P]): IndexedSeq[P] = {
 
     if(v.isEmpty) return IndexedSeq.empty
     if(v.size == 1) return v
@@ -251,13 +251,13 @@ object ParetoQuick {
 //  }
   
   
-  def archivePareto2D[T, P <: MultiGoal[T]](v: IndexedSeq[P]): IndexedSeq[P] = {
+  def archivePareto2D[P <: MultiGoal](v: IndexedSeq[P]): IndexedSeq[P] = {
 
     //Logger.getLogger(ParetoQuick.getClass.getName).info(vect.toString)
 
     if (v.isEmpty) return IndexedSeq.empty
 
-    val orderedV = MultiGoal.orderOneDim[T,P](1, v)
+    val orderedV = MultiGoal.orderOneDim[P](1, v)
     
     val archive = new ListBuffer[P]
     
@@ -271,9 +271,9 @@ object ParetoQuick {
     while (it.hasNext) {
       elt = it.next
       val goal = elt.goals(0)
-      val order = goal.order
+    
       
-      if ( order.lteq(goal.value, min.value) ) { /* || (second.getComparable(1).compareTo(elt.getComparable(1)) == 0)) {*/
+      if ( goal.toDouble <= min.toDouble ) { /* || (second.getComparable(1).compareTo(elt.getComparable(1)) == 0)) {*/
 //        Logger.getLogger(ParetoQuick.getClass.getName).info(elt.toString)
 
         min = elt.goals(0)
@@ -339,7 +339,7 @@ object ParetoQuick {
 //    return retA
 //  }
 //
-  def pointNotDominatedByList[T, P <: MultiGoal[T]](p: P, points: IndexedSeq[P]): Boolean = {
+  def pointNotDominatedByList[P <: MultiGoal](p: P, points: IndexedSeq[P]): Boolean = {
     for (p1 <- points) {
       if (DominateMinimization.isDominated(p, p1)) return false
     }
@@ -349,30 +349,30 @@ object ParetoQuick {
  
   
   
-  def notDominatedByPoint[T, P <: MultiGoal[T]](p: P, points: IndexedSeq[P]): IndexedSeq[P] = {
+  def notDominatedByPoint[P <: MultiGoal](p: P, points: IndexedSeq[P]): IndexedSeq[P] = {
     (for(p1 <- points ; if(!DominateMinimization.isDominated(p1, p))) yield p1).toIndexedSeq
   }
   
   
-  def marry[T, P <: MultiGoal[T]](x: IndexedSeq[P], y: IndexedSeq[P], curDim: Int): IndexedSeq[P] = {
+  def marry[P <: MultiGoal](x: IndexedSeq[P], y: IndexedSeq[P], curDim: Int): IndexedSeq[P] = {
     /*if (x.isEmpty) return y
     if (y.isEmpty) return x*/
 
-    if(x.size == 1) return if(pointNotDominatedByList[T,P](x.head, y)) IndexedSeq(x.head) else IndexedSeq.empty
-    if(y.size == 1) return notDominatedByPoint[T,P](y.head, x)
+    if(x.size == 1) return if(pointNotDominatedByList(x.head, y)) IndexedSeq(x.head) else IndexedSeq.empty
+    if(y.size == 1) return notDominatedByPoint(y.head, x)
     
     /*if(x.size == 2 && y.size == 2) {
       paretoPointList[T,P](x(1), paretoPointList[T,P](x(0), y))
     }*/
-
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("dim " + curDim)
     //Logger.getLogger(ParetoQuick.getClass.getName).info("x "  + x)
     //Logger.getLogger(ParetoQuick.getClass.getName).info("y "  + y)
    // Logger.getLogger(ParetoQuick.getClass.getName).info("marry2D "  + marry2D[T,P](x,y))
     
-    if(curDim == 1) return marry2D[T,P](x,y)
+    if(curDim == 1) return marry2D(x,y)
     
-    val orderedX = MultiGoal.orderOneDim[T,P](curDim, x)
-    val orderedY = MultiGoal.orderOneDim[T,P](curDim, y)
+    val orderedX = MultiGoal.orderOneDim(curDim, x)
+    val orderedY = MultiGoal.orderOneDim(curDim, y)
     
     val middleOfX = x.size / 2
     val middleOfY = y.size / 2
@@ -383,28 +383,27 @@ object ParetoQuick {
     val y1 = orderedY.slice(0, middleOfY)
     val y2 = orderedY.slice(middleOfY, y.size)
     
-    val xp1 = marry[T,P](x1,y1, curDim)
-    val xp2 = marry[T,P](x2,y2, curDim)
+    val xp1 = marry(x1,y1, curDim)
+    val xp2 = marry(x2,y2, curDim)
     
     val curDimP = curDim - 1
-    val xs2 = marry[T,P](xp2, y1, curDimP)
+    val xs2 = marry(xp2, y1, curDimP)
     
     return xp1 ++ xs2
   }
   
-  def marry2D[T, P <: MultiGoal[T]](x: IndexedSeq[P], y: IndexedSeq[P]): IndexedSeq[P] = {
-    
+  def marry2D[P <: MultiGoal](x: IndexedSeq[P], y: IndexedSeq[P]): IndexedSeq[P] = {
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("x " + x)
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("y " + y)
     //Marry2D - 1
-    val marryTagged = new ArrayBuffer[Tagged[T,P]](x.size + y.size) 
+    val marryTagged = new ArrayBuffer[Tagged[P]](x.size + y.size) 
     for (elt <- x) marryTagged += new Tagged(elt, Tag.A)
     for (elt <- y) marryTagged += new Tagged(elt, Tag.B)
     
     //Marry2D - 2
-    val sortedMarryTagged = MultiGoal.orderOneDim[T,Tagged[T,P]](1, marryTagged)
-    var w = sortedMarryTagged.head.multiGoal
-    
-    val order = w.goals(0).order
-    import order._
+    val sortedMarryTagged = MultiGoal.orderOneDim(1, marryTagged)
+    var w = sortedMarryTagged.head
+
     
     val xPrime = new ListBuffer[P]
        
@@ -414,12 +413,14 @@ object ParetoQuick {
       
       //Logger.getLogger(ParetoQuick.getClass.getName).info("Elt "  + elt)
       //Logger.getLogger(ParetoQuick.getClass.getName).info("W "  + w)
-      if(elt.multiGoal.goals(0).value <= w.goals(0).value || w.goals(1).value == elt.multiGoal.goals(1).value) {
+      if(elt.goals(0).toDouble <= w.goals(0).toDouble || w.goals(1).toDouble == elt.goals(1).toDouble || (w.tag == Tag.A && !DominateMinimization.isDominated(elt, w))) {
+        //if (w.tag == Tag.A && !DominateMinimization.isDominated(elt, w)) println("w " + w + " elt" + elt)
         if(elt.tag == Tag.A) xPrime += elt.multiGoal
-        else w = elt.multiGoal
+        else w = elt
       }
-    }
       
+    }
+    //Logger.getLogger(ParetoQuick.getClass.getName).info(xPrime.toString)
     return xPrime.toIndexedSeq 
   }
     

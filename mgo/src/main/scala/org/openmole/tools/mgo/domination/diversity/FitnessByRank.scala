@@ -20,110 +20,94 @@ package org.openmole.tools.mgo.domination.diversity
 import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._
 import org.openmole.tools.mgo.paretoquick.ParetoQuick
+import org.openmole.tools.mgo.domination.DominateMinimization._
 import scala.collection.immutable.TreeSet
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.ListBuffer
 
 object FitnessByRank {
 
-    def selectByFitnessAndCrowdingPareto[T, MG <: MultiGoal[T]](toSelect: IndexedSeq[MG], resPopSize: Int)(implicit op: Integral[T]): IndexedSeq[MG] = {
-        if(toSelect.isEmpty) toSelect
-        else selectByFitnessAndCrowdingPareto[T,MG](toSelect, toSelect.iterator.next.goals.size, resPopSize)
-    }
+  def selectByFitnessAndCrowdingPareto[MG <: MultiGoal](toSelect: IndexedSeq[MG], resPopSize: Int): IndexedSeq[MG] = {
+    if(toSelect.isEmpty) toSelect
+    else selectByFitnessAndCrowdingPareto(toSelect, toSelect.iterator.next.goals.size, resPopSize)
+  }
 
-    def selectByFitnessAndCrowdingPareto[T, MG <: MultiGoal[T]](toSelect: IndexedSeq[MG], dim: Int, resPopSize: Int)(implicit op: Integral[T]): IndexedSeq[MG] =  {
+  def selectByFitnessAndCrowdingPareto[MG <: MultiGoal](toSelect: IndexedSeq[MG], dim: Int, resPopSize: Int): IndexedSeq[MG] =  {
       
-        var all = new TreeSet[MG]
-        all ++= toSelect
+    var all = new TreeSet[MG]
+    all ++= toSelect
 
-        val ret = new ArrayBuffer[MG](resPopSize)
-        var pareto = ParetoQuick.pareto[T, MG](all, dim)
+    val ret = new ArrayBuffer[MG](resPopSize)
+    var pareto = ParetoQuick.pareto(all, dim)
     
-        while(resPopSize > ret.size + pareto.size) {
-            ret ++= pareto
-            all --= pareto
-            pareto = ParetoQuick.pareto[T, MG](all, dim)
-        }
-
-        for(elt <- Crowding.orderByDecreasingCrowding[T, MG](pareto, dim)) {
-            ret += elt
-            if(ret.size >= resPopSize) return ret
-        }
-  
-        ret
+    while(resPopSize > ret.size + pareto.size) {
+      println(pareto.size)
+      ret ++= pareto
+      all --= pareto
+      pareto = ParetoQuick.pareto(all, dim)
     }
 
-    /*public <T extends IPoint> Collection<T> selectByFitnessAndCrowding(Collection<T> toSelect, int dim,  int resPopSize, Map<Class, IOperation> operations) {
+    for(elt <- Crowding.orderByDecreasingCrowding(pareto, dim)) {
+      ret += elt
+      if(ret.size >= resPopSize) return ret
+    }
+  
+    ret
+  }
 
-        if(toSelect.size() <= resPopSize) return toSelect;
+  def selectByFitnessAndCrowding[MG <: MultiGoal](toSelect: IndexedSeq[MG], dim: Int, resPopSize: Int): IndexedSeq[MG] = {
 
-        ArrayList<T> toSelectArray = new ArrayList<T>(toSelect.size());
-        toSelectArray.addAll(toSelect);
+    if(toSelect.size <= resPopSize) return toSelect
 
-        Integer[] toSelectLevel = new Integer[toSelect.size()];
-        Arrays.fill(toSelectLevel, 0);
+    val toSelectLevel = new Array[Int](toSelect.size)
+ 
+    val v = Array.fill(toSelect.size)(new ListBuffer[Int])
+        
+    var curFront = new ListBuffer[Int]
+    // fronts: F[i] = indexess of the individuals contained in the ith front
+    // used to store the number of the first front
+    // int i = 0;
 
-        Collection<Integer>[] v = new Collection[toSelect.size()];
-        for (int p = 0; p < toSelectArray.size() ; p++) {
-            v[p] = new LinkedList();
+    for (p <- 0 until toSelect.size) {          
+      for (q <- 0 until toSelect.size) {
+        if (isDominated(toSelect(p), toSelect(q))) {
+          toSelectLevel(p) = toSelectLevel(p) + 1
+          v(q) += p
         }
+      }
 
-        Collection<Integer> curFront = new LinkedList<Integer>();
-        // fronts: F[i] = indexes of the individuals contained in the ith front
-        // used to store the number of the first front
-        int i = 0;
+      // if no individual dominates p
+      if (toSelectLevel(p) == 0) curFront += p
+    }
+    
+    //curFront ++= (for(i <- 0 until v.size ; if(toSelectLevel(i) == 0)) yield i)
+    //println(v.map{_.toString})
+    val ret = new ArrayBuffer[MG](resPopSize)
+    // Collection<T> ret = new LinkedList<T>();
 
-        for (int p = 0; p < toSelectArray.size() ; p++) {          
-            for (int q = 0; q < toSelectArray.size() ; q++) {
-                if (dominate.isDominated(toSelectArray.get(p), toSelectArray.get(q))) {
-                 //   case LEFT:
-                       toSelectLevel[p]++;
-                       v[q].add(p);
-                       i++;
-          //              break;
-           //         case RIGHT:
-        //                toSelectLevel[q]++;
-             //           v[p].add(q);
-               //         break;
-                }
-            }
 
-            // if no individual dominates p
-            if (toSelectLevel[p] == 0) {
-                curFront.add(p);
-            }
+    while(resPopSize >= ret.size + curFront.size) {
+       println(curFront.size)
+    
+      val nextFront = new ListBuffer[Int]
+      for(p <- curFront) {
+        ret += toSelect(p)
+
+        for(q <- v(p)) {
+          toSelectLevel(q) = toSelectLevel(q) - 1
+
+          if(toSelectLevel(q) == 0) nextFront += q
         }
-        // Logger.getLogger(FitnessByRank.class.getName()).info("Size: " + i);
+      }
+      curFront = nextFront
+    }
 
-       //System.out.println(Arrays.toString(toSelectLevel));
+    
+    for(elt <- Crowding.orderByDecreasingCrowding(curFront.map{toSelect(_)}.toIndexedSeq, dim)) {
+      ret += elt
+      if(ret.size >= resPopSize) return ret
+    }
 
-        Collection<T> ret = new LinkedList<T>();
-
-        while(resPopSize >= ret.size() + curFront.size()) {
-            Collection<Integer> nextFront = new LinkedList<Integer>();
-             for(Integer p: curFront) {
-                ret.add(toSelectArray.get(p));
-
-                for(Integer q : v[p]) {
-                    toSelectLevel[q]--;
-                    if(toSelectLevel[q] == 0) {
-                        nextFront.add(q);
-                    }
-                }
-             }
-             curFront = nextFront;
-        }
-
-        Collection<T> lastFront = new LinkedList<T>();
-
-        for(Integer p: curFront) {
-            lastFront.add(toSelectArray.get(p));
-        }
-
-        for(T point : crowding.orderByDecreasingCroding(lastFront, dim, operations)) {
-            if(ret.size() >= resPopSize) break;
-            ret.add(point);
-        }
-
-        return ret;
-    }*/
+    return ret
+  }
 }

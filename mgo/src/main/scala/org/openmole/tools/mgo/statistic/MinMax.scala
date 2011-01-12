@@ -17,19 +17,19 @@
 
 package org.openmole.tools.mgo.statistic
 
-import org.openmole.tools.mgo.model.Goal
 import org.openmole.tools.mgo.model.MultiGoal
 import scala.collection.mutable.ArraySeq
+import scala.math.ScalaNumericConversions
 
 object MinMax {
   
-  def MinMax[T, P <: MultiGoal[T]](goals: Iterable[P]) = {
+  def MinMax[P <: MultiGoal](goals: Iterable[P]) = {
     val it = goals.iterator
     val first = it.next
     val size = first.goals.size
       
-    val min = new ArraySeq[Goal[T]](size)
-    val max = new ArraySeq[Goal[T]](size)
+    val min = new ArraySeq[{ def toDouble: Double }](size)
+    val max = new ArraySeq[{ def toDouble: Double }](size)
     
     for(i <- 0 until size) {
       min(i) = first.goals(i)
@@ -42,9 +42,9 @@ object MinMax {
       for(i <- 0 until size) {
         val currentVal = current.goals(i)
         
-        if(currentVal.order.lt(currentVal.value, min(i).value)) {
+        if(currentVal.toDouble <  min(i).toDouble) {
           min(i) = currentVal
-        } else if (currentVal.order.gt(currentVal.value, max(i).value)) {
+        } else if (currentVal.toDouble > max(i).toDouble) {
           max(i) = currentVal
         }
       }
@@ -54,6 +54,6 @@ object MinMax {
   }
 }
 
-class MinMax[T, P <: MultiGoal[T]](val min: ArraySeq[T], val max: ArraySeq[T]) {
+class MinMax[P <: MultiGoal](val min: ArraySeq[{ def toDouble: Double }], val max: ArraySeq[{ def toDouble: Double }]) {
     
 }

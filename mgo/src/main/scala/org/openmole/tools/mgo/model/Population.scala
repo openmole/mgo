@@ -23,6 +23,6 @@ object Population {
   }
 }
 
-class Population[GE, GO, I <% Individual[GE,GO]](val individuals: IndexedSeq[I]) {
+class Population[GE, GO <: MultiGoal, I <% Individual[GE,GO]](val individuals: IndexedSeq[I]) {
 
 }

@@ -22,27 +22,20 @@ import DominateType._
 
 object DominateMinimization {
   
-  def isDominated[T](p1: MultiGoal[T], p2: MultiGoal[T]): Boolean = {
-    
+  def isDominated(p1: MultiGoal, p2: MultiGoal): Boolean = {
     for((g1, g2) <- p1.goals zip p2.goals) {
-      val g1Order = g1.order
-      import g1Order._
-      
-      if(g1Order.lteq(g1.value, g2.value)) return false
+      if(g1.toDouble <= g2.toDouble) return false
     }   
     true
   }
 
-  def dominated[T](p1: MultiGoal[T], p2: MultiGoal[T]): DominateType = {
+  def dominated(p1: MultiGoal, p2: MultiGoal): DominateType = {
     var a1 = 0
     var a2 = 0
-    var tot =0
+    var tot = 0
       
     for((g1, g2) <- p1.goals zip p2.goals) {
-      val g1Order = g1.order
-      import g1Order._
-      
-      val compare = g1Order.compare(g1.value, g2.value)
+      val compare = g1.toDouble - g2.toDouble //g1Order.compare(g1.value, g2.value)
 
       if(compare < 0) a1 += 1
       else if(compare > 0) a2 +=1
