@@ -20,7 +20,6 @@ package org.openmole.tools.mgo.asrea
 import org.openmole.tools.mgo.evolution.EvolutionEngine
 import org.openmole.tools.mgo.model.Individual
 import org.openmole.tools.mgo.model.MultiGoalLike
-import org.openmole.tools.mgo.model.Population
 import org.openmole.tools.mgo.model.Population._
 import scala.collection.mutable.ArrayBuffer
 import org.openmole.tools.mgo.domination.diversity.Crowding._
@@ -28,39 +27,39 @@ import scala.collection.mutable.ListBuffer
 import java.util.Random
 
 
-class ASREA[GE](var population: Population[Individual[GE,_]], archive: Archive[Individual[GE,_]], engine: EvolutionEngine[GE], fitness: GE => MultiGoalLike)(implicit rng: Random) {
-  
-  def apply(nbGeneration: Int) = {
+class ASREA[GE](engine: EvolutionEngine[GE], fitness: GE => MultiGoalLike)(implicit rng: Random) {
+
+  def apply(initialPopulation: Iterable[Individual[GE,_]], archiveContent: Iterable[Individual[GE,_]], nbGeneration: Int): (Iterable[Individual[GE,_]], Iterable[Individual[GE,_]]) = {
+    
+    val archive = new Archive(archiveContent)
+    var population = initialPopulation.toList
     
     for(gen <- 0 until nbGeneration) {
-      
-      val childPopulation = new Population(engine.apply(toGenomes(population), population.size * 2).map{ g => new Individual(g, fitness(g))})
-      childPopulation.individuals.foreach{ archive += _ }
-      val childPopulationAndCrowding = orderByDecreasingCrowding(childPopulation.individuals)
+      val childPopulation = engine(population.toGenomes.toIndexedSeq, population.size * 2).map{g => new Individual(g, fitness(g))}
+      childPopulation.foreach{ archive += _ }
+      val childPopulationAndCrowding = childPopulation.orderByDecreasingCrowding
       //val rankOfIndiv = childPopulation.individuals.map{ i => (i, archive.ranks(i)) }
-      val newPopulation = new ListBuffer[Individual[GE,_]]
-      
-      val archiveAndCrowding = orderByDecreasingCrowding(archive.individuals)
+      population = Nil  
+      val archiveAndCrowding = archive.orderByDecreasingCrowding
       
       for(i <- 0 until population.size) {
         val i1 = archiveAndCrowding(rng.nextInt(archive.size))
         val i2 = archiveAndCrowding(rng.nextInt(archive.size))
-        if(i1._2 != i2._2) newPopulation += List(i1, i2).sortWith( (x,y) => x._2 < y._2 ).head._1
-        else newPopulation += IndexedSeq(i1, i2)(rng.nextInt(2))._1
+        if(i1._2 != i2._2) population ::= List(i1, i2).sortWith( (x,y) => x._2 < y._2 ).head._1
+        else population ::= IndexedSeq(i1, i2)(rng.nextInt(2))._1
       }
       
       for(i <- 0 until population.size) {
-        val i1 = childPopulationAndCrowding(rng.nextInt(childPopulation.individuals.size))
-        val i2 = childPopulationAndCrowding(rng.nextInt(childPopulation.individuals.size))
+        val i1 = childPopulationAndCrowding(rng.nextInt(childPopulation.size))
+        val i2 = childPopulationAndCrowding(rng.nextInt(childPopulation.size))
         val rankI1 = archive.ranks(i1._1)
         val rankI2 = archive.ranks(i2._1)
         
-        if(rankI1 != rankI2) newPopulation += {if(rankI1 < rankI2) i1._1 else i2._1}
-        else newPopulation += IndexedSeq(i1, i2).apply(rng.nextInt(2))._1
+        if(rankI1 != rankI2) population ::= {if(rankI1 < rankI2) i1._1 else i2._1}
+        else population ::= IndexedSeq(i1, i2).apply(rng.nextInt(2))._1
       }
-      
-      population = new Population(newPopulation.toIndexedSeq)
     }
+    (population, archive)
   }
   
 }

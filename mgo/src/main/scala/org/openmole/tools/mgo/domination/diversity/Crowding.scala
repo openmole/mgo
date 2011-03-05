@@ -21,54 +21,58 @@ import org.openmole.tools.mgo.model.MultiGoalLike
 import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._
 
-
 object Crowding {
   
+  implicit def withCrowdingDecorator[MG <: MultiGoalLike](goals: Iterable[MG]) = new WithCrowdingDecorator(goals)
   
-  def orderByDecreasingCrowding[MG <: MultiGoalLike](goals: IndexedSeq[MG]): IndexedSeq[(MG, Double)] = {
+  
+  class WithCrowdingDecorator[MG <: MultiGoalLike](goals: Iterable[MG]) {
+  
+    def orderByDecreasingCrowding = {
 
-    if (goals.size <= 2) {
-      goals.map{(_, Double.PositiveInfinity)}
-    } else {         
-      class CrowdingInfo(val multiGoal: MG, var crowding: Double) extends MultiGoal(multiGoal.goals)
+      if (goals.size <= 2) {
+        goals.map{(_, Double.PositiveInfinity)}.toIndexedSeq
+      } else {         
+        class CrowdingInfo(val multiGoal: MG, var crowding: Double) extends MultiGoal(multiGoal.goals)
       
-      val crowding = goals.map( new CrowdingInfo(_, 0.) )
+        val crowding = goals.map( new CrowdingInfo(_, 0.) ).toSeq
 
-      // for each objective
-      for (curDim <- 0 until goals.head.goals.size) {
+        // for each objective
+        for (curDim <- 0 until goals.head.goals.size) {
         
-        val curCrowding = orderOneDim(curDim, crowding)
+          val curCrowding = crowding.orderOneDim(curDim)
 
-        val firstCrowdingInfo = curCrowding.head
-        val lastCrowdingInfo = curCrowding.last
+          val firstCrowdingInfo = curCrowding.head
+          val lastCrowdingInfo = curCrowding.last
 
-        val first = firstCrowdingInfo.multiGoal
-        val last = lastCrowdingInfo.multiGoal
+          val first = firstCrowdingInfo.multiGoal
+          val last = lastCrowdingInfo.multiGoal
 
-        val min = first.goals(curDim).toDouble
-        val max = last.goals(curDim).toDouble
+          val min = first.goals(curDim).toDouble
+          val max = last.goals(curDim).toDouble
 
-        firstCrowdingInfo.crowding = Double.PositiveInfinity
-        lastCrowdingInfo.crowding = Double.PositiveInfinity
+          firstCrowdingInfo.crowding = Double.PositiveInfinity
+          lastCrowdingInfo.crowding = Double.PositiveInfinity
 
-        val maxMinusMin = max - min
+          val maxMinusMin = max - min
 
-        val itOpod = curCrowding.iterator
-        var ptMinus1 = itOpod.next
-        var pt = itOpod.next
+          val itOpod = curCrowding.iterator
+          var ptMinus1 = itOpod.next
+          var pt = itOpod.next
 
-        while (itOpod.hasNext) {
-          val ptPlus1 = itOpod.next
-          val distance =  (ptPlus1.goals(curDim).toDouble - ptMinus1.goals(curDim).toDouble) / maxMinusMin
-          pt.crowding += distance.toDouble
+          while (itOpod.hasNext) {
+            val ptPlus1 = itOpod.next
+            val distance =  (ptPlus1.goals(curDim).toDouble - ptMinus1.goals(curDim).toDouble) / maxMinusMin
+            pt.crowding += distance.toDouble
   
-          ptMinus1 = pt
-          pt = ptPlus1
+            ptMinus1 = pt
+            pt = ptPlus1
+          }
         }
+
+        crowding.sortWith((a, b) => a.crowding < b.crowding).map( elt => (elt.multiGoal, elt.crowding))
       }
 
-      crowding.sortWith((a, b) => a.crowding < b.crowding).map( elt => (elt.multiGoal, elt.crowding))
     }
-
   }
 }

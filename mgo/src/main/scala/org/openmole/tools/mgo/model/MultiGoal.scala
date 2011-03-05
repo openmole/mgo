@@ -71,17 +71,21 @@ object MultiGoal {
     leftGoals(0) < rightGoals(0) || (leftGoals(0) == rightGoals(0) && leftGoals(1) < rightGoals(1))
   }
   
-  def orderOneDim[P <: MultiGoalLike](dim: Int, toOrder: IndexedSeq[P]): IndexedSeq[P] = {
+  implicit def MultiGoalIterable2MultiGoalIterableDecorator[P <: MultiGoalLike](toOrder: Seq[P]) = new MultiGoalIterableDecorator(toOrder)
+  
+  class MultiGoalIterableDecorator[P <: MultiGoalLike](toOrder: Seq[P]) {
+    def orderOneDim(dim: Int): Iterable[P] = {
     
-    return toOrder.sortWith((left: P, right: P) => {
-        val rightGoal = right.goals(dim)
-        val leftGoal = left.goals(dim)
+      return toOrder.sortWith((left: P, right: P) => {
+          val rightGoal = right.goals(dim)
+          val leftGoal = left.goals(dim)
 
-        leftGoal < rightGoal
-        /* if(compare != 0) return compare
-         return right.compareTo(left)*/
-      })
+          leftGoal < rightGoal
+          /* if(compare != 0) return compare
+           return right.compareTo(left)*/
+        })
       
+    }
   }
   
 }

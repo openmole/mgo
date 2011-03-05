@@ -23,10 +23,15 @@ import org.openmole.tools.mgo.domination.diversity.Crowding._
 import org.openmole.tools.mgo.model.MultiGoalLike
 import org.openmole.tools.mgo.model.Population
 import java.util.Random
+import scala.collection.mutable.ArraySeq
 
 
-class Archive[I <: Individual[_,_]](individuals: Array[I]) extends Population[I](individuals) {
+class Archive[I <: Individual[_,_]](val individuals: ArraySeq[I]) extends Iterable[I] {
 
+  def this(indiv: Iterable[I]) = this(ArraySeq(indiv.toSeq: _*))
+  
+  override def iterator = individuals.iterator
+  
   implicit def individualAndIndexToMultiGoalLike(elt: (I, Int)) = new MultiGoalLike{override def goals = elt._1.goals; def index = elt._2}
 
   def +=(individual: I)(implicit rng: Random): this.type = {
@@ -37,7 +42,7 @@ class Archive[I <: Individual[_,_]](individuals: Array[I]) extends Population[I]
       individuals(dominatedIndices(rng.nextInt(dominatedIndices.size))) = individual
     } else { 
       if(!indivIsDominated) {
-        val indice = orderByDecreasingCrowding(individuals.zipWithIndex.map{individualAndIndexToMultiGoalLike(_)}).last._1.index
+        val indice = individuals.toIterable.zipWithIndex.map{individualAndIndexToMultiGoalLike(_)}.orderByDecreasingCrowding.last._1.index
         individuals(indice) = individual
       }
     }
