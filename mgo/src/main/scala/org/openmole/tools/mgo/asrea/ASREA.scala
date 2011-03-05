@@ -27,9 +27,9 @@ import scala.collection.mutable.ListBuffer
 import java.util.Random
 
 
-class ASREA[GE](engine: EvolutionEngine[GE], fitness: GE => MultiGoalLike)(implicit rng: Random) {
+class ASREA[GE](engine: EvolutionEngine[GE], fitness: GE => MultiGoalLike) {
 
-  def apply(initialPopulation: Iterable[Individual[GE,_]], archiveContent: Iterable[Individual[GE,_]], nbGeneration: Int): (Iterable[Individual[GE,_]], Iterable[Individual[GE,_]]) = {
+  def apply(initialPopulation: Iterable[Individual[GE,_]], archiveContent: Iterable[Individual[GE,_]], nbGeneration: Int) (implicit rng: Random) = {
     
     val archive = new Archive(archiveContent)
     var population = initialPopulation.toList
