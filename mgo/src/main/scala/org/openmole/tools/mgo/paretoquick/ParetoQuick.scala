@@ -22,14 +22,25 @@ import java.util.logging.Logger
 import org.openmole.tools.mgo.domination.DominateMinimization
 import org.openmole.tools.mgo.domination.DominateType._
 import org.openmole.tools.mgo.model.MultiGoal
+import org.openmole.tools.mgo.model.MultiGoal._
+import scala.collection.immutable.TreeMap
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ArraySeq
+import scala.collection.mutable.HashMap
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.Queue
+import org.openmole.tools.mgo.model.ToDouble._
 import scala.collection.IndexedSeqOptimized
+import scala.math._
 
-object ParetoQuick {
+///Don't use it, it is not working
+private object ParetoQuick {
 
+ 
+  class Front[P <: MultiGoal](val multiGoal: P, var front: Int) extends MultiGoal(multiGoal.goals) {
+    def updateFront(otherFront: Int) = { front = max(front, otherFront) }
+  }
+  
   def pareto[P <: MultiGoal](points: Iterable[P]): IndexedSeq[P] = {
     points.headOption match {
       case None => IndexedSeq.empty[P]
@@ -37,10 +48,161 @@ object ParetoQuick {
     }
   }
     
-   def pareto[P <: MultiGoal](points: Iterable[P], dim: Int): IndexedSeq[P] = {
-     dc(points.toIndexedSeq, dim - 1)
-   }   
+  def pareto[P <: MultiGoal](points: Iterable[P], dim: Int): IndexedSeq[P] = {
+    dc(points.toIndexedSeq, dim - 1)
+  }   
 
+  
+  def helperA[P <: MultiGoal](s: IndexedSeq[Front[P]], m: Int, doSort: Boolean = true): Unit = {
+    if(s.size > 1) {
+      if(s.size == 2) {
+        if(mdomA(s(0).multiGoal, s(1).multiGoal, m)) s(1).updateFront(s(0).front + 1)
+        else if(mdomA(s(1).multiGoal, s(0).multiGoal, m)) s(0).updateFront(s(1).front + 1)
+      } else {
+        if(m == 2) {
+          //val ret = new ListBuffer[Front[P]]
+          
+          var stairs = new TreeMap[Double, Int]
+          val sortedS = orderFirstDim(s)
+          
+          var si = 0
+          stairs += sortedS(si).goals(1).toDouble -> sortedS(si).front
+          
+          var lasto0 = sortedS(si).goals(0)
+          var lasto1 = sortedS(si).goals(1)
+          
+          var lastFront = sortedS(si).front
+          
+          si += 1
+          
+          
+          while(si < sortedS.size) {
+            val siGoal = sortedS(si).goals
+            
+            val stairKeys = stairs.keys.toIndexedSeq
+            var pos = 0
+            
+            
+            while(pos < stairKeys.size && stairKeys(pos) < siGoal(1)) { pos += 1}
+            if(pos < stairKeys.size) pos -= 1
+            
+            if(stairKeys(pos) > siGoal(1) && pos > 0) pos -= 1
+            
+            if( siGoal(1) > stairKeys(pos) ||
+               (siGoal(1) == stairKeys(pos) && (siGoal(0) != lasto0 || siGoal(1) != lasto1))) {
+              sortedS(si).updateFront(stairs(stairKeys(pos)) + 1)
+            } else {
+              if(siGoal(0) == lasto0 && siGoal(1) == lasto1) {
+                sortedS(si).updateFront(lastFront)
+              }
+            }
+            
+            if(stairKeys(pos) <= siGoal(1) && stairs(stairKeys(pos)) < sortedS(si).front
+               || stairKeys(pos) > siGoal(1)) {
+              stairs += siGoal(1).toDouble -> sortedS(si).front
+              stairs = cleanupStairs(stairs, siGoal(1))
+              lasto0 = siGoal(0)
+              lasto1 = siGoal(1)
+              lastFront = sortedS(si).front
+            }
+            si += 1
+            //if(pos >= stairs.size) pos -= 1
+          }
+        } else {
+          val sortedS =  if(doSort) {
+            orderOneDim(m-1, s)
+          } else s
+          
+          if(sortedS(0).goals(m-1) != sortedS(sortedS.size - 1).goals(m - 1)) {
+            var cutinx = sortedS.size / 2
+            if(sortedS(cutinx).goals(m-1) != sortedS(sortedS.size - 1).goals(m - 1)) {
+              while(sortedS(cutinx + 1).goals(m-1) == sortedS(cutinx).goals(m - 1)) cutinx += 1
+              cutinx += 1
+            } else {
+              while(sortedS(cutinx - 1).goals(m-1) == sortedS(cutinx).goals(m - 1)) cutinx -= 1
+            }
+            
+            val l = sortedS.slice(0, cutinx)
+            val h = sortedS.slice(cutinx, sortedS.size)
+            
+            helperA(l, m, false)
+            helperB(l, h, m - 1, true)
+            helperA(h, m, false)
+          } else{
+            helperA[P](sortedS, m - 1, true)
+          }
+        }
+      } 
+    } 
+  }
+  
+  
+  def helperB[P <: MultiGoal](l: IndexedSeq[Front[P]], h: IndexedSeq[Front[P]], m: Int, doSort: Boolean = true): Unit = {
+    if(l.size != 0 && h.size != 0) {
+      if(l.size == 1) {
+        h.filter( mdomB(l.head, _, m)).map{elt => elt.updateFront(l.head.front + 1)}
+      } else {
+        if(h.size == 1) {
+          l.filter( mdomB(h.head, _, m)).map{elt => elt.updateFront(h.head.front + 1)}
+        } else {
+          if(m == 2) {
+            val sortedL = orderFirstDim(l)
+            val sortedH = orderFirstDim(h)
+            var stairs = new TreeMap[Double, Int]
+            
+            var hi = sortedH.findIndexOf( cmp2D(_, sortedL.head) )
+            if(hi == -1) hi = sortedH.size
+            var li = 0
+           
+            def curL = sortedL(li)
+            def curH = sortedH(hi)
+            
+            stairs += curL.goals(1).toDouble -> curL.front
+            li += 1
+            
+            while(hi < sortedH.size) {
+              while(li < sortedL.size && !cmp2D(curH, curL)) {
+                var pos = 0
+                //lower_bound
+              }
+            }
+          } else {
+          
+          }
+        }
+      }
+  
+    }
+  }
+
+  
+  def cleanupStairs(stairs: TreeMap[Double, Int], xval: Double): TreeMap[Double, Int] = {
+    val frontNum = stairs(xval)
+    var ret = TreeMap.empty[Double, Int]
+    ret ++= (stairs.view.dropWhile( _._1 <= xval).filter(_._2 <= frontNum))
+    ret
+  }
+  
+  
+  def mdomA[P <: MultiGoal](s: P, s2: P, m: Int): Boolean = {
+    var better = false
+    s.goals.zip(s2.goals).slice(0, m).foreach {
+      case(objS, objS2) => {
+          if(objS.toDouble > objS2.toDouble) return false
+          if(objS.toDouble < objS2.toDouble) better = true
+        }
+    }
+    return better
+  }
+  
+  
+  def mdomB[P <: MultiGoal](s: P, s2: P, m: Int): Boolean = {
+    s.goals.zip(s2.goals).slice(0, m).foreach {
+      case(objS, objS2) => if(objS.toDouble > objS2.toDouble) return false
+    }
+    return true
+  }
+  
   def dc[P <: MultiGoal](z: IndexedSeq[P], dim: Int): IndexedSeq[P] = {
     //Logger.getLogger(ParetoQuick.getClass.getName).info(z.toString)
     
@@ -59,24 +221,24 @@ object ParetoQuick {
     yy ++ xxxPrime //DC - 7
   } 
   
-   def sc[P <: MultiGoal](v: IndexedSeq[P]): IndexedSeq[P] = {
+  def sc[P <: MultiGoal](v: IndexedSeq[P]): IndexedSeq[P] = {
 
     if(v.isEmpty) return IndexedSeq.empty
     if(v.size == 1) return v
-      val it = v.iterator
+    val it = v.iterator
 
-      val p1 = it.next
-      val p2 = it.next
-      // Logger.getLogger(ParetoQuick.getClass.getName).info("Domin: " + p1.toString + " " + p2.toString)
+    val p1 = it.next
+    val p2 = it.next
+    // Logger.getLogger(ParetoQuick.getClass.getName).info("Domin: " + p1.toString + " " + p2.toString)
 
-      return DominateMinimization.dominated(p1, p2) match {       
-        case LEFT => IndexedSeq(p2)
-        case RIGHT => IndexedSeq(p1)
-        case NONE => v
-          //case _ => IndexedSeq.empty
-      }
+    return DominateMinimization.dominated(p1, p2) match {       
+      case LEFT => IndexedSeq(p2)
+      case RIGHT => IndexedSeq(p1)
+      case NONE => v
+        //case _ => IndexedSeq.empty
+    }
       
-      //Logger.getLogger(ParetoQuick.getClass.getName).info("Domin res: " + ret.toString)
+    //Logger.getLogger(ParetoQuick.getClass.getName).info("Domin res: " + ret.toString)
   }
   
   
@@ -345,9 +507,7 @@ object ParetoQuick {
     }
     return true
   }
-  
- 
-  
+
   
   def notDominatedByPoint[P <: MultiGoal](p: P, points: IndexedSeq[P]): IndexedSeq[P] = {
     (for(p1 <- points ; if(!DominateMinimization.isDominated(p1, p))) yield p1).toIndexedSeq
@@ -356,18 +516,18 @@ object ParetoQuick {
   
   def marry[P <: MultiGoal](x: IndexedSeq[P], y: IndexedSeq[P], curDim: Int): IndexedSeq[P] = {
     /*if (x.isEmpty) return y
-    if (y.isEmpty) return x*/
+     if (y.isEmpty) return x*/
 
     if(x.size == 1) return if(pointNotDominatedByList(x.head, y)) IndexedSeq(x.head) else IndexedSeq.empty
     if(y.size == 1) return notDominatedByPoint(y.head, x)
     
     /*if(x.size == 2 && y.size == 2) {
-      paretoPointList[T,P](x(1), paretoPointList[T,P](x(0), y))
-    }*/
+     paretoPointList[T,P](x(1), paretoPointList[T,P](x(0), y))
+     }*/
     //Logger.getLogger(ParetoQuick.getClass.getName).info("dim " + curDim)
     //Logger.getLogger(ParetoQuick.getClass.getName).info("x "  + x)
     //Logger.getLogger(ParetoQuick.getClass.getName).info("y "  + y)
-   // Logger.getLogger(ParetoQuick.getClass.getName).info("marry2D "  + marry2D[T,P](x,y))
+    // Logger.getLogger(ParetoQuick.getClass.getName).info("marry2D "  + marry2D[T,P](x,y))
     
     if(curDim == 1) return marry2D(x,y)
     

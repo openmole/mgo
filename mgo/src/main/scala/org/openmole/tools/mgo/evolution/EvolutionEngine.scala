@@ -17,36 +17,32 @@
 
 package org.openmole.tools.mgo.evolution
 
-
-
-import org.openmole.tools.distrng.prng.IPRNG
 import scala.collection.mutable.ArrayBuffer
+import java.util.Random
 
-class EvolutionEngine[T](operations: IndexedSeq[GenomeOperation[T]]) {
+class EvolutionEngine[T](operations: GenomeOperation[T]*) {
+  
+  def apply(genomes: IndexedSeq[T])(implicit rng: Random): T = {
+    val operation = operations(rng.nextInt(operations.size));
+    operation.operate(genomes)
+  }
 
+  def apply(genomes: IndexedSeq[T], add: Int, selection: Selection[T] = NoSelection)(implicit rng: Random) = {
+    val ret = new ArrayBuffer[T](add)
+    var i = 0
 
-    def makeEvolve(genomes: IndexedSeq[T], rng: IPRNG[_]): T = {
-        val operation = operations(rng.nextInt(0, operations.size));
-        operation.operate(genomes, rng);
+    while (i < add) {
+      val operation = operations(rng.nextInt(operations.size))
+
+      val newGenome = operation.operate(genomes)
+
+      if(selection.accept(newGenome)) {
+        ret += newGenome
+        i += 1
+      }
     }
 
-
-    def makeEvolve(genomes: IndexedSeq[T], add: Int, rng: IPRNG[_], selection: Selection[T] = NoSelection) = {
-        val ret = new ArrayBuffer[T](add)
-        var i = 0
-
-        while (i < add) {
-            val operation = operations(rng.nextInt(0, operations.size))
-
-            val newGenome = operation.operate(genomes, rng);
-
-            if(selection.accept(newGenome)) {
-                ret += newGenome
-                i += 1
-            }
-        }
-
-        ret.toIndexedSeq
-    }
+    ret.toIndexedSeq
+  }
 
 }

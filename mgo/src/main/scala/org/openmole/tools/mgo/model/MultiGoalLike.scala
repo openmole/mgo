@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 romain
+ * Copyright (C) 2011 reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,8 +17,7 @@
 
 package org.openmole.tools.mgo.model
 
-object Population {
-  implicit def toGenomes[GE](population: Population[Individual[GE, _]]): IndexedSeq[GE] = population.individuals.map( _.genome )
+trait MultiGoalLike {
+  def goals: IndexedSeq[ToDouble]
+  override def toString = goals.toString
 }
-
-class Population[I <: Individual[_,_]](val individuals: IndexedSeq[I])

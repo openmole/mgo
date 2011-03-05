@@ -18,6 +18,7 @@
 package org.openmole.tools.mgo.model
 
 import java.util.Random
+import ToDouble._
 
 object MultiGoal {
   
@@ -26,7 +27,6 @@ object MultiGoal {
   def buildInt(dim: Int, size: Int, max: Int): Array[MultiGoal] = {
     Array.fill(size)(buildInt(Array.fill(dim)( rand.nextInt(max) ): _*))
   }
-  
   
   def buildInt(dim: Int, size: Int): Array[MultiGoal] = {
     Array.fill(size)(buildInt(Array.fill(dim)( rand.nextInt ): _*))
@@ -44,7 +44,7 @@ object MultiGoal {
     new MultiGoal(g.map{ d => { new ToDouble { override def toDouble = d }}}.toIndexedSeq)
   }
   
-  implicit def ordering[P <% MultiGoal] = new Ordering[P] {
+  implicit def ordering[P <: MultiGoalLike] = new Ordering[P] {
     def compare(mg: P, other: P): Int = {
       val itMg = mg.goals.iterator
       val itOther = other.goals.iterator
@@ -52,21 +52,32 @@ object MultiGoal {
       while(itMg.hasNext) {
         val curMg = itMg.next
         
-        val comp = curMg.toDouble - itOther.next.toDouble
+        val comp = curMg - itOther.next
         if(comp != 0) return if(comp < 0) -1 else 1
       }
       0
     }
   }
   
+  def orderFirstDim[P <: MultiGoalLike](toOrder: IndexedSeq[P]): IndexedSeq[P] = {
+    return toOrder.sortWith(cmp2D)
+  }
   
-  def orderOneDim[P <: MultiGoal](dim: Int, toOrder: IndexedSeq[P]): IndexedSeq[P] = {
+  
+  def cmp2D[P <: MultiGoalLike](left: P, right: P) = {
+    val rightGoals = right.goals
+    val leftGoals = left.goals
+        
+    leftGoals(0) < rightGoals(0) || (leftGoals(0) == rightGoals(0) && leftGoals(1) < rightGoals(1))
+  }
+  
+  def orderOneDim[P <: MultiGoalLike](dim: Int, toOrder: IndexedSeq[P]): IndexedSeq[P] = {
     
     return toOrder.sortWith((left: P, right: P) => {
         val rightGoal = right.goals(dim)
         val leftGoal = left.goals(dim)
 
-        leftGoal.toDouble < rightGoal.toDouble
+        leftGoal < rightGoal
         /* if(compare != 0) return compare
          return right.compareTo(left)*/
       })
@@ -75,9 +86,8 @@ object MultiGoal {
   
 }
 
-class MultiGoal(val goals: IndexedSeq[ToDouble]) {
-  override def toString = goals.toString
-  //override def toString = goals.map{_.toString}.reduceLeft { (l,r) => l + " " + r}
+class MultiGoal(val goals: IndexedSeq[ToDouble]) extends MultiGoalLike {
+  def this(g: ToDouble*) = this((g.toIndexedSeq))
 }
 
 

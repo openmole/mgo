@@ -17,19 +17,19 @@
 
 package org.openmole.tools.mgo.domination
 
-import org.openmole.tools.mgo.model.MultiGoal
 import DominateType._
+import org.openmole.tools.mgo.model.MultiGoalLike
 
 object DominateMinimization {
   
-  def isDominated(p1: MultiGoal, p2: MultiGoal): Boolean = {
+  def isDominated(p1: MultiGoalLike, p2: MultiGoalLike): Boolean = {
     for((g1, g2) <- p1.goals zip p2.goals) {
       if(g1.toDouble <= g2.toDouble) return false
     }   
     true
   }
 
-  def dominated(p1: MultiGoal, p2: MultiGoal): DominateType = {
+  def dominated(p1: MultiGoalLike, p2: MultiGoalLike): DominateType = {
     var a1 = 0
     var a2 = 0
     var tot = 0

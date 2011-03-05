@@ -18,9 +18,10 @@
 
 package org.openmole.tools.mgo.genome.genomefloat
 
-import org.openmole.tools.distrng.prng.IPRNG
 import org.openmole.tools.mgo.evolution.Selection
 import org.openmole.tools.mgo.evolution.NoSelection
+
+import java.util.Random
 
 import scala.Array
 
@@ -28,13 +29,13 @@ import scala.Array
 class GenomeFloat(val chromosomes: Array[Float]) {
   def apply(i: Int): Float = {chromosomes.apply(i)}
   def update(i: Int, v: Float) = {chromosomes.update(i, v)}
-  def size(): Int = {chromosomes.size}
+  def size: Int = {chromosomes.size}
   def foreach(f: Float => Unit) = {chromosomes.foreach(f)}
 }
 
 object GenomeFloat {
 
-  def randomGenome(length: Int, rng: IPRNG[_]): GenomeFloat = {
+  def randomGenome(length: Int)(implicit rng: Random): GenomeFloat = {
     val genome = new Array[Float](length)
 
     for(i <- 0 until length) {
@@ -45,13 +46,13 @@ object GenomeFloat {
   }
 
  
-  def randomGenomes(length: Int, rng: IPRNG[_], number: Int, selection: Selection[GenomeFloat] = NoSelection): IndexedSeq[GenomeFloat] = {
+  def randomGenomes(length: Int, number: Int, selection: Selection[GenomeFloat] = NoSelection)(implicit rng: Random): IndexedSeq[GenomeFloat] = {
     val genomes = new Array[GenomeFloat](number)
 
     for(i <- 0 until number) {
       var genome: GenomeFloat = null
       do {
-        genome = randomGenome(length, rng)
+        genome = randomGenome(length)
       } while(!selection.accept(genome))
       genomes(i) = genome
     }

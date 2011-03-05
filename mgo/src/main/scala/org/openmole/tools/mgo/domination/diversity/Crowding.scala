@@ -17,30 +17,30 @@
 
 package org.openmole.tools.mgo.domination.diversity
 
+import org.openmole.tools.mgo.model.MultiGoalLike
 import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._
 
 
 object Crowding {
   
-  def orderByDecreasingCrowding[MG <: MultiGoal](goals: IndexedSeq[MG], dim: Int): IndexedSeq[MG] = {
+  
+  def orderByDecreasingCrowding[MG <: MultiGoalLike](goals: IndexedSeq[MG]): IndexedSeq[(MG, Double)] = {
 
-    return if (goals.size <= 2) {
-      goals
+    if (goals.size <= 2) {
+      goals.map{(_, Double.PositiveInfinity)}
     } else {         
       class CrowdingInfo(val multiGoal: MG, var crowding: Double) extends MultiGoal(multiGoal.goals)
       
       val crowding = goals.map( new CrowdingInfo(_, 0.) )
 
       // for each objective
-      for (curDim <- 0 until dim) {
+      for (curDim <- 0 until goals.head.goals.size) {
         
         val curCrowding = orderOneDim(curDim, crowding)
-        // OrderPointOneDim<T> opod = new OrderPointOneDim<T>(obj);
-        // opod.addAll(points);
 
         val firstCrowdingInfo = curCrowding.head
-        val lastCrowdingInfo = curCrowding.last //(curCrowding.size - 1)
+        val lastCrowdingInfo = curCrowding.last
 
         val first = firstCrowdingInfo.multiGoal
         val last = lastCrowdingInfo.multiGoal
@@ -67,22 +67,7 @@ object Crowding {
         }
       }
 
-      crowding.sortWith((a, b) => a.crowding < b.crowding).map( _.multiGoal)
-
-      /*Collections.sort(crowding, new Comparator<CrowdingInfo>() {
-
-          @Override
-          public int compare(CrowdingInfo t, CrowdingInfo t1) {
-            return Double.compare(t.crowding, t1.crowding);
-          }
-
-        });
-
-      for(CrowdingInfo elt : crowding) {
-        ret.add(elt.point);
-      }
-
-      return ret;*/
+      crowding.sortWith((a, b) => a.crowding < b.crowding).map( elt => (elt.multiGoal, elt.crowding))
     }
 
   }

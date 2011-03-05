@@ -16,13 +16,42 @@
  */
 
 
-package org.openmole.tools.mgo.evolution
+package org.openmole.tools.mgo.tools
 
-import org.openmole.tools.distrng.prng.IPRNG
+import java.util.{Random => JRandom}
+import collection.mutable.ArrayBuffer
 
 object Random {
-
-    def getRandom[T](prng: IPRNG[_], elts: IndexedSeq[T]): T = {
-        elts(prng.nextInt(0, elts.size))
+  
+  implicit def indexedSeq2IndexedSeqDecorator[T](elts: IndexedSeq[T]) = new IndexedSeqDecorator(elts)
+  
+  class IndexedSeqDecorator[T](elts: IndexedSeq[T]) {
+    def random(implicit prng: JRandom) = elts(prng.nextInt(elts.size))
+    def shuffle(implicit prng: JRandom) = {
+      val buf = new ArrayBuffer[T] ++= elts
+	       
+      def swap(i1: Int, i2: Int) {
+        val tmp = buf(i1)
+        buf(i1) = buf(i2)
+        buf(i2) = tmp
+      }
+	   
+      for (n <- buf.length to 2 by -1) {
+        val k = prng.nextInt(n)
+        swap(n - 1, k)
+      }
+	   
+      buf.toIndexedSeq      
     }
+  }
+  
+  /*def rndmChoice(set: T*)(implicit rng: Random): T = {
+   set(rng.nextInt(set.length))
+   }*/
+
+  def rndmChoice[T](t1: T, t2: T)(implicit rng: JRandom): T = {
+    if(rng.nextDouble <  0.5) t1 else t2
+  }
+  
+  
 }

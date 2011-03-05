@@ -18,18 +18,15 @@
 package org.openmole.tools.mgo.model
 
 
-import scala.actors.threadpool.AtomicInteger
+/*import scala.actors.threadpool.AtomicInteger
 
 object Individual {
 
   private var  currentId = new AtomicInteger
   
-  def nextId = {
-    currentId.incrementAndGet
-  }
+  def nextId = currentId.incrementAndGet
   
-}
+  
+}*/
 
-class Individual[GE, MG <: MultiGoal](val genome: GE, val multiGoal: MG) extends MultiGoal(multiGoal.goals) {
-
-}
+class Individual[+GE, +MG <: MultiGoalLike](val genome: GE, val multiGoal: MG) extends MultiGoal(multiGoal.goals)

@@ -18,18 +18,18 @@
 
 package org.openmole.tools.mgo.genome.genomefloat
 
+import java.util.Random
 import org.openmole.tools.mgo.evolution.GenomeOperation
-import org.openmole.tools.distrng.prng.IPRNG
 import GenomeFloat._
 
 
 class UniformeCrossOver extends GenomeOperation[GenomeFloat] {
 
-  override def operate(genomes: IndexedSeq[GenomeFloat], prng: IPRNG[_]): GenomeFloat = {
+  override def operate(genomes: IndexedSeq[GenomeFloat])(implicit prng: Random): GenomeFloat = {
     val size = genomes.head.size
     
-    val genome1 = randomGenome(size, prng)
-    val genome2 = randomGenome(size, prng)
+    val genome1 = randomGenome(size)
+    val genome2 = randomGenome(size)
 
     val newGenome = new GenomeFloat(new Array[Float](size))
 
