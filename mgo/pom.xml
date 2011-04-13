@@ -15,6 +15,12 @@
             <version>${lib.org.scala-lang.scala.version}</version>
         </dependency>
         <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest</artifactId>
+            <version>1.4-SNAPSHOT</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.8.1</version>
@@ -23,7 +29,7 @@
     </dependencies>
 
     <properties>
-        <lib.org.scala-lang.scala.version>2.9.0-SNAPSHOT</lib.org.scala-lang.scala.version>
+        <lib.org.scala-lang.scala.version>2.9.0.RC1</lib.org.scala-lang.scala.version>
         <maven.scala.version>${lib.org.scala-lang.scala.version}</maven.scala.version>
     </properties>
 
@@ -44,8 +50,17 @@
                     </execution>
                 </executions>
             </plugin>
-        </plugins>
 
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*Spec.class</include>
+                    </includes>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 
     <name>${project.artifactId} ${project.version}</name>
@@ -78,6 +93,11 @@
             <id>scala-tools.org</id>
             <name>Scala repository</name>
             <url>http://scala-tools.org/repo-releases/</url>
+        </repository>
+        <repository>
+            <id>Scala snapshots</id>
+            <name>Scala Repo Snapshots</name>
+            <url>http://scala-tools.org/repo-snapshots/</url>
         </repository>
 
     </repositories>
