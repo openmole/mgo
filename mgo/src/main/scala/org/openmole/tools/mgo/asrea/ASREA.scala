@@ -29,7 +29,7 @@ import java.util.Random
 
 class ASREA[GE](engine: EvolutionEngine[GE], fitness: GE => MultiGoalLike) {
 
-  def apply(initialPopulation: Iterable[Individual[GE,_]], archiveContent: Iterable[Individual[GE,_]], nbGeneration: Int) (implicit rng: Random) = {
+  def evolve(initialPopulation: Iterable[Individual[GE,_]], archiveContent: Iterable[Individual[GE,_]], nbGeneration: Int) (implicit rng: Random) = {
     
     val archive = new Archive(archiveContent)
     var population = initialPopulation.toList

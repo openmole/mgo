@@ -21,15 +21,40 @@ import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
-
+import org.openmole.tools.mgo.asrea._
+import org.openmole.tools.mgo.evolution._
+import org.openmole.tools.mgo.tools.Random._
 import java.io.File
-
+import org.openmole.tools.mgo.model._
 import scala.collection.mutable.ListBuffer
+import java.util.Random
 
 @RunWith(classOf[JUnitRunner])
 class ASREASpec extends FlatSpec with ShouldMatchers {
 
   "ASREA" should "converge to good solutions" in {
+    
+    
+    class TestGenome(val v1: Double, val v2: Double)
+    
+    val mutation = new GenomeOperation[TestGenome] {
+      def operate(genomes: IndexedSeq[TestGenome])(implicit aprng: Random) = {
+        genomes.random
+      }
+    }
+    
+    val evolutionEngine = new EvolutionEngine(mutation)
+    
+    def fitness(tg: TestGenome) = MultiGoal.buildDouble(tg.v1, tg.v2)
+    
+    
+    val ag = new ASREA(evolutionEngine, fitness)
+    
+    val rng = new Random
+    val pop = (0 until 20).map{i => new TestGenome(rng.nextDouble, rng.nextDouble)}.map{g => new Individual(g, fitness(g))}
+    val archive = (0 until 20).map{i => new TestGenome(rng.nextDouble, rng.nextDouble)}.map{g => new Individual(g, fitness(g))}
+    
+    ag.evolve(pop, archive, 20)(rng)
     true should equal(true)
   }
   

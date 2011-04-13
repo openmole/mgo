@@ -22,13 +22,13 @@ import ToDouble._
 
 object MultiGoal {
   
-  @transient lazy val rand = new Random
+  //@transient lazy val rand = new Random
   
-  def buildInt(dim: Int, size: Int, max: Int): Array[MultiGoal] = {
+  def buildInt(dim: Int, size: Int, max: Int)(implicit rand: Random): Array[MultiGoal] = {
     Array.fill(size)(buildInt(Array.fill(dim)( rand.nextInt(max) ): _*))
   }
   
-  def buildInt(dim: Int, size: Int): Array[MultiGoal] = {
+  def buildInt(dim: Int, size: Int)(implicit rand: Random): Array[MultiGoal] = {
     Array.fill(size)(buildInt(Array.fill(dim)( rand.nextInt ): _*))
   }
   
@@ -36,7 +36,7 @@ object MultiGoal {
     new MultiGoal(g.map{ e => new ToDouble{ override def toDouble = e.toDouble; override def toString = e.toString} }.toIndexedSeq)
   }
  
-  def buildDouble(dim: Int, size: Int): Array[MultiGoal] = {
+  def buildDouble(dim: Int, size: Int)(implicit rand: Random): Array[MultiGoal] = {
     Array.fill(size)(buildDouble(Array.fill(dim)( rand.nextDouble ): _*))
   }
   
