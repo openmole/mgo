@@ -23,15 +23,12 @@ import org.openmole.tools.mgo.model.MultiGoal._
 
 object Crowding {
   
-  implicit def withCrowdingDecorator[MG <: MultiGoalLike](goals: Iterable[MG]) = new WithCrowdingDecorator(goals)
-  
-  
-  class WithCrowdingDecorator[MG <: MultiGoalLike](goals: Iterable[MG]) {
+  implicit def withCrowdingDecorator[MG <: MultiGoalLike](goals: Iterable[MG]) = new {
   
     def orderByDecreasingCrowding = {
 
       if (goals.size <= 2) {
-        goals.map{(_, Double.PositiveInfinity)}.toIndexedSeq
+        goals.map{(_, Double.PositiveInfinity)}
       } else {         
         class CrowdingInfo(val multiGoal: MG, var crowding: Double) extends MultiGoal(multiGoal.goals)
       
@@ -70,7 +67,7 @@ object Crowding {
           }
         }
 
-        crowding.sortWith((a, b) => a.crowding < b.crowding).map( elt => (elt.multiGoal, elt.crowding))
+        crowding.sortWith((a, b) => a.crowding < b.crowding).map(elt => (elt.multiGoal, elt.crowding))
       }
 
     }

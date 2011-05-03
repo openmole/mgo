@@ -37,10 +37,10 @@ class ASREA[GE](engine: EvolutionEngine[GE], fitness: GE => MultiGoalLike) {
     for(gen <- 0 until nbGeneration) {
       val childPopulation = engine(population.toGenomes.toIndexedSeq, population.size * 2).map{g => new Individual(g, fitness(g))}
       childPopulation.foreach{ archive += _ }
-      val childPopulationAndCrowding = childPopulation.orderByDecreasingCrowding
+      val childPopulationAndCrowding = childPopulation.orderByDecreasingCrowding.toIndexedSeq
       //val rankOfIndiv = childPopulation.individuals.map{ i => (i, archive.ranks(i)) }
       population = Nil  
-      val archiveAndCrowding = archive.orderByDecreasingCrowding
+      val archiveAndCrowding = archive.orderByDecreasingCrowding.toIndexedSeq
       
       for(i <- 0 until population.size) {
         val i1 = archiveAndCrowding(rng.nextInt(archive.size))

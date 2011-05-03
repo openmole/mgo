@@ -23,10 +23,10 @@ import collection.mutable.ArrayBuffer
 
 object Random {
   
-  implicit def indexedSeq2IndexedSeqDecorator[T](elts: IndexedSeq[T]) = new IndexedSeqDecorator(elts)
-  
-  class IndexedSeqDecorator[T](elts: IndexedSeq[T]) {
+  implicit def indexedSeq2IndexedSeqDecorator[T](elts: IndexedSeq[T]) = new {
+    
     def random(implicit prng: JRandom) = elts(prng.nextInt(elts.size))
+    
     def shuffle(implicit prng: JRandom) = {
       val buf = new ArrayBuffer[T] ++= elts
 	       
@@ -43,6 +43,7 @@ object Random {
 	   
       buf.toIndexedSeq      
     }
+    
   }
   
   /*def rndmChoice(set: T*)(implicit rng: Random): T = {

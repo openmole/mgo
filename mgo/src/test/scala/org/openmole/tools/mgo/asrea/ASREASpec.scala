@@ -33,21 +33,16 @@ import java.util.Random
 class ASREASpec extends FlatSpec with ShouldMatchers {
 
   "ASREA" should "converge to good solutions" in {
-    
-    
     class TestGenome(val v1: Double, val v2: Double)
     
     val mutation = new GenomeOperation[TestGenome] {
-      def operate(genomes: IndexedSeq[TestGenome])(implicit aprng: Random) = {
-        genomes.random
-      }
+      def operate(population: IndexedSeq[TestGenome])(implicit aprng: Random) = population.random
     }
     
     val evolutionEngine = new EvolutionEngine(mutation)
     
     def fitness(tg: TestGenome) = MultiGoal.buildDouble(tg.v1, tg.v2)
-    
-    
+
     val ag = new ASREA(evolutionEngine, fitness)
     
     val rng = new Random
