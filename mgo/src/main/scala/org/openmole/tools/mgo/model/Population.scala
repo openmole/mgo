@@ -18,10 +18,7 @@
 package org.openmole.tools.mgo.model
 
 object Population {
-  implicit def withPopulationOpDecorator[GE](indiv: Iterable[Individual[GE,_]]) = new WithPopulationOp(indiv)
-  
-  class WithPopulationOp[GE](indiv: Iterable[Individual[GE,_]]) {
+  implicit def iterablePopulationDecorator[GE](indiv: Iterable[Individual[GE,_]]) = new {
     def toGenomes = indiv.map( _.genome )
   }
-  
 }

@@ -21,14 +21,14 @@ package org.openmole.tools.mgo.genome.genomefloat
 import java.util.Random
 import org.openmole.tools.mgo.evolution.GenomeOperation
 import GenomeFloat._
-
+import org.openmole.tools.mgo.tools.Random._
 
 class RandomMutation extends GenomeOperation[GenomeFloat] {
 
   override def operate(genomes: IndexedSeq[GenomeFloat])(implicit prng: Random): GenomeFloat = {
     val size = genomes.head.size
     val mutationRate = prng.nextFloat
-    val genome = randomGenome(size)
+    val genome = genomes.random
 
     val newGenome = new GenomeFloat(new Array[Float](size))
     var i = 0

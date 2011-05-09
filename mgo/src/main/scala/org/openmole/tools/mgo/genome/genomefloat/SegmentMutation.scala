@@ -21,6 +21,7 @@ package org.openmole.tools.mgo.genome.genomefloat
 import java.util.Random
 import org.openmole.tools.mgo.evolution.GenomeOperation
 import GenomeFloat._
+import org.openmole.tools.mgo.tools.Random._
 
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConversions._
@@ -32,7 +33,7 @@ class SegmentMutation extends GenomeOperation[GenomeFloat] {
   override def operate(genomes: IndexedSeq[GenomeFloat])(implicit prng: Random): GenomeFloat = {
     val size = genomes.head.size
     
-    val genome = randomGenome(size)
+    val genome = genomes.random
     val length = prng nextInt(genome.size / 2)
     val tmpValues = new LinkedList[Float]
 
