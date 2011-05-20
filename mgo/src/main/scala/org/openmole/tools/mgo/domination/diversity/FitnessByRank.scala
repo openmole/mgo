@@ -19,17 +19,19 @@ package org.openmole.tools.mgo.domination.diversity
 
 import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._
+import org.openmole.tools.mgo.model.MultiGoalLike
+import org.openmole.tools.mgo.model.Population._
 import org.openmole.tools.mgo.paretoquick.ParetoQuick
 import org.openmole.tools.mgo.domination.DominateMinimization._
 import scala.collection.immutable.TreeSet
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
-
+import org.openmole.tools.mgo.model.Individual
 import Crowding._
 
 object FitnessByRank {
 
-  def selectByFitnessAndCrowding[MG <: MultiGoal](toSelect: IndexedSeq[MG], dim: Int, resPopSize: Int): IndexedSeq[MG] = {
+  def selectByFitnessAndCrowding[MG <: MultiGoalLike](toSelect: IndexedSeq[MG], resPopSize: Int): IndexedSeq[MG] = {
 
     if(toSelect.size <= resPopSize) return toSelect
 
@@ -81,4 +83,6 @@ object FitnessByRank {
 
     return ret
   }
+  
+  
 }

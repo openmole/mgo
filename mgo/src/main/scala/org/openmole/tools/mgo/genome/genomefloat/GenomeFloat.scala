@@ -25,7 +25,6 @@ import java.util.Random
 
 import scala.Array
 
-
 class GenomeFloat(val chromosomes: Array[Float]) {
   def apply(i: Int): Float = {chromosomes.apply(i)}
   def update(i: Int, v: Float) = {chromosomes.update(i, v)}

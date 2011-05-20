@@ -24,7 +24,7 @@ class EvolutionEngine[T](operations: GenomeOperation[T]*) {
   
   def apply(genomes: IndexedSeq[T])(implicit rng: Random): T = {
     val operation = operations(rng.nextInt(operations.size));
-    operation.operate(genomes)
+    operation.operate(genomes)(rng)
   }
 
   def apply(genomes: IndexedSeq[T], add: Int, selection: Selection[T] = NoSelection)(implicit rng: Random) = {
@@ -41,7 +41,7 @@ class EvolutionEngine[T](operations: GenomeOperation[T]*) {
         i += 1
       }
     }
-
+    
     ret.toIndexedSeq
   }
 
