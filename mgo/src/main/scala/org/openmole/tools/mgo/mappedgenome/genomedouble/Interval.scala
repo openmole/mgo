@@ -14,11 +14,10 @@ class Interval(name:String,min:Double,max:Double,precision:Int)  {
   def apply(implicit rng:Random):Tuple2[String,Double] = {
     if (precision != -1){
       var nextInt = rng.nextInt(precision)
-      println("rng.nextInt(precision) > " + nextInt )
-      return Tuple2(name, ((rng.nextDouble * (max - min) + min) / nextInt))
+      
+      return Tuple2(name, ((rng.nextDouble * (max - min) + min) / nextInt.toDouble))
     }else
       return Tuple2(name, rng.nextDouble * (max - min) + min)
-    
   }
   
   def empty():Tuple2[String,Double] = {

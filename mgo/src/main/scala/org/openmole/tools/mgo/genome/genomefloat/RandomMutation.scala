@@ -23,18 +23,21 @@ import org.openmole.tools.mgo.evolution.GenomeOperation
 import GenomeFloat._
 import org.openmole.tools.mgo.tools.Random._
 
-class RandomMutation extends GenomeOperation[GenomeFloat] {
+class RandomMutation(rate: Random => Double = rng => rng.nextFloat) extends GenomeOperation[GenomeFloat] {
 
+  def this(rate: Double) = this(_ => rate)
+  
   override def operate(genomes: IndexedSeq[GenomeFloat])(implicit prng: Random): GenomeFloat = {
     val size = genomes.head.size
-    val mutationRate = prng.nextFloat
+    val mutationRate = rate(prng)
     val genome = genomes.random
 
     val newGenome = new GenomeFloat(new Array[Float](size))
     var i = 0
 
     genome.foreach( e => {
-        newGenome(i) = {if(prng.nextFloat < mutationRate) e else prng.nextFloat}
+        newGenome(i) = {
+          if(prng.nextFloat < mutationRate) e else prng.nextFloat}
         i+=1
       })
     

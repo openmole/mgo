@@ -23,8 +23,10 @@ import org.openmole.tools.mgo.evolution.GenomeOperation
 import GenomeFloat._
 import org.openmole.tools.mgo.tools.Random._
 
-class UniformeCrossOver extends GenomeOperation[GenomeFloat] {
+class UniformeCrossOver (rate: Random => Double = rng => rng.nextFloat) extends GenomeOperation[GenomeFloat] {
 
+  def this(rate: Double) = this(_ => rate)
+    
   override def operate(genomes: IndexedSeq[GenomeFloat])(implicit prng: Random): GenomeFloat = {
     val size = genomes.head.size
     

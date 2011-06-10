@@ -7,38 +7,37 @@ package org.openmole.tools.mgo.mappedgenome.genomedouble
 import org.openmole.tools.mgo.evolution.GenomeOperation
 import org.openmole.tools.mgo.mappedgenome.genomedouble._
 import java.util.Random
+import org.openmole.tools.mgo.tools.Random._
 import IntervalSet._
 
-class UniformeCrossover (interval:IntervalSet) extends GenomeOperation[GenomeDouble] {
+class UniformeCrossover (interval:IntervalSet, rate: Random => Double = rng => rng.nextFloat) extends GenomeOperation[GenomeDouble] {
   
-  override def operate(genomes: IndexedSeq[GenomeDouble])(implicit rng: Random): GenomeDouble = {
+  def this(interval:IntervalSet, rate: Double) = this(interval, _ => rate)
+  
+  override def operate(genomes: IndexedSeq[GenomeDouble])(implicit rng: Random, mutationRate:Double ): GenomeDouble = {
   
   val size:Int = genomes.size
   if (size == 1){
     return genomes(0)
   }
-  var indexGenomeA = rng.nextInt(genomes.size)
-  var indexGenomeB = rng.nextInt(genomes.size)
   
-  if (indexGenomeB == indexGenomeA && genomes.size>1)
+  var genomeA = genomes.random
+  var genomeB = genomes.random
+  
+  if (genomeA == genomeB && genomes.size > 1)
   {
-    while ((indexGenomeB) == indexGenomeA ) {
-      indexGenomeB = rng.nextInt(genomes.size)
+    while ((genomeA) == genomeB ) {
+      genomeA = genomes.random
     }
   }
   
-  val pickedGenomeA:GenomeDouble = genomes.apply(indexGenomeA)
-  val pickedGenomeB:GenomeDouble = genomes.apply(indexGenomeB)
-  
-    
   var newGenome = IntervalSet.intervallDecorator.generateEmpty(interval)
  
-  pickedGenomeA.foreach{ case(key,value) => {
-        var nextF = rng.nextFloat 
-        if(nextF < 0.5)
-        newGenome.update(key,pickedGenomeA.apply(key))
+  genomeA.foreach{ case(key,value) => { 
+        if( rng.nextDouble  < rate(rng))
+        newGenome.update(key,genomeA.apply(key))
        else
-         newGenome.update(key, pickedGenomeB.apply(key))
+         newGenome.update(key, genomeB.apply(key))
        }
   }
  return newGenome
