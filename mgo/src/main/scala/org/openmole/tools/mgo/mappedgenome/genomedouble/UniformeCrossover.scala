@@ -14,7 +14,7 @@ class UniformeCrossover (interval:IntervalSet, rate: Random => Double = rng => r
   
   def this(interval:IntervalSet, rate: Double) = this(interval, _ => rate)
   
-  override def operate(genomes: IndexedSeq[GenomeDouble])(implicit rng: Random, mutationRate:Double ): GenomeDouble = {
+  override def operate(genomes: IndexedSeq[GenomeDouble])(implicit rng: Random): GenomeDouble = {
   
   val size:Int = genomes.size
   if (size == 1){
