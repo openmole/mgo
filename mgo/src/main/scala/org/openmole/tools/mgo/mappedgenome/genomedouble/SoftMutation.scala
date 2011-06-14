@@ -29,9 +29,9 @@ class SoftMutation (interval: IntervalSet,sigma:Double, mean:Double,rate: Random
     //http://www.developpez.net/forums/d331848/autres-langages/algorithmes/contribuez/generation-nombre-aleatoire-suivant-loi-gaussienne/
     val gRndAffine =  ( gRnd  * sigma ) + mean
     
-    
     val mutationRate = rate(rng)
     
+    val mapOfBounds = IntervalSet.intervallDecorator.generateBounds(interval)
     val newGenome = IntervalSet.intervallDecorator.generateEmpty(interval)
     
     pickedGenome.foreach{ case(key,value) => {
@@ -39,9 +39,9 @@ class SoftMutation (interval: IntervalSet,sigma:Double, mean:Double,rate: Random
           if (rng.nextDouble < mutationRate)
             pickedGenome.apply(key)
           else
-            
-            // FIXME : tester que le nombre une fois ajouté ne va pas dépasser les bornes min max de notre génome
-            pickedGenome.apply(key) + gRndAffine 
+          { 
+            clamp(gRndAffine,mapOfBounds.apply(key)._1,mapOfBounds.apply(key)._2)
+          }
         }
        )
      }
@@ -50,5 +50,13 @@ class SoftMutation (interval: IntervalSet,sigma:Double, mean:Double,rate: Random
   return newGenome
   
   }
+  
+  def clamp( value:Double, min:Double, max:Double):Double={
+    if (value >= max)
+        return max
+    if (value <= min)
+        return min
+    return value
+}
   
   }

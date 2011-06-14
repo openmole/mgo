@@ -23,5 +23,9 @@ class Interval(name:String,min:Double,max:Double,precision:Int)  {
   def empty():Tuple2[String,Double] = {
     return Tuple2(name,0.0)
   }
+  
+  def bound():Tuple2[String,(Double,Double)]={
+    return Tuple2(name,(min,max))
+  }
 
 }
