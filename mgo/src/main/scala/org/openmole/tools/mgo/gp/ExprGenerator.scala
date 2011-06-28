@@ -9,24 +9,38 @@ import java.util.Random
 
 object ExprGenerator {
   //Generate a random expression
-  def expr (vars : Array [Expr], depth : Int, meth : String) (implicit rng : Random) = 
-     genExpr (Array (Sum, Prod, Div, Sin, Cos), vars, depth, meth)
-  
+  def expr (vars : IndexedSeq [ExprFactory], depth : Int, meth : String) 
+           (implicit rng : Random) = 
+     genExpr (Array (Sum, Prod, Div, Cos), Num +: vars, depth, meth)
+ 
   //Generate a random terminal
-  def term (vars : Array [Expr]) (implicit rng : Random) : Expr = {
-    (vars :+ (Num (rng.nextDouble))) apply (rng.nextInt(vars.size+1))
+  def term (vars : Array [Expr], min : Double, max : Double) 
+           (implicit rng : Random) : Expr = {
+    (vars :+ (Num ((rng.nextDouble * (max - min)) + min))) apply (rng.nextInt(vars.size+1))
   }
   
-  def genExpr (funs : Array [ExprFactory], vars : Array [Expr], depth : Int,
-           method : String) (implicit rng : Random) : Expr = {
+  def genExpr (funs : IndexedSeq [ExprFactory], terms : IndexedSeq [ExprFactory], 
+               depth : Int, method : String) (implicit rng : Random) : Expr = {
     if (depth == 0 || (method == "grow" &&
-                       rng.nextFloat < (vars.size / (vars.size + funs.size)))) 
-      term (vars)
+                       rng.nextFloat < (terms.size / (terms.size + funs.size)))) 
+      terms (rng.nextInt (terms.size)).build (Nil)
     else {
       val f = funs (rng.nextInt (funs.size))
-      f (Seq.fill (f.arity) (genExpr (funs, vars, depth - 1, method)):_*)
+      f build (List.fill (f.arity) (genExpr (funs, terms, depth - 1, method)))
     }
+    
   }
+  /*def genExpr (funs : Array [ExprFactory], vars : Array [Expr], depth : Int,
+               method : String, min : Double, max : Double) 
+              (implicit rng : Random) : Expr = {
+    if (depth == 0 || (method == "grow" &&
+                       rng.nextFloat < (vars.size / (vars.size + funs.size)))) 
+      term (vars, min, max)
+    else {
+      val f = funs (rng.nextInt (funs.size))
+      f (Seq.fill (f.arity) (genExpr (funs, vars, depth - 1, method, min, max)):_*)
+    }
+  }*/
   
   def replaceRandomSubtreeWith (from : Expr, by : Expr) 
   (implicit rng : Random) : Expr = 

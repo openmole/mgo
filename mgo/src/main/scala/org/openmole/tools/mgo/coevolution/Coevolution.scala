@@ -7,8 +7,9 @@ package org.openmole.tools.mgo.coevolution
 
 import java.util.Random
 import org.openmole.tools.mgo.gp._
+import scala.math.pow
 
-class Ga [T] (params : IndexedSeq [String], val popSize : Int, 
+class Ga [T] (params : Seq [String], val popSize : Int, 
               fitness : T => Double, val operators : List [Operator [T]]) {
   
   def evaluate (genome : T) = new Individual (genome, fitness (genome))
@@ -27,7 +28,7 @@ class Gp [T] (val popSize : Int, fitness : (T, Iterable [IndexedSeq [Double]]) =
     new Individual (genome, fitness (genome, optima))
   } 
   
-  def generateGenome (pop : Iterable [Individual [T]]) (implicit rnd : Random) = 
+  def generateGenome (pop : Iterable [Individual [T]]) (implicit rnd : Random) =
     operators (rnd.nextInt (operators.size)) generateGenome (pop)
 }
 
@@ -39,7 +40,7 @@ class Coevolution [A, P] (ga : Ga [A], gp : Gp [P],
   
   def coevolve (gaBestPop : List [Individual [A]], 
                 gpBestPop : List [Individual [P]], 
-                injectedOperators : List [Operator [A]]) : Unit = {
+                injectedOperators : List [Operator [A]]) = {
     val gaGenomes    =
       List.fill (ga.popSize) (ga.generateGenome (gaBestPop, injectedOperators))
     print ("GA : evaluating genomes... ")
@@ -50,7 +51,6 @@ class Coevolution [A, P] (ga : Ga [A], gp : Gp [P],
       (gaBestPop ++ gaNewPop).sortWith (_.fit < _.fit) take (ga.popSize)
     println ("done")
     val optima = gaSelect (gaNewBestPop)
-    println ("\tGA => best genome : " + gaNewBestPop (0))
     
     val gpOldPop     = gpBestPop map (i => new Individual (i.genome, Double.MaxValue))
     val gpGenomes    = List.fill (gp.popSize) (gp.generateGenome (gpOldPop))
@@ -60,8 +60,8 @@ class Coevolution [A, P] (ga : Ga [A], gp : Gp [P],
     println ("done")
     val gpNewBestPop =
       (gpOldPop ++ gpNewPop).sortWith (_.fit < _.fit) take (gp.popSize)
-    println ("\tGP => best genome : " + gpNewBestPop (0))
     
-    coevolve (gaNewBestPop, gpNewBestPop, gpSelect (gpNewBestPop))
+    (gaNewBestPop, gpNewBestPop)
   }
 }
+

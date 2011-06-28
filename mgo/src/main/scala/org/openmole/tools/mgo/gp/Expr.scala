@@ -4,67 +4,92 @@
  */
 
 package org.openmole.tools.mgo.gp
+import java.util.Random
 
 trait ExprFactory {
-  def apply (e : Expr*) : Expr
+  def build (e : List [Expr]) (implicit rng : Random) : Expr
   def arity : Int
 }
 
-case class Num  (n : Double) extends Expr
+class PowVarsInt (vars : List [Var], min : Int, max : Int) extends ExprFactory {
+  def build (e : List [Expr]) (implicit rng : Random) : Expr =
+    Pow (vars (rng.nextInt (vars.size)), Num (min + rng.nextInt (max - min)))
+  def arity = 0
+}
 
-case class Var  (x : String) extends Expr
+class IntNum (min : Int, max : Int) extends ExprFactory {
+  def arity = 0
+  def build (e : List [Expr]) (implicit rng : Random) : Expr =
+    Num (min + rng.nextInt (max - min))
+}
+
+case class Num  (n : Double) extends Expr
+object Num extends ExprFactory {
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = 
+    Num (rng.nextDouble)
+  def arity = 0
+}
+
+case class Var  (x : String) extends Expr with ExprFactory {
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = Var (x)
+}
 
 case class Sum  (e1 : Expr, e2 : Expr) extends Expr
 object Sum extends ExprFactory {
-  def apply (e : Expr*) = new Sum (e (0), e (1))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = 
+    Sum (e (0), e (1))
   def arity = 2
 }
 
 case class Sub  (e1 : Expr, e2 : Expr) extends Expr
 object Sub extends ExprFactory {
-  def apply (e : Expr*) = new Sub (e (0), e (1))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = 
+    Sub (e (0), e (1))
   def arity = 2
 }
 
 case class Prod (e1 : Expr, e2 : Expr) extends Expr
 object Prod extends ExprFactory {
-  def apply (e : Expr*) = new Prod (e (0), e (1))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = 
+    Prod (e (0), e (1))
   def arity = 2
 }
 
 case class Div  (e1 : Expr, e2 : Expr) extends Expr
 object Div extends ExprFactory {
-  def apply (e : Expr*) = new Div (e (0), e (1))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = 
+    Div (e (0), e (1))
   def arity = 2
 }
 
 case class Pow  (e1 : Expr, e2 : Expr) extends Expr
 object Pow extends ExprFactory {
-  def apply (e : Expr*) = new Pow (e (0), e (1))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = 
+    Pow (e (0), e (1))
   def arity = 2
 }
 
 case class Log  (e : Expr) extends Expr
 object Log extends ExprFactory {
-  def apply (e : Expr*) = new Log (e (0))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = Log (e (0))
   def arity = 1
 }
 
 case class Exp  (e : Expr) extends Expr
 object Exp extends ExprFactory {
-  def apply (e : Expr*) = new Exp (e (0))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = Exp (e (0))
   def arity = 1
 }
 
 case class Sin  (e : Expr) extends Expr
 object Sin extends ExprFactory {
-  def apply (e : Expr*) = new Sin (e (0))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = Sin (e (0))
   def arity = 1
 }
 
 case class Cos  (e : Expr) extends Expr
 object Cos extends ExprFactory {
-  def apply (e : Expr*) = new Cos (e (0))
+  def build (e : List [Expr]) (implicit rng : Random) : Expr = new Cos (e (0))
   def arity = 1
 }
 
