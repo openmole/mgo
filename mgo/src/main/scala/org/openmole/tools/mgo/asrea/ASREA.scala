@@ -20,7 +20,7 @@ package org.openmole.tools.mgo.asrea
 import org.openmole.tools.mgo.evolution.EvolutionEngine
 import org.openmole.tools.mgo.model.Individual
 import org.openmole.tools.mgo.model.MultiGoalLike
-import org.openmole.tools.mgo.model.Population._
+import org.openmole.tools.mgo.model.Population
 import scala.collection.mutable.ArrayBuffer
 import org.openmole.tools.mgo.domination.diversity.Crowding._
 import scala.collection.mutable.ListBuffer
@@ -29,13 +29,14 @@ import java.util.Random
 
 class ASREA[GE](engine: EvolutionEngine[GE], fitness: GE => MultiGoalLike) {
 
-  def evolve(initialPopulation: Iterable[Individual[GE,_]], archiveContent: Iterable[Individual[GE,_]], nbGeneration: Int) (implicit rng: Random) = {
+  def evolve(initialPopulation: Population[GE], archiveContent: Iterable[Individual[GE,_]], nbGeneration: Int) (implicit rng: Random) = {
     
     val archive = new Archive(archiveContent)
-    var population = initialPopulation.toList
+    var population = initialPopulation.individuals.toList
+    var popGenome = initialPopulation.toGenomes
     
     for(gen <- 0 until nbGeneration) {
-      val childPopulation = engine(population.toGenomes.toIndexedSeq, population.size * 2).map{g => new Individual(g, fitness(g))}
+      val childPopulation = engine(popGenome.toIndexedSeq, population.size * 2).map{g => new Individual(g, fitness(g))}
       childPopulation.foreach{ archive += _ }
       val childPopulationAndCrowding = childPopulation.orderByDecreasingCrowding.toIndexedSeq
       //val rankOfIndiv = childPopulation.individuals.map{ i => (i, archive.ranks(i)) }

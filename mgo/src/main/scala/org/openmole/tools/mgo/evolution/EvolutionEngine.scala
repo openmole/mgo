@@ -18,9 +18,11 @@
 package org.openmole.tools.mgo.evolution
 
 import scala.collection.mutable.ArrayBuffer
+import org.openmole.tools.mgo.model._
+
 import java.util.Random
 
-class EvolutionEngine[T](operations: GenomeOperation[T]*) {
+class EvolutionEngine[T,F](operations: Operator[T,F]*) {
   
   def apply(genomes: IndexedSeq[T])(implicit rng: Random): T = {
     val operation = operations(rng.nextInt(operations.size));

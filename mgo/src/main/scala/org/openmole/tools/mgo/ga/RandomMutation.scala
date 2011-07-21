@@ -3,14 +3,16 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.mappedgenome.genomedouble
+package org.openmole.tools.mgo.ga
+
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.mappedgenome.genomedouble._
 import java.util.Random
 import org.openmole.tools.mgo.tools.Random._
 import IntervalSet._
 
-class RandomMutation[T<: Genome](interval: ScaledIntervalSet, rate: Random => Double = rng => rng.nextFloat) extends Mutation[T,GenomeFactory[T]] with UniformRandomCopy[T] {
+/*class RandomMutation[T<: Genome](interval: ScaledIntervalSet, rate: Random => Double = rng => rng.nextFloat) 
+  extends Mutation[T,GenomeFactory[T]] with UniformRandomCopy[T] {
 
   def this(interval:ScaledIntervalSet, rate: Double) = this(interval, _ => rate)
   
@@ -39,4 +41,4 @@ class RandomMutation[T<: Genome](interval: ScaledIntervalSet, rate: Random => Do
     return newGenome
 }
 
-}
+}*/

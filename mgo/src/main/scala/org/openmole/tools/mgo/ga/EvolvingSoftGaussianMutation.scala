@@ -3,17 +3,15 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.mappedgenome.genomedouble
+package org.openmole.tools.mgo.ga
 
-import org.openmole.tools.mgo.mappedgenome.genomedouble._
 import org.apache.commons.math.util.FastMath._
-import org.openmole.tools.mgo.model.Genome
-import org.openmole.tools.mgo.model.GenomeFactory
-import org.openmole.tools.mgo.model.SigmaParametersGenome
+import org.openmole.tools.mgo.model._
+import org.openmole.tools.mgo.evolution._
 import org.openmole.tools.mgo.tools.Random._
 import java.util.Random
 
-class EvolvingSoftGaussianMutation[T <: Genome with SigmaParametersGenome, F <: GenomeFactory[T]] (interval: IntervalSet, rate: Random => Double = rng => rng.nextFloat) extends GenomeOperation[T, F] {
+/*class EvolvingSoftGaussianMutation[T <: Genome with SigmaParametersGenome, F <: GenomeFactory[T]] (interval: IntervalSet, rate: Random => Double = rng => rng.nextFloat) extends GenomeOperation[T] {
   
   override def operate(genomes: IndexedSeq[T],indices:List[Int])(implicit factory: F, rng: Random): T = {
     
@@ -45,4 +43,4 @@ class EvolvingSoftGaussianMutation[T <: Genome with SigmaParametersGenome, F <: 
   
 
   
-  }
+  }*/

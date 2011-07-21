@@ -3,14 +3,15 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.mappedgenome.genomedouble
+package org.openmole.tools.mgo.ga
+
 import org.openmole.tools.mgo.evolution.GenomeOperation
 import org.openmole.tools.mgo.tools.Random._
 
 
 import java.util.Random
 
-abstract class GenericMutation(interval: IntervalSet,rate: Random => Double = rng => rng.nextFloat) extends Operator[GenomeDouble]{
+/*abstract class GenericMutation(interval: IntervalSet,rate: Random => Double = rng => rng.nextFloat) extends Operator[GenomeDouble]{
   
   def this(interval:IntervalSet, rate: Double) = this(interval,  _ => rate)
   
@@ -41,5 +42,5 @@ abstract class GenericMutation(interval: IntervalSet,rate: Random => Double = rn
   }
                
   def operateMutation(genome:GenomeDouble,key:String, min:Double,max:Double)(implicit rng: Random):Double
-                           
-}
+                          
+}*/ 

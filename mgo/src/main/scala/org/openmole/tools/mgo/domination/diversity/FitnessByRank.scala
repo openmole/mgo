@@ -20,7 +20,7 @@ package org.openmole.tools.mgo.domination.diversity
 import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._
 import org.openmole.tools.mgo.model.MultiGoalLike
-import org.openmole.tools.mgo.model.Population._
+import org.openmole.tools.mgo.model.Population
 import org.openmole.tools.mgo.paretoquick.ParetoQuick
 import org.openmole.tools.mgo.domination.DominateMinimization._
 import scala.collection.immutable.TreeSet

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openmole.tools.mgo.asrea.newPackage
+package org.openmole.tools.mgo.asrea
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers

@@ -5,8 +5,6 @@
 
 package org.openmole.tools.mgo.model
 
-class GenomeSigmaFactory[G <: Genome ] extends GenomeFactory[G] {
-  override def buildGenome(values: Array[Double]):G{
-    
-  }
+trait FromValuesFactory[G] {
+  def buildFromValues(genome: G, values: Array[Double]): G 
 }
