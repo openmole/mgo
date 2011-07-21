@@ -15,6 +15,5 @@ class GenomeDouble(var chromosomes:Map[String,Double]) {
   def foreach(d: ((String,Double)) => Unit) : Unit = {
     chromosomes.foreach(x => d (x))
   }
- // def foreach = chromosomes.foreach((String,Double) => Unit) 
-  
+
 }

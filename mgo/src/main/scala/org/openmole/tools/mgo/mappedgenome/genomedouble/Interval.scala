@@ -7,9 +7,9 @@ package org.openmole.tools.mgo.mappedgenome.genomedouble
 import org.apache.commons.math.random._
 import java.util.Random
 
-class Interval(name:String,min:Double,max:Double,precision:Int)  {
+class Interval(name:String, min:Double, max:Double, precision:Int)  {
 
-  def this(name:String,min:Double,max:Double) = this(name,min,max,-1)
+  def this(name:String, min:Double, max:Double) = this(name, min, max, -1)
   
   def apply(implicit rng:Random):Tuple2[String,Double] = {
     if (precision != -1){

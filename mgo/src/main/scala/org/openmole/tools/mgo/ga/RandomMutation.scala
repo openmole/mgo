@@ -4,15 +4,15 @@
  */
 
 package org.openmole.tools.mgo.mappedgenome.genomedouble
-import org.openmole.tools.mgo.evolution.GenomeOperation
+import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.mappedgenome.genomedouble._
 import java.util.Random
 import org.openmole.tools.mgo.tools.Random._
 import IntervalSet._
 
-class RandomMutation(interval: IntervalSet, rate: Random => Double = rng => rng.nextFloat) extends GenomeOperation[GenomeDouble] {
+class RandomMutation[T<: Genome](interval: ScaledIntervalSet, rate: Random => Double = rng => rng.nextFloat) extends Mutation[T,GenomeFactory[T]] with UniformRandomCopy[T] {
 
-  def this(interval:IntervalSet, rate: Double) = this(interval, _ => rate)
+  def this(interval:ScaledIntervalSet, rate: Double) = this(interval, _ => rate)
   
   override def operate(genomes: IndexedSeq[GenomeDouble])(implicit rng: Random): GenomeDouble = {
   
