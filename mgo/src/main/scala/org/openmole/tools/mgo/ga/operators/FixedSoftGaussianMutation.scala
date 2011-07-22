@@ -5,29 +5,19 @@
 
 package org.openmole.tools.mgo.ga.operators
 
-import org.openmole.tools.mgo.AbstractGenome
-import org.openmole.tools.mgo.GenomeFactory
-import org.openmole.tools.mgo.Mutation
-import org.openmole.tools.mgo.ga.SigmaParameters
-import org.openmole.tools.mgo.tools.Random._
+import org.openmole.tools.mgo._
+import ga._
+import tools.Random._
+import tools.Math._
 import java.util.Random
 
-class FixedSoftGaussianMutation [G <: AbstractGenome with SigmaParameters, 
-                                 F <: GenomeFactory [G]] (val factory:F) 
-  extends Mutation [G, F] {
+class FixedSoftGaussianMutation [G <: GAGenome, F <: GenomeFactory [G]] (
+  sigma : Double, val factory : F) extends Mutation [G, F] {
 
-  def operate (genomes:IndexedSeq[G])
-    (implicit aprng: Random) : Double = {
-      
-    val pickedGenome = genomes.random
-    
-    val gRnd = aprng.nextGaussian()
-    val gRndAffine =  ( gRnd  * computeSigma (min, max, 6.0)) + value
-    return 0 //clamp(gRndAffine, min, max)
-  }
-  
-  def computeSigma (min : Double, max : Double, precision : Double) : Double = {
-    return  (max - min) / precision
-  }
-  
+  override def operate (genomes:IndexedSeq[G]) (implicit aprng: Random) : G = {
+    val genome = genomes.random
+    val newValues = genome.values map (v => 
+      clamp (v + (aprng.nextGaussian * sigma), 0, 1))
+    factory.buildGenome (newValues)
+  }  
 }

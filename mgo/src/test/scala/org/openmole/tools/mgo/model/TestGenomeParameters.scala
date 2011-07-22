@@ -11,14 +11,13 @@ import org.openmole.tools.mgo.tools.Random._
 
 import java.util.Random
 
-import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga._
 
 class TestGenomeParameters extends FlatSpec with ShouldMatchers{
 
   "GenomeParameters " should "create and initialize with good values" in {
     
-    val sigmaGenome = new Genome(Array(0.,1.)) with SigmaParametersGenome {
+    val sigmaGenome = new GAGenome (Array(0.,1.)) with SigmaParameters {
       override def sigma = Array(2.,3.)
     }
   

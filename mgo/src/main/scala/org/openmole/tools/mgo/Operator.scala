@@ -9,5 +9,5 @@ import java.util.Random
 
 abstract class Operator[G <: AbstractGenome, F <: GenomeFactory[G]] {  
   val factory: F
-  def operate(genomes: IndexedSeq[G]) (implicit aprng: Random): G 
+  def operate (genomes: IndexedSeq[G]) (implicit aprng : Random): G 
 }
