@@ -3,8 +3,8 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.model
+package org.openmole.tools.mgo
 
-abstract class GenomeFactory[T <: Genome] {
-  def buildGenome(values: Array[Double]): T
+abstract class GenomeFactory[G <: AbstractGenome] {
+  def buildGenome(values: Array[Double]): G
 }

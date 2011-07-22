@@ -3,8 +3,10 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.model
+package org.openmole.tools.mgo.genomefactory
 
-trait FromValuesFactory[G] {
+import org.openmole.tools.mgo.ga.GAGenome
+
+trait FromValuesFactory[G <: GAGenome] {
   def buildFromValues(genome: G, values: Array[Double]): G 
 }

@@ -5,11 +5,10 @@
 
 package org.openmole.tools.mgo.mappedgenome.genomedouble
 
-import org.openmole.tools.mgo.model.Genome
+import org.openmole.tools.mgo.AbstractGenome
+import java.util.Random
 
 // On passe la fonction à appliquer (operateMutation) avec sigma fixe 
-trait UniformRandom[T <: Genome] {
-  def operate(origin:Genome,destination:Genome)(implicit rng: Random):Double={
-    
-  }
+trait UniformRandom [G <: AbstractGenome] {
+  def operate (origin : G, destination : G) (implicit rng: Random) : Double
 }

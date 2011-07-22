@@ -5,6 +5,7 @@
 
 package org.openmole.tools.mgo.gp
 import java.util.Random
+import org.openmole.tools.mgo.AbstractGenome
 
 trait ExprFactory {
   def build (e : List [Expr]) (implicit rng : Random) : Expr
@@ -93,7 +94,7 @@ object Cos extends ExprFactory {
   def arity = 1
 }
 
-abstract class Expr {
+abstract class Expr extends AbstractGenome {
   lazy val subtrees : List [Expr] = this match {
      case Num (n)       => Nil
      case Var (x)       => Nil
