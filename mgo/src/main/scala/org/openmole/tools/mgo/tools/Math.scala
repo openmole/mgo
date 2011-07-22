@@ -4,12 +4,8 @@
  */
 
 package org.openmole.tools.mgo.tools
-
+import scala.math.{max, min}
 object Math {
-  final def clamp(value:Double, min:Double, max:Double) : Double = {
-    var result = value
-    if(result > max) result = max
-    if(result < min) result = min
-    result
-  }
+  final def clamp(value:Double, min_v:Double, max_v:Double) : Double = 
+    max (min (value, max_v), min_v)
 }

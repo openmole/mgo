@@ -8,5 +8,5 @@ package org.openmole.tools.mgo.genomefactory
 import org.openmole.tools.mgo.ga.GAGenome
 
 trait FromValuesFactory[G <: GAGenome] {
-  def buildFromValues(genome: G, values: Array[Double]): G 
+  def buildFromValues(genome: G, values: IndexedSeq [Double]): G 
 }

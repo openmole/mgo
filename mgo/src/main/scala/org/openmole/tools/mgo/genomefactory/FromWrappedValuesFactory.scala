@@ -8,5 +8,5 @@ package org.openmole.tools.mgo.genomefactory
 import org.openmole.tools.mgo.ga.GAGenome
 
 trait FromWrappedValuesFactory [G <: GAGenome] {
-  def buildFromWrappedValues(genome: G, values: Array[Double]): G 
+  def buildFromWrappedValues(genome: G, values: IndexedSeq [Double]): G 
 }
