@@ -5,5 +5,5 @@
 
 package org.openmole.tools.mgo
 
-trait CrossingOver [G <: AbstractGenome, F <: GenomeFactory [G]] 
-  extends Operator [G, F]
+abstract class CrossingOver [G <: AbstractGenome, F <: GenomeFactory [G]]
+  extends Operator [G, F] 

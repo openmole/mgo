@@ -7,6 +7,7 @@ package org.openmole.tools.mgo
 
 import java.util.Random
 
-trait Operator[G <: AbstractGenome, F <: GenomeFactory[G]] {  
-  def operate(genomes: Population[G]) (implicit factory: F, aprng: Random): G 
+abstract class Operator[G <: AbstractGenome, F <: GenomeFactory[G]] {  
+  val factory: F
+  def operate(genomes: IndexedSeq[G]) (implicit aprng: Random): G 
 }

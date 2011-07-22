@@ -7,7 +7,7 @@ package org.openmole.tools.mgo.mappedgenome.genomedouble
 import org.apache.commons.math.random._
 import java.util.Random
 
-class Interval(name:String, min:Double, max:Double, precision:Int)  {
+/*class Interval(name:String, min:Double, max:Double, precision:Int)  {
 
   def this(name:String, min:Double, max:Double) = this(name, min, max, -1)
   
@@ -28,4 +28,4 @@ class Interval(name:String, min:Double, max:Double, precision:Int)  {
     return Tuple2(name,(min,max))
   }
 
-}
+}*/

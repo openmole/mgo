@@ -4,13 +4,9 @@
  */
 
 package org.openmole.tools.mgo.mappedgenome.genomedouble
-import org.openmole.tools.mgo.evolution.GenomeOperation
-import org.openmole.tools.mgo.mappedgenome.genomedouble._
-import java.util.Random
-import org.openmole.tools.mgo.tools.Random._
-import IntervalSet._
 
-class PointCrossover (interval:IntervalSet) extends GenomeOperation[GenomeDouble] {
+
+/*class PointCrossover (interval:IntervalSet) extends GenomeOperation[GenomeDouble] {
   
   override def operate(genomes: IndexedSeq[GenomeDouble])(implicit rng: Random): GenomeDouble = {
     
@@ -40,4 +36,4 @@ class PointCrossover (interval:IntervalSet) extends GenomeOperation[GenomeDouble
     
     return newGenome
   }
-}
+}*/

@@ -16,7 +16,7 @@
  */
 
 package org.openmole.tools.mgo.asrea
-
+/*
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.junit.JUnitRunner
@@ -54,4 +54,4 @@ class ASREASpec extends FlatSpec with ShouldMatchers {
   }
   
 }
-
+*/

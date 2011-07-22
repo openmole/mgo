@@ -5,11 +5,8 @@
 
 package org.openmole.tools.mgo.ga
 
-import org.openmole.tools.mgo.model._
-import org.openmole.tools.mgo.mappedgenome.genomedouble._
-import java.util.Random
-import org.openmole.tools.mgo.tools.Random._
-import IntervalSet._
+
+
 
 /*class RandomMutation[T<: Genome](interval: ScaledIntervalSet, rate: Random => Double = rng => rng.nextFloat) 
   extends Mutation[T,GenomeFactory[T]] with UniformRandomCopy[T] {

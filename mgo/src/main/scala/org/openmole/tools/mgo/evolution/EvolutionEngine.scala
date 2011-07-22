@@ -18,23 +18,24 @@
 package org.openmole.tools.mgo.evolution
 
 import scala.collection.mutable.ArrayBuffer
+import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.model._
 
 import java.util.Random
 
-class EvolutionEngine[T,F](operations: Operator[T,F]*) {
+class EvolutionEngine[G <: AbstractGenome,F <: GenomeFactory[G]](operations: Operator[G,F]*) {
   
-  def apply(genomes: IndexedSeq[T])(implicit rng: Random): T = {
-    val operation = operations(rng.nextInt(operations.size));
-    operation.operate(genomes)(rng)
+  def apply(genomes: IndexedSeq[G])(implicit aprng: Random): G = {
+    val operation = operations(aprng.nextInt(operations.size))
+    operation.operate(genomes)
   }
 
-  def apply(genomes: IndexedSeq[T], add: Int, selection: Selection[T] = NoSelection)(implicit rng: Random) = {
-    val ret = new ArrayBuffer[T](add)
+  def apply(genomes: IndexedSeq[G], add: Int, selection: Selection[G] = NoSelection)(implicit aprng: Random) = {
+    val ret = new ArrayBuffer[G](add)
     var i = 0
 
     while (i < add) {
-      val operation = operations(rng.nextInt(operations.size))
+      val operation = operations(aprng.nextInt(operations.size))
 
       val newGenome = operation.operate(genomes)
 

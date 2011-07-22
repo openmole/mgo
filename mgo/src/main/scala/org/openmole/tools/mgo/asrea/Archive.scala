@@ -17,7 +17,7 @@
 
 package org.openmole.tools.mgo.asrea
 
-import org.openmole.tools.mgo.model.Individual
+/*import org.openmole.tools.mgo.model.Individual
 import org.openmole.tools.mgo.domination.DominateMinimization
 import org.openmole.tools.mgo.domination.diversity.Crowding._
 import org.openmole.tools.mgo.model.MultiGoalLike
@@ -54,4 +54,4 @@ class Archive[I <: Individual[_,_]](val individuals: ArraySeq[I]) extends Iterab
   private def dominatesInTheAchive(individual: I) = individuals.zipWithIndex.map{individualAndIndexToMultiGoalLike(_)}.filter(DominateMinimization.isDominated(_, individual)).map{_.index}
   private def isDominatedInTheAchive(individual: I) = individuals.exists(DominateMinimization.isDominated(individual, _))
   
-}
+}*/

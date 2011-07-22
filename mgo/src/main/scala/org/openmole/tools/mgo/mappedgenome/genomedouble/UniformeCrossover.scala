@@ -4,13 +4,12 @@
  */
 
 package org.openmole.tools.mgo.mappedgenome.genomedouble
-import org.openmole.tools.mgo.evolution.GenomeOperation
-import org.openmole.tools.mgo.mappedgenome.genomedouble._
+
 import java.util.Random
 import org.openmole.tools.mgo.tools.Random._
-import IntervalSet._
 
-class UniformeCrossover (interval:IntervalSet, rate: Random => Double = rng => rng.nextFloat) extends GenomeOperation[GenomeDouble] {
+
+/*class UniformeCrossover (interval:IntervalSet, rate: Random => Double = rng => rng.nextFloat) extends GenomeOperation[GenomeDouble] {
   
   def this(interval:IntervalSet, rate: Double) = this(interval, _ => rate)
   
@@ -43,4 +42,4 @@ class UniformeCrossover (interval:IntervalSet, rate: Random => Double = rng => r
  return newGenome
   }
 
-}
+}*/

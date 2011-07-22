@@ -16,7 +16,7 @@
  */
 
 package org.openmole.tools.mgo.asrea
-
+/*
 import org.openmole.tools.mgo.evolution.EvolutionEngine
 import org.openmole.tools.mgo.model.Individual
 import org.openmole.tools.mgo.model.MultiGoalLike
@@ -63,4 +63,4 @@ class ASREA[GE](engine: EvolutionEngine[GE], fitness: GE => MultiGoalLike) {
     (population, archive)
   }
   
-}
+}*/

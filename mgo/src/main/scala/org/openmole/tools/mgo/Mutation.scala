@@ -5,4 +5,5 @@
 
 package org.openmole.tools.mgo
 
-trait Mutation [G <: AbstractGenome, F <: GenomeFactory [G]] extends Operator [G, F]
+abstract class Mutation [G <: AbstractGenome, F <: GenomeFactory [G]]  
+  extends Operator [G, F]

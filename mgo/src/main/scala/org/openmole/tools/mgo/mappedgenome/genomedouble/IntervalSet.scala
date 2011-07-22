@@ -5,7 +5,7 @@
 
 package org.openmole.tools.mgo.mappedgenome.genomedouble
 
-import java.util.Random
+/*import java.util.Random
 import scala.collection.JavaConversions._
 
 class IntervalSet(listIntervals:Iterable[Interval]) {
@@ -31,4 +31,4 @@ object IntervalSet {
       return listIntervals.mapBound{_.bound()}.toMap
     }
   }
-}
+}*/
