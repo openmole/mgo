@@ -5,7 +5,7 @@
 
 package org.openmole.tools.mgo.model
 
-abstract class Genome (v: Array[Double]){
+abstract class Genome (v: Array[Double])extends AbstractGenome{
   def position = 0
   def wrappedValues = values
   def values: Array[Double] = v
