@@ -22,6 +22,7 @@ class EvolvingSoftGaussianMutation [G <: GAGenome with SigmaParameters,
     val genome = genomes.random 
     val newValues = (genome.values zip genome.sigma) map {
       case (v, s) => clamp (aprng.nextGaussian * s + v, 0, 1)}
-    factory.buildGenome (newValues)
+    factory.buildFromValues ( genome ,newValues)
+    
   }
 }

@@ -5,6 +5,9 @@
 
 package org.openmole.tools.mgo
 
-abstract class GenomeFactory[G <: AbstractGenome] {
+import java.util.Random
+
+abstract class GenomeFactory[G <: AbstractGenome](implicit aprng:Random) {
   def buildGenome(values: Array[Double]): G
+  def buildRandomGenome(aprng:Random):G
 }
