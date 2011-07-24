@@ -21,7 +21,7 @@ extends Mutation[G,F]  {
     val mutationRate = rate(aprng)
     val genome = genomes.random
     
-    val newValues = genome.wrappedValues map { v => 
+    val newValues = genome.values map { v => 
       if (aprng.nextDouble < mutationRate) 
         aprng.nextDouble
       else v }

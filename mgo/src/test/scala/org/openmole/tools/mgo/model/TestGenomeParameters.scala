@@ -20,6 +20,8 @@ class TestGenomeParameters extends FlatSpec with ShouldMatchers{
     val sigmaGenome = new GAGenome (Array(0.,1.)) with SigmaParameters {
       override def sigma = Array(2.,3.)
     }
+    
+    
   
   }
 }
