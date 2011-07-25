@@ -5,9 +5,6 @@
 
 package org.openmole.tools.mgo.ga
 
-trait SigmaParameters { self : GAGenome => 
-  def sigmaPosition = self.position + sigma.size
+trait SigmaParameters extends GAGenome { self : GAGenome => 
   def sigma: Array[Double]
-  //override def position = self.position + sigma.size
-  //abstract override def values =  self.values ++ sigma  
 }

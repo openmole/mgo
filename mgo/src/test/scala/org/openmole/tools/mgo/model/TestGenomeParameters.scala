@@ -6,8 +6,6 @@ import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 import org.openmole.tools.mgo.asrea._
-import org.openmole.tools.mgo.evolution._
-import org.openmole.tools.mgo.tools.Random._
 
 import java.util.Random
 
@@ -17,10 +15,22 @@ class TestGenomeParameters extends FlatSpec with ShouldMatchers{
 
   "GenomeParameters " should "create and initialize with good values" in {
     
-    val sigmaGenome = new GAGenome (Array(0.,1.)) with SigmaParameters {
-      override def sigma = Array(2.,3.)
+    class GenomeSLocal(v:IndexedSeq[Double], override val sigma:IndexedSeq[Double]) extends GAGenome with SigmaParameters {
+      override val values = v
     }
     
+    // Init population
+    val gaGenomeFactory = new GenomeSigmaFactory(){
+      override def buildFromValues(genome: GenomeSLocal, sigmaValues: IndexedSeq [Double]): GenomeSLocal = {
+         new GenomeSLocal(genome.values,sigmaValues)
+        }
+      }
+    
+    
+    // Init operator
+    
+    // Init engine
+    //val engine = new EvolutionEngine[GenomeDouble]
     
   
   }

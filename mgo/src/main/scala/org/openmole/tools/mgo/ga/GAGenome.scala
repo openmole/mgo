@@ -7,8 +7,8 @@ package org.openmole.tools.mgo.ga
 
 import org.openmole.tools.mgo.AbstractGenome
 
-class GAGenome (v: IndexedSeq [Double]) extends AbstractGenome {
-  def position = 0
+trait GAGenome extends AbstractGenome {
+  //def position = 0
   def wrappedValues = values
-  def values: IndexedSeq [Double] = v
+  def values: IndexedSeq [Double] 
 }
