@@ -10,9 +10,11 @@ import java.util.Random
 import org.openmole.tools.mgo.tools.Random._
 import org.openmole.tools.mgo.genomefactory._
 
-class RandomValuesMutation[G <: GAGenome, 
-                          F <: GenomeFactory [G] with FromValuesFactory[G]] (rate: Random => Double = rng => rng.nextFloat, val factory:F) 
-extends Mutation[G,F]  {
+class RandomValuesMutation [
+  G <: GAGenome, 
+  F <: GAGenomeFactory [G] with FromValuesFactory [G]] (
+  rate: Random => Double = rng => rng.nextFloat, val factory:F) 
+  extends Mutation [G, F]  {
   
   def this(rate: Double, factory:F) = this( _ => rate, factory)
   

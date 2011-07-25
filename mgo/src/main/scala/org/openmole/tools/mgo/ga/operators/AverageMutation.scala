@@ -10,7 +10,7 @@ import ga._
 import tools.Random._
 import java.util.Random
 
-class AverageMutation [G <: GAGenome, F <: GenomeFactory [G]] (val factory : F) 
+class AverageMutation [G <: GAGenome, F <: GAGenomeFactory [G]] (val factory : F) 
   extends Mutation [G, F] {
   override def operate (genomes : IndexedSeq [G]) (implicit aprng : Random) : G = {
     val g1 = genomes.random
