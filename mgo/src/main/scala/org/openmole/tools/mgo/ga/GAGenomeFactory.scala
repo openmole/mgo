@@ -7,7 +7,6 @@ package org.openmole.tools.mgo.ga
 
 import org.openmole.tools.mgo._
 
-class GAGenomeFactory  [G <: GAGenome] extends GenomeFactory [G] {
-  def buildGenome (values: IndexedSeq [Double]) : G = 
-    new GAGenome (values).asInstanceOf [G]
+trait GAGenomeFactory  [G <: GAGenome] extends GenomeFactory [G] {
+  def buildGenome (values: IndexedSeq [Double]) : G
 }

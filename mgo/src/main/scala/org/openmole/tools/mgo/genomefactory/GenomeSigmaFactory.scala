@@ -8,6 +8,6 @@ package org.openmole.tools.mgo.genomefactory
 import org.openmole.tools.mgo.ga._
 import org.openmole.tools.mgo._
 
-trait GenomeSigmaFactory [G <: GAGenome with SigmaParameters] 
+trait GenomeSigmaFactory [G <: GAGenome with SigmaParameters]
   extends GAGenomeFactory [G] 
   with FromValuesFactory [G]

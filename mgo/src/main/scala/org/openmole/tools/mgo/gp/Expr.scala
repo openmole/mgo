@@ -85,7 +85,7 @@ object Cos extends ExprFactory {
   def arity = 1
 }
 
-abstract class Expr extends AbstractGenome {
+trait Expr extends AbstractGenome {
   lazy val subtrees : List [Expr] = this match {
      case Num (n)       => Nil
      case Var (x)       => Nil
@@ -165,7 +165,7 @@ abstract class Expr extends AbstractGenome {
     case Sin  (e) => Sin (e.simplify)   
     case Cos  (Num (i))            => Num (scala.math.cos (i))
     case Cos  (e) => Cos (e.simplify)
-    case _ => this
+    case e => if (this == e) e else e.simplify
   }
   
   /** Return the depth of the node at index i **/
@@ -309,4 +309,18 @@ abstract class Expr extends AbstractGenome {
      case Sin (e)       => "sin(" + e.pretty + ")"
      case Cos (e)       => "cos(" + e.pretty + ")"
    }
+}
+
+case class Sum2 (override val e1 : Expr, override val e2 : Expr) extends Sum (e1, e2) {
+  override def eval (env : Map [String, Double]) : Double = this match {
+    case Sum2 (e1, e2) => e1.eval (env) + e2.eval (env) + 2
+    case _ => super.eval (env)
+  }
+}
+
+case class Sum3 (override val e1 : Expr, override val e2 : Expr) extends Sum (e1, e2) {
+  override def eval (env : Map [String, Double]) : Double = this match {
+    case Sum3 (e1, e2) => e1.eval (env) + e2.eval (env) + 3
+    case _ => super.eval (env)
+  }
 }
