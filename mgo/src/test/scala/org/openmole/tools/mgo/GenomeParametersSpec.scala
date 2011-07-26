@@ -19,24 +19,26 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     
     
     
-    class GenomeSLocal(v:IndexedSeq[Double]) extends GAGenome with SigmaParameters {
-      def this (v:IndexedSeq[Double], sigma:IndexedSeq[Double]) = this(v++ v.takeRight(sigma.size))
-      override val values = v
+    class GenomeSLocal(
+      override val values : IndexedSeq[Double],
+      override val sigma  : IndexedSeq[Double]) 
+      extends GAGenome with SigmaParameters {
+      
+      def this (v : IndexedSeq[Double]) = 
+        this (v.take (v.size/2), v.takeRight (v.size/2))
     }
     
     class GenomeSLocalSigmaFactory extends GenomeSigmaFactory[GenomeSLocal] {
-      
-
-      
-      override def buildGenome(v:IndexedSeq[Double]): GenomeSLocal = {
-        new GenomeSLocal(v)
+         
+      override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
+        new GenomeSLocal (v)
       }
       
       override def buildFromValues(genome: GenomeSLocal, sigmaValues: IndexedSeq [Double]): GenomeSLocal = {
         new GenomeSLocal(genome.values,sigmaValues)
       }
         
-       def buildRandomGenome: GenomeSLocal = {
+       def buildRandomGenome (implicit aprng : Random) : GenomeSLocal = {
         new GenomeSLocal(IndexedSeq[Double](1,2,3), IndexedSeq[Double](1,2,3))
       }
     }
@@ -48,7 +50,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
 
     
     // Init population
-    val gaGenomeFactory = new GenomeSLocalSigmaFactory()
+    val gaGenomeFactory = new GenomeSLocalSigmaFactory
     
     // Init operator
     
