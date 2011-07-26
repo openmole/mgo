@@ -6,5 +6,5 @@
 package org.openmole.tools.mgo.ga
 
 trait SigmaParameters extends GAGenome { self : GAGenome => 
-  def sigma: Array[Double]
+  def sigma: IndexedSeq[Double]
 }

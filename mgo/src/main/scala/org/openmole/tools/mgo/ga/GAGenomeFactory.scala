@@ -11,6 +11,6 @@ import java.util.Random
 //trait GAGenomeFactory  [G <: GAGenome] extends GenomeFactory [G] {
 //  def buildGenome (values: IndexedSeq [Double]) : G
  abstract class GAGenomeFactory  [G <: GAGenome] extends GenomeFactory [G] {
-  def buildGenome (v: IndexedSeq [Double]) : G =  new GAGenome {override val values = v}.asInstanceOf [G]
+  def buildGenome (v: IndexedSeq [Double]) : G 
   def buildRandomGenome (implicit aprng:Random) : G
 }
