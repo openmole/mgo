@@ -17,6 +17,7 @@ import org.openmole.tools.mgo.ga.operators._
 import org.openmole.tools.mgo.genomefactory._
 import org.openmole.tools.mgo.domination.diversity._
 import scala.math._
+import org.openmole.tools.mgo.tools.ScalingEngine
 
 import java.util.Random
 
@@ -35,7 +36,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       def this (v : IndexedSeq[Double]) = 
         this (v.take (v.size/2), v.takeRight (v.size/2))
       
-      def printValues = println((values ++ sigma).toString)    
+       
     }
     
     class GenomeSLocalSigmaFactory extends GenomeSigmaFactory[GenomeSLocal] {
@@ -43,8 +44,12 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
         new GenomeSLocal (v)
       }
       
-      override def buildFromValues(genome: GenomeSLocal, sigmaValues: IndexedSeq [Double]): GenomeSLocal = {
-        new GenomeSLocal(genome.values,sigmaValues)
+      override def buildFromValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
+        new GenomeSLocal(values,genome.sigma)
+      }
+      
+       override def buildFromWrappedValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
+        new GenomeSLocal(genome.values ++ values)
       }
         
       def buildRandomGenome (implicit aprng : Random) : GenomeSLocal = {
@@ -57,9 +62,9 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     class EvolveEngine(rng:Random, gaGenomeFactory:GenomeSLocalSigmaFactory){
     
       // Init operators
-      val randomMut = new RandomValuesMutation[GenomeSLocal,GenomeSLocalSigmaFactory](rate => 0.5d,gaGenomeFactory)
+      val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GenomeSLocalSigmaFactory](rate => 0.5d,gaGenomeFactory)
       val softMut = new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
-      val randomCross = new RandomCrossOver[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
+      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
     
       // Init evolution engine
       //FIXME : randomCross ne renvoie qu'un bout du genome du fait qu'il utilise la methode build genome ...
@@ -91,9 +96,17 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
         val genomeSize = genome.values.size
-        genome.printValues
-        val a = genome.values.map{x => x * x}.sum //sum(x(i)^2)
-        val b = genome.values.map{x => cos(2*Pi*x)}.sum //sum(cos(2*Pi*x(i)
+        
+        val max:Double = 0 
+        val min:Double = 1
+        val boundaryMax:Double = 30 
+        val boundaryMin:Double = -30
+       
+        println((genome.values ++ genome.sigma).map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.toString)
+                                      
+        
+        val a = genome.values.map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.map{x => x * x}.sum //sum(x(i)^2)
+        val b = genome.values.map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.map{x => cos(2*Pi*x)}.sum //sum(cos(2*Pi*x(i)
         val fx = 20 + exp(1) - 20*exp(-0.2*sqrt((1/genomeSize)*a))-exp((1/genomeSize)*b)      
     
         println("------ >> EVALUATION << -------------")
@@ -119,7 +132,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => gaGenomeFactory.buildRandomGenome(rng)}
     
     // Affichage genomes random
-    genomes.map{e=> e.printValues}
+    
     
     // Init de l'archive population, vide au premier tour
     var archive = new PopulationMG[GenomeSLocal](IndexedSeq.empty)

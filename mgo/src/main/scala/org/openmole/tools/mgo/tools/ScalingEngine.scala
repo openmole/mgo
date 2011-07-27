@@ -3,8 +3,7 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.model
-
+package org.openmole.tools.mgo.tools
 object ScalingEngine{
 
   def scale(v:Double,max:Double, min:Double,boundaryMax:Double,boundaryMin:Double):Double =  {
