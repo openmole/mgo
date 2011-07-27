@@ -15,7 +15,7 @@ object Test extends App {
   val funs  : IndexedSeq [ExprFactory] = IndexedSeq (Sum, Sub, Prod, Div, Sin, Cos)
   val terms : IndexedSeq [ExprFactory] = IndexedSeq (Num, Var ("t"))
   val data  : List [(Double, Double)]  = 
-    Source.fromFile ("/Users/Gabriel/data.txt").getLines map {l =>
+    Source.fromFile ("/iscpif/users/cardoso/data.txt").getLines map {l =>
       (l.split(';')(0).toDouble, l.split (';') (1).toDouble)} toList 
   val operators = 
     List (HoistMutation, new ShrinkMutation (terms), 
@@ -49,5 +49,5 @@ object Test extends App {
     new Individual (e, fitness (e))
   }
   
-  launch (List.par.fill (128) (generateRandomIndividual))
+  launch (List.fill (128) (generateRandomIndividual))
 }
