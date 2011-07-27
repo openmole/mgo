@@ -7,7 +7,11 @@ package org.openmole.tools.mgo.gp
 import java.util.Random
 import org.openmole.tools.mgo.AbstractGenome
 
-case class Var  (x : String) extends Expr
+case class Var (x : String) extends Expr with ExprFactory {
+  def buildGenome (e : List [Expr]) (implicit aprng : Random) : Expr = Var (x)
+  override def arity = 0
+}
+
 class PowVarsInt (vars : List [Var], min : Int, max : Int) extends ExprFactory {
   def buildGenome (e : List [Expr]) (implicit aprng : Random) : Expr =
     Pow (vars (aprng.nextInt (vars.size)), Num (min + aprng.nextInt (max - min)))
@@ -85,7 +89,7 @@ object Cos extends ExprFactory {
   def arity = 1
 }
 
-trait Expr extends AbstractGenome {
+abstract class Expr extends AbstractGenome {
   lazy val subtrees : List [Expr] = this match {
      case Num (n)       => Nil
      case Var (x)       => Nil

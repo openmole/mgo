@@ -9,7 +9,7 @@ import org.openmole.tools.mgo._
 import gp._
 import ExprGenerator._
 
-class HoistMutation extends Mutation [Expr, ExprFactory] {
+object HoistMutation extends Mutation [Expr, ExprFactory] {
   val factory = null
   override def operate (genomes : IndexedSeq [Expr])
     (implicit aprng : java.util.Random) : Expr =

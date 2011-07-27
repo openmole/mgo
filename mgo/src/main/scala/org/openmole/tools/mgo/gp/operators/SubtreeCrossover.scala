@@ -9,7 +9,7 @@ import org.openmole.tools.mgo._
 import gp._
 import ExprGenerator._
 
-object CrossingOver extends CrossOver [Expr, ExprFactory] {
+object SubtreeCrossOver extends CrossOver [Expr, ExprFactory] {
   val factory = null
   override def operate (genomes : IndexedSeq [Expr]) 
     (implicit aprng : java.util.Random) : Expr = {

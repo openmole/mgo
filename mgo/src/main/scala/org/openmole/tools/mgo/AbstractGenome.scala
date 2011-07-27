@@ -5,4 +5,4 @@
 
 package org.openmole.tools.mgo
 
-abstract class AbstractGenome
+trait AbstractGenome
