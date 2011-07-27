@@ -23,7 +23,7 @@ import org.openmole.tools.mgo.model._
 
 import java.util.Random
 
-class EvolutionEngine[G <: AbstractGenome,F <: GenomeFactory[G]](operations: Operator[G,F]*) {
+class EvolutionEngine[G <: AbstractGenome, F <: GenomeFactory[G]](operations: Operator [G,F]*) {
   
   def apply(genomes: IndexedSeq[G])(implicit aprng: Random): G = {
     val operation = operations(aprng.nextInt(operations.size))

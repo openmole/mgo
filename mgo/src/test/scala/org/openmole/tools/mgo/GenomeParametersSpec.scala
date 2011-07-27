@@ -31,7 +31,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     class GenomeSLocal(
       override val values : IndexedSeq[Double],
       override val sigma  : IndexedSeq[Double]) 
-    extends GAGenome with SigmaParameters {
+      extends GAGenome with SigmaParameters {
       
       def this (v : IndexedSeq[Double]) = 
         this (v.take (v.size/2), v.takeRight (v.size/2))
@@ -39,7 +39,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
        
     }
     
-    class GenomeSLocalSigmaFactory extends GenomeSigmaFactory[GenomeSLocal] {
+    object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
       override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
         new GenomeSLocal (v)
       }
@@ -59,20 +59,24 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       }
     }
     
-    class EvolveEngine(rng:Random, gaGenomeFactory:GenomeSLocalSigmaFactory){
+    class EvolveEngine(rng:Random){
     
       // Init operators
-      val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GenomeSLocalSigmaFactory](rate => 0.5d,gaGenomeFactory)
-      val softMut = new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
-      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
-    
+
+      val randomMut = 
+        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSLocalSigmaFactory](rate => 0.5d,gaGenomeFactory)
+      val softMut = 
+        new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
+      val randomCross = 
+        new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
+
       // Init evolution engine
       //FIXME : randomCross ne renvoie qu'un bout du genome du fait qu'il utilise la methode build genome ...
       //FIXME : les autres mutations utilise buildFromValues, et retourne deux valeurs, mais que se passe t il si on a n parametres au lieu d'un seul ?
-      val evolutionEngine = new EvolutionEngine[GenomeSLocal,GenomeSLocalSigmaFactory](randomMut,softMut,randomCross)
+      val evolutionEngine = new EvolutionEngine (randomMut,softMut,randomCross)
       
       // Select function Individual[GenomeDouble,_]
-      def select(population: PopulationMG[GenomeSLocal],nbSlot: Int):Iterable[IndividualMG[GenomeSLocal,_]] = {   
+      def select(population: PopulationMG[GenomeSLocal], nbSlot: Int) : Iterable[IndividualMG[GenomeSLocal,_]] = {   
         FitnessByRank.selectByFitnessAndCrowding(population.individuals,nbSlot)
       }
     
@@ -123,10 +127,10 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     val rng = new Random
     
     //Init Factory
-    val gaGenomeFactory = new GenomeSLocalSigmaFactory
+    val gaGenomeFactory = GenomeSLocalSigmaFactory
     
     //Init Engine 
-    val evolveEngine = new EvolveEngine(rng:Random, gaGenomeFactory)
+    val evolveEngine = new EvolveEngine(rng:Random)
     
     // Init random population
     var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => gaGenomeFactory.buildRandomGenome(rng)}
