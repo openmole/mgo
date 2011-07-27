@@ -34,6 +34,8 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       
       def this (v : IndexedSeq[Double]) = 
         this (v.take (v.size/2), v.takeRight (v.size/2))
+      
+      def printValues = println((values ++ sigma).toString)    
     }
     
     class GenomeSLocalSigmaFactory extends GenomeSigmaFactory[GenomeSLocal] {
@@ -46,8 +48,8 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       }
         
       def buildRandomGenome (implicit aprng : Random) : GenomeSLocal = {
-        var values = (0 until 5).map{_ => aprng.nextDouble}.toIndexedSeq
-        var sigma = (0 until 5).map{_ => aprng.nextDouble}.toIndexedSeq
+        var values = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
+        var sigma = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
         new GenomeSLocal(values, sigma)
       }
     }
@@ -55,19 +57,20 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     class EvolveEngine(rng:Random, gaGenomeFactory:GenomeSLocalSigmaFactory){
     
       // Init operators
-      val randomMut = new RandomValuesMutation[GenomeSLocal,GenomeSLocalSigmaFactory](rate => 0.3d,gaGenomeFactory)
+      val randomMut = new RandomValuesMutation[GenomeSLocal,GenomeSLocalSigmaFactory](rate => 0.5d,gaGenomeFactory)
       val softMut = new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
       val randomCross = new RandomCrossOver[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
     
       // Init evolution engine
+      //FIXME : randomCross ne renvoie qu'un bout du genome du fait qu'il utilise la methode build genome ...
+      //FIXME : les autres mutations utilise buildFromValues, et retourne deux valeurs, mais que se passe t il si on a n parametres au lieu d'un seul ?
       val evolutionEngine = new EvolutionEngine[GenomeSLocal,GenomeSLocalSigmaFactory](randomMut,softMut,randomCross)
       
-// Select function Individual[GenomeDouble,_]
+      // Select function Individual[GenomeDouble,_]
       def select(population: PopulationMG[GenomeSLocal],nbSlot: Int):Iterable[IndividualMG[GenomeSLocal,_]] = {   
         FitnessByRank.selectByFitnessAndCrowding(population.individuals,nbSlot)
       }
-     // def selectByFitnessAndCrowding[MG <: MultiGoalLike](toSelect: IndexedSeq[MG], resPopSize: Int): IndexedSeq[MG] = {
-
+    
       //Evolve function
       def evolve(population: PopulationMG[GenomeSLocal],sizeOfNewPop:Int):IndexedSeq[GenomeSLocal] = {
         evolutionEngine.apply(population.toGenomes.toIndexedSeq,sizeOfNewPop)(rng)
@@ -88,6 +91,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
         val genomeSize = genome.values.size
+        genome.printValues
         val a = genome.values.map{x => x * x}.sum //sum(x(i)^2)
         val b = genome.values.map{x => cos(2*Pi*x)}.sum //sum(cos(2*Pi*x(i)
         val fx = 20 + exp(1) - 20*exp(-0.2*sqrt((1/genomeSize)*a))-exp((1/genomeSize)*b)      
@@ -112,18 +116,31 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     val evolveEngine = new EvolveEngine(rng:Random, gaGenomeFactory)
     
     // Init random population
-    var genomes = (0 until 100).map{_ => gaGenomeFactory.buildRandomGenome(rng)}
+    var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => gaGenomeFactory.buildRandomGenome(rng)}
     
+    // Affichage genomes random
+    genomes.map{e=> e.printValues}
     
-    val populationStart = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
-
+    // Init de l'archive population, vide au premier tour
+    var archive = new PopulationMG[GenomeSLocal](IndexedSeq.empty)
+    
     //Generation evolve
-    /*for (i <- 0 to 50){
-      evolveEngine.merge
-      evolveEngine.select
-      evolveEngine.evolve
+    for (i <- 0 to 1){
+      //Evaluation de la fitness et création des individu a partir des genomes
+      var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
+    
+      // Merge de l'ancienne et de la nouvelle population
+      var mergedPopulation = evolveEngine.mergePopulation(population, archive)
       
-    }*/
+      //Selection des meilleurs individus dans la population merged
+      var bestPop = new PopulationMG[GenomeSLocal](evolveEngine.select(mergedPopulation,5).toIndexedSeq)
+      
+      //Multiplication des meilleurs éléments entres eux pour former une nouvelle population de genome
+      genomes = evolveEngine.evolve(bestPop,10)
+      
+      archive = bestPop
+     
+    }
 
     
   
