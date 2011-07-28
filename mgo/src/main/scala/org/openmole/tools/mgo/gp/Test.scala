@@ -15,7 +15,7 @@ object Test extends App {
   val funs  : IndexedSeq [ExprFactory] = IndexedSeq (Sum, Sub, Prod, Div, Sin, Cos)
   val terms : IndexedSeq [ExprFactory] = IndexedSeq (Num, new VarFactory ("t"))
   val data  : List [(Double, Double)]  = 
-    Source.fromFile ("/Users/Gabriel/data.txt").getLines map {l =>
+    Source.fromFile ("/iscpif/users/cardoso/data.txt").getLines map {l =>
       (l.split(';')(0).toDouble, l.split (';') (1).toDouble)} toList 
   val operators = 
     List (HoistMutation, new ShrinkMutation (terms), 
@@ -48,6 +48,6 @@ object Test extends App {
     val e = ExprGenerator.genExpr (funs, terms, 6, "full")
     new Individual (e, fitness (e))
   }
-  println ((Sum (Num (1), Sum (Num (1), Num (1)))).size)
+
   launch (List.fill (128) (generateRandomIndividual))
 }

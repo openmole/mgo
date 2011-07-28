@@ -10,4 +10,4 @@ import org.openmole.tools.mgo._
 
 trait GenomeSigmaFactory [G <: GAGenome with SigmaParameters]
   extends GAGenomeFactory [G] 
-  with FromValuesFactory [G]
+ 

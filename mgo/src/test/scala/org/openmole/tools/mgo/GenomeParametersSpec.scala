@@ -6,6 +6,7 @@ import org.scalatest.matchers.ShouldMatchers
 import java.util.Random
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.evolution._
 import org.openmole.tools.mgo.ga._
@@ -17,6 +18,7 @@ import org.openmole.tools.mgo.ga.operators._
 import org.openmole.tools.mgo.genomefactory._
 import org.openmole.tools.mgo.domination.diversity._
 import scala.math._
+import org.openmole.tools.mgo.tools.ScalingEngine
 
 import java.util.Random
 
@@ -26,7 +28,9 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
   "GenomeParameters " should "create and initialize with good values" in {
     
     
-    
+    ////////////////////////////////
+    // GENOME SLOCAL
+    ////////////////////////////////    
     class GenomeSLocal(
       override val values : IndexedSeq[Double],
       override val sigma  : IndexedSeq[Double]) 
@@ -34,17 +38,23 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       
       def this (v : IndexedSeq[Double]) = 
         this (v.take (v.size/2), v.takeRight (v.size/2))
-      
-      def printValues = println((values ++ sigma).toString)    
+       
     }
     
-    class GenomeSLocalSigmaFactory extends GenomeSigmaFactory[GenomeSLocal] {
+    ////////////////////////////////
+    // GENOME SIGMA FACTORY
+    ////////////////////////////////
+    object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
       override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
         new GenomeSLocal (v)
       }
       
-      override def buildFromValues(genome: GenomeSLocal, sigmaValues: IndexedSeq [Double]): GenomeSLocal = {
-        new GenomeSLocal(genome.values,sigmaValues)
+      override def buildFromValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
+        new GenomeSLocal(values,genome.sigma)
+      }
+      
+      override def buildFromWrappedValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
+        new GenomeSLocal(genome.values ++ values)
       }
         
       def buildRandomGenome (implicit aprng : Random) : GenomeSLocal = {
@@ -54,26 +64,31 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       }
     }
     
-    class EvolveEngine(rng:Random, gaGenomeFactory:GenomeSLocalSigmaFactory){
+    ////////////////////////////////
+    // GA ENGINE
+    ////////////////////////////////
+    object EvolveEngine{
     
-      // Init operators
-      val randomMut = new RandomValuesMutation[GenomeSLocal,GenomeSLocalSigmaFactory](rate => 0.5d,gaGenomeFactory)
-      val softMut = new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
-      val randomCross = new RandomCrossOver[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
-    
+      val randomMut = 
+        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](rate => 0.5d,factory)
+      val softMut = 
+        new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](factory)
+      val randomCross = 
+        new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](factory)
+
       // Init evolution engine
       //FIXME : randomCross ne renvoie qu'un bout du genome du fait qu'il utilise la methode build genome ...
       //FIXME : les autres mutations utilise buildFromValues, et retourne deux valeurs, mais que se passe t il si on a n parametres au lieu d'un seul ?
-      val evolutionEngine = new EvolutionEngine[GenomeSLocal,GenomeSLocalSigmaFactory](randomMut,softMut,randomCross)
+      val evolutionEngine = new EvolutionEngine (randomMut,softMut,randomCross)
       
       // Select function Individual[GenomeDouble,_]
-      def select(population: PopulationMG[GenomeSLocal],nbSlot: Int):Iterable[IndividualMG[GenomeSLocal,_]] = {   
+      def select(population: PopulationMG[GenomeSLocal], nbSlot: Int) : Iterable[IndividualMG[GenomeSLocal,_]] = {   
         FitnessByRank.selectByFitnessAndCrowding(population.individuals,nbSlot)
       }
     
       //Evolve function
-      def evolve(population: PopulationMG[GenomeSLocal],sizeOfNewPop:Int):IndexedSeq[GenomeSLocal] = {
-        evolutionEngine.apply(population.toGenomes.toIndexedSeq,sizeOfNewPop)(rng)
+      def evolve(population: PopulationMG[GenomeSLocal],sizeOfNewPop:Int)(implicit aprng: Random):IndexedSeq[GenomeSLocal] = {
+        evolutionEngine.apply(population.toGenomes.toIndexedSeq,sizeOfNewPop)
       }
     
       //New archive
@@ -91,9 +106,17 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
         val genomeSize = genome.values.size
-        genome.printValues
-        val a = genome.values.map{x => x * x}.sum //sum(x(i)^2)
-        val b = genome.values.map{x => cos(2*Pi*x)}.sum //sum(cos(2*Pi*x(i)
+        
+        val max:Double = 0 
+        val min:Double = 1
+        val boundaryMax:Double = 30 
+        val boundaryMin:Double = -30
+       
+        println((genome.values ++ genome.sigma).map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.toString)
+                                      
+        
+        val a = genome.values.map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.map{x => x * x}.sum //sum(x(i)^2)
+        val b = genome.values.map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.map{x => cos(2*Pi*x)}.sum //sum(cos(2*Pi*x(i)
         val fx = 20 + exp(1) - 20*exp(-0.2*sqrt((1/genomeSize)*a))-exp((1/genomeSize)*b)      
     
         println("------ >> EVALUATION << -------------")
@@ -107,19 +130,17 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     
     // MAIN 
     
-    val rng = new Random
+    implicit val aprng = new Random
+
+    // Init Factory
+    implicit val factory = GenomeSLocalSigmaFactory
     
-    //Init Factory
-    val gaGenomeFactory = new GenomeSLocalSigmaFactory
-    
-    //Init Engine 
-    val evolveEngine = new EvolveEngine(rng:Random, gaGenomeFactory)
+    // Init Engine
+    implicit val evolveEngine =  EvolveEngine 
     
     // Init random population
-    var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => gaGenomeFactory.buildRandomGenome(rng)}
+    var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => factory.buildRandomGenome}
     
-    // Affichage genomes random
-    genomes.map{e=> e.printValues}
     
     // Init de l'archive population, vide au premier tour
     var archive = new PopulationMG[GenomeSLocal](IndexedSeq.empty)
@@ -130,19 +151,17 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
     
       // Merge de l'ancienne et de la nouvelle population
-      var mergedPopulation = evolveEngine.mergePopulation(population, archive)
+      var mergedPopulation = EvolveEngine.mergePopulation(population, archive)
       
       //Selection des meilleurs individus dans la population merged
-      var bestPop = new PopulationMG[GenomeSLocal](evolveEngine.select(mergedPopulation,5).toIndexedSeq)
+      var bestPop = new PopulationMG[GenomeSLocal](EvolveEngine.select(mergedPopulation,5).toIndexedSeq)
       
       //Multiplication des meilleurs éléments entres eux pour former une nouvelle population de genome
-      genomes = evolveEngine.evolve(bestPop,10)
+      genomes = EvolveEngine.evolve(bestPop,10)
       
       archive = bestPop
      
     }
-
-    
   
   }
 }
