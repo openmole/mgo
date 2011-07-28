@@ -13,7 +13,7 @@ import scala.io.Source
 object Test extends App {
   implicit val aprng = new java.util.Random
   val funs  : IndexedSeq [ExprFactory] = IndexedSeq (Sum, Sub, Prod, Div, Sin, Cos)
-  val terms : IndexedSeq [ExprFactory] = IndexedSeq (Num, Var ("t"))
+  val terms : IndexedSeq [ExprFactory] = IndexedSeq (Num, new VarFactory ("t"))
   val data  : List [(Double, Double)]  = 
     Source.fromFile ("/Users/Gabriel/data.txt").getLines map {l =>
       (l.split(';')(0).toDouble, l.split (';') (1).toDouble)} toList 
@@ -48,6 +48,6 @@ object Test extends App {
     val e = ExprGenerator.genExpr (funs, terms, 6, "full")
     new Individual (e, fitness (e))
   }
-  
-  launch (List.par.fill (128) (generateRandomIndividual))
+  println ((Sum (Num (1), Sum (Num (1), Num (1)))).size)
+  launch (List.fill (128) (generateRandomIndividual))
 }

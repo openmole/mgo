@@ -19,14 +19,14 @@ object ExprGenerator {
     (vars :+ (Num ((aprng.nextDouble * (max - min)) + min))) apply (aprng.nextInt(vars.size+1))
   }
   
-  def genExpr (funs : IndexedSeq [ExprFactory], terms : IndexedSeq [ExprFactory], 
+  def genExpr (funs : IndexedSeq [ExprFactory], terms : IndexedSeq [ExprFactory],
                depth : Int, method : String) (implicit aprng : Random) : Expr = {
     if (depth == 0 || (method == "grow" &&
                        aprng.nextFloat < (terms.size / (terms.size + funs.size)))) 
-      terms (aprng.nextInt (terms.size)).buildGenome (Nil)
+      terms (aprng.nextInt (terms.size)) (Nil:_*)
     else {
       val f = funs (aprng.nextInt (funs.size))
-      f buildGenome (List.fill (f.arity) (genExpr (funs, terms, depth - 1, method)))
+      f apply (List.fill (f.arity) (genExpr (funs, terms, depth - 1, method)):_*)
     }
     
   }

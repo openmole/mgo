@@ -19,7 +19,7 @@ object SubtreeCrossOver extends CrossOver [Expr, ExprFactory] {
       if (t1.depth >= t2.depth) (t1, t2) else (t2, t1)
     val i = aprng.nextInt (shallow.size)
     val depth = shallow.getDepth(i)
-    val subtrees = deeper.subtreesAtDepth(depth)
+    val subtrees = deeper.subtreesAtDepth (depth)
     shallow.replaceSubtreeWith(i, subtrees (aprng.nextInt (subtrees.size)))
   }
 }

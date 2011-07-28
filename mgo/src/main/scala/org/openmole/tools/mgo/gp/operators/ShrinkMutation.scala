@@ -15,6 +15,6 @@ class ShrinkMutation (terms : IndexedSeq [ExprFactory])
     (implicit aprng : java.util.Random) : Expr = {
     val rpl = terms (aprng.nextInt (terms.size))
     replaceRandomSubtreeWith (genomes (aprng.nextInt (genomes.size)), 
-                              rpl.buildGenome (Nil))
+                              rpl ())
   }
 }
