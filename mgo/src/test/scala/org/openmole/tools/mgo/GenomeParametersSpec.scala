@@ -87,8 +87,8 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       }
     
       //Evolve function
-      def evolve(population: PopulationMG[GenomeSLocal],sizeOfNewPop:Int):IndexedSeq[GenomeSLocal] = {
-        evolutionEngine.apply(population.toGenomes.toIndexedSeq,sizeOfNewPop)(aprng)
+      def evolve(population: PopulationMG[GenomeSLocal],sizeOfNewPop:Int)(implicit aprng: Random):IndexedSeq[GenomeSLocal] = {
+        evolutionEngine.apply(population.toGenomes.toIndexedSeq,sizeOfNewPop)
       }
     
       //New archive
@@ -139,7 +139,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     implicit val evolveEngine =  EvolveEngine 
     
     // Init random population
-    var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => factory.buildRandomGenome(aprng)}
+    var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => factory.buildRandomGenome}
     
     
     // Init de l'archive population, vide au premier tour
