@@ -6,6 +6,7 @@ import org.scalatest.matchers.ShouldMatchers
 import java.util.Random
 import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
+
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.evolution._
 import org.openmole.tools.mgo.ga._
@@ -27,18 +28,22 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
   "GenomeParameters " should "create and initialize with good values" in {
     
     
-    
+    ////////////////////////////////
+    // GENOME SLOCAL
+    ////////////////////////////////    
     class GenomeSLocal(
       override val values : IndexedSeq[Double],
       override val sigma  : IndexedSeq[Double]) 
-      extends GAGenome with SigmaParameters {
+    extends GAGenome with SigmaParameters {
       
       def this (v : IndexedSeq[Double]) = 
         this (v.take (v.size/2), v.takeRight (v.size/2))
-      
        
     }
     
+    ////////////////////////////////
+    // GENOME SIGMA FACTORY
+    ////////////////////////////////
     object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
       override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
         new GenomeSLocal (v)
@@ -48,7 +53,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
         new GenomeSLocal(values,genome.sigma)
       }
       
-       override def buildFromWrappedValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
+      override def buildFromWrappedValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
         new GenomeSLocal(genome.values ++ values)
       }
         
@@ -59,16 +64,17 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       }
     }
     
-    class EvolveEngine(rng:Random){
+    ////////////////////////////////
+    // GA ENGINE
+    ////////////////////////////////
+    object EvolveEngine{
     
-      // Init operators
-
       val randomMut = 
-        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSLocalSigmaFactory](rate => 0.5d,gaGenomeFactory)
+        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](rate => 0.5d,factory)
       val softMut = 
-        new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
+        new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](factory)
       val randomCross = 
-        new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSLocalSigmaFactory](gaGenomeFactory)
+        new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](factory)
 
       // Init evolution engine
       //FIXME : randomCross ne renvoie qu'un bout du genome du fait qu'il utilise la methode build genome ...
@@ -82,7 +88,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     
       //Evolve function
       def evolve(population: PopulationMG[GenomeSLocal],sizeOfNewPop:Int):IndexedSeq[GenomeSLocal] = {
-        evolutionEngine.apply(population.toGenomes.toIndexedSeq,sizeOfNewPop)(rng)
+        evolutionEngine.apply(population.toGenomes.toIndexedSeq,sizeOfNewPop)(aprng)
       }
     
       //New archive
@@ -124,18 +130,16 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
     
     // MAIN 
     
-    val rng = new Random
+    implicit val aprng = new Random
+
+    // Init Factory
+    implicit val factory = GenomeSLocalSigmaFactory
     
-    //Init Factory
-    val gaGenomeFactory = GenomeSLocalSigmaFactory
-    
-    //Init Engine 
-    val evolveEngine = new EvolveEngine(rng:Random)
+    // Init Engine
+    implicit val evolveEngine =  EvolveEngine 
     
     // Init random population
-    var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => gaGenomeFactory.buildRandomGenome(rng)}
-    
-    // Affichage genomes random
+    var genomes:IndexedSeq[GenomeSLocal] = (0 until 10).map{_ => factory.buildRandomGenome(aprng)}
     
     
     // Init de l'archive population, vide au premier tour
@@ -147,19 +151,17 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
     
       // Merge de l'ancienne et de la nouvelle population
-      var mergedPopulation = evolveEngine.mergePopulation(population, archive)
+      var mergedPopulation = EvolveEngine.mergePopulation(population, archive)
       
       //Selection des meilleurs individus dans la population merged
-      var bestPop = new PopulationMG[GenomeSLocal](evolveEngine.select(mergedPopulation,5).toIndexedSeq)
+      var bestPop = new PopulationMG[GenomeSLocal](EvolveEngine.select(mergedPopulation,5).toIndexedSeq)
       
       //Multiplication des meilleurs éléments entres eux pour former une nouvelle population de genome
-      genomes = evolveEngine.evolve(bestPop,10)
+      genomes = EvolveEngine.evolve(bestPop,10)
       
       archive = bestPop
      
     }
-
-    
   
   }
 }
