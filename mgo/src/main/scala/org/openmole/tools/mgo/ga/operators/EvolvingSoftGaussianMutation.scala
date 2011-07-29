@@ -7,14 +7,13 @@ package org.openmole.tools.mgo.ga.operators
 
 import org.openmole.tools.mgo._
 import ga._
-import genomefactory._
 import tools.Math._
 import tools.Random._
 import java.util.Random
 
 class EvolvingSoftGaussianMutation [G <: GAGenome with SigmaParameters, 
-                                    F <: GenomeSigmaFactory [G]] (
-  val factory : F) extends Mutation [G, F] {
+                                    F <: GAGenomeFactory [G]] (
+  implicit val factory : F) extends Mutation [G, F] {
 
   //http://c-faq.com/lib/gaussian.html
   //http://www.developpez.net/forums/d331848/autres-langages/algorithmes/contribuez/generation-nombre-aleatoire-suivant-loi-gaussienne/

@@ -9,7 +9,7 @@ import org.openmole.tools.mgo._
 import ga._
 import java.util.Random
 
-class RandomWrappedValuesCrossOver [G <: GAGenome, F <: GAGenomeFactory [G]] (val factory : F)
+class RandomWrappedValuesCrossOver [G <: GAGenome, F <: GAGenomeFactory [G]] (implicit val factory : F)
   extends CrossOver [G, F] {
   def operate (genomes : IndexedSeq [G]) (implicit aprng : Random) : G = {
     val g1 = genomes (aprng.nextInt(genomes.size))

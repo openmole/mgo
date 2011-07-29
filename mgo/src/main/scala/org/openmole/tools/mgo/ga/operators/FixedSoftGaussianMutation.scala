@@ -13,7 +13,7 @@ import java.util.Random
 
 class FixedSoftGaussianMutation [G <: GAGenome, F <: GAGenomeFactory [G]] (
   sigma : Double, 
-  val factory : F) 
+  implicit val factory : F) 
   extends Mutation [G, F] {
 
   override def operate (genomes:IndexedSeq[G]) (implicit aprng: Random) : G = {
