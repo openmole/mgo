@@ -20,7 +20,7 @@ class RandomWrappedValuesMutation [
   override def operate(genomes: IndexedSeq[G])(implicit aprng: Random): G = {
    
     //val mutationRate = rate(aprng)
-    val mutationRate = 0.3
+    val mutationRate = 0.6
     val genome = genomes.random
     
     val newValues = genome.wrappedValues map { v => 
@@ -28,7 +28,7 @@ class RandomWrappedValuesMutation [
         aprng.nextDouble
       else v }
     
-    return factory.buildFromWrappedValues (genome,newValues)
+    return factory.buildGenome (newValues)
   }
   
 }
