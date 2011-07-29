@@ -9,6 +9,6 @@ import org.openmole.tools.mgo.AbstractGenome
 
 trait GAGenome extends AbstractGenome {
   //def position = 0
-  def wrappedValues = values
-  def values: IndexedSeq [Double] 
+  val wrappedValues = values
+  val values : IndexedSeq [Double] 
 }

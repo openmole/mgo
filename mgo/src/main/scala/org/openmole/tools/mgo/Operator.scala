@@ -8,6 +8,6 @@ package org.openmole.tools.mgo
 import java.util.Random
 
 abstract class Operator[G <: AbstractGenome, F <: GenomeFactory[G]] {  
-  val factory: F
+  implicit val factory: F
   def operate (genomes: IndexedSeq[G]) (implicit aprng : Random): G 
 }

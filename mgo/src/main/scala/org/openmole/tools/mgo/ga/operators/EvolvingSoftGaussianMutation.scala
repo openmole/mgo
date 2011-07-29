@@ -7,12 +7,13 @@ package org.openmole.tools.mgo.ga.operators
 
 import org.openmole.tools.mgo._
 import ga._
+import org.openmole.tools.mgo.genomefactory.GenomeSigmaFactory
 import tools.Math._
 import tools.Random._
 import java.util.Random
 
 class EvolvingSoftGaussianMutation [G <: GAGenome with SigmaParameters, 
-                                    F <: GAGenomeFactory [G]] (
+                                    F <: GenomeSigmaFactory [G]] (
   implicit val factory : F) extends Mutation [G, F] {
 
   //http://c-faq.com/lib/gaussian.html
