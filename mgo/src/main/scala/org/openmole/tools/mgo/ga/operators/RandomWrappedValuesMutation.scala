@@ -19,9 +19,14 @@ class RandomWrappedValuesMutation [
   
   override def operate(genomes: IndexedSeq[G])(implicit aprng: Random): G = {
    
+    /* @todo Faire marcher le mutation rate .... pour qu'il puisse etre passé en parametre */
+    
     //val mutationRate = rate(aprng)
     val mutationRate = 0.6
     val genome = genomes.random
+    
+     /* @todo Faire en sorte d'utiliser plutot un genome généré par buildRandomGenome, 
+     * plutot qu'une valeur tiré au hasard avec aprng... */
     
     val newValues = genome.wrappedValues map { v => 
       if (aprng.nextDouble < mutationRate) 

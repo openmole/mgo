@@ -23,9 +23,9 @@ import org.openmole.tools.mgo.tools.ScalingEngine
 import java.util.Random
 
 @RunWith(classOf[JUnitRunner])
-class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
+class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
 
-  "GenomeParameters " should "create and initialize with good values" in {
+  "GenomeParametersSchafferF6Spec " should "create and initialize with good values" in {
     
     
     ////////////////////////////////
@@ -61,6 +61,10 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       override def buildFromWrappedValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
         new GenomeSLocal(genome.values ++ values)
       }
+      
+      override def buildFromSigmaValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
+        new GenomeSLocal(genome.values,values)
+      }
         
       def buildRandomGenome (implicit aprng : Random) : GenomeSLocal = {
         var values = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
@@ -77,13 +81,11 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
      val randomMut = 
         new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(rate => 0.5d,GenomeSLocalSigmaFactory)
       val softMut = 
-        new EvolvingSoftGaussianMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
+        new CoEvolvingSigmaValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
       val randomCross = 
         new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
 
       // Init evolution engine
-      //FIXME : randomCross ne renvoie qu'un bout du genome du fait qu'il utilise la methode build genome ...
-      //FIXME : les autres mutations utilise buildFromValues, et retourne deux valeurs, mais que se passe t il si on a n parametres au lieu d'un seul ?
       val evolutionEngine = new EvolutionEngine (softMut,randomCross,randomMut)
       
       // Select function Individual[GenomeDouble,_]
@@ -107,35 +109,36 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       }
     }
     
-    // http://tracer.lcc.uma.es/problems/ackley/ackley.html
+    /* This is the Schaffer F6 Function
+       This function has been conceived by Schaffer, it's a 
+       multimodal function and it's hard for GAs due to the
+       large number of local minima, the global minimum is
+       at x=0,y=0 and there are many local minima around it*/
+     
+    //http://zhanggw.wordpress.com/2010/09/25/optimization-schaffer-f6-function-using-basic-genetic-algorithm-2/
+      
       object IndividuFactory {
       def build(genome:GenomeSLocal):IndividualMG[GenomeSLocal,MultiGoal] = {
-    
+        
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
         val genomeSize:Double = genome.values.size
-        
+         
         val max:Double = 0 
         val min:Double = 1
-        val boundaryMax:Double = 30 
-        val boundaryMin:Double = -30
+        val boundaryMax:Double = 100 
+        val boundaryMin:Double = -100
+        
+        val valGen1 = ScalingEngine.scale(genome.values(0),max, min,boundaryMax,boundaryMin)
+        val valGen2 = ScalingEngine.scale(genome.values(1),max, min,boundaryMax,boundaryMin)
+        
+        val t1 = sin(sqrt(pow(valGen1,2) + pow(valGen2,2)));
+        val t2 = 1.0 + 0.001*(pow(valGen1,2)+ pow(valGen2,2));
+        val fx = 0.5 + (t1*t1 - 0.5)/(t2*t2)
+
        
         //println((genome.values ++ genome.sigma).map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.toString)        
         
-        val a = genome.values.map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.map{x => pow(x,2.)}.sum //sum(x(i)^2)
-        val b = genome.values.map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.map{x => cos(2.*Pi*x)}.sum //sum(cos(2*Pi*x(i)
-        val exp1 = exp( (-0.2) * sqrt((1./genomeSize.toDouble)*a))
-        val exp2 = exp((1./genomeSize.toDouble)*b) 
-        val fx = 20.+ math.E - (20. * exp1) - exp2
-        //val result = 1.0 / (1.0 + fx)
-
-        
-        /*println("------ >> EVALUATION << -------------")
-        println( "a > " + a)
-        println( "b > " + b)
-        println( "t1 > " + t1)
-        println( "t2 > " + t2)
-        println( "fx > " + fx)
-        println("-------------------------------------")*/
+        //println( "fx > " + fx)
   
         val fitness = MultiGoal.buildDouble(fx)
         return (new IndividualMG(genome,fitness))
@@ -149,14 +152,14 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
 
     
     // Init random population
-    var genomes:IndexedSeq[GenomeSLocal] = (0 until 500).map{_ => GenomeSLocalSigmaFactory.buildRandomGenome}
+    var genomes:IndexedSeq[GenomeSLocal] = (0 until 100).map{_ => GenomeSLocalSigmaFactory.buildRandomGenome}
     
     
     // Init de l'archive population, vide au premier tour
     var archive = new PopulationMG[GenomeSLocal](IndexedSeq.empty)
     
     //Generation evolve
-    for (i <- 0 to 1000){
+    for (i <- 0 to 8000){
       //Evaluation de la fitness et création des individu a partir des genomes
       //println("Evaluate fitness to make new population of individuals")
       var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
@@ -171,7 +174,7 @@ class GenomeParametersSpec extends FlatSpec with ShouldMatchers{
       
       //Multiplication des meilleurs éléments entres eux pour former une nouvelle population de genome
       //println("Generate a new list of genomes with this best population")
-      genomes = EvolveEngine.evolve(bestPop,500)
+      genomes = EvolveEngine.evolve(bestPop,100)
       
       //println("new list > " + genomes.map{e=> e.wrappedValues})
        

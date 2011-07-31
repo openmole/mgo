@@ -11,7 +11,7 @@ import tools.Random._
 import tools.Math._
 import java.util.Random
 
-class FixedSoftGaussianMutation [G <: GAGenome, F <: GAGenomeFactory [G]] (
+class FixedGaussianMutation [G <: GAGenome, F <: GAGenomeFactory [G]] (
   sigma : Double, 
   implicit val factory : F) 
   extends Mutation [G, F] {

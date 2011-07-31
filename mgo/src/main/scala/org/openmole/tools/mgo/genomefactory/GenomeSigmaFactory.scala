@@ -12,4 +12,5 @@ trait GenomeSigmaFactory [G <: GAGenome with SigmaParameters]
   extends GAGenomeFactory [G]
   with FromValuesFactory [G]
   with FromWrappedValuesFactory [G]
+  with FromSigmaValuesFactory [G]
  
