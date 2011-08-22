@@ -159,7 +159,7 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
     var archive = new PopulationMG[GenomeSLocal](IndexedSeq.empty)
     
     //Generation evolve
-    for (i <- 0 to 8000){
+    for (i <- 0 to 1000){
       //Evaluation de la fitness et création des individu a partir des genomes
       //println("Evaluate fitness to make new population of individuals")
       var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})

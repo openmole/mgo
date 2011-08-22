@@ -59,9 +59,8 @@ object FitnessByRank {
     val ret = new ArrayBuffer[MG](resPopSize)
     // Collection<T> ret = new LinkedList<T>();
 
-
     while(resPopSize >= ret.size + curFront.size) {
-       println(curFront.size)
+       println("size of current front > " + curFront.size)
     
       val nextFront = new ListBuffer[Int]
       for(p <- curFront) {
@@ -73,11 +72,27 @@ object FitnessByRank {
         }
       }
       curFront = nextFront
-    }
+      
+      println("curFront => ")
+      println(curFront.map{toSelect(_)}.orderByDecreasingCrowding)
 
+    }
+    
+    println("-----------------------------------")
+    println("RET EQUAL")
+    var i = 0
+      
+    for(elt <- curFront.map{toSelect(_)}.orderByDecreasingCrowding) {
+      i+= 1
+      println("i"+i+" > " + elt._1.toString)
+    }
+    println("-----------------------------------")
+    
     for(elt <- curFront.map{toSelect(_)}.orderByDecreasingCrowding) {
       ret += elt._1
-      if(ret.size >= resPopSize) return ret
+      if(ret.size >= resPopSize) {
+    return ret
+      }
     }
 
     return ret

@@ -25,12 +25,11 @@ class RandomWrappedValuesMutation [
     val mutationRate = 0.6
     val genome = genomes.random
     
-     /* @todo Faire en sorte d'utiliser plutot un genome généré par buildRandomGenome, 
-     * plutot qu'une valeur tiré au hasard avec aprng... */
-    
-    val newValues = genome.wrappedValues map { v => 
+    val randomGenome = factory.buildRandomGenome
+    val valMutationZipped = genome.wrappedValues.zip(randomGenome.wrappedValues)   
+    val newValues = valMutationZipped map { case(v,vrg) => 
       if (aprng.nextDouble < mutationRate) 
-        aprng.nextDouble
+        vrg
       else v }
     
     return factory.buildGenome (newValues)

@@ -22,6 +22,7 @@ class CoEvolvingSigmaValuesMutation [G <: GAGenome with SigmaParameters,
     val newValues:IndexedSeq[Double] = (genome.values zip indexedSeqSigma) map {
       case (v, s) => clamp (aprng.nextGaussian * s + v, 0, 1)}
     
+    //@todo : Probleme ici, on ne rajoute pas la valeur spécifique au reste du genome ...
     return (factory.buildGenome(newValues ++ indexedSeqSigma))
   }
 }
