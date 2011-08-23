@@ -123,8 +123,8 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
         val genomeSize:Double = genome.values.size
          
-        val max:Double = 0 
-        val min:Double = 1
+        val max:Double = 1 
+        val min:Double = 0
         val boundaryMax:Double = 100 
         val boundaryMin:Double = -100
         
@@ -145,7 +145,9 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
       }
     }
     
-    // MAIN 
+    //initTest
+    
+    def initTest ={ 
     implicit val aprng = new Random
     
     implicit val function: Random => Double = arpng => arpng.nextFloat
@@ -186,4 +188,6 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
     println(archive.individuals.map{e => e.multiGoal.toString})
   
   }
+  }
+  
 }
