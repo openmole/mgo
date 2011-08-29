@@ -19,7 +19,7 @@
 package org.openmole.tools.mgo.paretoquick
 
 import java.util.logging.Logger
-import org.openmole.tools.mgo.domination.DominateMinimization
+import org.openmole.tools.mgo.domination._
 import org.openmole.tools.mgo.domination.DominateType._
 import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._

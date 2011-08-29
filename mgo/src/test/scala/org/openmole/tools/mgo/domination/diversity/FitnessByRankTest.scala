@@ -6,7 +6,7 @@
 package org.openmole.tools.mgo.domination.diversity
 
 import org.junit._
-import org.openmole.tools.mgo.domination.diversity.FitnessByRank._
+import org.openmole.tools.mgo.domination.diversity._
 
 import Assert._
 import org.openmole.tools.mgo.model.MultiGoal

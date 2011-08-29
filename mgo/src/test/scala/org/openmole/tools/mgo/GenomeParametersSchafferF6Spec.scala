@@ -13,6 +13,7 @@ import org.openmole.tools.mgo.ga._
 import org.openmole.tools.mgo.mg.IndividualMG
 import org.openmole.tools.mgo.mg.PopulationMG
 import org.openmole.tools.mgo.domination.diversity._
+import org.openmole.tools.mgo.domination._
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
 import org.openmole.tools.mgo.genomefactory._
@@ -90,8 +91,9 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
       
       // Select function Individual[GenomeDouble,_]
       def select(population: PopulationMG[GenomeSLocal], nbSlot: Int) : Iterable[IndividualMG[GenomeSLocal,_]] = {
-       
-        FitnessByRank.selectByFitnessAndCrowding(population.individuals,nbSlot)
+              
+        val fitnessByRank = new FitnessByRank(new StrictDominant)
+        fitnessByRank.selectByFitnessAndCrowding(population.individuals,nbSlot)
       }
     
       //Evolve function

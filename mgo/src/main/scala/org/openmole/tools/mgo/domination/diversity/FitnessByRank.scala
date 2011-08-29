@@ -21,19 +21,21 @@ import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._
 import org.openmole.tools.mgo.model.MultiGoalLike
 import org.openmole.tools.mgo.paretoquick.ParetoQuick
-import org.openmole.tools.mgo.domination.DominateMinimization._
+import org.openmole.tools.mgo.domination._
 import scala.collection.immutable.TreeSet
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 
 import Crowding._
 
-object FitnessByRank {
+class FitnessByRank(dominanceType:Dominant) {
 
   def selectByFitnessAndCrowding[MG <: MultiGoalLike](toSelect: IndexedSeq[MG], resPopSize: Int): IndexedSeq[MG] = {
 
     if(toSelect.size <= resPopSize) return toSelect
-
+    
+    println("toSelectSize => " + toSelect.size)
+    
     val toSelectLevel = new Array[Int](toSelect.size)
     val v = Array.fill(toSelect.size)(new ListBuffer[Int])
         
@@ -43,15 +45,20 @@ object FitnessByRank {
     // int i = 0;
 
     for (p <- 0 until toSelect.size) {          
-      for (q <- 0 until toSelect.size) {
-        if (isDominated(toSelect(p), toSelect(q))) {
+      for (q <- 0 until toSelect.size if q != p) {
+        val isDominated = dominanceType.isDominated(toSelect(p), toSelect(q))
+        if (isDominated) {
+          println ("p("+ p +") = ["+toSelect(p).goals.toString+"] dominate q("+ q +") = ["+toSelect(q).goals.toString+"]")
           toSelectLevel(p) = toSelectLevel(p) + 1
           v(q) += p
         }
       }
 
       // if no individual dominates p
-      if (toSelectLevel(p) == 0) curFront += p
+      if (toSelectLevel(p) == 0) {
+        curFront += p
+        println("no individual dominates P >" + p)
+      }
     }
     
     //curFront ++= (for(i <- 0 until v.size ; if(toSelectLevel(i) == 0)) yield i)
@@ -73,28 +80,21 @@ object FitnessByRank {
       }
       curFront = nextFront
       
-      println("curFront => ")
-      println(curFront.map{toSelect(_)}.orderByDecreasingCrowding)
+ 
 
     }
     
-    println("-----------------------------------")
-    println("RET EQUAL")
-    var i = 0
-      
-    for(elt <- curFront.map{toSelect(_)}.orderByDecreasingCrowding) {
-      i+= 1
-      println("i"+i+" > " + elt._1.toString)
-    }
-    println("-----------------------------------")
-    
+ 
     for(elt <- curFront.map{toSelect(_)}.orderByDecreasingCrowding) {
       ret += elt._1
       if(ret.size >= resPopSize) {
+        
+      println(ret.map{x => x.goals}.toString)
     return ret
       }
     }
-
+    
+    println(ret.map{x => x.goals}.toString)
     return ret
   }
   

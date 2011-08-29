@@ -22,7 +22,7 @@ import Assert._
 import org.openmole.tools.mgo.model.MultiGoal
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
-import org.openmole.tools.mgo.domination.DominateMinimization._
+import org.openmole.tools.mgo.domination._
 
 class ParetoQuickTest {
 

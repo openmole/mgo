@@ -20,16 +20,16 @@ package org.openmole.tools.mgo.domination
 import DominateType._
 import org.openmole.tools.mgo.model.MultiGoalLike
 
-object DominateMinimization {
+class StrictDominant extends Dominant {
   
   def isDominated(p1: MultiGoalLike, p2: MultiGoalLike): Boolean = {
     for((g1, g2) <- p1.goals zip p2.goals) {
-      if(g1.toDouble <= g2.toDouble) return false
+      if(g1.toDouble < g2.toDouble) return false
     }   
     true
   }
 
-  def dominated(p1: MultiGoalLike, p2: MultiGoalLike): DominateType = {
+  /*def dominated(p1: MultiGoalLike, p2: MultiGoalLike): DominateType = {
     var a1 = 0
     var a2 = 0
     var tot = 0
@@ -48,5 +48,5 @@ object DominateMinimization {
     if(a1==tot) return DominateType.RIGHT
     else if(a2==tot) return DominateType.LEFT
     else return DominateType.NONE
-  }
+  }*/
 }
