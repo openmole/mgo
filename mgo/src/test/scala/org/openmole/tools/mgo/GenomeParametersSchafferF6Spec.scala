@@ -80,7 +80,7 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
     implicit object EvolveEngine{
     
      val randomMut = 
-        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(rate => 0.5d,GenomeSLocalSigmaFactory)
+        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d,GenomeSLocalSigmaFactory)
       val softMut = 
         new CoEvolvingSigmaValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
       val randomCross = 

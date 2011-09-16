@@ -84,7 +84,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     implicit object EvolveEngine{
     
      val randomMut = 
-        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(rate => 0.5d,GenomeSLocalSigmaFactory)
+        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.75d,GenomeSLocalSigmaFactory)
       val softMut = 
         new CoEvolvingSigmaValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
       val randomCross = 
@@ -193,7 +193,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     var archive = new PopulationMG[GenomeSLocal](IndexedSeq.empty)
     
     //Generation evolve
-    for (i <- 0 to 1000){
+    for (i <- 0 to 250){
       //Evaluation de la fitness et création des individu a partir des genomes
       //println("Evaluate fitness to make new population of individuals")
       var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
