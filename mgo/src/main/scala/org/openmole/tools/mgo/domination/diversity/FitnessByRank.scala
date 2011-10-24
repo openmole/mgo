@@ -34,7 +34,7 @@ class FitnessByRank(dominanceType:Dominant) {
 
     if(toSelect.size <= resPopSize) return toSelect
     
-    println("toSelectSize => " + toSelect.size)
+    //println("toSelectSize => " + toSelect.size)
     
     val toSelectLevel = new Array[Int](toSelect.size)
     val v = Array.fill(toSelect.size)(new ListBuffer[Int])
@@ -48,7 +48,7 @@ class FitnessByRank(dominanceType:Dominant) {
       for (q <- 0 until toSelect.size if q != p) {
         val isDominated = dominanceType.isDominated(toSelect(p), toSelect(q))
         if (isDominated) {
-          println ("p("+ p +") = ["+toSelect(p).goals.toString+"] dominate q("+ q +") = ["+toSelect(q).goals.toString+"]")
+          //println ("p("+ p +") = ["+toSelect(p).goals.toString+"] dominate q("+ q +") = ["+toSelect(q).goals.toString+"]")
           toSelectLevel(p) = toSelectLevel(p) + 1
           v(q) += p
         }
@@ -57,7 +57,7 @@ class FitnessByRank(dominanceType:Dominant) {
       // if no individual dominates p
       if (toSelectLevel(p) == 0) {
         curFront += p
-        println("no individual dominates P >" + p)
+        //println("no individual dominates P >" + p)
       }
     }
     
@@ -67,7 +67,7 @@ class FitnessByRank(dominanceType:Dominant) {
     // Collection<T> ret = new LinkedList<T>();
 
     while(resPopSize >= ret.size + curFront.size) {
-       println("size of current front > " + curFront.size)
+      //println("size of current front > " + curFront.size)
     
       val nextFront = new ListBuffer[Int]
       for(p <- curFront) {
@@ -79,22 +79,14 @@ class FitnessByRank(dominanceType:Dominant) {
         }
       }
       curFront = nextFront
-      
- 
-
     }
-    
- 
+   
     for(elt <- curFront.map{toSelect(_)}.orderByDecreasingCrowding) {
       ret += elt._1
-      if(ret.size >= resPopSize) {
-        
-      println(ret.map{x => x.goals}.toString)
-    return ret
-      }
+      if(ret.size >= resPopSize) return ret
     }
     
-    println(ret.map{x => x.goals}.toString)
+    //println(ret.map{x => x.goals}.toString)
     return ret
   }
   
