@@ -3,10 +3,10 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.domination.diversity
+package org.openmole.tools.mgo.selection
 
 import org.junit._
-import org.openmole.tools.mgo.domination.diversity._
+import org.openmole.tools.mgo.selection._
 
 import Assert._
 import org.openmole.tools.mgo.model.MultiGoal

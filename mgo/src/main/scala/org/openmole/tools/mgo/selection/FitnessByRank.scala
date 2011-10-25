@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openmole.tools.mgo.domination.diversity
+package org.openmole.tools.mgo.selection
 
 import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._
@@ -28,7 +28,7 @@ import scala.collection.mutable.ListBuffer
 
 import Crowding._
 
-class FitnessByRank(dominanceType:Dominant) {
+class FitnessByRank(dominanceType: Dominant) {
 
   def selectByFitnessAndCrowding[MG <: MultiGoalLike](toSelect: IndexedSeq[MG], resPopSize: Int): IndexedSeq[MG] = {
 

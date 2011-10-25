@@ -16,12 +16,11 @@ import org.openmole.tools.mgo.evolution._
 import org.openmole.tools.mgo.ga._
 import org.openmole.tools.mgo.mg.IndividualMG
 import org.openmole.tools.mgo.mg.PopulationMG
-import org.openmole.tools.mgo.domination.diversity._
+import org.openmole.tools.mgo.selection._
 import org.openmole.tools.mgo.domination._
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
 import org.openmole.tools.mgo.genomefactory._
-import org.openmole.tools.mgo.domination.diversity._
 import scala.math._
 import org.openmole.tools.mgo.tools.ScalingEngine
 
@@ -194,7 +193,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     
     //Generation evolve
     for (i <- 0 to 250){
-      //Evaluation de la fitness et création des individu a partir des genomes
+      //Evaluation de la fitness et cr??ation des individu a partir des genomes
       //println("Evaluate fitness to make new population of individuals")
       var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
     
@@ -206,7 +205,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       //println("Select the best population")
       var bestPop = new PopulationMG[GenomeSLocal](EvolveEngine.select(mergedPopulation,25).toIndexedSeq)
       
-      //Multiplication des meilleurs éléments entres eux pour former une nouvelle population de genome
+      //Multiplication des meilleurs ??l??ments entres eux pour former une nouvelle population de genome
       //println("Generate a new list of genomes with this best population")
       genomes = EvolveEngine.evolve(bestPop,50)
       

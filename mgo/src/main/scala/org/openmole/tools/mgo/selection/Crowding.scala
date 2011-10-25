@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openmole.tools.mgo.domination.diversity
+package org.openmole.tools.mgo.selection
 
 import org.openmole.tools.mgo.model.MultiGoalLike
 import org.openmole.tools.mgo.model.MultiGoal
