@@ -35,6 +35,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     ////////////////////////////////
     // ZDT1
     ////////////////////////////////    
+  /*
     class GenomeSLocal(
       override val values : IndexedSeq[Double],
       override val sigma  : IndexedSeq[Double]
@@ -49,10 +50,11 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       def print = println(wrappedValues)
        
     }
-    
+    */
     ////////////////////////////////
     // GENOME SIGMA FACTORY
     ////////////////////////////////
+   /*
     implicit object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
       override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
         new GenomeSLocal (v)
@@ -76,10 +78,11 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
         new GenomeSLocal(values, sigma)
       }
     }
-    
+    */
     ////////////////////////////////
     // GA ENGINE
     ////////////////////////////////
+    /*
     implicit object EvolveEngine{
     
      val randomMut = 
@@ -113,9 +116,10 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
           new PopulationMG[GenomeSLocal](initialPopulation.individuals)
       }
     }
-    
+    */
     // http://tracer.lcc.uma.es/problems/ackley/ackley.html
-      object IndividuFactory {
+    /* 
+    object IndividuFactory {
       def build(genome:GenomeSLocal):IndividualMG[GenomeSLocal,MultiGoal] = {
     
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
@@ -143,7 +147,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
         val fitness = MultiGoal.buildDouble(f0,f1)
         return (new IndividualMG(genome,fitness))
       }
-      
+     */ 
       
   /**
    * Returns the value of the ZDT1 function G.
@@ -151,6 +155,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
    * evaluate.
    * @throws JMException 
    */
+  /*
   def evalG(gValues:IndexedSeq[Double]):Double={
     var g = (gValues.slice(1,30)).sum
     val constante = (9.0 / (30-1))
@@ -158,12 +163,13 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     g = g + 1.0
     return g
   } // evalG
-    
+    */
   /**
    * Returns the value of the ZDT1 function H.
    * @param f First argument of the function H.
    * @param g Second argument of the function H.
    */
+  /*
   def evalH(f:Double, g:Double):Double ={
     var h:Double = 0.0
     h = 1.0 - sqrt(f/g);
@@ -171,12 +177,13 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
   } // evalH
       
       
-    }
+    }*/
     
     // MAIN 
     //initTest
     
-    def initTest ={
+    /*
+     def initTest ={
       
     
     implicit val aprng = new Random
@@ -219,6 +226,8 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     println(archive.individuals.map{e => e.multiGoal.toString})
   
   }
+  */
+  
   }
   
 }

@@ -23,13 +23,15 @@ import org.openmole.tools.mgo.model._
 
 import java.util.Random
 
-class EvolutionEngine[G <: AbstractGenome, F <: GenomeFactory[G]](operations: Operator [G,F]*) {
+/*class EvolutionEngine[G <: AbstractGenome, F <: GenomeFactory[G]](operations: Mutation [G,F]*) {
   
-  def apply(genomes: IndexedSeq[G])(implicit aprng: Random): G = {
+ // TODO: Renvoie G ou IndexedSeq selon que l'on a un crossover ou une mutation
+  def apply(genomes: IndexedSeq[G])(implicit aprng: Random) = {
     val operation = operations(aprng.nextInt(operations.size))
     operation.operate(genomes)
   }
 
+  // TODO: Probleme ici du fait que operate peut renvoyer soit un genome, soit deux genomes.
   def apply(genomes: IndexedSeq[G], add: Int, selection: Selection[G] = NoSelection)(implicit aprng: Random) = {
     val ret = new ArrayBuffer[G](add)
     var i = 0
@@ -49,3 +51,4 @@ class EvolutionEngine[G <: AbstractGenome, F <: GenomeFactory[G]](operations: Op
   }
 
 }
+*/

@@ -10,10 +10,15 @@ import org.junit.runner.RunWith
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.evolution._
 import org.openmole.tools.mgo.ga._
+import org.openmole.tools.mgo.mg.IDistance
+import org.openmole.tools.mgo.mg.IRanking
 import org.openmole.tools.mgo.mg.IndividualMG
+import org.openmole.tools.mgo.mg.IndividualMGFactory
 import org.openmole.tools.mgo.mg.PopulationMG
 import org.openmole.tools.mgo.domination._
 import org.openmole.tools.mgo.selection._
+import org.openmole.tools.mgo.mg.ga.algorithms.NSGAII
+import org.openmole.tools.mgo.mg.ga.selection.BinaryTournamentNSGA2
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
 import org.openmole.tools.mgo.genomefactory._
@@ -34,7 +39,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     class GenomeSLocal(
       override val values : IndexedSeq[Double],
       override val sigma  : IndexedSeq[Double]
-      ) 
+    ) 
     extends GAGenome with SigmaParameters {
 
       def this (v : IndexedSeq[Double]) = 
@@ -73,46 +78,16 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       }
     }
     
-    ////////////////////////////////
-    // GA ENGINE
-    ////////////////////////////////
-    implicit object EvolveEngine{
-    
-     val randomMut = 
-        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d,GenomeSLocalSigmaFactory)
-      val softMut = 
-        new CoEvolvingSigmaValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
-      val randomCross = 
-        new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
-
-      // Init evolution engine
-      val evolutionEngine = new EvolutionEngine (softMut,randomCross,randomMut)
-      
-      // Select function Individual[GenomeDouble,_]
-      def select(population: PopulationMG[GenomeSLocal], nbSlot: Int) : Iterable[IndividualMG[GenomeSLocal,_]] = {
-        val dominantType = new StrictDominant
-        val fitnessByRank = new FitnessByRank(dominantType)
-        fitnessByRank.selectByFitnessAndCrowding(population.individuals,nbSlot)
-      }
-    
-      //Evolve function
-      def evolve(population: PopulationMG[GenomeSLocal],sizeOfNewPop:Int)(implicit aprng: Random):IndexedSeq[GenomeSLocal] = {
-        
-        evolutionEngine.apply(population.toGenomes.toIndexedSeq,sizeOfNewPop)
-      }
-    
-      //New archive
-      def mergePopulation(initialPopulation: PopulationMG[GenomeSLocal], archive: PopulationMG[GenomeSLocal]): PopulationMG[GenomeSLocal] = { 
-        if(archive.individuals.size > 0)
-          new PopulationMG[GenomeSLocal](initialPopulation.individuals ++ archive.individuals)
-        else 
-          new PopulationMG[GenomeSLocal](initialPopulation.individuals)
-      }
-    }
+   /*object IndividualMGFactoryDistanceRank extends IndividualMGFactory[MultiGoal,GenomeSLocal]{
+     override def operate
+   }*/
     
     // http://tracer.lcc.uma.es/problems/ackley/ackley.html
-      object IndividuFactory {
-      def build(genome:GenomeSLocal):IndividualMG[GenomeSLocal,MultiGoal] = {
+   implicit object IndividuFactory 
+   extends IndividualMGFactory[MultiGoal,GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance]
+   {
+        
+      override def operate(genome:GenomeSLocal):IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance = {
     
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
         val genomeSize:Double = genome.values.size
@@ -133,61 +108,63 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
 
         
         /*println("------ >> EVALUATION << -------------")
-        println( "a > " + a)
-        println( "b > " + b)
-        println( "t1 > " + t1)
-        println( "t2 > " + t2)*/
-        println( "fx > " + fx)
+         println( "a > " + a)
+         println( "b > " + b)
+         println( "t1 > " + t1)
+         println( "t2 > " + t2)*/
+        //println( "fx > " + fx)
         //println("-------------------------------------")
   
         val fitness = MultiGoal.buildDouble(fx)
-        return (new IndividualMG(genome,fitness))
+        return (new IndividualMG(genome,fitness) with IRanking with IDistance )
       }
     }
     
-    //initTest
+    initTest
    
     def initTest ={
       
-    implicit val aprng = new Random
+      implicit val aprng = new Random
     
-    implicit val function: Random => Double = arpng => arpng.nextFloat
-
+      implicit val function: Random => Double = arpng => arpng.nextFloat
     
-    // Init random population
-    var genomes:IndexedSeq[GenomeSLocal] = (0 until 100).map{_ => GenomeSLocalSigmaFactory.buildRandomGenome}
+      // Init random population
+      var genomes:IndexedSeq[GenomeSLocal] = (0 until 100).map{_ => GenomeSLocalSigmaFactory.buildRandomGenome}
     
+      // Init de l'archive population, vide au premier tour
+      var archive = new PopulationMG[GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance](IndexedSeq.empty)
     
-    // Init de l'archive population, vide au premier tour
-    var archive = new PopulationMG[GenomeSLocal](IndexedSeq.empty)
-    
-    //Generation evolve
-    for (i <- 0 to 1000){
-      //Evaluation de la fitness et cr??ation des individu a partir des genomes
-      //println("Evaluate fitness to make new population of individuals")
-      var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
-    
-      // Merge de l'ancienne et de la nouvelle population
-     //println("Merge archive and new population of individuals")
-     var mergedPopulation = EvolveEngine.mergePopulation(population, archive)
-      
-      //Selection des meilleurs individus dans la population merged
-      //println("Select the best population")
-      var bestPop = new PopulationMG[GenomeSLocal](EvolveEngine.select(mergedPopulation,25).toIndexedSeq)
-      
-      //Multiplication des meilleurs ??l??ments entres eux pour former une nouvelle population de genome
-      //println("Generate a new list of genomes with this best population")
-      genomes = EvolveEngine.evolve(bestPop,100)
-      
-      //println("new list > " + genomes.map{e=> e.wrappedValues})
-       
-     archive = bestPop
+      //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
+      val softMut = new CoEvolvingSigmaValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] 
+      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d)(GenomeSLocalSigmaFactory)
+      val selectOp = new BinaryTournamentNSGA2[GenomeSLocal,MultiGoal,GenomeSigmaFactory[GenomeSLocal]]()
      
-     println("generation" + i)
-    }
+      // Init algorithms NSGA2 avec les trois types d'operateurs
+      val evolutionEngine = new NSGAII[MultiGoal,GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](softMut,selectOp,randomCross)
+       
+      // Premier tour, obligatoire pour l'initiatlisation des premier individu
+      var individus:IndexedSeq[IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance] = genomes.map{g => IndividuFactory.operate(g)}
+      
+      //Generation evolve
+      for (i <- 0 to 8000){
+        //Evaluation de la fitness et cr??ation des individu a partir des genomes
+        //println("Evaluate fitness to make new population of individuals")
+        //var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
+        
+        var result = evolutionEngine.operate(individus,archive,25)
+        //Genome pour l'évaluation'
+        
+        individus = result._1.map{g => IndividuFactory.operate(g)}
+        archive = new PopulationMG(result._2)
+        //println("new list > " + genomes.map{e=> e.wrappedValues})
+       
+        //archive = bestPop
+     
+        println("generation" + i)
+      }
     
-    println(archive.individuals.map{e => e.multiGoal.toString})
+      println(archive.individuals.map{e => e.multiGoal.toString})
   
+    }
   }
-  }
-  }
+}

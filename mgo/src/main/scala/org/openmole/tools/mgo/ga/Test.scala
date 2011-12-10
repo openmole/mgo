@@ -14,7 +14,9 @@ import org.openmole.tools.mgo.tools.Random._
 /** 
  * An example finding a word using genetic algorithm
  */
-object Test extends App {
+// TODO : bug operateur crossover qui renvoie deux genome au lieu d'un
+
+/*object Test extends App {
   implicit val aprng = new Random
   
   val wordToFind = "helloworld"
@@ -83,4 +85,4 @@ object Test extends App {
     new Individual (g, fitness (g))
   }
   launch (firstPop)
-}
+}*/

@@ -5,5 +5,8 @@
 
 package org.openmole.tools.mgo
 
+import java.util.Random
+
 abstract class CrossOver [G <: AbstractGenome, F <: GenomeFactory [G]]
-  extends Operator [G, F] 
+  extends Operator [G, F, IndexedSeq[G]] {
+  }

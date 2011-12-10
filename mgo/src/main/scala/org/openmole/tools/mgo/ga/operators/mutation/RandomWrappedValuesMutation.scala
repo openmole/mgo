@@ -10,17 +10,16 @@ import java.util.Random
 import org.openmole.tools.mgo.tools.Random._
 import org.openmole.tools.mgo.genomefactory._
 
+
 class RandomWrappedValuesMutation [
   G <: GAGenome, 
   F <: GAGenomeFactory [G] with FromWrappedValuesFactory [G]] (
-  rate: Random => Double = rng => rng.nextFloat, val factory:F) 
+  rate: Random => Double = rng => rng.nextFloat) (implicit val factory : F) 
   extends Mutation [G, F]  {
   
-  def this( rate: Double, factory : F) = this( _ => rate, factory)
+  def this( rate: Double, factory : F) = this( _ => rate)(factory)
   
   override def operate(genomes: IndexedSeq[G])(implicit aprng: Random): G = {
-   
-    /* @todo Faire marcher le mutation rate .... pour qu'il puisse etre passé en parametre */
     
     val mutationRate = rate(aprng)
     println("mutation rate = " + mutationRate)

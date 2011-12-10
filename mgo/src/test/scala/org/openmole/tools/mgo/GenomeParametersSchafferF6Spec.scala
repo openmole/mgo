@@ -27,11 +27,11 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
 
   "GenomeParametersSchafferF6Spec" should "create and initialize with good values" in {
     
-    
+
     ////////////////////////////////
     // GENOME SLOCAL
     ////////////////////////////////    
-    class GenomeSLocal(
+   /* class GenomeSLocal(
       override val values : IndexedSeq[Double],
       override val sigma  : IndexedSeq[Double]
       ) 
@@ -44,12 +44,12 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
         
       def print = println(wrappedValues)
        
-    }
+    }*/
     
     ////////////////////////////////
     // GENOME SIGMA FACTORY
     ////////////////////////////////
-    implicit object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
+   /* implicit object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
       override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
         new GenomeSLocal (v)
       }
@@ -71,11 +71,12 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
         var sigma = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
         new GenomeSLocal(values, sigma)
       }
-    }
+    }*/
     
     ////////////////////////////////
     // GA ENGINE
     ////////////////////////////////
+   /* 
     implicit object EvolveEngine{
     
      val randomMut = 
@@ -108,7 +109,7 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
         else 
           new PopulationMG[GenomeSLocal](initialPopulation.individuals)
       }
-    }
+    }*/
     
     /* This is the Schaffer F6 Function
        This function has been conceived by Schaffer, it's a 
@@ -118,6 +119,7 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
      
     //http://zhanggw.wordpress.com/2010/09/25/optimization-schaffer-f6-function-using-basic-genetic-algorithm-2/
       
+     /* 
       object IndividuFactory {
       def build(genome:GenomeSLocal):IndividualMG[GenomeSLocal,MultiGoal] = {
         
@@ -144,11 +146,12 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
         val fitness = MultiGoal.buildDouble(fx)
         return (new IndividualMG(genome,fitness))
       }
-    }
+    }*/
     
     //initTest
     
-    def initTest ={ 
+  /*  
+   def initTest ={ 
     implicit val aprng = new Random
     
     implicit val function: Random => Double = arpng => arpng.nextFloat
@@ -188,7 +191,7 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
     
     println(archive.individuals.map{e => e.multiGoal.toString})
   
-  }
+  }*/
   }
   
 }

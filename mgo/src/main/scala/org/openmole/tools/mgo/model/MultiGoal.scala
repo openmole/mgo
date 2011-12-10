@@ -94,4 +94,3 @@ class MultiGoal(val goals: IndexedSeq[ToDouble]) extends MultiGoalLike {
   def this(g: ToDouble*) = this((g.toIndexedSeq))
 }
 
-

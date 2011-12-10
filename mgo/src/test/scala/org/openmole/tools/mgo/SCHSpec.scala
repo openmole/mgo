@@ -35,7 +35,8 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
     ////////////////////////////////
     // ZDT1
     ////////////////////////////////    
-    class GenomeSLocal(
+    /*
+     class GenomeSLocal(
       override val values : IndexedSeq[Double],
       override val sigma  : IndexedSeq[Double]
       ) 
@@ -49,11 +50,14 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
       def print = println(wrappedValues)
        
     }
+    */
     
     ////////////////////////////////
     // GENOME SIGMA FACTORY
     ////////////////////////////////
-    implicit object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
+    /*
+      
+     implicit object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
       override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
         new GenomeSLocal (v)
       }
@@ -76,11 +80,13 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
         new GenomeSLocal(values, sigma)
       }
     }
+    */
     
     ////////////////////////////////
     // GA ENGINE
     ////////////////////////////////
-    implicit object EvolveEngine{
+    /*
+     implicit object EvolveEngine{
     
      val randomMut = 
         new RandomValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 1d,GenomeSLocalSigmaFactory)
@@ -109,8 +115,9 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
           new PopulationMG[GenomeSLocal](initialPopulation.individuals)
       }
     }
-    
-      object IndividuFactory {
+    */
+    /*
+     object IndividuFactory {
       def build(genome:GenomeSLocal):IndividualMG[GenomeSLocal,MultiGoal] = {
     
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
@@ -141,8 +148,9 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
         return (new IndividualMG(genome,fitness))
       }
     }
-    
+    */
     // MAIN 
+   /* 
     initTest
     
     def initTest ={
@@ -188,6 +196,8 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
     println(archive.individuals.map{e => e.multiGoal.toString})
   
   }
+  */
+  
   }
   
 }

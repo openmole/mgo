@@ -15,18 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openmole.tools.mgo.selection
+package org.openmole.tools.mgo.ga.operators.diversity
 
 import org.openmole.tools.mgo.model.MultiGoalLike
+import org.openmole.tools.mgo.mg._
 import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoal._
 
 object Crowding {
   
+
   implicit def withCrowdingDecorator[MG <: MultiGoalLike](goals: Iterable[MG]) = new {
   
     def orderByDecreasingCrowding = {
-
+      
       if (goals.size <= 2) {
         goals.map{(_, Double.PositiveInfinity)}
       } else {         
@@ -67,7 +69,7 @@ object Crowding {
           }
         }
 
-        crowding.sortWith((a, b) => a.crowding < b.crowding).map(elt => (elt.multiGoal, elt.crowding))
+        crowding.sortBy(_.crowding).reverse.map(elt => (elt.multiGoal, elt.crowding))
       }
 
     }

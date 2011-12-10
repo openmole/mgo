@@ -11,7 +11,9 @@ import ga._
 import gp._
 import scala.math.pow
 
-class Ga (
+//TODO : corriger les operateurs pour rendre fonctionnel ...
+
+/*class Ga (
   params : Seq [String], 
   val popSize : Int, 
   fitness : GAGenome => Double, 
@@ -73,5 +75,5 @@ class Coevolution (
     
     (gaNewBestPop, gpNewBestPop)
   }
-}
+}*/
 

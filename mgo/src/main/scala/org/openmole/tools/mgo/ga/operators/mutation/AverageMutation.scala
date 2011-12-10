@@ -20,7 +20,7 @@ class AverageMutation [G <: GAGenome, F <: GAGenomeFactory [G]] (implicit val fa
       
     val newValues = IndexedSeq.tabulate (g1.values.size) (i => 
       (pds*g1.values (i) + (1 - pds) * g2.values (i)) / 2)
-    factory.buildGenome (newValues)
+    return factory.buildGenome (newValues)
   }
 }
 
