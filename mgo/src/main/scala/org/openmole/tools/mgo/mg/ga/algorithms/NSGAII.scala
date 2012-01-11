@@ -54,7 +54,7 @@ class NSGAII[MG <: MultiGoalLike, G <: Genome, F <: GenomeFactory[G]]
       rankingDistance.operate(Q_total.individuals)
       
       //println value for each individuals of Q_Total
-      Q_total.individuals.map{ g=> println(g.multiGoal.toString +  " > distance => " + g.distances + " , rank => "+ g.rank)}
+      //Q_total.individuals.map{ g=> println(g.multiGoal.toString +  " > distance => " + g.distances + " , rank => "+ g.rank)}
       
       // For each front we try to insert individuals into Q_partiel
       var remain = sizeOfSampling
@@ -63,7 +63,6 @@ class NSGAII[MG <: MultiGoalLike, G <: Genome, F <: GenomeFactory[G]]
       
       // fill the new Q_partiel with max limit equal to remain value
       while ((remain > 0) && (remain >= front.size)) {
-         
         // adding all the bloc in one time
         Q_partiel = Q_partiel ++ front
         
@@ -71,20 +70,14 @@ class NSGAII[MG <: MultiGoalLike, G <: Genome, F <: GenomeFactory[G]]
         remain = remain - front.size
         index += 1
         
-        if (remain > 0){  
-          front = Q_total.individuals.filter{_.rank == index}
-        }
-    
+        if (remain > 0) front = Q_total.individuals.filter{_.rank == index}
       }
     
      // A the end, if we have a front larger than computed remain value, 
      // we add only the best individuals, based on distance value
 
-     if (remain > 0)
-       {
-         Q_partiel = Q_partiel ++ front.sortBy(_.distances).reverse.slice(0,remain)
-         println("remain value = " + remain)
-       }
+     if (remain > 0) Q_partiel = Q_partiel ++ front.sortBy(_.distances).reverse.slice(0,remain)
+
     
     /**
     * BREED STEP

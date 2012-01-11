@@ -23,7 +23,7 @@ import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
 import org.openmole.tools.mgo.ga._
 import scala.math._
-import org.openmole.tools.mgo.tools.ScalingEngine
+import org.openmole.tools.mgo.tools.Scaling._
 
 import java.util.Random
 
@@ -97,15 +97,15 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
         val genomeSize:Double = genome.values.size
         
-        val max:Double = 1 
-        val min:Double = 0
-        val boundaryMax:Double = 32 
-        val boundaryMin:Double = -32
+        //val max:Double = 1 
+        //val min:Double = 0
+        val max = 32 
+        val min = -32
        
         //println((genome.values ++ genome.sigma).map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.toString)        
         
-        val a = genome.values.map{x => ScalingEngine.scale(x,max, min,boundaryMax,boundaryMin)}.map{x => pow(x,2.)}.sum //sum(x(i)^2)
-        val b = genome.values.map{x=> ScalingEngine.scale(x,max, min,boundaryMax,boundaryMin)}.map{x => cos(2.*Pi*x)}.sum //sum(cos(2*Pi*x(i)
+        val a = genome.values.map{x => x.scale(min, max)}.map{x => pow(x,2.)}.sum //sum(x(i)^2)
+        val b = genome.values.map{x=> x.scale(min, max)}.map{x => cos(2.*Pi*x)}.sum //sum(cos(2*Pi*x(i)
         val exp1 = exp( (-0.2) * sqrt((1./genomeSize.toDouble)*a))
         val exp2 = exp((1./genomeSize.toDouble)*b) 
         val fx = 20.+ math.E - (20. * exp1) - exp2

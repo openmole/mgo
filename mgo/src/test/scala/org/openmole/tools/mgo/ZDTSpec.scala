@@ -21,7 +21,7 @@ import org.openmole.tools.mgo.domination._
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
 import scala.math._
-import org.openmole.tools.mgo.tools.ScalingEngine
+import org.openmole.tools.mgo.tools.Scaling._
 
 import java.util.Random
 
