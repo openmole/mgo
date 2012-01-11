@@ -5,6 +5,4 @@
 
 package org.openmole.tools.mgo
 
-import java.util.Random
-
-trait GenomeFactory [G <: AbstractGenome]
+trait GenomeFactory [G <: Genome]

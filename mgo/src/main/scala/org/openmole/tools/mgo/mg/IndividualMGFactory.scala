@@ -5,9 +5,9 @@
 
 package org.openmole.tools.mgo.mg
 
-import org.openmole.tools.mgo.AbstractGenome
+import org.openmole.tools.mgo.Genome
 import org.openmole.tools.mgo.model.MultiGoalLike
 
-trait IndividualMGFactory[MG <: MultiGoalLike,G <: AbstractGenome,I <: IndividualMG[G,MG]] {
+trait IndividualMGFactory[MG <: MultiGoalLike,G <: Genome,I <: IndividualMG[G,MG]] {
   def operate(genome:G):I
 }

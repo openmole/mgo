@@ -5,9 +5,9 @@
 
 package org.openmole.tools.mgo.ga
 
-import org.openmole.tools.mgo.AbstractGenome
+import org.openmole.tools.mgo.Genome
 
-trait GAGenome extends AbstractGenome {
+trait GAGenome extends Genome {
   val wrappedValues = values
   val values : IndexedSeq [Double] 
 }

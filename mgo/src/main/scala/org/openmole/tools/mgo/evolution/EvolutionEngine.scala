@@ -23,7 +23,7 @@ import org.openmole.tools.mgo.model._
 
 import java.util.Random
 
-/*class EvolutionEngine[G <: AbstractGenome, F <: GenomeFactory[G]](operations: Mutation [G,F]*) {
+/*class EvolutionEngine[G <: Genome, F <: GenomeFactory[G]](operations: Mutation [G,F]*) {
   
  // TODO: Renvoie G ou IndexedSeq selon que l'on a un crossover ou une mutation
   def apply(genomes: IndexedSeq[G])(implicit aprng: Random) = {

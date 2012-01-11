@@ -5,9 +5,9 @@
 
 package org.openmole.tools.mgo.gp
 
-import org.openmole.tools.mgo.AbstractGenome
+import org.openmole.tools.mgo.Genome
 
-trait Expr extends AbstractGenome {
+trait Expr extends Genome {
   val companion : ExprFactory
   val subtrees : List [Expr]
   val depth : Int

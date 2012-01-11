@@ -122,7 +122,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     
     initTest
    
-    def initTest ={
+    def initTest = {
       
       implicit val aprng = new Random
     

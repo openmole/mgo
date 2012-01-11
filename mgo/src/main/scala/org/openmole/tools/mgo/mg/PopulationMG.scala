@@ -21,11 +21,11 @@ import org.openmole.tools.mgo._
 
 
 
-class PopulationMG [G <: AbstractGenome,I <: IndividualMG [G,_]] (
+class PopulationMG [G <: Genome,I <: IndividualMG [G,_]] (
   val individuals : IndexedSeq [I]) {
     def toGenomes = individuals map (_.genome)
 }
 
 object PopulationMG{
-  def empty[G <:AbstractGenome,I<: IndividualMG [G,_]] = new PopulationMG[G,I](IndexedSeq.empty)
+  def empty[G <:Genome,I<: IndividualMG [G,_]] = new PopulationMG[G,I](IndexedSeq.empty)
 }

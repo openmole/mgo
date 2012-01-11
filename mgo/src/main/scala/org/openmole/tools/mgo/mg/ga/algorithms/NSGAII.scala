@@ -6,7 +6,7 @@
 package org.openmole.tools.mgo.mg.ga.algorithms
 
 import java.util.Random
-import org.openmole.tools.mgo.AbstractGenome
+import org.openmole.tools.mgo.Genome
 import org.openmole.tools.mgo.mg.ga.selection.BinaryTournamentNSGA2
 import org.openmole.tools.mgo.model.MultiGoalLike
 import org.openmole.tools.mgo.mg.filters._
@@ -18,7 +18,7 @@ import org.openmole.tools.mgo.mg._
 //@todo : On ne peut pas deleguer la création/évaluation avec IndividualMGFactory[MG,G] 
 //a operate(), car c'est une tache a part, cf workflow openmole...
 
-class NSGAII[MG <: MultiGoalLike, G <: AbstractGenome, F <: GenomeFactory[G]]
+class NSGAII[MG <: MultiGoalLike, G <: Genome, F <: GenomeFactory[G]]
             (mutationOperator:Mutation [G, F],selectionOperator:Selection [G,MG, F], 
              crossoverOperator:CrossOver [G, F]) (implicit aprng: Random) {
 

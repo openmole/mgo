@@ -34,7 +34,7 @@ import org.openmole.tools.mgo.tools.Random._
 
 //PROBLEME DE TYPE ICI
 //TODO : IDEM AVEC INDIVIDUALMG et INDIVIDUAL ... IL NOUS FAUT UN SUPERTYPE ?
-class BinaryTournamentNSGA2[G <: AbstractGenome,   MG <: MultiGoalLike, F <: GenomeFactory [G]] (implicit val factory : F) 
+class BinaryTournamentNSGA2[G <: Genome,   MG <: MultiGoalLike, F <: GenomeFactory [G]] (implicit val factory : F) 
 extends Selection[G,MG,F] {
   //TODO : probleme avec la dominance passé ici, elle sert au calcul initial, 
   //et pas a la comparaison, donc peut etre il faudra differencie leur utilisation ?

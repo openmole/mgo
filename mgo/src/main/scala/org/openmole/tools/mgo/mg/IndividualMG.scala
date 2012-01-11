@@ -21,6 +21,6 @@ import org.openmole.tools.mgo.model.MultiGoal
 import org.openmole.tools.mgo.model.MultiGoalLike
 import org.openmole.tools.mgo._
 
-class IndividualMG[G <: AbstractGenome,MG <: MultiGoalLike] (val genome: G,val multiGoal:MG) extends MultiGoal(multiGoal.goals){
+class IndividualMG[G <: Genome,MG <: MultiGoalLike] (val genome: G,val multiGoal:MG) extends MultiGoal(multiGoal.goals){
   override def toString = "(" + genome.toString + ", " + multiGoal.toString + ")"
 }

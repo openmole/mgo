@@ -12,7 +12,7 @@ import org.openmole.tools.mgo.mg._
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.tools._
 
-class RankingByDistance[G <: AbstractGenome, MG <: MultiGoalLike] extends Ranking[G,MG] {
+class RankingByDistance[G <: Genome, MG <: MultiGoalLike] extends Ranking[G,MG] {
   //(distance: Distance)
   type RankType = IndividualMG [G,MG] with IDistance
   

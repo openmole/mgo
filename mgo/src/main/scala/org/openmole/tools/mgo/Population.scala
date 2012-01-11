@@ -17,7 +17,7 @@
 
 package org.openmole.tools.mgo
 
-class Population [G <: AbstractGenome] (
+class Population [G <: Genome] (
   val individuals : IndexedSeq [Individual [G]]) {
     def toGenomes = individuals map (_.genome)
 }

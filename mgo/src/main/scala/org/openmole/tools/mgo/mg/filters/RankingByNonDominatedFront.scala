@@ -12,7 +12,7 @@ import org.openmole.tools.mgo.model._
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 
-class RankingByNonDominatedFront[G <: AbstractGenome, MG <: MultiGoalLike] (dominanceType: Dominant)
+class RankingByNonDominatedFront[G <: Genome, MG <: MultiGoalLike] (dominanceType: Dominant)
   extends Ranking[G,MG] {
     
 type RankType = IndividualMG [G,MG] with IRanking
