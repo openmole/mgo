@@ -45,7 +45,8 @@ extends Selection[G,MG,F] {
    * avec un binary tournament sur le rank et la distance.
    */
   
-  override def operate (individuals: IndexedSeq[IndividualMG[G,MG] with IRanking with IDistance],numberGenerated:Int) (implicit aprng : Random): IndexedSeq[IndividualMG[G,MG] with IRanking with IDistance]={
+  override def operate (individuals: IndexedSeq[IndividualMG[G,MG] with IRanking with IDistance],
+                        numberGenerated:Int) (implicit aprng : Random) : IndexedSeq[IndividualMG[G,MG] with IRanking with IDistance]={
     return (0 until numberGenerated).map{ x => binaryTournament(individuals.random(aprng), individuals.random(aprng))}.toIndexedSeq
   } 
   
