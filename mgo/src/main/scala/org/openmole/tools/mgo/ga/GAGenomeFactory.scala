@@ -6,14 +6,12 @@
 package org.openmole.tools.mgo.ga
 
 import org.openmole.tools.mgo._
-import org.openmole.tools.mgo.genomefactory._
+import org.openmole.tools.mgo.ga._
 
 import java.util.Random
 
-trait GAGenomeFactory [G <: GAGenome] 
-  extends GenomeFactory [G] {
-  //with FromValuesFactory [G]
-  //with FromWrappedValuesFactory [G]{
+trait GAGenomeFactory [G <: GAGenome] extends GenomeFactory [G] {
   def buildGenome (v: IndexedSeq [Double]) : G 
+  def buildFromValues(g: G, values: IndexedSeq [Double]): G
   def buildRandomGenome (implicit aprng:Random) : G
 }

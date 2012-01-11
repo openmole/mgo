@@ -54,7 +54,7 @@
 //    ////////////////////////////////
 //    // GENOME SIGMA FACTORY
 //    ////////////////////////////////
-//    implicit object ssGenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
+//    implicit object ssGenomeSLocalSigmaFactory extends GAGenomeSigmaFactory [GenomeSLocal] {
 //      override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
 //        new GenomeSLocal (v)
 //      }
@@ -134,13 +134,13 @@
 //      // Init de l'archive population, vide au premier tour
 //      var archive = new PopulationMG[GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance](IndexedSeq.empty)
 //    
-//      //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
-//      val softMut = new CoEvolvingSigmaValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] 
-//      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d)(GenomeSLocalSigmaFactory)
-//      val selectOp = new BinaryTournamentNSGA2[GenomeSLocal,MultiGoal,GenomeSigmaFactory[GenomeSLocal]]()
+//      //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
+//      val softMut = new CoEvolvingSigmaValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] 
+//      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d)(GenomeSLocalSigmaFactory)
+//      val selectOp = new BinaryTournamentNSGA2[GenomeSLocal,MultiGoal,GAGenomeSigmaFactory[GenomeSLocal]]()
 //     
 //      // Init algorithms NSGA2 avec les trois types d'operateurs
-//      val evolutionEngine = new NSGAII[MultiGoal,GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](softMut,selectOp,randomCross)
+//      val evolutionEngine = new NSGAII[MultiGoal,GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]](softMut,selectOp,randomCross)
 //       
 //      // Premier tour, obligatoire pour l'initiatlisation des premier individu
 //      var individus:IndexedSeq[IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance] = genomes.map{g => IndividuFactory.operate(g)}

@@ -21,7 +21,7 @@ import org.openmole.tools.mgo.mg.ga.algorithms.NSGAII
 import org.openmole.tools.mgo.mg.ga.selection.BinaryTournamentNSGA2
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
-import org.openmole.tools.mgo.genomefactory._
+import org.openmole.tools.mgo.ga._
 import scala.math._
 import org.openmole.tools.mgo.tools.ScalingEngine
 
@@ -36,56 +36,61 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     ////////////////////////////////
     // GENOME SLOCAL
     ////////////////////////////////    
-    class GenomeSLocal(
-      override val values : IndexedSeq[Double],
-      override val sigma  : IndexedSeq[Double]
-    ) 
-    extends GAGenome with SigmaParameters {
+    /*class GenomeSLocal(
+     override val values : IndexedSeq[Double],
+     override val sigma  : IndexedSeq[Double]
+     ) 
+     extends GAGenome with SigmaParameters *//*{
 
-      def this (v : IndexedSeq[Double]) = 
-        this (v.slice(from = 0, until = 2), v.slice(from = 2, until= 4))
-      
-      override val wrappedValues = values ++ sigma
-        
-      def print = println(wrappedValues)
-       
-    }
+                                              def this (v : IndexedSeq[Double]) = 
+                                              this (v.slice(from = 0, until = 2), v.slice(from = 2, until= 4))
+
+                                              }*/
     
     ////////////////////////////////
     // GENOME SIGMA FACTORY
     ////////////////////////////////
-    implicit object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
-      override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
-        new GenomeSLocal (v)
-      }
-      
-      override def buildFromValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
-        new GenomeSLocal(values,genome.sigma)
-      }
-      
-      override def buildFromWrappedValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
-        new GenomeSLocal(genome.values ++ values)
-      }
-      
-      override def buildFromSigmaValues(genome: GenomeSLocal, values: IndexedSeq [Double]): GenomeSLocal = {
-        new GenomeSLocal(genome.values,values)
-      }
-      
-      def buildRandomGenome (implicit aprng : Random) : GenomeSLocal = {
-        var values = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
-        var sigma = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
-        new GenomeSLocal(values, sigma)
-      }
+    //
+    
+    trait GenomeSLocal extends GAGenome with SigmaParameters {
+      def wrappedValues = values ++ sigma
     }
     
-   /*object IndividualMGFactoryDistanceRank extends IndividualMGFactory[MultiGoal,GenomeSLocal]{
+    implicit object GenomeSLocalSigmaFactory extends GAGenomeSigmaFactory [GenomeSLocal] {
+      override def buildGenome(v : IndexedSeq[Double]) = 
+        new GenomeSLocal {
+          val values = v.slice(0, 2)
+          val sigma = v.slice(2, 4)
+        } 
+      
+      override def buildFromValues(genome: GenomeSLocal, _values: IndexedSeq [Double]) = 
+        new GenomeSLocal {
+          val values = _values
+          val sigma = genome.sigma
+        }
+
+      override def buildFromSigma(genome: GenomeSLocal, _sigma: IndexedSeq [Double]) = 
+        new GenomeSLocal {
+          val values = genome.values
+          val sigma = _sigma
+        }
+      
+      def buildRandomGenome (implicit aprng : Random) = 
+        new GenomeSLocal {
+          val values = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
+          val sigma = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
+        } 
+
+    }
+    
+    /*object IndividualMGFactoryDistanceRank extends IndividualMGFactory[MultiGoal,GenomeSLocal]{
      override def operate
-   }*/
+     }*/
     
     // http://tracer.lcc.uma.es/problems/ackley/ackley.html
-   implicit object IndividuFactory 
-   extends IndividualMGFactory[MultiGoal,GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance]
-   {
+    implicit object IndividuFactory 
+    extends IndividualMGFactory[MultiGoal,GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance]
+    {
         
       override def operate(genome:GenomeSLocal):IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance = {
     
@@ -134,13 +139,13 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       // Init de l'archive population, vide au premier tour
       var archive = new PopulationMG[GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance](IndexedSeq.empty)
     
-      //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
-      val softMut = new CoEvolvingSigmaValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] 
-      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d)(GenomeSLocalSigmaFactory)
-      val selectOp = new BinaryTournamentNSGA2[GenomeSLocal,MultiGoal,GenomeSigmaFactory[GenomeSLocal]]()
+      //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
+      val softMut = new CoEvolvingSigmaValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] 
+      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d)(GenomeSLocalSigmaFactory)
+      val selectOp = new BinaryTournamentNSGA2[GenomeSLocal,MultiGoal,GAGenomeSigmaFactory[GenomeSLocal]]()
      
       // Init algorithms NSGA2 avec les trois types d'operateurs
-      val evolutionEngine = new NSGAII[MultiGoal,GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]](softMut,selectOp,randomCross)
+      val evolutionEngine = new NSGAII[MultiGoal,GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]](softMut,selectOp,randomCross)
        
       // Premier tour, obligatoire pour l'initiatlisation des premier individu
       var individus:IndexedSeq[IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance] = genomes.map{g => IndividuFactory.operate(g)}

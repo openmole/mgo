@@ -2,14 +2,14 @@ package org.openmole.tools.mgo.ga.operators
 
 import org.openmole.tools.mgo._
 import ga._
-import org.openmole.tools.mgo.genomefactory.GenomeSigmaFactory
+import org.openmole.tools.mgo.ga._
 import tools.Math._
 import tools.Random._
 import java.util.Random
 import scala.math._
 
 class CoEvolvingSigmaValuesMutation [G <: GAGenome with SigmaParameters, 
-                                     F <: GenomeSigmaFactory [G]] (
+                                     F <: GAGenomeSigmaFactory [G]] (
   implicit val factory : F) extends Mutation [G, F] {
   
   override def operate (genomes : IndexedSeq [G]) (implicit aprng : Random) : G = {

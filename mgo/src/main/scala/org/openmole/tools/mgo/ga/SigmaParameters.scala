@@ -5,6 +5,6 @@
 
 package org.openmole.tools.mgo.ga
 
-trait SigmaParameters extends GAGenome { self : GAGenome => 
+trait SigmaParameters { this : GAGenome => 
   def sigma: IndexedSeq[Double]
 }

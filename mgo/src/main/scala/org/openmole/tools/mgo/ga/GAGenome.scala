@@ -8,6 +8,8 @@ package org.openmole.tools.mgo.ga
 import org.openmole.tools.mgo.Genome
 
 trait GAGenome extends Genome {
-  val wrappedValues = values
-  val values : IndexedSeq [Double] 
+  def wrappedValues : IndexedSeq [Double]
+  def values : IndexedSeq [Double] 
+  
+  override def toString = wrappedValues.toString
 }

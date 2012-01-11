@@ -16,7 +16,6 @@ import org.openmole.tools.mgo.selection._
 import org.openmole.tools.mgo.domination._
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
-import org.openmole.tools.mgo.genomefactory._
 import scala.math._
 import org.openmole.tools.mgo.tools.ScalingEngine
 
@@ -49,7 +48,7 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
     ////////////////////////////////
     // GENOME SIGMA FACTORY
     ////////////////////////////////
-   /* implicit object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
+   /* implicit object GenomeSLocalSigmaFactory extends GAGenomeSigmaFactory [GenomeSLocal] {
       override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
         new GenomeSLocal (v)
       }
@@ -80,11 +79,11 @@ class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{
     implicit object EvolveEngine{
     
      val randomMut = 
-        new RandomWrappedValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d,GenomeSLocalSigmaFactory)
+        new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d,GenomeSLocalSigmaFactory)
       val softMut = 
-        new CoEvolvingSigmaValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
+        new CoEvolvingSigmaValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
       val randomCross = 
-        new RandomWrappedValuesCrossOver[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
+        new RandomWrappedValuesCrossOver[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] //(GenomeSLocalSigmaFactory)
 
       // Init evolution engine
       val evolutionEngine = new EvolutionEngine (softMut,randomCross,randomMut)

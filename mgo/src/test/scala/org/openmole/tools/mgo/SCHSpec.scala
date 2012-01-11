@@ -20,7 +20,6 @@ import org.openmole.tools.mgo.selection._
 import org.openmole.tools.mgo.domination._
 import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
-import org.openmole.tools.mgo.genomefactory._
 import scala.math._
 import org.openmole.tools.mgo.tools.ScalingEngine
 
@@ -57,7 +56,7 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
     ////////////////////////////////
     /*
       
-     implicit object GenomeSLocalSigmaFactory extends GenomeSigmaFactory [GenomeSLocal] {
+     implicit object GenomeSLocalSigmaFactory extends GAGenomeSigmaFactory [GenomeSLocal] {
       override def buildGenome(v : IndexedSeq[Double]): GenomeSLocal = {
         new GenomeSLocal (v)
       }
@@ -89,7 +88,7 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
      implicit object EvolveEngine{
     
      val randomMut = 
-        new RandomValuesMutation[GenomeSLocal,GenomeSigmaFactory[GenomeSLocal]] (rate => 1d,GenomeSLocalSigmaFactory)
+        new RandomValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 1d,GenomeSLocalSigmaFactory)
             
      val strictDominant = new StrictDominant
      val fitnessByRank = new FitnessByRank(strictDominant)
