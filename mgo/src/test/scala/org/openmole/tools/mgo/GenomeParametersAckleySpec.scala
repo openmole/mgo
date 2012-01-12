@@ -133,8 +133,8 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     
       implicit val function: Random => Double = arpng => arpng.nextFloat
     
-      // Init random population
-      var genomes:IndexedSeq[GenomeSLocal] = (0 until 100).map{_ => GenomeSLocalSigmaFactory.buildRandomGenome}
+      // Init random population, equal to 200 genomes here
+      var genomes:IndexedSeq[GenomeSLocal] = (0 until 200).map{_ => GenomeSLocalSigmaFactory.buildRandomGenome}
     
       // Init de l'archive population, vide au premier tour
       var archive = new PopulationMG[GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance](IndexedSeq.empty)
@@ -147,7 +147,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       // Init algorithms NSGA2 avec les trois types d'operateurs
       val evolutionEngine = new NSGAII[MultiGoal,GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]](softMut,selectOp,randomCross)
        
-      // Premier tour, obligatoire pour l'initiatlisation des premier individu
+      // Init archive with individuals, result of evaluation of random genomes previously generated (200 individuals here)
       var individus:IndexedSeq[IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance] = genomes.map{g => IndividuFactory.operate(g)}
       
       //Generation evolve
@@ -156,8 +156,12 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
         //println("Evaluate fitness to make new population of individuals")
         //var population = new PopulationMG [GenomeSLocal](genomes.map{e => IndividuFactory.build(e)})
         
-        var result = evolutionEngine.operate(individus,archive,25)
-        //Genome pour l'évaluation'
+        // 1- first last arg, here 100 => indicate us the size of sampling of individuals, 
+        // so it's the number of individuals we want to conserve after merging new individuals with archive individuals, 
+        // This number represent a constant size of our best individuals we want to conserve into archive
+        // 2 - second last arg, here 200 => give us the size of offspring generated, based on a matted population, 
+        // result of our selection operator on the new best archive after sampling
+        var result = evolutionEngine.operate(individus,archive,100,200)
         
         individus = result._1.map{g => IndividuFactory.operate(g)}
         archive = new PopulationMG(result._2)
