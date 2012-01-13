@@ -52,31 +52,31 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     ////////////////////////////////
     //
     
-    trait GenomeSLocal extends GAGenome with SigmaParameters {
+    trait GenomeAckley extends GAGenome with SigmaParameters {
       def wrappedValues = values ++ sigma
     }
     
-    implicit object GenomeSLocalSigmaFactory extends GAGenomeSigmaFactory [GenomeSLocal] {
+    implicit object GenomeAckleySigmaFactory extends GAGenomeSigmaFactory [GenomeAckley] {
       override def buildGenome(v : IndexedSeq[Double]) = 
-        new GenomeSLocal {
+        new GenomeAckley {
           val values = v.slice(0, 2)
           val sigma = v.slice(2, 4)
         } 
       
-      override def buildFromValues(genome: GenomeSLocal, _values: IndexedSeq [Double]) = 
-        new GenomeSLocal {
+      override def buildFromValues(genome: GenomeAckley, _values: IndexedSeq [Double]) = 
+        new GenomeAckley {
           val values = _values
           val sigma = genome.sigma
         }
 
-      override def buildFromSigma(genome: GenomeSLocal, _sigma: IndexedSeq [Double]) = 
-        new GenomeSLocal {
+      override def buildFromSigma(genome: GenomeAckley, _sigma: IndexedSeq [Double]) = 
+        new GenomeAckley {
           val values = genome.values
           val sigma = _sigma
         }
       
       def buildRandomGenome (implicit aprng : Random) = 
-        new GenomeSLocal {
+        new GenomeAckley {
           val values = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
           val sigma = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
         } 
@@ -89,10 +89,10 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     
     // http://tracer.lcc.uma.es/problems/ackley/ackley.html
     implicit object IndividuFactory 
-    extends IndividualMGFactory[MultiGoal,GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance]
+    extends IndividualMGFactory[MultiGoal,GenomeAckley,IndividualMG[GenomeAckley,MultiGoal] with IRanking with IDistance]
     {
         
-      override def operate(genome:GenomeSLocal):IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance = {
+      override def operate(genome:GenomeAckley):IndividualMG[GenomeAckley,MultiGoal] with IRanking with IDistance = {
     
         // Nombre de dimensions de la fonction = nombre de gene dans le genome
         val genomeSize:Double = genome.values.size
@@ -134,21 +134,21 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       implicit val function: Random => Double = arpng => arpng.nextFloat
     
       // Init random population, equal to 200 genomes here
-      var genomes:IndexedSeq[GenomeSLocal] = (0 until 200).map{_ => GenomeSLocalSigmaFactory.buildRandomGenome}
+      var genomes:IndexedSeq[GenomeAckley] = (0 until 200).map{_ => GenomeAckleySigmaFactory.buildRandomGenome}
     
       // Init de l'archive population, vide au premier tour
-      var archive = new PopulationMG[GenomeSLocal,IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance](IndexedSeq.empty)
+      var archive = new PopulationMG[GenomeAckley,IndividualMG[GenomeAckley,MultiGoal] with IRanking with IDistance](IndexedSeq.empty)
     
       //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
-      val softMut = new CoEvolvingSigmaValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] 
-      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.5d)(GenomeSLocalSigmaFactory)
-      val selectOp = new BinaryTournamentNSGA2[GenomeSLocal,MultiGoal,GAGenomeSigmaFactory[GenomeSLocal]]()
+      val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley,GAGenomeSigmaFactory[GenomeAckley]] 
+      val randomCross = new RandomWrappedValuesCrossOver[GenomeAckley,GAGenomeSigmaFactory[GenomeAckley]] (rate => 0.5d)(GenomeAckleySigmaFactory)
+      val selectOp = new BinaryTournamentNSGA2[GenomeAckley,MultiGoal,GAGenomeSigmaFactory[GenomeAckley]]()
      
       // Init algorithms NSGA2 avec les trois types d'operateurs
-      val evolutionEngine = new NSGAII[MultiGoal,GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]](softMut,selectOp,randomCross)
+      val evolutionEngine = new NSGAII[MultiGoal,GenomeAckley,GAGenomeSigmaFactory[GenomeAckley]](softMut,selectOp,randomCross)
        
       // Init archive with individuals, result of evaluation of random genomes previously generated (200 individuals here)
-      var individus:IndexedSeq[IndividualMG[GenomeSLocal,MultiGoal] with IRanking with IDistance] = genomes.map{g => IndividuFactory.operate(g)}
+      var individus:IndexedSeq[IndividualMG[GenomeAckley,MultiGoal] with IRanking with IDistance] = genomes.map{g => IndividuFactory.operate(g)}
       
       //Generation evolve
       for (i <- 0 to 8000){
