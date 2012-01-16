@@ -26,6 +26,7 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
   val selection = new BinaryTournamentNSGA2[Individual[G, _] with Distance with Ranking]
   
   def apply(population: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking], factory: F)(implicit aprng: Random) = {
+    //FIX : We are not obligated to generate an offspring equal to population imho...
     val offspring = generate(population, factory, population.size).map{evaluator}
     select(offspring ++ population, population.size)
   }

@@ -22,11 +22,6 @@ import java.util.Random
 class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
 
   "GenomeParametersAckleySpec " should "create and initialize with good values" in {
-
-    ////////////////////////////////
-    // GENOME SIGMA FACTORY
-    ////////////////////////////////
-
     
     trait GenomeAckley extends GAGenome with SigmaParameters {
       def wrappedValues = values ++ sigma
