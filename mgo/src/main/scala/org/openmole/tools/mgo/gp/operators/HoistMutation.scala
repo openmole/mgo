@@ -9,9 +9,9 @@ import org.openmole.tools.mgo._
 import gp._
 import ExprGenerator._
 
-object HoistMutation extends Mutation [Expr, ExprFactory] {
+object HoistMutation extends Operator {
   val factory = null
-  override def operate (genomes : IndexedSeq [Expr])
+  override def apply (genomes : IndexedSeq [Expr])
     (implicit aprng : java.util.Random) : Expr =
     chooseRandomSubtree (genomes (aprng.nextInt (genomes.size)))
 }

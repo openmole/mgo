@@ -8,7 +8,7 @@ package org.openmole.tools.mgo.gp
 import java.util.Random
 import org.openmole.tools.mgo._
 
-trait ExprFactory extends GenomeFactory [Expr] {
+trait ExprFactory {
   def apply (e : Expr*) : Expr
   //def buildGenome (l : List [Expr]) (implicit aprng : Random) : T
   val arity : Int

@@ -9,12 +9,11 @@ import gp._
 import ExprGenerator._
 
 class ShrinkMutation (terms : IndexedSeq [ExprFactory]) 
-  extends Mutation [Expr, ExprFactory] {
+  extends Operator {
   val factory = null
-  override def operate (genomes : IndexedSeq [Expr])
+  override def apply (genomes : IndexedSeq [Expr])
     (implicit aprng : java.util.Random) : Expr = {
     val rpl = terms (aprng.nextInt (terms.size))
-    replaceRandomSubtreeWith (genomes (aprng.nextInt (genomes.size)), 
-                              rpl ())
+    replaceRandomSubtreeWith (genomes (aprng.nextInt (genomes.size)), rpl ())
   }
 }

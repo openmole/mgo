@@ -17,6 +17,9 @@
 
 package org.openmole.tools.mgo
 
-class Individual[G <: Genome] (val genome: G, val fitness : Double) {
+trait Individual[+G, +F] {
+  def genome: G
+  def fitness: F
+  
   override def toString = "(" + genome.toString + ", " + fitness.toString + ")"
 }

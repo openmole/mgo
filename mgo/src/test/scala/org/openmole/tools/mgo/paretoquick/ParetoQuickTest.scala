@@ -19,10 +19,8 @@ package org.openmole.tools.mgo.paretoquick
 
 import org.junit._
 import Assert._
-import org.openmole.tools.mgo.model.MultiGoal
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
-import org.openmole.tools.mgo.domination._
 
 class ParetoQuickTest {
 

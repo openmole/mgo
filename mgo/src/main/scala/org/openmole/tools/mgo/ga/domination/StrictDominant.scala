@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package org.openmole.tools.mgo.domination
+package org.openmole.tools.mgo.ga.domination
 
 import DominateType._
-import org.openmole.tools.mgo.model.MultiGoalLike
+import org.openmole.tools.mgo.ga.GAFitness
 
 class StrictDominant extends Dominant {
   
-  def isDominated(p1: MultiGoalLike, p2: MultiGoalLike): Boolean = {
-    for((g1, g2) <- p1.goals zip p2.goals) {
-      if(g1.toDouble < g2.toDouble) return false
+  def isDominated(p1: GAFitness, p2: GAFitness): Boolean = {
+    for((g1, g2) <- p1.fitness zip p2.fitness) {
+      if(g1 < g2) return false
     }   
     true
   }

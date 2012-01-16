@@ -9,7 +9,6 @@ import org.junit._
 import org.openmole.tools.mgo.selection._
 
 import Assert._
-import org.openmole.tools.mgo.model.MultiGoal
 
 
 class FitnessByRankTest {

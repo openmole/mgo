@@ -12,13 +12,8 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import org.openmole.tools.mgo._
-import org.openmole.tools.mgo.evolution._
 import org.openmole.tools.mgo.ga._
-import org.openmole.tools.mgo.mg.IndividualMG
-import org.openmole.tools.mgo.mg.PopulationMG
 import org.openmole.tools.mgo.selection._
-import org.openmole.tools.mgo.domination._
-import org.openmole.tools.mgo.model._
 import org.openmole.tools.mgo.ga.operators._
 import scala.math._
 import org.openmole.tools.mgo.tools.Scaling._

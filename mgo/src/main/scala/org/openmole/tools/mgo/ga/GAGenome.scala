@@ -5,9 +5,8 @@
 
 package org.openmole.tools.mgo.ga
 
-import org.openmole.tools.mgo.Genome
 
-trait GAGenome extends Genome {
+trait GAGenome {
   def wrappedValues : IndexedSeq [Double]
   def values : IndexedSeq [Double] 
   

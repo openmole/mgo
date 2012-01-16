@@ -13,12 +13,12 @@ import org.openmole.tools.mgo.ga._
 class RandomValuesMutation [
   G <: GAGenome, 
   F <: GAGenomeFactory [G]] (
-  rate: Random => Double = rng => rng.nextFloat) (implicit val factory:F) 
+  rate: Random => Double = rng => rng.nextFloat) 
   extends Mutation [G, F] {
   
-  def this (rate : Double, factory : F) = this( _ => rate)(factory)
+  def this (rate : Double) = this( _ => rate)
   
-  override def operate(genomes: IndexedSeq[G])(implicit aprng: Random): G = {
+  override def mutate(genomes: IndexedSeq[G], factory: F)(implicit aprng: Random): G = {
    
     val mutationRate = rate(aprng)
     val genome = genomes.random

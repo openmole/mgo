@@ -7,6 +7,11 @@ package org.openmole.tools.mgo
 
 import java.util.Random
 
-abstract class CrossOver [G <: Genome, F <: GenomeFactory [G]]
-  extends Operator [G, F, IndexedSeq[G]] {
-  }
+trait CrossOver [G, F] extends Operator [G, F] {
+  def crossOver(genomes: IndexedSeq[G], factory: F) (implicit aprng : Random): (G, G)
+  def apply(genomes: IndexedSeq[G], factory: F) (implicit aprng : Random) = 
+    crossOver(genomes, factory) match {
+      case (g1, g2) => IndexedSeq(g1, g2)
+    }
+
+}
