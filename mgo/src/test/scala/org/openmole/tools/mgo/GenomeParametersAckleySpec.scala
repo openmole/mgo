@@ -32,7 +32,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       def wrappedValues = values ++ sigma
     }
     
-    class GenomeSLocalFactory extends GAGenomeFactory[GenomeSLocal] with GASigmaParametersFactory [GenomeSLocal] {
+    class GenomeAckleyFactory extends GAGenomeFactory[GenomeAckley] with GASigmaParametersFactory [GenomeAckley] {
       override def buildGenome(v : IndexedSeq[Double]) = 
         new GenomeAckley {
           val values = v.slice(0, 2)
@@ -59,14 +59,10 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
 
     }
     
-    val factory = new GenomeSLocalFactory
-    
-    /*object IndividualMGFactoryDistanceRank extends IndividualMGFactory[MultiGoal,GenomeSLocal]{
-     override def operate
-     }*/
+    val factory = new GenomeAckleyFactory
     
     // http://tracer.lcc.uma.es/problems/ackley/ackley.html
-    def evaluator(inGenome: GenomeSLocal) = {
+    def evaluator(inGenome: GenomeAckley) = {
       // Nombre de dimensions de la fonction = nombre de gene dans le genome
       val genomeSize:Double = inGenome.values.size
         
@@ -83,7 +79,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val exp2 = exp((1./genomeSize.toDouble)*b) 
       val fx = 20.+ math.E - (20. * exp1) - exp2
   
-      new Individual[GenomeSLocal, GAFitness] {
+      new Individual[GenomeAckley, GAFitness] {
         def genome = inGenome
         def fitness = new GAFitness {
           val fitness = IndexedSeq(fx)
@@ -100,12 +96,12 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       implicit val function: Random => Double = arpng => arpng.nextFloat
     
       // Init random population
-      var genomes: IndexedSeq[GenomeSLocal] = (0 until 100).map{_ => factory.buildRandomGenome}
+      var genomes: IndexedSeq[GenomeAckley] = (0 until 100).map{_ => factory.buildRandomGenome}
     
     
       //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
-      val softMut = new CoEvolvingSigmaValuesMutation[GenomeSLocal, GenomeSLocalFactory] 
-      val randomCross = new RandomWrappedValuesCrossOver[GenomeSLocal, GenomeSLocalFactory](0.5)
+      val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley, GenomeAckleyFactory] 
+      val randomCross = new RandomWrappedValuesCrossOver[GenomeAckley, GenomeAckleyFactory](0.5)
      
       // Init algorithms NSGA2 avec les trois types d'operateurs
       val evolutionEngine = new NSGAII(softMut, randomCross, evaluator)
