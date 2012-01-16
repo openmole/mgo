@@ -93,13 +93,11 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       // Init random population
       var genomes: IndexedSeq[GenomeAckley] = (0 until 100).map{_ => factory.buildRandomGenome}
     
-    
-      //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
       val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley, GenomeAckleyFactory] 
       val randomCross = new RandomWrappedValuesCrossOver[GenomeAckley, GenomeAckleyFactory](0.5)
      
-      // Init algorithms NSGA2 avec les trois types d'operateurs
-      val evolutionEngine = new NSGAII(softMut, randomCross, evaluator)
+      // Init algorithms NSGA2 avec les deux types d'operateurs, select etant dans NSGA2
+      val evolutionEngine = new NSGAII(softMut, randomCross)
       
       // First turn, evaluate and construct init population of individual
       var individus = evolutionEngine.select(genomes.map{g => evaluator(g)}, genomes.size)

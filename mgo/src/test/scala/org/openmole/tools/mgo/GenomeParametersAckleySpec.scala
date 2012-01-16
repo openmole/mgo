@@ -99,7 +99,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val randomCross = new RandomWrappedValuesCrossOver[GenomeAckley, GenomeAckleyFactory](0.5)
      
       // Init algorithms NSGA2 avec les trois types d'operateurs
-      val evolutionEngine = new NSGAII(softMut, randomCross, evaluator)
+      val evolutionEngine = new NSGAII(softMut, randomCross)
        
       // Premier tour, obligatoire pour l'initiatlisation des premier individu
       var individus = evolutionEngine.select(genomes.map{g => evaluator(g)}, genomes.size)
@@ -107,7 +107,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       //Generation evolve
       val archive = (0 to 800).foldLeft(individus){
         (acc, gen) => 
-          val result = evolutionEngine(acc, factory)
+          val result = evolutionEngine(acc, factory,evaluator)
           println("generation" + gen)
           result
       }

@@ -19,13 +19,12 @@ import scala.annotation.tailrec
 
 class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
   mutationOperator: Mutation [G, F],
-  crossoverOperator: CrossOver [G, F],
-  evaluator: G => Individual[G, GAFitness]) {
+  crossoverOperator: CrossOver [G, F]) {
 
   
   val selection = new BinaryTournamentNSGA2[Individual[G, _] with Distance with Ranking]
   
-  def apply(population: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking], factory: F)(implicit aprng: Random) = {
+  def apply(population: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking], factory: F, evaluator: G => Individual[G, GAFitness])(implicit aprng: Random) = {
     //FIX : We are not obligated to generate an offspring equal to population imho...
     val offspring = generate(population, factory, population.size).map{evaluator}
     select(offspring ++ population, population.size)
