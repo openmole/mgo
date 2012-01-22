@@ -1,4 +1,4 @@
-package org.openmole.tools.mgo.ga.operators
+package org.openmole.tools.mgo.ga.operators.mutation
 
 import org.openmole.tools.mgo._
 import ga._

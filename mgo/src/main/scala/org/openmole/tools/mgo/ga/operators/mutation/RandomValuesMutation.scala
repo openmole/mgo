@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.ga
+package org.openmole.tools.mgo.ga.operators.mutation
 
 import org.openmole.tools.mgo._
 import java.util.Random

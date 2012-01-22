@@ -9,7 +9,8 @@ import org.junit.runner.RunWith
 
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.ga._
-import org.openmole.tools.mgo.selection._
+import org.openmole.tools.mgo.ga.operators.crossover._
+import org.openmole.tools.mgo.ga.operators.mutation._
 import org.openmole.tools.mgo.ga.operators._
 import org.openmole.tools.mgo.ga._
 import org.openmole.tools.mgo.ga.algorithm.NSGAII
@@ -96,10 +97,10 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     
       //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
       val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley, GenomeAckleyFactory] 
-      val randomCross = new RandomWrappedValuesCrossOver[GenomeAckley, GenomeAckleyFactory](0.5)
-     
+      val sbxCross = new SBXBoundedCrossover[GenomeAckley, GenomeAckleyFactory](0.8)
+
       // Init algorithms NSGA2 avec les trois types d'operateurs
-      val evolutionEngine = new NSGAII(softMut, randomCross)
+      val evolutionEngine = new NSGAII(softMut, sbxCross)
        
       // Premier tour, obligatoire pour l'initiatlisation des premier individu
       var individus = evolutionEngine.select(genomes.map{g => evaluator(g)}, genomes.size)

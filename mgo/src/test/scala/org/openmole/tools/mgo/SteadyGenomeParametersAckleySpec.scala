@@ -9,8 +9,8 @@ import org.junit.runner.RunWith
 
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.ga._
-import org.openmole.tools.mgo.selection._
-import org.openmole.tools.mgo.ga.operators._
+import org.openmole.tools.mgo.ga.operators.crossover._
+import org.openmole.tools.mgo.ga.operators.mutation._
 import org.openmole.tools.mgo.ga._
 import org.openmole.tools.mgo.ga.algorithm.NSGAII
 import scala.math._
@@ -94,10 +94,10 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       var genomes: IndexedSeq[GenomeAckley] = (0 until 100).map{_ => factory.buildRandomGenome}
     
       val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley, GenomeAckleyFactory] 
-      val randomCross = new RandomWrappedValuesCrossOver[GenomeAckley, GenomeAckleyFactory](0.5)
+      val sbxCross = new SBXBoundedCrossover[GenomeAckley, GenomeAckleyFactory](0.8)
      
       // Init algorithms NSGA2 avec les deux types d'operateurs, select etant dans NSGA2
-      val evolutionEngine = new NSGAII(softMut, randomCross)
+      val evolutionEngine = new NSGAII(softMut, sbxCross)
       
       // First turn, evaluate and construct init population of individual
       var individus = evolutionEngine.select(genomes.map{g => evaluator(g)}, genomes.size)

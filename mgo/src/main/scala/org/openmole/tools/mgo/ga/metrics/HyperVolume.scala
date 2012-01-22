@@ -9,6 +9,7 @@ import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.ga._
 import org.openmole.tools.mgo.ga.selection._
 import org.openmole.tools.mgo.tools._
+import scala.math._
 
 class HyperVolume(fileName:String) {
 
@@ -44,10 +45,11 @@ class HyperVolume(fileName:String) {
         new Individual[GAGenome, GAFitness] {
           def genome = i.genome
           def fitness = new GAFitness {
-            val fitness = i.fitness.fitness.map{e => 
+            val fitness:IndexedSeq[Double] = i.fitness.fitness.map{e => 
               if (e <= 1.0 && e >= 0.0) 1.0 - e
               else if (e > 1.0) 0.0
-              else if (e < 0.0 ) 1.0
+              else 1.0 //if (e < 0.0 )
+              
             }
           }
         }
@@ -80,6 +82,9 @@ class HyperVolume(fileName:String) {
   }
   
   /**
+   * R version http://www.statistik.tu-dortmund.de/~olafm/software/emoa/
+   * http://ls11-www.cs.tu-dortmund.de/rudolph/hypervolume/start
+   *
    * This class implements the hypervolume indicator. The code is the a Java version
    * of the original metric implementation by Eckart Zitzler.
    * It can be used also as a command line program just by typing
@@ -93,18 +98,33 @@ class HyperVolume(fileName:String) {
 
   // Peut etre serait il mieux de convertir notre indexedSeq d'invidual en matrice de double ... et de re
   // reprendre l'algorithme de Zitzler par la suite ...
-  def calculateHypervolume(front:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking],
+  /*def calculateHypervolume(front:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking],
                            noPoints:Int,
                            noObjectives:Int) ={
-    var n:Int = 0
+    var n:Int = noPoints
     var volume:Double = 0
-    var distance:Double = noPoints
+    var distance:Double = 0
     
-    /*while (n > 0) {
-     var noNondominatedPoints = filterNondominatedSet
+    while (n > 0) {
+      
+     // renvoie le front d'individu non dominé, et non pas une valeur donc avec un rank = 0
+     var noNonDominatedSize = noNondominatedPoints.size - front.filter{i => i.rank == 0}
+     var noNondominatedPoints = front.filter{i => i.rank == 0}
+     
+     
+      var tempVolume : Double = 0
+      var tempDistance:Double
+      
+      if (noObjectives < 3)
+        if (noNondominatedPoints.size < 1)  
+          
       
       
-     } */ 
+     }  
+  }
+  
+  def surfaceUnchangedTo(front:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking], noPoints : Int, objective:Int):Double={
+     (front.head.fitness.fitness(objective).min
   }
     
     
@@ -116,6 +136,6 @@ class HyperVolume(fileName:String) {
     
     //Fonction recursive pour le calcul de l'hypervolume'
     
-  }
+  }*/
   
 }
