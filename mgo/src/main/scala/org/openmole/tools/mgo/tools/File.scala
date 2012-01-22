@@ -6,21 +6,23 @@
 package org.openmole.tools.mgo.tools
 import java.io._
 import java.util.StringTokenizer
+import org.openmole.tools.mgo.Individual
+import org.openmole.tools.mgo.ga.GAFitness
+import org.openmole.tools.mgo.ga.GAGenome
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
-      
+
 object FileUtils {
 
   def readFront(path:String)={
  
+    //var path = "/home/srey/Bureau/Schaffer.pf"
+  val list = new ArrayBuffer[Array[Double]]()
     try {
 
-      val list = new ArrayBuffer[Array[Double]]()
-      
-      var path = "/home/srey/test.txt"
       Source.fromFile(path).getLines().foreach{ line =>
-        list += line.split(" ").flatMap { s =>
+        list += line.split("[ \t]+").flatMap { s =>
           try {
             List(s.toDouble)
           } catch {
@@ -33,8 +35,24 @@ object FileUtils {
       case ioe: IOException =>  println("Error, mgo crashed reading for file: "+path);
       case e: Exception => println("Exception on file "+path);
     }
-  }  
+    list
+  }
+  
+  def convertMatrixFrontToIndividuals(path:String)={
+    
+    val matrixFront = readFront(path)
+    
+    val individualFront= matrixFront.map{
+      i =>  new Individual[GAGenome, GAFitness] {
+        def genome = null //genome n'existe pas dans ce cas la ...
+        def fitness = new GAFitness {
+          val fitness = i.toIndexedSeq
+        }
+      }
+    }
+  }
 }
+
 
 /**
  * This method reads a Pareto Front for a file.
