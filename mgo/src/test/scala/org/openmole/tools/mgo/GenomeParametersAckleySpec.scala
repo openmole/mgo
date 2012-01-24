@@ -81,7 +81,6 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
           val fitness = IndexedSeq(fx)
         }
       }
-      
     }
     
     initTest
@@ -97,7 +96,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     
       //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
       val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley, GenomeAckleyFactory] 
-      val sbxCross = new SBXBoundedCrossover[GenomeAckley, GenomeAckleyFactory](0.8)
+      val sbxCross = new SBXBoundedCrossover[GenomeAckley, GenomeAckleyFactory](0.9)
 
       // Init algorithms NSGA2 avec les trois types d'operateurs
       val evolutionEngine = new NSGAII(softMut, sbxCross)

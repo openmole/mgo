@@ -94,7 +94,7 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       var genomes: IndexedSeq[GenomeAckley] = (0 until 100).map{_ => factory.buildRandomGenome}
     
       val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley, GenomeAckleyFactory] 
-      val sbxCross = new SBXBoundedCrossover[GenomeAckley, GenomeAckleyFactory](0.8)
+      val sbxCross = new SBXBoundedCrossover[GenomeAckley, GenomeAckleyFactory](0.9)
      
       // Init algorithms NSGA2 avec les deux types d'operateurs, select etant dans NSGA2
       val evolutionEngine = new NSGAII(softMut, sbxCross)

@@ -51,6 +51,17 @@ object FileUtils {
       }
     }
   }
+  
+  /*def convertIndividualsFrontToMatrix(individuals:IndexedSeq[Individual[GAGenome, GAFitness]] )={
+    
+    val nbObjective = individuals.head.fitness.fitness.size
+    var matrix:Array[Array[Double]]= {
+      individuals.map{
+        i =>  matrix :+ (0 until nbObjective).map{ o => i.fitness.fitness(o)}.toArray } 
+    }.flatten.toArray 
+  }*/
+  
+  
 }
 
 

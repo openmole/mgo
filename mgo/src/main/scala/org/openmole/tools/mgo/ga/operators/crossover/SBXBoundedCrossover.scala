@@ -40,14 +40,15 @@ class SBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]](rate: Random =
     val crossoverRate = rate(aprng)
     val EPS =  1.0e-14
     val numberOfVariables = g1.wrappedValues.size
-    val distributionIndex = 2
+    //FIXME : aucune idée de la valeur qu'il faudrait mettre ici, si on raisonne entre 0 et 1, pour le moment on laisse la valeur a 20
+    val distributionIndex = 20
   
     val variableToMutate = (0 until g1.wrappedValues.size).map{x => !(aprng.nextDouble < 0.5)}
       
     //crossover probability
     val offspring = {
       
-      if (aprng.nextDouble < crossoverRate) {      
+      if (aprng.nextDouble <= crossoverRate) {      
         (variableToMutate zip (g1.wrappedValues zip g2.wrappedValues)) map {
           case (b, (g1e, g2e)) =>
             if(b) {
