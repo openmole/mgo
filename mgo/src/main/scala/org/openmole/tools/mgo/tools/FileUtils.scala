@@ -52,7 +52,7 @@ object FileUtils {
     }
   }
   
-  def convertIndividualsFrontToMatrix(individuals:IndexedSeq[Individual[GAGenome, GAFitness]] )={
+  def convertIndividualsFrontToMatrix(individuals:IndexedSeq[Individual[GAGenome, GAFitness]] ):Array[Array[Double]]={
     
     val nbObjective = individuals.head.fitness.fitness.size
     var matrix:Array[Array[Double]] = Array.empty
