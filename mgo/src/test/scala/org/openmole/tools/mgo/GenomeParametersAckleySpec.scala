@@ -47,7 +47,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
           val sigma = _sigma
         }
       
-      def buildRandomGenome (implicit aprng : Random) = 
+      def buildRandomGenome (implicit aprng : Random):GenomeAckley = 
         new GenomeAckley {
           val values = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
           val sigma = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
@@ -83,7 +83,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       }
     }
     
-    initTest
+    //initTest
    
     def initTest = {
       

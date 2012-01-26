@@ -15,9 +15,9 @@ import scala.io.Source
 
 object FileUtils {
 
-  def readFront(path:String)={
+  def readFront(path:String):Array[Array[Double]]={
  
-    //var path = "/home/srey/Bureau/Schaffer.pf"
+    
   val list = new ArrayBuffer[Array[Double]]()
     try {
 
@@ -35,7 +35,7 @@ object FileUtils {
       case ioe: IOException =>  println("Error, mgo crashed reading for file: "+path);
       case e: Exception => println("Exception on file "+path);
     }
-    list
+    list.toArray
   }
   
   def convertMatrixFrontToIndividuals(path:String)={
@@ -52,14 +52,15 @@ object FileUtils {
     }
   }
   
-  /*def convertIndividualsFrontToMatrix(individuals:IndexedSeq[Individual[GAGenome, GAFitness]] )={
+  def convertIndividualsFrontToMatrix(individuals:IndexedSeq[Individual[GAGenome, GAFitness]] )={
     
     val nbObjective = individuals.head.fitness.fitness.size
-    var matrix:Array[Array[Double]]= {
+    var matrix:Array[Array[Double]] = Array.empty
+    
       individuals.map{
-        i =>  matrix :+ (0 until nbObjective).map{ o => i.fitness.fitness(o)}.toArray } 
+        i =>  matrix :+ (0 until nbObjective).map{ o => i.fitness.fitness(o)}.toArray 
     }.flatten.toArray 
-  }*/
+  }
   
   
 }
