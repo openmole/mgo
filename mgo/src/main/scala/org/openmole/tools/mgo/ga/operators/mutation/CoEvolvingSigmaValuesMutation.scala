@@ -18,7 +18,7 @@ class CoEvolvingSigmaValuesMutation
     
     // See on the web : http://www.nashcoding.com/2010/07/07/evolutionary-algorithms-the-little-things-youd-never-guess-part-1/#fnref-28-1
     // See on paper : Gaussian mutation and self adaptation (Hinterding) && Parameter Control in Evolutionary Algorithms (Agoston Endre Eiben, Robert Hinterding, and Zbigniew Michalewicz, Senior Member, IEEE) + How to Solve It, Modern Heuristics (assez détaillé !)
-    val indexedSeqSigma = genome.sigma.map{(0. max _ * exp(aprng.nextGaussian))}
+    val indexedSeqSigma = genome.sigma.map{s => clamp(s * exp(aprng.nextGaussian),0,1)}
     
     val newValues:IndexedSeq[Double] = (genome.values zip indexedSeqSigma) map {
       case (v, s) => clamp (aprng.nextGaussian * s + v, 0, 1)}

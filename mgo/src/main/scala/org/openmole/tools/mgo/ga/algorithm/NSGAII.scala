@@ -38,10 +38,6 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
     val ranks = Ranking.pareto(allIndividuals, new StrictDominant)
     val distances = Distance.crowding(allIndividuals)
     
-    //allIndividuals.zip(ranks).zip(distances)
-    println("test > " + (allIndividuals,ranks,distances).zipped.map{ case(a,b,c) => println(a.genome.toString)})
-    println("fin test")
-    
     val allIndividualRD = (allIndividuals,ranks,distances).zipped.map { 
       case (i, iranking, idistance) =>    
         new Individual[G, FIT] with Distance with Ranking {
@@ -67,7 +63,7 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
       }
     
       val (lastFront, selected) = addFronts(fronts, List.empty[Individual[G, FIT] with Distance with Ranking])
-   println("END OF SELECT")
+
       // A the end, if we have a front larger than computed remain value, 
       // we add only the best individuals, based on distance value
 

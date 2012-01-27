@@ -69,8 +69,8 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
        
       //println((genome.values ++ genome.sigma).map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.toString)        
         
-      val a = inGenome.values.map{x => x.scale(min, max)}.map{x => pow(x,2.)}.sum //sum(x(i)^2)
-      val b = inGenome.values.map{x=> x.scale(min, max)}.map{x => cos(2.*Pi*x)}.sum //sum(cos(2*Pi*x(i)
+      val a = inGenome.values.map{x => x.unscale(min, max)}.map{x => pow(x,2.)}.sum //sum(x(i)^2)
+      val b = inGenome.values.map{x=> x.unscale(min, max)}.map{x => cos(2.*Pi*x)}.sum //sum(cos(2*Pi*x(i)
       val exp1 = exp( (-0.2) * sqrt((1./genomeSize.toDouble)*a))
       val exp2 = exp((1./genomeSize.toDouble)*b) 
       val fx = 20.+ math.E - (20. * exp1) - exp2

@@ -23,6 +23,8 @@ import de.erichseifert.gral.data.DataTable
 @RunWith(classOf[JUnitRunner]) 
 class FileImportSpec extends FlatSpec with ShouldMatchers{
   "FileImportSpec " should "create and initialize with good values" in {
+    
+    def main()={
     var path = "/home/srey/Bureau/Schaffer.pf"
     var matrixFront = FileUtils.readFront(path)
     
@@ -41,4 +43,6 @@ class FileImportSpec extends FlatSpec with ShouldMatchers{
     writer.write(plot, new FileOutputStream(dest),400,400)
     
   }
+  //main
+}
 }

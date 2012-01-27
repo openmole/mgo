@@ -10,8 +10,15 @@ import org.scalatest.matchers.ShouldMatchers
 import de.erichseifert.gral.data._
 import de.erichseifert.gral.io.plots.DrawableWriterFactory
 import de.erichseifert.gral.plots.XYPlot
+import de.erichseifert.gral.plots.areas.AreaRenderer
+import de.erichseifert.gral.plots.areas.DefaultAreaRenderer2D
+import de.erichseifert.gral.plots.lines.DefaultLineRenderer2D
+import de.erichseifert.gral.plots.lines.LineRenderer
 import de.erichseifert.gral.plots.points.PointRenderer
+import de.erichseifert.gral.util.GraphicsUtils
 import java.awt.Color
+import java.awt.Rectangle
+import java.awt.geom.AffineTransform
 import java.io.File
 import java.io.FileOutputStream
 import java.util.Random
@@ -75,32 +82,34 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     
     val factory = new GenomeZDT1Factory
     
-    def evaluator(genome: GenomeZDT1) = {
+    def evaluator(agenome: GenomeZDT1) = {
       
       // Nombre de dimensions de la fonction = nombre de gene dans le genome
-      val genomeSize:Double = genome.values.size
+      val genomeSize:Double = agenome.values.size
       
       val max:Double = 1
       val min:Double = 0
-      
-      var f0:Double = genome.values(0)
-      var g:Double = evalG(genome.values)
+        
+      var f0:Double = agenome.values(0).unscale(min,max)
+      var g:Double = evalG(agenome.values.map{x=>x.unscale(min,max)})
       var h:Double = evalH(f0,g)
       var f1:Double = h * g
       
       //println((genome.values ++ genome.sigma).map{ScalingEngine.scale(_,max, min,boundaryMax,boundaryMin)}.toString)        
       
-      println("genome equal")
-       println(genome.values.toString)
+       //println(agenome.values.toString)
+       /*if (agenome.values(0).isNaN || agenome.values(1).isNaN){
+         
        println("------ >> EVALUATION << -------------")
        println( "f0 > " + f0)
        println( "g > " + g)
        println( "h > " + h)
        println( "f1 > " + f1)
        println("-------------------------------------")
-      
+       }*/
+       
       new Individual[GenomeZDT1, GAFitness] {
-        def genome = genome
+        def genome = agenome
         def fitness = new GAFitness {
           val fitness = IndexedSeq(f0,f1)
         }
@@ -113,8 +122,8 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
      * evaluate.
      */
     def evalG(gValues:IndexedSeq[Double]):Double={
-      var g = (gValues.slice(1,30)).sum
-      val constante = (9.0 / (30-1))
+      var g = (gValues.slice(1,gValues.size)).sum
+      val constante = (9.0 / (gValues.size-1))
       g = constante * g
       g = g + 1.0
       return g
@@ -138,7 +147,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       implicit val function: Random => Double = arpng => arpng.nextFloat
     
       // Init random population
-      var genomes: IndexedSeq[GenomeZDT1] = (0 until 100).map{_ => factory.buildRandomGenome}
+      var genomes: IndexedSeq[GenomeZDT1] = (0 until 1001).map{_ => factory.buildRandomGenome}
     
       //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
       val softMut = new CoEvolvingSigmaValuesMutation[GenomeZDT1, GenomeZDT1Factory] 
@@ -146,19 +155,17 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
 
       // Init algorithms NSGA2 avec les trois types d'operateurs
       val evolutionEngine = new NSGAII(softMut, sbxCross)
-       println("START TURN")
+      
       // Premier tour, obligatoire pour l'initiatlisation des premier individu
       var individus = evolutionEngine.select(genomes.map{g => evaluator(g)}, genomes.size)
-      println("END TURN")
       //Generation evolve
      
-      val archive = (0 to 800).foldLeft(individus){
+      val archive = (0 to 10).foldLeft(individus){
         (acc, gen) => 
         val result = evolutionEngine(acc, factory,evaluator)
         println("generation" + gen)
         result
       }
-      println("end generation")
       
       println(archive.map{i => i.fitness.toString})
       return archive
@@ -169,9 +176,11 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
         
       var trueFront = FileUtils.readFront(path)
       val simulFront:Array[Array[Double]] = FileUtils.convertIndividualsFrontToMatrix(archive)
-      val dest = new File("/tmp/essai.png")
-        
+      val dest1 = new File("/tmp/zdt1.png")
+      val dest2 = new File("/tmp/zdt2.png")
       
+      println("simulFront Size =" + simulFront.size )
+      println("trueFront Size =" + trueFront.size)
       var data = new DataTable(classOf[java.lang.Double], classOf[java.lang.Double],classOf[java.lang.Double], classOf[java.lang.Double])
       for(i <- 0 to trueFront.size - 1) {
         data.add(trueFront(i)(0), trueFront(i)(1),simulFront(i)(0),simulFront(i)(1))
@@ -182,26 +191,24 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       
       val data1 = new DataSeries("True Front", data, 0, 1)
       val data2 = new DataSeries("Simul Front", data, 2, 3)
-      val plot = new XYPlot(data1,data2)
+      val plot1 = new XYPlot(data1)
+      val plot2 = new XYPlot(data2) 
       
-        
-      val color1 = new Color(0.0f, 0.3f, 1.0f) 
-      val color2 = new Color(0.3f, 0.5f, 0.1f)
-      plot.getPointRenderer(data1).setSetting(PointRenderer.COLOR, color1)
-      plot.getPointRenderer(data2).setSetting(PointRenderer.COLOR, color2)
-       
-      writer.write(plot, new FileOutputStream(dest),400,400)
+      plot1.getPointRenderer(data1).setSetting(PointRenderer.COLOR,  new Color(77,77,77))
+      plot2.getPointRenderer(data2).setSetting(PointRenderer.COLOR,  new Color(187,200,7))
       
+      writer.write(plot1, new FileOutputStream(dest1),600,800)
+      writer.write(plot2, new FileOutputStream(dest2),600,800)
     }
      
     def main = {
       
     
-    //var path = "/home/srey/TRAVAUX/THESE/REPOSITORY_GIT/mgo/data/ZDT1.pf"
+    var path = "/home/srey/TRAVAUX/THESE/REPOSITORY_GIT/mgo/data/ZDT1.pf"
    
-    var bestArchive = initTest()
+    var bestArchive = initTest
 
-    //printFile(path,bestArchive)
+    printFile(path,bestArchive)
     
     }
     

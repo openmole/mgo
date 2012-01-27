@@ -41,7 +41,7 @@ class SBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]](rate: Random =
     val EPS =  1.0e-14
     val numberOfVariables = g1.wrappedValues.size
     //FIXME : aucune idée de la valeur qu'il faudrait mettre ici, si on raisonne entre 0 et 1, pour le moment on laisse la valeur a 20
-    val distributionIndex = 20
+    val distributionIndex = 20.0
   
     val variableToMutate = (0 until g1.wrappedValues.size).map{x => !(aprng.nextDouble < 0.5)}
       
@@ -54,36 +54,52 @@ class SBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]](rate: Random =
             if(b) {
               if (abs(g1e - g2e) > EPS){
              
+                
+    
                 val y1 = min(g1e, g2e)
                 val y2 = max(g2e, g1e)
-              
+                
                 var yL = 0.0 //g1e.getLowerBound
                 var yu = 1.0 //g1e.getUpperBound  
                 var rand = aprng.nextDouble   // ui
               
                 var beta1 = 1.0 + (2.0 * (y1 - yL)/(y2 - y1))
                 var alpha1 = 2.0 - pow(beta1,-(distributionIndex+1.0))
-                var betaq1 = computebetaQ(alpha1,distributionIndex,rand)
+                
+                var betaq1 = {                  
+                  if (rand <= (1.0/alpha1)){
+                    pow ((rand * alpha1),(1.0 / (distributionIndex + 1.0)))
+                  } else {
+                    pow ((1.0 / (2.0 - rand * alpha1)),(1.0 / (distributionIndex + 1.0)))
+                  } 
+                }
               
                 //calcul offspring 1 en utilisant betaq1, correspond au β barre
                 var c1 = 0.5 * ((y1 + y2) - betaq1 * (y2 - y1)) 
               
                 // -----------------------------------------------
               
-                var beta2 = 1.0 + (2.0 * (yu - y2) / (y2 - y1))
-                var alpha2 = 2.0 - pow(beta2, -(distributionIndex + 1.0))
-              
-                var betaq2 = computebetaQ(alpha2,distributionIndex,rand)
+                val beta2 = 1.0 + (2.0 * (yu - y2) / (y2 - y1))
+                val alpha2 = 2.0 - pow(beta2, -(distributionIndex + 1.0))
+                
+               
+                var betaq2:Double = {                  
+                  if (rand <= (1.0/alpha2)){
+                    pow ((rand * alpha2),(1.0 / (distributionIndex + 1.0)))
+                  } else {
+                    pow ((1.0 / (2.0 - rand * alpha2)),(1.0 / (distributionIndex + 1.0)))
+                  } 
+                }
               
                 //calcul offspring2 en utilisant betaq2
                 var c2 = 0.5 * ((y1 + y2) + betaq2 * (y2 - y1))
-              
+                
                 if (c1 < yL) c1 = yL
                 if (c1 > yu) c1 = yu
               
                 if (c2 < yL) c2 = yL
-                if (c2 > yu) c2 = yu   
-              
+                if (c2 > yu) c2 = yu
+                           
                 if (aprng.nextDouble <= 0.5) {
                   (c2,c1)
                 } else {
@@ -107,13 +123,16 @@ class SBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]](rate: Random =
     (factory.buildGenome(offspring.map{_._1}),  factory.buildGenome(offspring.map{_._2}))
   }
 
-  def computebetaQ(alpha:Double,  distributionIndex:Double,  rand:Double):Double = { 
+  /*def computebetaQ(alpha:Double,  distributionIndex:Double,  rand:Double):Double = { 
     if (rand <= (1.0/alpha)){
-      pow ((rand * alpha),(1.0 / (distributionIndex + 1.0)))
+      println("rand * alpha = " + (rand * alpha))
+      println("exp = " + (1.0 / (distributionIndex + 1.0)))
+      println("poww = " + pow((rand * alpha),(1.0 / (distributionIndex + 1.0))))
+      return pow ((rand * alpha),(1.0 / (distributionIndex + 1.0)))
     } else {
-      pow ((1.0 / (2.0 - rand * alpha)),(1.0 / (distributionIndex + 1.0)))
-    } 
-  }
+      return pow ((1.0 / (2.0 - rand * alpha)),(1.0 / (distributionIndex + 1.0)))
+    }
+  }*/
 
 }
 
