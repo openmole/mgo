@@ -12,6 +12,7 @@ import org.openmole.tools.mgo.ga.GAGenome
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.ListBuffer
 import scala.io.Source
+import Individual._
 
 object FileUtils {
 
@@ -37,8 +38,21 @@ object FileUtils {
     }
     list.toArray
   }
+
+  /**
+   * Used for reading/writing to database, files, etc.
+   * Code From the book "Beginning Scala"
+   * http://www.amazon.com/Beginning-Scala-David-Pollak/dp/1430219890
+   */
+  def using[A <: {def close(): Unit}, B](param: A)(f: A => B): B =
+    try { f(param) } finally { param.close() }
   
-  def convertMatrixFrontToIndividuals(path:String)={
+  def writeToFile(file:File, data:String) = 
+  using (new FileWriter(file)) {
+    fileWriter => fileWriter.write(data)
+  }
+
+   def convertMatrixFrontToIndividuals(path:String)={
     
     val matrixFront = readFront(path)
     
@@ -50,16 +64,6 @@ object FileUtils {
         }
       }
     }
-  }
-  
-  def convertIndividualsFrontToMatrix(individuals:IndexedSeq[Individual[GAGenome, GAFitness]] ):Array[Array[Double]]={
-    
-    val nbObjective = individuals.head.fitness.fitness.size
-    var matrix:Array[Array[Double]] = Array.empty
-    
-      individuals.map{
-        i =>  matrix :+ (0 until nbObjective).map{ o => i.fitness.fitness(o)}.toArray 
-    }.flatten.toArray 
   }
   
   

@@ -36,6 +36,7 @@ import scala.math._
 import org.openmole.tools.mgo.tools.FileUtils
 import org.openmole.tools.mgo.tools.Scaling._
 
+
 import java.util.Random
 
 @RunWith(classOf[JUnitRunner])
@@ -90,8 +91,8 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       val max:Double = 1
       val min:Double = 0
         
-      var f0:Double = agenome.values(0).unscale(min,max)
-      var g:Double = evalG(agenome.values.map{x=>x.unscale(min,max)})
+      var f0:Double = agenome.values(0).scale(min,max)
+      var g:Double = evalG(agenome.values.map{x=>x.scale(min,max)})
       var h:Double = evalH(f0,g)
       var f1:Double = h * g
       
@@ -115,7 +116,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
         }
       }
     }
-      
+
     /**
      * Returns the value of the ZDT1 function G.
      * @param decisionVariables The decision variables of the solution to 
@@ -160,7 +161,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       var individus = evolutionEngine.select(genomes.map{g => evaluator(g)}, genomes.size)
       //Generation evolve
      
-      val archive = (0 to 10).foldLeft(individus){
+      val archive = (0 to 20).foldLeft(individus){
         (acc, gen) => 
         val result = evolutionEngine(acc, factory,evaluator)
         println("generation" + gen)
@@ -174,8 +175,10 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
    
     def printFile(path:String, archive:IndexedSeq[Individual[GenomeZDT1, GAFitness]])={
         
+      import Individual._
+      
       var trueFront = FileUtils.readFront(path)
-      val simulFront:Array[Array[Double]] = FileUtils.convertIndividualsFrontToMatrix(archive)
+      val simulFront:Array[Array[Double]] = archive.toMatrix
       val dest1 = new File("/tmp/zdt1.png")
       val dest2 = new File("/tmp/zdt2.png")
       
@@ -200,19 +203,14 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       writer.write(plot1, new FileOutputStream(dest1),600,800)
       writer.write(plot2, new FileOutputStream(dest2),600,800)
     }
-     
-    def main = {
-      
-    
-    var path = "/home/srey/TRAVAUX/THESE/REPOSITORY_GIT/mgo/data/ZDT1.pf"
-   
-    var bestArchive = initTest
 
-    printFile(path,bestArchive)
-    
+    def main = {    
+      var path = "/home/srey/TRAVAUX/THESE/REPOSITORY_GIT/mgo/data/ZDT1.pf"
+      var bestArchive = initTest
+      printFile(path,bestArchive)
     }
     
-    main
+    // main
     
   } 
 }

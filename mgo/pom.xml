@@ -41,6 +41,11 @@
             <artifactId>de.erichseifert.gral</artifactId>
             <version>0.4.3</version>
         </dependency>
+        <dependency>
+            <groupId>net.ericaro</groupId>
+            <artifactId>surfaceplotter</artifactId>
+            <version>2.0.1</version>
+        </dependency>
     </dependencies>
 
     <properties>

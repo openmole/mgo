@@ -17,9 +17,51 @@
 
 package org.openmole.tools.mgo
 
+
+import org.openmole.tools.mgo.ga.GAFitness
+import org.openmole.tools.mgo.ga.GAGenome
+import org.openmole.tools.mgo.tools.Scaling._
+
+object Individual {
+  
+  import java.io.File
+
+  
+  implicit def indexedSeq2IndexedSeqDecorator[G <:GAGenome,F <: GAFitness](individuals:IndexedSeq[Individual[G,F]])= new {
+    
+    def toMatrix():Array[Array[Double]] = {
+      val nbObjective = individuals.head.fitness.fitness.size
+      var matrix:Array[Array[Double]] =  individuals.map{
+        i =>   (0 until nbObjective).map{ o => i.fitness.fitness(o)}.toArray 
+      }.toArray 
+      matrix
+    }
+    
+    //Version scale, pas generique :(
+    def arrayWithGenome(max:Int,min:Int):Array[Array[Double]]= {
+      val nbObjective = individuals.head.fitness.fitness.size
+      var matrix:Array[Array[Double]] = { 
+        individuals.map{
+          i =>   ((0 until nbObjective).map{ o => i.fitness.fitness(o)} ++ i.genome.values.map{_.scale(min,max)}).toArray
+        }.toArray
+      }
+      matrix
+    }
+    
+    def toCsv(path:File,arrayOfValues:Array[Array[Double]]) = {
+      import java.io._
+      import org.openmole.tools.mgo.tools.FileUtils._  
+      val data = arrayOfValues.map{ _.mkString("\t")}.mkString("\n")
+      writeToFile(path,data)   
+    }
+  }
+}
+
 trait Individual[+G, +F] {
   def genome: G
   def fitness: F
   
   override def toString = "(" + genome.toString + ", " + fitness.toString + ")"
 }
+
+

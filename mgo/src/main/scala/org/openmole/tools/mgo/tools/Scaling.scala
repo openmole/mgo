@@ -9,7 +9,7 @@ object Scaling {
 
   implicit def double2Scalable(d: Double) = new {
     def scale(min:Double, max:Double) = Scaling.scale(d, 0, 1, min, max)
-    def unscale(min:Double, max:Double) = Scaling.scale(d, min, max, 0, 1)
+    //def unscale(min:Double, max:Double) = Scaling.scale(d, min, max, 0, 1)
   }
   
   private def scale(v:Double, min:Double, max:Double, boundaryMin:Double, boundaryMax:Double) =  {
