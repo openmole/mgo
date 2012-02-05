@@ -19,7 +19,7 @@ object Ranking {
       case (indiv, index) =>
         new Ranking {
           val rank = 
-            individuals.zipWithIndex.filterNot {
+            individuals.zipWithIndex.filter {
               case (_, index2) => index != index2
             }.count { 
               case(indiv2, _) => indiv.isDominated(indiv2)

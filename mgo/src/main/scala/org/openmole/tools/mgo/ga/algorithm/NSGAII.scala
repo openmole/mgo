@@ -7,6 +7,8 @@ package org.openmole.tools.mgo.ga.algorithm
 
 import java.util.Random
 import org.openmole.tools.mgo.ga._
+import org.openmole.tools.mgo.ga.operators.crossover.SBXBoundedCrossover
+import org.openmole.tools.mgo.ga.operators.mutation.CoEvolvingSigmaValuesMutation
 import org.openmole.tools.mgo.ga.selection.BinaryTournamentNSGA2
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.ga.domination._
@@ -17,11 +19,77 @@ import scala.annotation.tailrec
 //@todo : On ne peut pas deleguer la création/évaluation avec IndividualMGFactory[MG,G] 
 //a operate(), car c'est une tache a part, cf workflow openmole...
 
+//object NSGAII extends App {
+//  
+//  val front = 
+//    new Ind {
+//      def fitness = new GAFitness {
+//        val fitness = Vector(1., 0.8, 1.)
+//      }
+//    } :: (0 to 10).map {
+//    i => new Ind {
+//      def fitness = new GAFitness {
+//        val fitness = Vector(1., 1., 1.)
+//      }
+//    }
+//  }.toList ::: Nil
+//
+//  abstract class Ind extends Individual[Any, GAFitness] {
+//    def genome = None
+//  }
+//  
+//   def select[FIT <: GAFitness](allIndividuals: IndexedSeq[Individual[Any, FIT]],
+//                               size: Int): IndexedSeq[Individual[Any, FIT] with Distance with Ranking] = {
+//        
+//        
+//    // Compute rank et distance for each individuals for each pareto front
+//    val ranks = Ranking.pareto(allIndividuals, new StrictDominant)
+//    val distances = Distance.crowding(allIndividuals)
+//    
+//    val allIndividualRD = (allIndividuals,ranks,distances).zipped.map { 
+//      case (i, iranking, idistance) =>  
+//        println(i.fitness, iranking.rank)
+//        new Individual[Any, FIT] with Distance with Ranking {
+//          val genome = i.genome
+//          val fitness = i.fitness
+//          val distance = idistance.distance
+//          val rank = iranking.rank
+//        }
+//    } 
+//     
+//    if(allIndividualRD.size < size) allIndividualRD
+//    else {
+//      val fronts = 
+//        allIndividualRD.groupBy(_.rank).
+//        toList.map{_._2}
+//
+//      // var acc = List.empty[Individual[G, FIT] with Distance with Ranking]
+//      
+//      @tailrec def addFronts[I](fronts: List[IndexedSeq[I]], acc: List[I]): (IndexedSeq[I], List[I]) = {
+//        if(acc.size + fronts.head.size < size) addFronts(fronts.tail, acc ++ fronts.head)
+//        else (fronts.headOption.getOrElse(IndexedSeq.empty), acc)
+//      }
+//    
+//      val (lastFront, selected) = addFronts(fronts, List.empty[Individual[Any, FIT] with Distance with Ranking])
+//
+//      // A the end, if we have a front larger than computed remain value, 
+//      // we add only the best individuals, based on distance value
+//
+//      (if (selected.size < size) selected ++ lastFront.sortBy(_.distance).reverse.slice(0, size - selected.size)
+//       else selected).toIndexedSeq
+//    }
+//  }
+//  
+//  println(select(front.toIndexedSeq, 10).toString)
+//  
+//  
+//}
+
 class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
   mutationOperator: Mutation [G, F],
   crossoverOperator: CrossOver [G, F]) {
 
-  
+  val dominance = new StrictDominant
   val selection = new BinaryTournamentNSGA2[Individual[G, _] with Distance with Ranking]
   
   def apply(population: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking], factory: F, evaluator: G => Individual[G, GAFitness])(implicit aprng: Random) = {
@@ -35,7 +103,7 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
         
         
     // Compute rank et distance for each individuals for each pareto front
-    val ranks = Ranking.pareto(allIndividuals, new StrictDominant)
+    val ranks = Ranking.pareto(allIndividuals, dominance)
     val distances = Distance.crowding(allIndividuals)
     
     val allIndividualRD = (allIndividuals,ranks,distances).zipped.map { 
@@ -46,9 +114,8 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
           val distance = idistance.distance
           val rank = iranking.rank
         }
-    }
-    
-      
+    } 
+     
     if(allIndividualRD.size < size) allIndividualRD
     else {
       val fronts = 
