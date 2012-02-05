@@ -202,7 +202,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
                 })
     }*/
     
-    main
+    // main
     
   }
 }
