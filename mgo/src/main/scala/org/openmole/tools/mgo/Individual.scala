@@ -55,6 +55,9 @@ object Individual {
       writeToFile(path,data)   
     }
   }
+  
+  implicit def indiv2Fitness[F](i: Individual[_,F]) = i.fitness
+ 
 }
 
 trait Individual[+G, +F] {

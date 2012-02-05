@@ -53,9 +53,6 @@ class SBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]](rate: Random =
           case (b, (g1e, g2e)) =>
             if(b) {
               if (abs(g1e - g2e) > EPS){
-             
-                
-    
                 val y1 = min(g1e, g2e)
                 val y2 = max(g2e, g1e)
                 
