@@ -18,7 +18,6 @@ object FileUtils {
 
   def readFront(path:String):Array[Array[Double]]={
  
-    
   val list = new ArrayBuffer[Array[Double]]()
     try {
 

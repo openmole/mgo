@@ -118,15 +118,17 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val evolutionEngine = new NSGAII(softMut, sbxCross)
        
       // Premier tour, obligatoire pour l'initiatlisation des premier individu
-      var individus = evolutionEngine.select(genomes.map{g => evaluator(g)}, genomes.size)
+      var individus = evolutionEngine.select(IndexedSeq.empty, genomes.map{g => evaluator(g)}, genomes.size)._1
+      var nbSimilar = 0
       
       //Generation evolve
       val archive = (0 to 15).foldLeft(individus){
         (acc, gen) => 
           val result = evolutionEngine(acc, factory,evaluator)
-          println("generation" + gen)
-          printFile(result,gen)
-          result
+          if (!result._2) nbSimilar += 1
+          println("generation" + gen + "nb similar = " + nbSimilar)
+          printFile(result._1,gen)
+          result._1
       }
       archive
     }
