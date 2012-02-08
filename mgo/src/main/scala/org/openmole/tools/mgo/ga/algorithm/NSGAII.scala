@@ -29,31 +29,42 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
   def apply(population: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking], factory: F, evaluator: G => Individual[G, GAFitness])(implicit aprng: Random) = {
     //FIX : We are not obligated to generate an offspring equal to population imho...
     val offspring = generate(population, factory, population.size).map{evaluator}
-    select(offspring ++ population, population.size)
+    select(population, offspring, population.size)
   }
   
-  def select[FIT <: GAFitness](allIndividuals: IndexedSeq[Individual[G, FIT]],
-                               size: Int): IndexedSeq[Individual[G, FIT] with Distance with Ranking] = {
-        
+  def select[FIT <: GAFitness](archive: IndexedSeq[Individual[G, FIT]],
+                               newIndividuals: IndexedSeq[Individual[G, FIT]],
+                               size: Int): (IndexedSeq[Individual[G, FIT] with Distance with Ranking], Boolean) = {
+
         
     // Compute rank et distance for each individuals for each pareto front
+    val allIndividuals = archive ++ newIndividuals
     val ranks = Ranking.pareto(allIndividuals, dominance)
     val distances = Distance.crowding(allIndividuals)
     
-    val allIndividualRD = (allIndividuals,ranks,distances).zipped.map { 
-      case (i, iranking, idistance) =>    
-        new Individual[G, FIT] with Distance with Ranking {
-          val genome = i.genome
-          val fitness = i.fitness
-          val distance = idistance.distance
-          val rank = iranking.rank
-        }
-    } 
-     
-    if(allIndividualRD.size < size) allIndividualRD
+    abstract class IndexedIndividual {
+      def individual: Individual[G, FIT] with Distance with Ranking 
+      def index: Int
+    }
+    
+    
+    val allIndividualRD = (allIndividuals zip ranks zip distances zipWithIndex) map { 
+      case (((i, iranking), idistance), _index) =>  
+        new IndexedIndividual {
+          val individual = new Individual[G, FIT] with Distance with Ranking {
+            val genome = i.genome
+            val fitness = i.fitness
+            val distance = idistance.distance
+            val rank = iranking.rank
+          }
+          val index = _index
+        } 
+    }
+
+    if(allIndividualRD.size < size) (allIndividualRD.map{_.individual}, false)
     else {
       val fronts = 
-        allIndividualRD.groupBy(_.rank).
+        allIndividualRD.groupBy(_.individual.rank).
         toList.sortBy(_._1).map{_._2}
 
       // var acc = List.empty[Individual[G, FIT] with Distance with Ranking]
@@ -63,13 +74,17 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
         else (fronts.headOption.getOrElse(IndexedSeq.empty), acc)
       }
     
-      val (lastFront, selected) = addFronts(fronts, List.empty[Individual[G, FIT] with Distance with Ranking])
+      val (lastFront, selected) = addFronts[IndexedIndividual](fronts, List.empty[IndexedIndividual])
 
       // A the end, if we have a front larger than computed remain value, 
       // we add only the best individuals, based on distance value
 
-      (if (selected.size < size) selected ++ lastFront.sortBy(_.distance).reverse.slice(0, size - selected.size)
+      val ret = (if (selected.size < size) selected ++ lastFront.sortBy(_.individual.distance).reverse.slice(0, size - selected.size)
        else selected).toIndexedSeq
+
+      val allArchive = allIndividualRD.slice(0, archive.size).map{_.index}.sorted
+      val allRet = ret.map{_.index}.sorted
+      (ret.map{_.individual}, !allRet.sameElements(allArchive))
     }
   }
   
