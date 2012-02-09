@@ -125,7 +125,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val archive = (0 to 15).foldLeft(individus){
         (acc, gen) => 
           val result = evolutionEngine(acc, factory,evaluator)
-          if (!result._2) nbSimilar += 1
+          if (!result._2) nbSimilar += 1 else nbSimilar = 0
           println("generation" + gen + "nb similar = " + nbSimilar)
           printFile(result._1,gen)
           result._1
