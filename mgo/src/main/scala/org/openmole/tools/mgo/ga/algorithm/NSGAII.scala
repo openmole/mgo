@@ -61,7 +61,7 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
         } 
     }
 
-    if(allIndividualRD.size < size) (allIndividualRD.map{_.individual}, false)
+    if(allIndividualRD.size < size) (allIndividualRD.map{_.individual}, !newIndividuals.isEmpty)
     else {
       val fronts = 
         allIndividualRD.groupBy(_.individual.rank).

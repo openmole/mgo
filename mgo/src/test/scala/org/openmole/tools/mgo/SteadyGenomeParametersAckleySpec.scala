@@ -104,12 +104,12 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       var nbSimilar = 0
       
       //Generation evolve 1 by 1
-      val archive = (0 to 8000).foldLeft(individus){
+      val archive = (0 to 800).foldLeft(individus){
         (acc, gen) => 
           val offspring = evolutionEngine.generate(acc,factory, 1).map{evaluator} // create breed population and evaluate to make new individuals
           val result = evolutionEngine.select(acc,offspring, acc.size) //merge archive and recent evaluated population, then sample the best individuals to make a new archive
-          if (!result._2) nbSimilar += 1
-          println("generation" + gen + "nb similar = " + nbSimilar)
+          if (!result._2) nbSimilar += 1 else nbSimilar = 0
+	   //println("generation" + gen + "nb similar = " + nbSimilar)
           result._1
       }
 
