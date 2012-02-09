@@ -166,7 +166,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       val archive = (0 to 20).foldLeft(individus){
         (acc, gen) => 
         val result = evolutionEngine(acc, factory,evaluator)
-        if (!result._2) nbSimilar += 1
+        if (!result._2) nbSimilar += 1 else nbSimilar = 0
           println("generation" + gen + "nb similar = " + nbSimilar)
         result._1
       }
