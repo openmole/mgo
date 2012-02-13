@@ -8,4 +8,5 @@ package org.openmole.tools.mgo.ga
 trait SBXParameters { this: GAGenome =>
   def distributionIndex: Double
   def crossoverRate: Double
+  def sbxParameters = List(distributionIndex, crossoverRate)
 }
