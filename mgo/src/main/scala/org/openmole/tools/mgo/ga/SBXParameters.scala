@@ -5,6 +5,7 @@
 
 package org.openmole.tools.mgo.ga
 
-trait DistributionIndex { this: GAGenome =>
+trait SBXParameters { this: GAGenome =>
   def distributionIndex: Double
+  def crossoverRate: Double
 }

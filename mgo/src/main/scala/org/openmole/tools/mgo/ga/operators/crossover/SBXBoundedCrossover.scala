@@ -33,8 +33,11 @@ import org.openmole.tools.mgo.tools.Math._
 class SBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]](
   distributionIndex: Double) extends AbstractSBXBoundedCrossover [G, F] {
     
+  def rate(rng: Random) = rng.nextDouble
+ 
+  
   def crossOver (genomes : IndexedSeq [G], factory: F) (implicit aprng : Random) = 
-    crossOver(genomes.random, genomes.random, distributionIndex, factory)
+    crossOver(genomes.random, genomes.random, distributionIndex, rate(aprng), factory)
  
 }
 

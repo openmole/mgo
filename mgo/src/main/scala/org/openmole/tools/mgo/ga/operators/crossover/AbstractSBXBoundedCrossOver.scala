@@ -31,11 +31,8 @@ import org.openmole.tools.mgo.tools.Math._
  */
 
 abstract class AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]] extends CrossOver [G, F] {
-    
-  def rate(rng: Random) = rng.nextDouble
- 
-  def crossOver (g1: G, g2: G, distributionIndex: Double, factory: F) (implicit aprng : Random) = {
-    val crossoverRate = rate(aprng)
+     
+  def crossOver (g1: G, g2: G, distributionIndex: Double, crossoverRate: Double, factory: F) (implicit aprng : Random) = {
     val numberOfVariables = g1.wrappedValues.size
     
     val variableToMutate = (0 until g1.wrappedValues.size).map{x => !(aprng.nextDouble < 0.5)}
