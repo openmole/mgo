@@ -34,15 +34,13 @@ abstract class AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G
      
   def crossOver (g1: G, g2: G, distributionIndex: Double, crossoverRate: Double, factory: F) (implicit aprng : Random) = {
     val numberOfVariables = g1.wrappedValues.size
-    
-    val variableToMutate = (0 until g1.wrappedValues.size).map{x => !(aprng.nextDouble < 0.5)}
       
     //crossover probability
     val offspring = {
       if (aprng.nextDouble <= crossoverRate) {      
-        (variableToMutate zip (g1.wrappedValues zip g2.wrappedValues)) map {
-          case (b, (g1e, g2e)) =>
-            if(b) {
+        (g1.wrappedValues zip g2.wrappedValues).map {
+          case (g1e, g2e) =>
+            if(aprng.nextBoolean) {
               if (abs(g1e - g2e) > epsilon){
                 val y1 = min(g1e, g2e)
                 val y2 = max(g2e, g1e)
@@ -78,9 +76,7 @@ abstract class AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G
                 //calcul offspring2 en utilisant betaq2
                 val c2 = inBound(0.5 * ((y1 + y2) + betaq2 * (y2 - y1)))
        
-                if (aprng.nextDouble <= 0.5) (c2,c1)
-                else (c1, c2) 
-              
+                if (aprng.nextBoolean) (c2,c1) else (c1, c2)
               } else(g1e, g2e)
             } else (g2e, g1e)
         }
