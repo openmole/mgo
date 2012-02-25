@@ -21,6 +21,7 @@ import org.openmole.tools.mgo.ga.operators.crossover._
 import org.openmole.tools.mgo.ga.operators.mutation._
 import org.openmole.tools.mgo.ga.operators._
 import org.openmole.tools.mgo.ga._
+import org.openmole.tools.mgo.ga.GAFitness._
 import org.openmole.tools.mgo.ga.algorithm.NSGAII
 import scala.math._
 import org.openmole.tools.mgo.tools.FileUtils
@@ -66,7 +67,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
           val sigma = _sigma
         }
       
-      def buildRandomGenome (implicit aprng : Random):GenomeAckley = 
+      def buildRandomGenome(implicit aprng : Random): GenomeAckley = 
         new GenomeAckley {
           val values = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
           val sigma = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
@@ -94,43 +95,25 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val exp2 = exp((1./genomeSize.toDouble)*b) 
       val fx = 20.+ math.E - (20. * exp1) - exp2
       
-      new Individual[GenomeAckley, GAFitness] {
-        def genome = inGenome
-        def fitness = new GAFitness {
-          val fitness = IndexedSeq(fx)
-        }
+      new GAFitness {
+        val fitness = IndexedSeq(fx)
       }
+      
     }
      
     def initTest():IndexedSeq[Individual[GenomeAckley, GAFitness]] = {
       
       implicit val aprng = new Random
       implicit val function: Random => Double = arpng => arpng.nextFloat
-    
-      // Init random population
-      var genomes: IndexedSeq[GenomeAckley] = (0 until 500).map{_ => factory.buildRandomGenome}
-    
+      
       //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
       val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley, GenomeAckleyFactory] 
       val sbxCross = new SBXBoundedCrossover[GenomeAckley, GenomeAckleyFactory](0.9)
 
       // Init algorithms NSGA2 avec les trois types d'operateurs
       val evolutionEngine = new NSGAII(softMut, sbxCross)
-       
-      // Premier tour, obligatoire pour l'initiatlisation des premier individu
-      var individus = evolutionEngine.select(IndexedSeq.empty, genomes.map{g => evaluator(g)}, genomes.size)._1
-      var nbSimilar = 0
-      
-      //Generation evolve
-      val archive = (0 to 15).foldLeft(individus){
-        (acc, gen) => 
-          val result = evolutionEngine(acc, factory,evaluator)
-          if (!result._2) nbSimilar += 1 else nbSimilar = 0
-          println("generation" + gen + "nb similar = " + nbSimilar)
-          printFile(result._1,gen)
-          result._1
-      }
-      archive
+      val individus = (0 until 50).map{_ => factory.buildRandomGenome}.map{g => Individual(g, evaluator)}
+      evolutionEngine(individus, factory, evaluator, 10)
     }
     
       def printFile(archive:IndexedSeq[Individual[GenomeAckley, GAFitness]],generation:Integer)={

@@ -147,9 +147,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       implicit val aprng = new Random
       implicit val function: Random => Double = arpng => arpng.nextFloat
     
-      // Init random population
-      var genomes: IndexedSeq[GenomeZDT1] = (0 until 1001).map{_ => factory.buildRandomGenome}
-    
+      
       //val randomMut = new RandomWrappedValuesMutation[GenomeSLocal,GAGenomeSigmaFactory[GenomeSLocal]] (rate => 0.1d)(GenomeSLocalSigmaFactory)
       val softMut = new CoEvolvingSigmaValuesMutation[GenomeZDT1, GenomeZDT1Factory] 
       val sbxCross = new SBXBoundedCrossover[GenomeZDT1, GenomeZDT1Factory](0.9)
@@ -158,22 +156,12 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       val evolutionEngine = new NSGAII(softMut, sbxCross)
       
       // Premier tour, obligatoire pour l'initiatlisation des premier individu
-      var individus = evolutionEngine.select(IndexedSeq.empty, genomes.map{g => evaluator(g)}, genomes.size)._1
-      var nbSimilar = 0
+      val individus = (0 until 50).map{_ => factory.buildRandomGenome}.map{g => evaluator(g)}
       
-      //Generation evolve
-     
-      val archive = (0 to 20).foldLeft(individus){
-        (acc, gen) => 
-        val result = evolutionEngine(acc, factory,evaluator)
-        if (!result._2) nbSimilar += 1 else nbSimilar = 0
-          println("generation" + gen + "nb similar = " + nbSimilar)
-        result._1
-      }
+      val archive = evolutionEngine(individus, factory, evaluator, 10)
       
       println(archive.map{i => i.fitness.toString})
-      return archive
-    
+      archive
     }
    
     def printFile(path:String, archive:IndexedSeq[Individual[GenomeZDT1, GAFitness]])={

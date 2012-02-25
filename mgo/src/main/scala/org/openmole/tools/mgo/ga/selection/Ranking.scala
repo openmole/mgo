@@ -12,7 +12,12 @@ import org.openmole.tools.mgo.ga.selection._
 
 object Ranking {
   
-  def pareto[F <: GAFitness](individuals: IndexedSeq [Individual[_, F]], dominanceType: Dominant): IndexedSeq[Ranking] = { 
+  def pareto[I <: Individual[_, _] with Ranking](individuals: IndexedSeq[I]) = {
+    val first = individuals.map{_.rank}.min
+    individuals.filter(_.rank == first)
+  }
+  
+  def rank[F <: GAFitness](individuals: IndexedSeq [Individual[_, F]], dominanceType: Dominant): IndexedSeq[Ranking] = { 
     import dominanceType._
     
     individuals.zipWithIndex.map { 

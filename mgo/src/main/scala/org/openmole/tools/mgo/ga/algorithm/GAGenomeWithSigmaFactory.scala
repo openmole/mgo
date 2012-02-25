@@ -3,9 +3,11 @@
  * and open the template in the editor.
  */
 
-package org.openmole.tools.mgo.ga
+package org.openmole.tools.mgo.ga.algorithm
 
 import java.util.Random
+import org.openmole.tools.mgo.ga.GAGenomeFactory
+import org.openmole.tools.mgo.ga.GASigmaParametersFactory
 
 class GAGenomeWithSigmaFactory(size: Int) extends GAGenomeFactory[GAGenomeWithSigma] with GASigmaParametersFactory [GAGenomeWithSigma] {
   override def buildGenome(v : IndexedSeq[Double]) = 

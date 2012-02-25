@@ -74,11 +74,8 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val exp2 = exp((1./genomeSize.toDouble)*b) 
       val fx = 20.+ math.E - (20. * exp1) - exp2
   
-      new Individual[GenomeAckley, GAFitness] {
-        def genome = inGenome
-        def fitness = new GAFitness {
-          val fitness = IndexedSeq(fx)
-        }
+      new GAFitness {
+        val fitness = IndexedSeq(fx)
       }
       
     }
@@ -100,18 +97,8 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val evolutionEngine = new NSGAII(softMut, sbxCross)
       
       // First turn, evaluate and construct init population of individual
-      var individus = evolutionEngine.select(IndexedSeq.empty, genomes.map{g => evaluator(g)}, genomes.size)._1
-      var nbSimilar = 0
-      
-      //Generation evolve 1 by 1
-      val archive = (0 to 800).foldLeft(individus){
-        (acc, gen) => 
-          val offspring = evolutionEngine.generate(acc,factory, 1).map{evaluator} // create breed population and evaluate to make new individuals
-          val result = evolutionEngine.select(acc,offspring, acc.size) //merge archive and recent evaluated population, then sample the best individuals to make a new archive
-          if (!result._2) nbSimilar += 1 else nbSimilar = 0
-          result._1
-      }
-
+      val individus = genomes.map{g => Individual(g, evaluator)}
+      val archive = evolutionEngine(individus, factory, evaluator, 1)
       println(archive.map{i => i.fitness.toString})
     }
   }

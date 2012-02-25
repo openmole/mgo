@@ -29,12 +29,8 @@ object Individual {
   
   implicit def indexedSeq2IndexedSeqDecorator[G <:GAGenome,F <: GAFitness](individuals:IndexedSeq[Individual[G,F]])= new {
     
-    def toMatrix():Array[Array[Double]] = {
-      val nbObjective = individuals.head.fitness.fitness.size
-      var matrix:Array[Array[Double]] =  individuals.map{
-        i =>   (0 until nbObjective).map{ o => i.fitness.fitness(o)}.toArray 
-      }.toArray 
-      matrix
+    def toMatrix:Array[Array[Double]] = {
+      individuals.map{ _.fitness.fitness.toArray }.toArray 
     }
     
     //Version scale, pas generique :(
@@ -58,6 +54,13 @@ object Individual {
   
   implicit def indiv2Fitness[F](i: Individual[_,F]) = i.fitness
  
+  def apply[G, F](g: G, e: G => F) = 
+    new Individual[G, F] {
+      val genome = g
+      val fitness = e(g)
+    }
+  
+   
 }
 
 trait Individual[+G, +F] {
