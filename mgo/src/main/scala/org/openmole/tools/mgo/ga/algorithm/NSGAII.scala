@@ -7,8 +7,6 @@ package org.openmole.tools.mgo.ga.algorithm
 
 import java.util.Random
 import org.openmole.tools.mgo.ga._
-import org.openmole.tools.mgo.ga.operators.crossover.SBXBoundedCrossover
-import org.openmole.tools.mgo.ga.operators.mutation.CoEvolvingSigmaValuesMutation
 import org.openmole.tools.mgo.ga.selection.BinaryTournamentNSGA2
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.Individual._
@@ -19,15 +17,8 @@ import org.openmole.tools.mgo.ga.selection.Ranking
 import org.openmole.tools.mgo.tools.Math
 import scala.annotation.tailrec
 
-//@todo : On ne peut pas deleguer la création/évaluation avec IndividualMGFactory[MG,G] 
-//a operate(), car c'est une tache a part, cf workflow openmole...
-
-class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
-  mutationOperator: Mutation [G, F],
-  crossoverOperator: CrossOver [G, F]) {
-  
-  
-  implicit def individualsDecorator[FIT <: GAFitness](individuals: IndexedSeq[Individual[G, FIT]]) = new {
+object NSGAII {
+  implicit def individualsDecorator[FIT <: GAFitness, G](individuals: IndexedSeq[Individual[G, FIT]]) = new {
         
     def toIndividualsWithDistanceAndRanking(dominance: Dominant) = {
       val ranks = Ranking.rank(individuals, dominance)
@@ -40,10 +31,17 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
             val distance = idistance.distance
             val rank = iranking.rank
           }
-      } 
+      }
     }
-    
-  }
+  }  
+  
+}
+
+import NSGAII._
+
+class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
+  mutationOperator: Mutation [G, F],
+  crossoverOperator: CrossOver [G, F]) {
 
   val dominance = new StrictDominant
   val selection = new BinaryTournamentNSGA2[Individual[G, _] with Distance with Ranking]
@@ -71,12 +69,9 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
   def select(archive: IndexedSeq[Individual[G, GAFitness]], size: Int): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
     val individuals = archive.toIndividualsWithDistanceAndRanking(dominance)
     
-
     if(individuals.size < size) individuals
     else {
       val fronts = individuals.groupBy(_.rank).toList.sortBy(_._1).map{_._2}
-
-      // var acc = List.empty[Individual[G, FIT] with Distance with Ranking]
       
       @tailrec def addFronts[I](fronts: List[IndexedSeq[I]], acc: List[I]): (IndexedSeq[I], List[I]) = {
         if(acc.size + fronts.head.size < size) addFronts(fronts.tail, acc ++ fronts.head)
@@ -85,8 +80,7 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
     
       val (lastFront, selected) = addFronts(fronts, List.empty)
 
-      (if (selected.size < size) selected ++ lastFront.sortBy(_.distance).reverse.slice(0, size - selected.size)
-                 else selected).toIndexedSeq
+      (if (selected.size < size) selected ++ lastFront.sortBy(_.distance).reverse.slice(0, size - selected.size) else selected).toIndexedSeq
     }
   }
   
@@ -95,16 +89,12 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
    * @param archive : the population
    * @param sizeOfSampling : the quantity / limit of the new computed population of genome 
    */
+  def generate(
+    archive: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking],
+    factory: F, offSpringSize: Int)(implicit aprng: Random): IndexedSeq[G] = {
     
-  def generate(archive: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking], factory: F, offSpringSize: Int)(implicit aprng: Random): IndexedSeq[G] = {
-    //mattingPop compare couple of individuals taken in Q_partiel and return one selected genome for each individual of last archive(see popSize) 
     val mattingPop: IndexedSeq[G] = (selection.select(archive, archive.size)).map{_.genome}
-    
-    // On ne se sert pas de evolutionEngine ici, car on veut faire : crossover + mutation
-    // On genere une nouvelle population a partir de la pop "matting" sous groupe issu du tournament 
-    // CROSSOVER => 2 enfants a chaque fois ... donc pop / 2 forcement (a condition que la pop soit un multiple de 2 ... sinon bug)
-    
-    // crossover on matting pop
+
     crossoverOperator.crossOver(mattingPop, factory)
     
     val offspring: IndexedSeq[G] = 
