@@ -52,8 +52,7 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
       if(steadyUntil >= stopAfterSteady) population
       else {
         val nextPop = evolve(population, factory, evaluator) 
-        val evolved = !Math.allTheSameSorted(pareto(population).map{_.fitness.fitness}, pareto(nextPop).map{_.fitness.fitness})
-        if(evolved) evolveUntilSteady(nextPop, 0)
+        if(!samePareto(population, nextPop)) evolveUntilSteady(nextPop, 0)
         else evolveUntilSteady(nextPop, steadyUntil + 1)
       }
     }
