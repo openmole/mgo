@@ -89,9 +89,10 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     // Premier tour, obligatoire pour l'initiatlisation des premier individu
     val individus = (0 until 50).map{_ => factory.random}.map{g => Individual(g, evaluator)}.toIndexedSeq
       
-    val archive = evolutionEngine(individus, factory, evaluator, 10)
+    //Too slow for a unit test
+    //val archive = evolutionEngine(individus, factory, evaluator, 1)
       
-    println(archive.map{i => i.fitness.toString})
+    //println(archive.map{i => i.fitness.toString})
       
     
    
