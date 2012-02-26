@@ -7,11 +7,10 @@ package org.openmole.tools.mgo.ga
 
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.ga._
-
 import java.util.Random
 
 trait GAGenomeFactory [G <: GAGenome] {
-  def buildGenome (v: IndexedSeq [Double]) : G 
-  def buildFromValues(g: G, values: IndexedSeq [Double]): G
-  def buildRandomGenome (implicit aprng:Random) : G
+  def apply (v: IndexedSeq [Double]) : G 
+  def updatedValues(g: G, values: IndexedSeq [Double]): G
+  def random (implicit aprng: Random): G
 }

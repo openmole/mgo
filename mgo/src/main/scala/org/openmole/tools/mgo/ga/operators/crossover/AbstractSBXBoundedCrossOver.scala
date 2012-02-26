@@ -82,7 +82,7 @@ abstract class AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G
         }
       } else(g1.wrappedValues zip g2.wrappedValues)
     }
-    (factory.buildGenome(offspring.map{_._1}),  factory.buildGenome(offspring.map{_._2}))
+    (factory(offspring.map{_._1}),  factory(offspring.map{_._2}))
   }
   
   

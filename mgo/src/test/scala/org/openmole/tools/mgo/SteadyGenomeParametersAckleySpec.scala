@@ -12,7 +12,7 @@ import org.openmole.tools.mgo.ga._
 import org.openmole.tools.mgo.ga.operators.crossover._
 import org.openmole.tools.mgo.ga.operators.mutation._
 import org.openmole.tools.mgo.ga._
-import org.openmole.tools.mgo.ga.algorithm.NSGAII
+import org.openmole.tools.mgo.ga.algorithm._
 import scala.math._
 import org.openmole.tools.mgo.tools.Scaling._
 
@@ -23,41 +23,10 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
 
   "SteadyGenomeParametersAckleySpec " should "create and initialize with good values" in {
     
-    trait GenomeAckley extends GAGenome with SigmaParameters {
-      def wrappedValues = values ++ sigma
-    }
-    
-    class GenomeAckleyFactory extends GAGenomeFactory[GenomeAckley] with GASigmaParametersFactory [GenomeAckley] {
-      override def buildGenome(v : IndexedSeq[Double]) = 
-        new GenomeAckley {
-          val values = v.slice(0, 2)
-          val sigma = v.slice(2, 4)
-        } 
-      
-      override def buildFromValues(genome: GenomeAckley, _values: IndexedSeq [Double]) = 
-        new GenomeAckley {
-          val values = _values
-          val sigma = genome.sigma
-        }
-
-      override def buildFromSigma(genome: GenomeAckley, _sigma: IndexedSeq [Double]) = 
-        new GenomeAckley {
-          val values = genome.values
-          val sigma = _sigma
-        }
-      
-      def buildRandomGenome (implicit aprng : Random):GenomeAckley = 
-        new GenomeAckley {
-          val values = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
-          val sigma = (0 until 2).map{_ => aprng.nextDouble}.toIndexedSeq
-        } 
-
-    }
-    
-    val factory = new GenomeAckleyFactory
+    val factory = new GAGenomeWithSigmaFactory(2)
     
     // http://tracer.lcc.uma.es/problems/ackley/ackley.html
-    def evaluator(inGenome: GenomeAckley) = {
+    def evaluator(inGenome: GAGenomeWithSigma) = {
       // Nombre de dimensions de la fonction = nombre de gene dans le genome
       val genomeSize:Double = inGenome.values.size
         
@@ -80,26 +49,18 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       
     }
     
-    initTest
-   
-    def initTest = {
       
-      implicit val aprng = new Random
-      implicit val function: Random => Double = arpng => arpng.nextFloat
+    implicit val aprng = new Random
     
-      // Init random population
-      var genomes: IndexedSeq[GenomeAckley] = (0 until 100).map{_ => factory.buildRandomGenome}
+    // Init random population
+    val genomes = (0 until 100).map{_ => factory.random}
     
-      val softMut = new CoEvolvingSigmaValuesMutation[GenomeAckley, GenomeAckleyFactory] 
-      val sbxCross = new SBXBoundedCrossover[GenomeAckley, GenomeAckleyFactory](0.9)
-     
-      // Init algorithms NSGA2 avec les deux types d'operateurs, select etant dans NSGA2
-      val evolutionEngine = new NSGAII(softMut, sbxCross)
+    // Init algorithms NSGA2 avec les deux types d'operateurs, select etant dans NSGA2
+    val evolutionEngine = new SigmaNSGAII(0.9)
       
-      // First turn, evaluate and construct init population of individual
-      val individus = genomes.map{g => Individual(g, evaluator)}
-      val archive = evolutionEngine(individus, factory, evaluator, 1)
-      println(archive.map{i => i.fitness.toString})
-    }
+    // First turn, evaluate and construct init population of individual
+    val individus = genomes.map{g => Individual(g, evaluator)}
+    val archive = evolutionEngine(individus, factory, evaluator, 1)
+    println(archive.map{i => i.fitness.toString})
   }
 }

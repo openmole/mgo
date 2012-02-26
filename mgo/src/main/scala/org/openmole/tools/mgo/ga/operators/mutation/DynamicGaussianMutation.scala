@@ -23,6 +23,6 @@ class DynamicGaussianMutation [G <: GAGenome with SigmaParameters,
     val newValues = (genome.values zip genome.sigma) map {
       case (v, s) => clamp (aprng.nextGaussian * s + v, 0, 1)
     }
-    factory.buildFromValues (genome, newValues)
+    factory.updatedValues (genome, newValues)
   }
 }

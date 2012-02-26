@@ -28,7 +28,7 @@ class RandomValuesMutation [
       if (aprng.nextDouble < mutationRate) aprng.nextDouble
       else v 
     }
-    return  factory.buildFromValues (genome,newValues)
+    return  factory.updatedValues (genome, newValues)
   }
   
 }

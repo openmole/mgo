@@ -23,14 +23,14 @@ class RandomWrappedValuesMutation [
     val mutationRate = rate(aprng)
     val genome = genomes.random
     
-    val randomGenome = factory.buildRandomGenome
+    val randomGenome = factory.random
     val valMutationZipped = genome.wrappedValues.zip(randomGenome.wrappedValues)   
-    val newValues = valMutationZipped map { case(v,vrg) => 
-      if (aprng.nextDouble < mutationRate) 
-        vrg
-      else v }
+    val newValues = valMutationZipped map { 
+      case(v,vrg) => 
+        if (aprng.nextDouble < mutationRate) vrg else v 
+    }
     
-    return factory.buildGenome (newValues)
+    factory(newValues)
   }
   
 }

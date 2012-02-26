@@ -18,6 +18,6 @@ class FixedGaussianMutation [G <: GAGenome, F <: GAGenomeFactory [G]] (
     val genome = genomes.random
     val newValues = genome.values map (v => 
       clamp (v + (aprng.nextGaussian * sigma), 0, 1))
-    return factory.buildGenome (newValues)
+    factory(newValues)
   }  
 }

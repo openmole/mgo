@@ -28,7 +28,7 @@ class RandomWrappedValuesCrossOver[G <: GAGenome, F <: GAGenomeFactory[G]](rate:
         if(b) (g1e, g2e) else (g2e, g1e)
     }
     
-    (factory.buildGenome(offspringValues.map{_._1}),  factory.buildGenome(offspringValues.map{_._2}))
+    (factory(offspringValues.map{_._1}),  factory(offspringValues.map{_._2}))
   }
 
 }
