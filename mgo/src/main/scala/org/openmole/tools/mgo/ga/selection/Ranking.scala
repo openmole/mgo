@@ -19,10 +19,12 @@ object Ranking {
       !Math.allTheSameSorted(pareto(a1).map{_.fitness.fitness}, pareto(a2).map{_.fitness.fitness})
   
   
-  def pareto[I <: Individual[_, _] with Ranking](individuals: IndexedSeq[I]) = {
-    val first = individuals.map{_.rank}.min
-    individuals.filter(_.rank == first)
-  }
+  def pareto[I <: Individual[_, _] with Ranking](individuals: IndexedSeq[I]) = 
+    if(individuals.isEmpty) individuals
+    else {
+      val first = individuals.map{_.rank}.min
+      individuals.filter(_.rank == first)
+    }
   
   def rank[F <: GAFitness](individuals: IndexedSeq [Individual[_, F]], dominanceType: Dominant): IndexedSeq[Ranking] = { 
     import dominanceType._
