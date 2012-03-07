@@ -9,12 +9,11 @@ import org.junit.runner.RunWith
 
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.ga._
-import org.openmole.tools.mgo.selection._
+import org.openmole.tools.mgo.ga.selection._
 import org.openmole.tools.mgo.ga.operators._
 import scala.math._
 import org.openmole.tools.mgo.tools.Scaling._
 
-import java.util.Random
 
 @RunWith(classOf[JUnitRunner])
 class GenomeParametersSchafferF6Spec extends FlatSpec with ShouldMatchers{

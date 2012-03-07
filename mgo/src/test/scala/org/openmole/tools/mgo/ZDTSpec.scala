@@ -20,7 +20,7 @@ import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.ga._
 import org.openmole.tools.mgo.ga.operators.crossover._
 import org.openmole.tools.mgo.ga.operators.mutation._
-import org.openmole.tools.mgo.selection._
+import org.openmole.tools.mgo.ga.selection._
 import org.openmole.tools.mgo.ga.algorithm._
 import org.openmole.tools.mgo.ga.operators._
 import scala.math._
@@ -72,6 +72,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       (gValues.slice(1, gValues.size)).sum * (9.0 / (gValues.size-1))  + 1.0
   
 
+    
     /**
      * Returns the value of the ZDT1 function H.
      * @param f First argument of the function H.

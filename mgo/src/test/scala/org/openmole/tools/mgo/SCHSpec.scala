@@ -13,7 +13,7 @@ import org.junit.runner.RunWith
 
 import org.openmole.tools.mgo._
 import org.openmole.tools.mgo.ga._
-import org.openmole.tools.mgo.selection._
+import org.openmole.tools.mgo.ga.selection._
 import org.openmole.tools.mgo.ga.operators._
 import scala.math._
 import org.openmole.tools.mgo.tools.Scaling._

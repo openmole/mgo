@@ -93,10 +93,8 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
     factory: F, offSpringSize: Int)(implicit aprng: Random): IndexedSeq[G] = {
     
     val mattingPop: IndexedSeq[G] = (selection.select(archive, archive.size)).map{_.genome}
-
-    crossoverOperator.crossOver(mattingPop, factory)
     
-    val offspring: IndexedSeq[G] = 
+    val offspring = 
       Iterator.continually(
         crossoverOperator.crossOver(mattingPop, factory)
         match {

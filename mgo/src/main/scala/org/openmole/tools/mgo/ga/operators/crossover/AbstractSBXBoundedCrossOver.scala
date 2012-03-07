@@ -76,7 +76,7 @@ abstract class AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G
                 //calcul offspring2 en utilisant betaq2
                 val c2 = inBound(0.5 * ((y1 + y2) + betaq2 * (y2 - y1)))
        
-                if (aprng.nextBoolean) (c2,c1) else (c1, c2)
+                if (aprng.nextBoolean) (c2, c1) else (c1, c2)
               } else(g1e, g2e)
             } else (g2e, g1e)
         }
