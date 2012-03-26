@@ -1,0 +1,20 @@
+/*
+ * Replaces a randomly selected subtree with another randomly created subtree
+ */
+
+package fr.iscpif.mgo.gp.operators
+
+import fr.iscpif.mgo._
+import gp._
+import ExprGenerator._
+
+class SubtreeMutation (terms : IndexedSeq [ExprFactory], funs : IndexedSeq [ExprFactory]) 
+  extends Operator {
+  val factory = null
+  override def apply (genomes : IndexedSeq [Expr]) 
+    (implicit aprng : java.util.Random) : Expr = {
+    val e = genomes (aprng.nextInt (1))
+    val i = aprng.nextInt (e.size)
+    e.replaceSubtreeWith(i, genExpr(funs, terms, e.depth - e.getDepth (i), "full"))
+  }
+}
