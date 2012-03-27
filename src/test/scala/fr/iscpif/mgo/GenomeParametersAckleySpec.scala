@@ -3,11 +3,11 @@ package fr.iscpif.mgo
 
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
-import de.erichseifert.gral.data.DataSeries
+/*import de.erichseifert.gral.data.DataSeries
 import de.erichseifert.gral.data.DataTable
 import de.erichseifert.gral.io.plots.DrawableWriterFactory
 import de.erichseifert.gral.plots.XYPlot
-import de.erichseifert.gral.plots.points.PointRenderer
+import de.erichseifert.gral.plots.points.PointRenderer*/
 import java.awt.Color
 import java.io.File
 import java.io.FileOutputStream
@@ -37,7 +37,7 @@ import javax.swing.SwingConstants
 import javax.swing.SwingUtilities
 import javax.swing.plaf.basic.BasicArrowButton
 
-import net.ericaro.surfaceplotter._
+//import net.ericaro.surfaceplotter._
 
 
 import java.util.Random

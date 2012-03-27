@@ -8,21 +8,21 @@ package fr.iscpif.mgo
 import org.scalatest.FlatSpec
 import org.scalatest.matchers.ShouldMatchers
 import org.scalatest.junit.JUnitRunner
-import de.erichseifert.gral.io.plots.DrawableWriter
+/*import de.erichseifert.gral.io.plots.DrawableWriter
 import de.erichseifert.gral.io.plots.DrawableWriterFactory
 import de.erichseifert.gral.plots.XYPlot
-import de.erichseifert.gral.plots.points.PointRenderer
+import de.erichseifert.gral.plots.points.PointRenderer*/
 import java.awt.Color
 import java.io.File
 import java.io.FileOutputStream
 import org.junit.runner.RunWith
 
 import fr.iscpif.mgo.tools.FileUtils
-import de.erichseifert.gral.data.DataTable
+//import de.erichseifert.gral.data.DataTable
 
 @RunWith(classOf[JUnitRunner]) 
 class FileImportSpec extends FlatSpec with ShouldMatchers{
-  "FileImportSpec " should "create and initialize with good values" in {
+ /* "FileImportSpec " should "create and initialize with good values" in {
     
     def main()={
     var path = "/home/srey/Bureau/Schaffer.pf"
@@ -42,7 +42,6 @@ class FileImportSpec extends FlatSpec with ShouldMatchers{
     plot.getPointRenderer(data).setSetting(PointRenderer.COLOR, color)
     writer.write(plot, new FileOutputStream(dest),400,400)
     
-  }
+  }*/
   //main
-}
 }
