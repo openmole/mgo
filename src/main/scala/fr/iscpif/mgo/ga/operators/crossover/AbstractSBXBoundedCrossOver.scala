@@ -32,7 +32,7 @@ import fr.iscpif.mgo.tools.Math._
 
 abstract class AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]] extends CrossOver [G, F] {
      
-  def crossOver (g1: G, g2: G, distributionIndex: Double, crossoverRate: Double, factory: F) (implicit aprng : Random) = {
+  def apply (g1: G, g2: G, distributionIndex: Double, crossoverRate: Double, factory: F) (implicit aprng : Random) = {
     val numberOfVariables = g1.wrappedValues.size
       
     //crossover probability
@@ -82,7 +82,7 @@ abstract class AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G
         }
       } else(g1.wrappedValues zip g2.wrappedValues)
     }
-    (factory(offspring.map{_._1}),  factory(offspring.map{_._2}))
+    IndexedSeq(factory(offspring.map{_._1}),  factory(offspring.map{_._2}))
   }
   
   

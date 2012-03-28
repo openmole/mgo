@@ -18,10 +18,9 @@ class RandomValuesMutation [
   
   def this (rate : Double) = this( _ => rate)
   
-  override def mutate(genomes: IndexedSeq[G], factory: F)(implicit aprng: Random): G = {
+  override def apply(genome: G, factory: F)(implicit aprng: Random): G = {
    
     val mutationRate = rate(aprng)
-    val genome = genomes.random
     /* @todo Faire en sorte d'utiliser plutot un genome généré par buildRandomGenome, 
      * plutot qu'une valeur tiré au hasard avec aprng... */
     val newValues = genome.values map { v => 

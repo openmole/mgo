@@ -67,17 +67,10 @@ object NSGAII {
     crossoverOperator: CrossOver [G, F]
   )(implicit aprng: Random): IndexedSeq[G] = {
     
-    val mattingPop: IndexedSeq[G] = (selection.select(archive, archive.size)).map{_.genome}
-    
-    val offspring = 
-      Iterator.continually(
-        crossoverOperator.crossOver(mattingPop, factory)
-        match {
-          case(i1, i2) => IndexedSeq(i1, i2)
-        }).flatten.take(offSpringSize).toIndexedSeq
+    Iterator.continually {
+      crossoverOperator(selection(archive).genome, selection(archive).genome, factory)
+    }.flatten.map{mutationOperator(_, factory)}.take(offSpringSize).toIndexedSeq
                                                                
-    
-    Iterator.continually(mutationOperator.mutate(offspring, factory)).take(offSpringSize).toIndexedSeq        
   }
 
 }

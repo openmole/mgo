@@ -11,6 +11,6 @@ import java.util.Random
 // + pas generique car on utilise IndividualMG With With ... et il existe aussi Individual tout court ...
 // le operate est pas du tout generique
 trait Selection[I <: Individual[_, _]] {
-  def select(individuals: IndexedSeq[I], numberGenerated:Int) (implicit aprng : Random): IndexedSeq[I] 
+  def apply(individuals: IndexedSeq[I]) (implicit aprng : Random): I 
 }
 

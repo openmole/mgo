@@ -35,8 +35,8 @@ class BinaryTournamentNSGA2[I <: Individual[_, _] with Distance with Ranking] ex
    * avec un binary tournament sur le rank et la distance.
    */
   
-  def select(individuals: IndexedSeq[I], numberGenerated:Int) (implicit aprng : Random) : IndexedSeq[I] =
-   (0 until numberGenerated).map{ x => binaryTournament(individuals.random(aprng), individuals.random(aprng))}.toIndexedSeq
+  def apply(individuals: IndexedSeq[I]) (implicit aprng : Random) : I =
+   binaryTournament(individuals.random(aprng), individuals.random(aprng))
   
   
   def binaryTournament[I <: Individual[_, _] with Distance with Ranking](individual1: I, individual2: I)(implicit aprng: Random): I =  

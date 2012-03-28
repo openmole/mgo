@@ -16,9 +16,7 @@ class RandomWrappedValuesCrossOver[G <: GAGenome, F <: GAGenomeFactory[G]](rate:
     
   def this(rate: Double) = this( _ => rate)
   
-  def crossOver (genomes : IndexedSeq [G], factory: F) (implicit aprng : Random) = {
-    val g1 = genomes.random
-    val g2 = genomes.random
+  def apply (g1: G, g2: G, factory: F) (implicit aprng : Random) = {
     val crossoverRate = rate(aprng)
     
     // False on echange, true on maintient
@@ -28,7 +26,7 @@ class RandomWrappedValuesCrossOver[G <: GAGenome, F <: GAGenomeFactory[G]](rate:
         if(b) (g1e, g2e) else (g2e, g1e)
     }
     
-    (factory(offspringValues.map{_._1}),  factory(offspringValues.map{_._2}))
+    IndexedSeq(factory(offspringValues.map{_._1}),  factory(offspringValues.map{_._2}))
   }
 
 }
