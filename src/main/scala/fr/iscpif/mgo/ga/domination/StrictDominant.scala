@@ -23,7 +23,7 @@ import fr.iscpif.mgo.ga.GAFitness
 class StrictDominant extends Dominant {
   
   def isDominated(p1: GAFitness, p2: GAFitness): Boolean = {
-    for((g1, g2) <- p1.fitness zip p2.fitness) {
+    for((g1, g2) <- p1.values zip p2.values) {
       if(g1 < g2) return false
     }   
     true

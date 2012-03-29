@@ -28,9 +28,9 @@ object Distance {
       val crowding = indiv.map(new CrowdingInfo(_, 0.))
 
       // for each objective
-      for (curDim <- 0 until indiv.head.fitness.fitness.size) {
+      for (curDim <- 0 until indiv.head.fitness.values.size) {
         
-        val curCrowding = crowding.sortBy(_.multiGoal.fitness.fitness(curDim))
+        val curCrowding = crowding.sortBy(_.multiGoal.fitness.values(curDim))
 
         val firstCrowdingInfo = curCrowding.head
         val lastCrowdingInfo = curCrowding.last
@@ -38,8 +38,8 @@ object Distance {
         val first = firstCrowdingInfo.multiGoal.fitness
         val last = lastCrowdingInfo.multiGoal.fitness
 
-        val min = first.fitness(curDim)
-        val max = last.fitness(curDim)
+        val min = first.values(curDim)
+        val max = last.values(curDim)
 
         firstCrowdingInfo.crowding = Double.PositiveInfinity
         lastCrowdingInfo.crowding = Double.PositiveInfinity
@@ -52,7 +52,7 @@ object Distance {
 
         while (itOpod.hasNext) {
           val ptPlus1 = itOpod.next
-          val distance =  (ptPlus1.multiGoal.fitness.fitness(curDim) - ptMinus1.multiGoal.fitness.fitness(curDim)) / maxMinusMin
+          val distance =  (ptPlus1.multiGoal.fitness.values(curDim) - ptMinus1.multiGoal.fitness.values(curDim)) / maxMinusMin
           pt.crowding += distance.toDouble
   
           ptMinus1 = pt

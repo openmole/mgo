@@ -58,7 +58,7 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
       val f1 = h * g
       
       new GAFitness {
-        val fitness = IndexedSeq(f0, f1)
+        val values = IndexedSeq(f0, f1)
       }
       
     }

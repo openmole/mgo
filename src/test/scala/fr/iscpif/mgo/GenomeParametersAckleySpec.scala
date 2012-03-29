@@ -69,7 +69,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val fx = 20.+ math.E - (20. * exp1) - exp2
       
       new GAFitness {
-        val fitness = IndexedSeq(fx)
+        val values = IndexedSeq(fx)
       }
       
     }
@@ -78,6 +78,6 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     val evolutionEngine = new SigmaNSGAII(0.9)
     
     val individus = (0 until 50).map{_ => factory.random}.map{g => Individual(g, evaluator)}
-    evolutionEngine(individus, factory, evaluator, 1).foreach{i => println(i.fitness.fitness)}
+    evolutionEngine(individus, factory, evaluator, 1).foreach{i => println(i.fitness.values)}
   }
 }

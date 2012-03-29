@@ -16,7 +16,7 @@ object Ranking {
   def samePareto[I <: Individual[_, GAFitness] with Ranking](
     a1: IndexedSeq[I],
     a2: IndexedSeq[I]) = 
-      Math.allTheSameSorted(pareto(a1).map{_.fitness.fitness}, pareto(a2).map{_.fitness.fitness})
+      Math.allTheSameSorted(pareto(a1).map{_.fitness.values}, pareto(a2).map{_.fitness.values})
   
   
   def pareto[I <: Individual[_, _] with Ranking](individuals: IndexedSeq[I]) = 

@@ -44,7 +44,7 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
       val fx = 20.+ math.E - (20. * exp1) - exp2
   
       new GAFitness {
-        val fitness = IndexedSeq(fx)
+        val values = IndexedSeq(fx)
       }
       
     }

@@ -17,15 +17,15 @@ class HyperVolume(fileName:String) {
   
   def oppositeByFront(paretoFront:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]) = {
     
-    val nbObjective = paretoFront.head.fitness.fitness.size
+    val nbObjective = paretoFront.head.fitness.values.size
     
     var arrayOfMin = new Array[Double](nbObjective)
     var arrayOfMax = new Array[Double](nbObjective)
     
     for (curDim <- 0 until nbObjective) {  
-      var curList = paretoFront.sortBy(_.fitness.fitness(curDim))
-      arrayOfMin(curDim) = curList.head.fitness.fitness(curDim)
-      arrayOfMax(curDim) = curList.last.fitness.fitness(curDim) 
+      var curList = paretoFront.sortBy(_.fitness.values(curDim))
+      arrayOfMin(curDim) = curList.head.fitness.values(curDim)
+      arrayOfMax(curDim) = curList.last.fitness.values(curDim) 
     }
     
     Seq(arrayOfMin,arrayOfMax)
@@ -37,7 +37,7 @@ class HyperVolume(fileName:String) {
   
   def invertedFront(paretoFront:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]) = {
     
-    val nbObjective = paretoFront.head.fitness.fitness.size
+    val nbObjective = paretoFront.head.fitness.values.size
     var invertedFront = IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]()
     
     for (curObjectives <- 0 until nbObjective) {  
@@ -45,11 +45,10 @@ class HyperVolume(fileName:String) {
         new Individual[GAGenome, GAFitness] {
           def genome = i.genome
           def fitness = new GAFitness {
-            val fitness:IndexedSeq[Double] = i.fitness.fitness.map{e => 
+            val values = i.fitness.values.map{e => 
               if (e <= 1.0 && e >= 0.0) 1.0 - e
               else if (e > 1.0) 0.0
               else 1.0 //if (e < 0.0 )
-              
             }
           }
         }
@@ -65,7 +64,7 @@ class HyperVolume(fileName:String) {
     val arrayMax = arrayOfMinMaxValues(1)
     
     var normalizedFront = IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]()
-    val nbObjective = paretoFront.head.fitness.fitness.size
+    val nbObjective = paretoFront.head.fitness.values.size
     
     // On re-calcule un front d'individu normalisé a partir du front actuel(a priori le meilleur ...), selon le min max de chaque objectif
     for (curObjectives <- 0 until nbObjective) {  
@@ -73,7 +72,7 @@ class HyperVolume(fileName:String) {
         new Individual[GAGenome, GAFitness] {
           def genome = i.genome
           def fitness = new GAFitness {
-            val fitness = i.fitness.fitness.map{toNormalize(_,arrayMin(curObjectives),arrayMax(curObjectives))}
+            val values = i.fitness.values.map{toNormalize(_,arrayMin(curObjectives),arrayMax(curObjectives))}
           }
         }
       }

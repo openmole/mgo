@@ -30,15 +30,15 @@ object Individual {
   implicit def indexedSeq2IndexedSeqDecorator[G <:GAGenome,F <: GAFitness](individuals:IndexedSeq[Individual[G,F]])= new {
     
     def toMatrix:Array[Array[Double]] = {
-      individuals.map{ _.fitness.fitness.toArray }.toArray 
+      individuals.map{ _.fitness.values.toArray }.toArray 
     }
     
     //Version scale, pas generique :(
     def arrayWithGenome(max:Int,min:Int):Array[Array[Double]]= {
-      val nbObjective = individuals.head.fitness.fitness.size
+      val nbObjective = individuals.head.fitness.values.size
       var matrix:Array[Array[Double]] = { 
         individuals.map{
-          i =>   ((0 until nbObjective).map{ o => i.fitness.fitness(o)} ++ i.genome.values.map{_.scale(min,max)}).toArray
+          i =>   ((0 until nbObjective).map{ o => i.fitness.values(o)} ++ i.genome.values.map{_.scale(min,max)}).toArray
         }.toArray
       }
       matrix

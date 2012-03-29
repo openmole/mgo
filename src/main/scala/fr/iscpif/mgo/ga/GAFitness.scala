@@ -9,7 +9,7 @@ object GAFitness {
 
   implicit def indexedSeqToFit(f: IndexedSeq[Double]) = new {
     def toGAFitness = new GAFitness {
-      val fitness = f
+      val values = f
     }
   }
   
@@ -17,6 +17,6 @@ object GAFitness {
 
 
 trait GAFitness {
-  def fitness: IndexedSeq[Double]
-  override def toString = fitness.toString
+  def values: IndexedSeq[Double]
+  override def toString = values.toString
 }

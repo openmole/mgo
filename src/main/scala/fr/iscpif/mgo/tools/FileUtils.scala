@@ -59,7 +59,7 @@ object FileUtils {
       i =>  new Individual[GAGenome, GAFitness] {
         def genome = null //genome n'existe pas dans ce cas la ...
         def fitness = new GAFitness {
-          val fitness = i.toIndexedSeq
+          val values = i.toIndexedSeq
         }
       }
     }
