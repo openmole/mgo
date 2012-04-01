@@ -16,11 +16,12 @@ object Ranking {
   def sameFirstRanked[I <: Individual[GAGenome, GAFitness]](
     a1: IndexedSeq[I],
     a2: IndexedSeq[I],
-    rank: Rank,
-    dominance: Dominant) = 
+    dominance: Dominant,
+    rank: Rank = new ParetoRank
+  ) = 
       Math.allTheSame (
-        firstRanked(a1, rank, dominance).map{_.fitness.values},
-        firstRanked(a2, rank, dominance).map{_.fitness.values}
+        firstRanked(a1, dominance, rank).map{_.fitness.values},
+        firstRanked(a2, dominance, rank).map{_.fitness.values}
       )
   
   
@@ -31,7 +32,10 @@ object Ranking {
       individuals.filter(_.rank == first)
     }
     
-  def firstRanked[I <: Individual[GAGenome, GAFitness]](individuals: IndexedSeq[I], rank: Rank, dominance: Dominant): IndexedSeq[I] = {
+  def firstRanked[I <: Individual[GAGenome, GAFitness]](
+    individuals: IndexedSeq[I],
+    dominance: Dominant,
+    rank: Rank = new ParetoRank): IndexedSeq[I] = {
     val ranks = rank.apply(individuals, dominance)
     val firstRank = ranks.map{_.rank}.min
     individuals zip ranks filter { case(_,r) => r.rank == firstRank } map { case(i, _) => i }

@@ -16,7 +16,7 @@ import fr.iscpif.mgo.Individual._
 import fr.iscpif.mgo.ga.domination._
 import fr.iscpif.mgo.ga.selection.Distance
 import fr.iscpif.mgo.ga.selection.Ranking._
-import fr.iscpif.mgo.ga.selection.RankPareto
+import fr.iscpif.mgo.ga.selection.ParetoRank
 import fr.iscpif.mgo.ga.selection.Ranking
 import fr.iscpif.mgo.ga.selection.Rank
 import fr.iscpif.mgo.tools.Math
@@ -44,7 +44,7 @@ object NSGAII {
   def elitism[G <: GAGenome](
     archive: IndexedSeq[Individual[G, GAFitness]], 
     size: Int,
-    rank: Rank = new RankPareto
+    rank: Rank = new ParetoRank
   )(implicit dominance: Dominant): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
     val individuals = buildIndividualsWithDistanceAndRanking(archive, dominance, rank)
     
@@ -86,8 +86,8 @@ object NSGAII {
   
   def sigma(
     sbxDistributionIndex: Double,
-    rank: Rank = new RankPareto,
     dominance: Dominant = new StrictDominant,
+    rank: Rank = new ParetoRank,
     selection: Selection[Individual[GAGenomeWithSigma, _] with Distance with Ranking] = new BinaryTournamentNSGA2[Individual[GAGenomeWithSigma, _] with Distance with Ranking]
   ) = {
     val _dominance = dominance
@@ -117,7 +117,7 @@ abstract class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] {
   def selection: Selection[Individual[G, _] with Distance with Ranking]
   def rank: Rank
   def steady(oldPop: IndexedSeq[Individual[G, GAFitness]], newPop: IndexedSeq[Individual[G, GAFitness]]) =
-    sameFirstRanked(oldPop, newPop, new RankPareto, dominance)
+    sameFirstRanked(oldPop, newPop, dominance)
   
   def apply(population: IndexedSeq[Individual[G, GAFitness]] ,factory: F, evaluator: G => GAFitness, stopAfterSteady: Int)(implicit aprng: Random): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
     

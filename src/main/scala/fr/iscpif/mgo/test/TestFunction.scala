@@ -36,7 +36,7 @@ object TestFunction extends App {
   val nsga2 = 
     NSGAII.sigma(
       sbxDistributionIndex = 2,
-      rank = new RankParetoCrowding,
+      rank = new ParetoCrowdingRank,
       dominance = new StrictDominant
     )
   
@@ -45,7 +45,7 @@ object TestFunction extends App {
                      factory, 
                      evaluator, 
                      1000)
-  val ranks = new RankPareto().apply(res, new StrictDominant)
+  val ranks = new ParetoRank().apply(res, new StrictDominant)
   val firstRank = ranks zip res sortBy (_._1.rank) foreach { case(i, r) => println(i.rank + " " + r.genome.values) }
   
   //, new RankPareto, new StrictDominant).foreach{i => println(scale(i.genome.values(0)))}

@@ -10,7 +10,7 @@ import fr.iscpif.mgo.ga.GAFitness
 import fr.iscpif.mgo.ga.GAGenome
 import fr.iscpif.mgo.ga.domination.Dominant
 
-class RankParetoCrowding extends RankPareto {
+class ParetoCrowdingRank extends ParetoRank {
   
   override def apply(individuals: IndexedSeq [Individual[GAGenome, GAFitness]], dominanceType: Dominant): IndexedSeq[Ranking] = {
     val crowding = Distance.crowding(individuals)

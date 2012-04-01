@@ -11,7 +11,7 @@ import fr.iscpif.mgo.ga.GAGenome
 import fr.iscpif.mgo.ga.domination._
 import fr.iscpif.mgo.ga.selection._
 
-class RankPareto extends Rank {
+class ParetoRank extends Rank {
     
   override def apply(individuals: IndexedSeq [Individual[GAGenome, GAFitness]], dominanceType: Dominant): IndexedSeq[Ranking] = { 
     import dominanceType._
