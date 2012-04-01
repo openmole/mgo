@@ -21,7 +21,6 @@ import fr.iscpif.mgo.ga.algorithm.GAGenomeWithSigmaFactory
 import fr.iscpif.mgo.ga._
 import fr.iscpif.mgo.ga.operators.crossover._
 import fr.iscpif.mgo.ga.operators.mutation._
-import fr.iscpif.mgo.ga.algorithm.SigmaNSGAII
 import fr.iscpif.mgo.ga.operators._
 import fr.iscpif.mgo.ga._
 import fr.iscpif.mgo.ga.GAFitness._
@@ -75,7 +74,7 @@ class GenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     }
      
     implicit val rng = new Random
-    val evolutionEngine = new SigmaNSGAII(0.9)
+    val evolutionEngine = NSGAII.sigma(0.9)
     
     val individus = (0 until 50).map{_ => factory.random}.map{g => Individual(g, evaluator)}
     evolutionEngine(individus, factory, evaluator, 1).foreach{i => println(i.fitness.values)}

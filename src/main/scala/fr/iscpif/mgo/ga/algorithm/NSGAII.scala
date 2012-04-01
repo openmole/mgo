@@ -7,6 +7,8 @@ package fr.iscpif.mgo.ga.algorithm
 
 import java.util.Random
 import fr.iscpif.mgo.ga._
+import fr.iscpif.mgo.ga.operators.crossover.SBXBoundedCrossover
+import fr.iscpif.mgo.ga.operators.mutation.CoEvolvingSigmaValuesMutation
 import fr.iscpif.mgo.ga.selection.BinaryTournamentNSGA2
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.CrossOver
@@ -14,34 +16,37 @@ import fr.iscpif.mgo.Individual._
 import fr.iscpif.mgo.ga.domination._
 import fr.iscpif.mgo.ga.selection.Distance
 import fr.iscpif.mgo.ga.selection.Ranking._
+import fr.iscpif.mgo.ga.selection.RankPareto
 import fr.iscpif.mgo.ga.selection.Ranking
+import fr.iscpif.mgo.ga.selection.Rank
 import fr.iscpif.mgo.tools.Math
 import scala.annotation.tailrec
 
 object NSGAII {
   
-  implicit def individualsDecorator[FIT <: GAFitness, G](individuals: IndexedSeq[Individual[G, FIT]]) = new {
-        
-    def toIndividualsWithDistanceAndRanking(dominance: Dominant) = {
-      val ranks = Ranking.rank(individuals, dominance)
-      val distances = Distance.crowding(individuals)
-      (individuals zip ranks zip distances) map { 
-        case ((i, iranking), idistance) =>  
-          new Individual[G, FIT] with Distance with Ranking {
-            val genome = i.genome
-            val fitness = i.fitness
-            val distance = idistance.distance
-            val rank = iranking.rank
-          }
-      }
+  def buildIndividualsWithDistanceAndRanking[G <: GAGenome, FIT <: GAFitness](
+    individuals: IndexedSeq[Individual[G, FIT]],
+    dominance: Dominant,
+    rank: Rank) = {
+    val ranks = rank(individuals, dominance)
+    val distances = Distance.crowding(individuals)
+    (individuals zip ranks zip distances) map { 
+      case ((i, iranking), idistance) =>  
+        new Individual[G, FIT] with Distance with Ranking {
+          val genome = i.genome
+          val fitness = i.fitness
+          val distance = idistance.distance
+          val rank = iranking.rank
+        }
     }
-  }  
-  
+  }
   
   def elitism[G <: GAGenome](
     archive: IndexedSeq[Individual[G, GAFitness]], 
-    size: Int)(implicit dominance: Dominant): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
-    val individuals = archive.toIndividualsWithDistanceAndRanking(dominance)
+    size: Int,
+    rank: Rank = new RankPareto
+  )(implicit dominance: Dominant): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
+    val individuals = buildIndividualsWithDistanceAndRanking(archive, dominance, rank)
     
     if(individuals.size < size) individuals
     else {
@@ -67,35 +72,67 @@ object NSGAII {
     crossoverOperator: CrossOver [G, F]
   )(implicit aprng: Random): IndexedSeq[G] = {
     
-    Iterator.continually {
-      crossoverOperator(selection(archive).genome, selection(archive).genome, factory)
-    }.flatten.map{mutationOperator(_, factory)}.take(offSpringSize).toIndexedSeq
-                                                               
+    def breed(acc: List[G] = List.empty): List[G] = {
+      if(acc.size >= offSpringSize) acc
+      else {
+        val newIndividuals = crossoverOperator(selection(archive).genome, selection(archive).genome, factory)
+        breed(acc ++ newIndividuals)
+      }
+    }
+
+    breed().toIndexedSeq
   }
 
+  
+  def sigma(
+    sbxDistributionIndex: Double,
+    rank: Rank = new RankPareto,
+    dominance: Dominant = new StrictDominant,
+    selection: Selection[Individual[GAGenomeWithSigma, _] with Distance with Ranking] = new BinaryTournamentNSGA2[Individual[GAGenomeWithSigma, _] with Distance with Ranking]
+  ) = {
+    val _dominance = dominance
+    val _selection = selection
+    val _rank = rank
+    
+    new NSGAII[GAGenomeWithSigma, GAGenomeWithSigmaFactory] {
+      val mutationOperator = new CoEvolvingSigmaValuesMutation[GAGenomeWithSigma, GAGenomeWithSigmaFactory]
+      val crossoverOperator = new SBXBoundedCrossover[GAGenomeWithSigma, GAGenomeWithSigmaFactory](sbxDistributionIndex)
+      val dominance = _dominance
+      val selection = _selection
+      val rank = _rank
+      
+    }
+  }
+    
+  
 }
 
 import NSGAII._
 
-class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
-  mutationOperator: Mutation [G, F],
-  crossoverOperator: CrossOver [G, F]) {
-
-  implicit val dominance = new StrictDominant
-  val selection = new BinaryTournamentNSGA2[Individual[G, _] with Distance with Ranking]
+abstract class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] {
+ 
+  def mutationOperator: Mutation [G, F]
+  def crossoverOperator: CrossOver [G, F]
+  def dominance: Dominant
+  def selection: Selection[Individual[G, _] with Distance with Ranking]
+  def rank: Rank
+  def steady(oldPop: IndexedSeq[Individual[G, GAFitness]], newPop: IndexedSeq[Individual[G, GAFitness]]) =
+    sameFirstRanked(oldPop, newPop, new RankPareto, dominance)
   
   def apply(population: IndexedSeq[Individual[G, GAFitness]] ,factory: F, evaluator: G => GAFitness, stopAfterSteady: Int)(implicit aprng: Random): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
     
     @tailrec def evolveUntilSteady(population: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking], steadyUntil: Int = 0): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
+      //println(steadyUntil)
+      //population.foreach{i => println(i.rank + " " + i.genome)}
       if(steadyUntil >= stopAfterSteady) population
       else {
-        val nextPop = evolve(population, factory, evaluator) 
-        if(!samePareto(population, nextPop)) evolveUntilSteady(nextPop, 0)
+        val nextPop = evolve(population, factory, evaluator)
+        if(!steady(population, nextPop)) evolveUntilSteady(nextPop, 0)
         else evolveUntilSteady(nextPop, steadyUntil + 1)
       }
     }
     
-    evolveUntilSteady(population.toIndividualsWithDistanceAndRanking(dominance))
+    evolveUntilSteady(buildIndividualsWithDistanceAndRanking(population, dominance, rank))
   }
   
   def evolve(population: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking], factory: F, evaluator: G => GAFitness)(implicit aprng: Random): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
@@ -107,7 +144,7 @@ class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]] (
       mutationOperator,
       crossoverOperator
     ).map{ g => Individual(g, evaluator) }
-    elitism(population ++ offspring, population.size)
+    elitism(population ++ offspring, population.size, rank)(dominance)
   }
 
   

@@ -70,22 +70,18 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
      */
     def evalG(gValues:IndexedSeq[Double])=
       (gValues.slice(1, gValues.size)).sum * (9.0 / (gValues.size-1))  + 1.0
-  
 
-    
     /**
      * Returns the value of the ZDT1 function H.
      * @param f First argument of the function H.
      * @param g Second argument of the function H.
      */
     def evalH(f: Double, g: Double) = 1.0 - sqrt(f/g)
-      
- 
-       
+
     implicit val aprng = new Random
       
     // Init algorithms NSGA2 avec les trois types d'operateurs
-    val evolutionEngine = new SigmaNSGAII(0.9)
+    val evolutionEngine = NSGAII.sigma(0.9)
       
     // Premier tour, obligatoire pour l'initiatlisation des premier individu
     val individus = (0 until 50).map{_ => factory.random}.map{g => Individual(g, evaluator)}.toIndexedSeq
@@ -94,9 +90,5 @@ class ZDTSpec extends FlatSpec with ShouldMatchers{
     //val archive = evolutionEngine(individus, factory, evaluator, 1)
       
     //println(archive.map{i => i.fitness.toString})
-      
-    
-   
-    
   } 
 }

@@ -56,7 +56,7 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     val genomes = (0 until 100).map{_ => factory.random}
     
     // Init algorithms NSGA2 avec les deux types d'operateurs, select etant dans NSGA2
-    val evolutionEngine = new SigmaNSGAII(0.9)
+    val evolutionEngine = NSGAII.sigma(0.9)
       
     // First turn, evaluate and construct init population of individual
     val individus = genomes.map{g => Individual(g, evaluator)}
