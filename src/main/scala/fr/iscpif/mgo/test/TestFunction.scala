@@ -17,7 +17,7 @@ import fr.iscpif.mgo.ga.selection.Ranking._
 import java.util.Random
 
 object TestFunction extends App {
-  def f(x: Double) = x * x
+ /* def f(x: Double) = x * x
   
   def scale(x: Double) = x.scale(-100, 100)
     
@@ -30,24 +30,29 @@ object TestFunction extends App {
     }
  
   implicit val rng = new Random
-  val factory = new GAGenomeWithSigmaFactory(1) 
+  val factory = new GAGenomeWithSigmaFactory(1)
     
     
   val nsga2 = 
     NSGAII.sigma(
+      maxStep = 50,
+      factory = factory,
+      evaluator = evaluator,
       sbxDistributionIndex = 2,
       rank = new ParetoCrowdingRank,
       dominance = new StrictDominant
     )
-  
-  val res = nsga2.apply((0 until 50).
+
+  val res = nsga2.evolveStep((0 until 50).map {i => evaluator(factory.random)})
+  /*val res = nsga2.apply((0 until 50).
                      map{i => evaluator(factory.random)}, 
                      factory, 
                      evaluator, 
                      1000)
+  */
   val ranks = new ParetoRank().apply(res, new StrictDominant)
   val firstRank = ranks zip res sortBy (_._1.rank) foreach { case(i, r) => println(i.rank + " " + r.genome.values) }
   
   //, new RankPareto, new StrictDominant).foreach{i => println(scale(i.genome.values(0)))}
-    
+  */
 }

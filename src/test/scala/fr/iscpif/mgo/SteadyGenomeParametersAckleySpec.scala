@@ -1,3 +1,4 @@
+/*
 
 package fr.iscpif.mgo
 
@@ -64,3 +65,4 @@ class SteadyGenomeParametersAckleySpec extends FlatSpec with ShouldMatchers{
     println(archive.map{i => i.fitness.toString})
   }
 }
+*/

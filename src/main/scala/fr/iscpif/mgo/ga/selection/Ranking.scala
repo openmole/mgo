@@ -18,7 +18,7 @@ object Ranking {
     a2: IndexedSeq[I],
     dominance: Dominant,
     rank: Rank = new ParetoRank
-  ) = 
+  ) =
     Math.allTheSame (
       firstRanked(a1, dominance, rank).map{_.fitness.values},
       firstRanked(a2, dominance, rank).map{_.fitness.values}
