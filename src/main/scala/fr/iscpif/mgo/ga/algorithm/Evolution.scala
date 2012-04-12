@@ -23,7 +23,7 @@ import java.util.Random
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-trait AbstractAlgorithm[ G <: GAGenome, F <: GAGenomeFactory[G]] {
+trait Evolution[ G <: GAGenome, F <: GAGenomeFactory[G]] {
 
   type I <: Individual[G,GAFitness]
 
@@ -31,18 +31,17 @@ trait AbstractAlgorithm[ G <: GAGenome, F <: GAGenomeFactory[G]] {
   def factory: F
   def evaluator: G => GAFitness
 
-  def mutationOperator: Mutation[G, F]
-  def crossoverOperator: CrossOver[G, F]
-  def termination : AbstractTermination[I]
-
-  def selection: Selection[I]
+  def mutate (genome: G, factory: F)(implicit aprng: Random): G
+  def crossover(g1: G, g2: G, factory: F)(implicit aprng: Random) : IndexedSeq[G]
+  def terminated (oldPop: IndexedSeq[I], newPop: IndexedSeq[I]): Boolean
+  def selection (individuals: IndexedSeq[I])(implicit aprng: Random): I
 
   //Perform N step
   @tailrec private def evolveStep(population: IndexedSeq[I], step: Int = 0)(implicit aprng:Random):IndexedSeq[I]= {
     if (step >= maxStep) population
     else {
       val nextPop = evolve(population)
-      if (!termination.hasNext(population, nextPop)) evolveStep(nextPop, 0)
+      if (terminated(population, nextPop)) evolveStep(nextPop, 0)
       else evolveStep(nextPop, step + 1)
     }
   }

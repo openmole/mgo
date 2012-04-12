@@ -6,7 +6,6 @@
 package fr.iscpif.mgo.ga.algorithm
 
 import java.util.Random
-import fr.iscpif.mgo.ga._
 import fr.iscpif.mgo.ga.operators.crossover.SBXBoundedCrossover
 import fr.iscpif.mgo.ga.operators.mutation.CoEvolvingSigmaValuesMutation
 import fr.iscpif.mgo.ga.selection.stochastic.BinaryTournamentNSGA2
@@ -20,9 +19,10 @@ import fr.iscpif.mgo.ga.selection.ParetoRank
 import fr.iscpif.mgo.ga.selection.Ranking
 import fr.iscpif.mgo.ga.selection.Rank
 import fr.iscpif.mgo.tools.Math
+import ga._
 import scala.annotation.tailrec
-import termination.{AbstractTermination, SameRankingTermination}
 import selection.paretorankingstrategy.NonDominatedSorting
+import termination.{AbstractTermination, SameRankingTermination}
 
 object NSGAII {
 
@@ -45,34 +45,33 @@ object NSGAII {
 
 
   def sigma(
-             maxStep: Int,
-             archiveSize: Int,
-             factory: GAGenomeWithSigmaFactory,
-             evaluator: GAGenomeWithSigma => GAFitness,
-             sbxDistributionIndex: Double,
-             dominance: Dominant = new StrictDominant,
-             rank: Rank = new ParetoRank): NSGAII[GAGenomeWithSigma, GAGenomeWithSigmaFactory] = {
-    def _dominance = dominance
-    def _rank = rank
+             _maxStep: Int,
+             _archiveSize: Int,
+             _genomeSize: Int,
+             _factory: GAGenomeWithSigmaFactory,
+             _evaluator: GAGenomeWithSigma => GAFitness,
+             _sbxDistributionIndex: Double,
+             _dominance: Dominant = new StrictDominant,
+             _rank: Rank = new ParetoRank): NSGAII[GAGenomeWithSigma, GAGenomeWithSigmaFactory] = {
 
+    type I = Individual[GAGenomeWithSigma, GAFitness] with Distance with Ranking
 
-    /*
-    Selection occurs two times in the evolutionary loop.First, in order to generate offsprings,
-    parents must be selected from the current population (mating selection).Second, the new
-    parent population has to be selected from the offspring and the previous parents (Environmental selection)
-    A number of selection operators were proposed, which usually base the chance of selection of
-    particular individuals on their fitness values or their rank in the population, respectively.
-     */
+    new NSGAII[GAGenomeWithSigma, GAGenomeWithSigmaFactory]
+      with BinaryTournamentNSGA2[I]
+      with SameRankingTermination[I]
+      with NonDominatedSorting[I]
+      with CoEvolvingSigmaValuesMutation[GAGenomeWithSigma, GAGenomeWithSigmaFactory]
+      with SBXBoundedCrossover[GAGenomeWithSigma, GAGenomeWithSigmaFactory]{
 
+      def distributionIndex = _sbxDistributionIndex
 
-    // Environmental selection
-    // How to prevent non-dominated solutions from being lost?
-    // Environmental selection is used to obtain a representative efficient set
+      def factory = _factory
 
-    new NSGAII[GAGenomeWithSigma, GAGenomeWithSigmaFactory](maxStep, archiveSize, factory, evaluator) {
-      def mutationOperator = new CoEvolvingSigmaValuesMutation[GAGenomeWithSigma, GAGenomeWithSigmaFactory]
+      def archiveSize = _archiveSize
 
-      def crossoverOperator = new SBXBoundedCrossover[GAGenomeWithSigma, GAGenomeWithSigmaFactory](sbxDistributionIndex)
+      def maxStep = _maxStep
+
+      def evaluator = _evaluator
 
       def dominance = _dominance
 
@@ -80,55 +79,33 @@ object NSGAII {
     }
   }
 
-  def elitism[G <: GAGenome](archive: IndexedSeq[Individual[G, GAFitness]],
-                             envSelection: NonDominatedSorting,
-                             rank: Rank = new ParetoRank
-                              )(implicit dominance: Dominant): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
-
-    val individuals = buildIndividualsWithDistanceAndRanking(archive, dominance, rank)
-    envSelection.apply(individuals)(dominance)
-  }
-
-  def breed[G <: GAGenome, F <: GAGenomeFactory[G], I <: Individual[G, GAFitness] with Distance with Ranking](archive: IndexedSeq[I],
-                                                                                                              factory: F,
-                                                                                                              offSpringSize: Int,
-                                                                                                              selection: Selection[I],
-                                                                                                              mutationOperator: Mutation[G, F],
-                                                                                                              crossoverOperator: CrossOver[G, F]
-                                                                                                               )(implicit aprng: Random): IndexedSeq[G] = {
-
-    def breed(acc: List[G] = List.empty): List[G] = {
-      if (acc.size >= offSpringSize) acc
-      else {
-        val newIndividuals = crossoverOperator(selection(archive).genome, selection(archive).genome, factory)
-        breed(acc ++ newIndividuals)
-      }
-    }
-
-    breed().toIndexedSeq
-  }
 }
 
-abstract class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]](_maxStep: Int, archiveSize: Int, _factory: F, _evaluator: G => GAFitness)
-  extends AbstractAlgorithm[G, F] {
+// WORK NOTE :
+/*
+Selection occurs two times in the evolutionary loop.First, in order to generate offsprings,
+parents must be selected from the current population (mating selection).Second, the new
+parent population has to be selected from the offspring and the previous parents (Environmental selection)
+A number of selection operators were proposed, which usually base the chance of selection of
+particular individuals on their fitness values or their rank in the population, respectively.
+
+
+
+// Environmental selection
+// How to prevent non-dominated solutions from being lost?
+// Environmental selection is used to obtain a representative efficient set
+
+*/
+
+// @fixme Refaire un check sur Ranking
+
+trait NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]]
+  extends Evolution[G, F] with MOOElitism {
 
   type I = Individual[G, GAFitness] with Distance with Ranking
 
-  def evaluator = _evaluator
-
-  def maxStep = _maxStep
-
-  def factory = _factory
-
-  def dominance: Dominant
-
-  def rank: Rank
-
-  def termination: AbstractTermination[I] = new SameRankingTermination[I](dominance, rank)
-
-  def selection: Selection[I] = new BinaryTournamentNSGA2[I]
-
-  def envSelection = new NonDominatedSorting(archiveSize)
+  def archiveSize: Int
+  def envSelection(individuals: IndexedSeq[I]): IndexedSeq[I]
 
   override def evolve(population: IndexedSeq[I])(implicit aprng: Random): IndexedSeq[I] = {
 
@@ -140,15 +117,27 @@ abstract class NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]](_maxStep: Int, arc
     }
 
     val archive = population ++ offspring
-    //Elitisme strategy
-    NSGAII.elitism(archive, envSelection, rank)(dominance)
 
+    //Elitisme strategy
+    val individuals = NSGAII.buildIndividualsWithDistanceAndRanking(archive, dominance, rank)
+    envSelection(individuals)
   }
 
   def breed(archive: IndexedSeq[I],
             offSpringSize: Int)(implicit aprng: Random): IndexedSeq[G] = {
 
-    NSGAII.breed[G, F, I](archive, factory, offSpringSize, selection, mutationOperator, crossoverOperator)
+    //Crossover sur matingPopulation puis mutation
+    def breed(acc: List[G] = List.empty): List[G] = {
+      if (acc.size >= offSpringSize) acc
+      else {
+        val newIndividuals = crossover(selection(archive).genome, selection(archive).genome, factory).map {
+          mutate(_, factory)
+        }.take(offSpringSize).toIndexedSeq
+        breed(acc ++ newIndividuals)
+      }
+    }
+
+    breed().toIndexedSeq
   }
 
 

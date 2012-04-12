@@ -18,7 +18,7 @@ class DynamicGaussianMutation [G <: GAGenome with SigmaParameters,
   //http://c-faq.com/lib/gaussian.html
   //http://www.developpez.net/forums/d331848/autres-langages/algorithmes/contribuez/generation-nombre-aleatoire-suivant-loi-gaussienne/
   //http://www.taygeta.com/random/gaussian.html
-  override def apply (genome : G, factory: F) (implicit aprng : Random) : G = {
+  override def mutate (genome : G, factory: F) (implicit aprng : Random) : G = {
     val newValues = (genome.values zip genome.sigma) map {
       case (v, s) => clamp (aprng.nextGaussian * s + v, 0, 1)
     }

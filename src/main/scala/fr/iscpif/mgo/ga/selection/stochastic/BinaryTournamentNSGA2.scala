@@ -26,7 +26,7 @@ import selection.{Ranking, Distance}
 
 //PROBLEME DE TYPE ICI
 //TODO : IDEM AVEC INDIVIDUALMG et INDIVIDUAL ... IL NOUS FAUT UN SUPERTYPE ?
-class BinaryTournamentNSGA2[I <: Individual[_, _] with Distance with Ranking] extends Selection[I] {
+trait BinaryTournamentNSGA2[I <: Individual[_, _] with Distance with Ranking] extends Selection[I] {
   //TODO : probleme avec la dominance passé ici, elle sert au calcul initial,
   //et pas a la comparaison, donc peut etre il faudra differencie leur utilisation ?
   //(dominanceType: Dominant)
@@ -36,9 +36,8 @@ class BinaryTournamentNSGA2[I <: Individual[_, _] with Distance with Ranking] ex
    * avec un binary tournament sur le rank et la distance.
    */
 
-  def apply(individuals: IndexedSeq[I])(implicit aprng: Random): I =
+  def selection(individuals: IndexedSeq[I])(implicit aprng: Random): I =
     binaryTournament(individuals.random(aprng), individuals.random(aprng))
-
 
   def binaryTournament[I <: Individual[_, _] with Distance with Ranking](individual1: I, individual2: I)(implicit aprng: Random): I =
     if (individual1.rank < individual2.rank) return individual1

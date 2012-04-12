@@ -24,9 +24,12 @@ import annotation.tailrec
  */
 
 //Utiliser par NSGA2 et MO-CMA-ES
-class NonDominatedSorting(archiveSize : Int) {
+trait NonDominatedSorting[I <: Individual[GAGenome, GAFitness] with Distance with Ranking] {
 
-  def apply[G <: GAGenome]( individuals: IndexedSeq[Individual[G, GAFitness] with Distance with Ranking])(implicit dominance: Dominant): IndexedSeq[Individual[G, GAFitness] with Distance with Ranking] = {
+  def archiveSize: Int
+  def dominance:Dominant
+
+  def envSelection( individuals: IndexedSeq[I]): IndexedSeq[I] = {
 
     if (individuals.size < archiveSize) individuals
     else {

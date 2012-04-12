@@ -11,7 +11,7 @@ import tools.Random._
 import java.util.Random
 
 class AverageCrossover [G <: GAGenome, F <: GAGenomeFactory [G]] extends CrossOver [G, F] {
-  def apply (g1: G, g2: G, factory: F) (implicit aprng : Random) = {
+  def crossover (g1: G, g2: G, factory: F) (implicit aprng : Random) = {
     val pds = aprng.nextDouble
       
     val newValues = IndexedSeq.tabulate (g1.values.size) (i => 

@@ -16,7 +16,7 @@ class RandomWrappedValuesCrossOver[G <: GAGenome, F <: GAGenomeFactory[G]](rate:
     
   def this(rate: Double) = this( _ => rate)
   
-  def apply (g1: G, g2: G, factory: F) (implicit aprng : Random) = {
+  def crossover (g1: G, g2: G, factory: F) (implicit aprng : Random) = {
     val crossoverRate = rate(aprng)
     
     // False on echange, true on maintient

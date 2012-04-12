@@ -18,7 +18,7 @@ class RandomValuesMutation [
   
   def this (rate : Double) = this( _ => rate)
   
-  override def apply(genome: G, factory: F)(implicit aprng: Random): G = {
+  override def mutate(genome: G, factory: F)(implicit aprng: Random): G = {
    
     val mutationRate = rate(aprng)
     /* @todo Faire en sorte d'utiliser plutot un genome généré par buildRandomGenome, 

@@ -30,9 +30,9 @@ import fr.iscpif.mgo.tools.Math._
  *  
  */
 
-abstract class AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]] extends CrossOver [G, F] {
+trait AbstractSBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]] extends CrossOver [G, F] {
      
-  def apply (g1: G, g2: G, distributionIndex: Double, crossoverRate: Double, factory: F) (implicit aprng : Random) = {
+  def crossover (g1: G, g2: G, distributionIndex: Double, crossoverRate: Double, factory: F) (implicit aprng : Random) = {
     val numberOfVariables = g1.wrappedValues.size
       
     //crossover probability

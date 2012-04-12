@@ -30,10 +30,11 @@ import fr.iscpif.mgo.tools.Math._
  *  
  */
 
-class SBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]](distributionIndex: Double) extends AbstractSBXBoundedCrossover [G, F] {
-    
+trait SBXBoundedCrossover[G <: GAGenome, F <: GAGenomeFactory[G]] extends AbstractSBXBoundedCrossover [G, F] {
+
+  def distributionIndex: Double
   def rate(rng: Random) = rng.nextDouble
-  def apply (g1 : G, g2: G, factory: F) (implicit aprng : Random) = apply(g1, g2, distributionIndex, rate(aprng), factory)
+  def crossover (g1 : G, g2: G, factory: F) (implicit aprng : Random) = crossover(g1, g2, distributionIndex, rate(aprng), factory)
  
 }
 

@@ -8,5 +8,5 @@ package fr.iscpif.mgo
 import java.util.Random
 
 trait CrossOver [G, F] {
-  def apply(g1: G, g2: G, factory: F) (implicit aprng : Random): IndexedSeq[G]
+  def crossover(g1: G, g2: G, factory: F) (implicit aprng : Random): IndexedSeq[G]
 }

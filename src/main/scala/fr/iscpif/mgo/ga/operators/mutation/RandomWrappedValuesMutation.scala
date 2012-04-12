@@ -19,7 +19,7 @@ class RandomWrappedValuesMutation [
   
   def this( rate: Double) = this( _ => rate)
   
-  override def apply(genome: G, factory: F)(implicit aprng: Random): G = {
+  override def mutate(genome: G, factory: F)(implicit aprng: Random): G = {
     val mutationRate = rate(aprng)
     
     val randomGenome = factory.random

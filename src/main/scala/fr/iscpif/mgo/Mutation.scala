@@ -10,5 +10,5 @@ package fr.iscpif.mgo
 import java.util.Random
 
 trait Mutation [G, F]{
-  def apply(genomes: G, factory: F) (implicit aprng : Random): G
+  def mutate(genomes: G, factory: F) (implicit aprng : Random): G
 }

@@ -6,6 +6,8 @@ import fr.iscpif.mgo.ga.domination.Dominant
 import fr.iscpif.mgo.ga.selection.{ParetoRank, Rank}
 import fr.iscpif.mgo.tools.Math
 import fr.iscpif.mgo.ga.selection.Ranking._
+import fr.iscpif.mgo.ga.algorithm.{MOOElitism, Evolution}
+import fr.iscpif.mgo.ga.selection._
 
 /*
  * Copyright (C) 2011 srey
@@ -23,18 +25,13 @@ import fr.iscpif.mgo.ga.selection.Ranking._
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-class SameRankingTermination[I <: Individual[GAGenome, GAFitness]](dominance:Dominant, rank:Rank = new ParetoRank)
-  extends AbstractTermination[I]{
+trait SameRankingTermination[I <: Individual[GAGenome, GAFitness] with Ranking]
+  extends AbstractTermination[I] {
 
-  def hasNext(a1: IndexedSeq[I], a2: IndexedSeq[I]): Boolean = {
-    Math.allTheSame(
-      firstRanked(a1, dominance, rank).map {
-        _.fitness.values
-      },
-      firstRanked(a2, dominance, rank).map {
-        _.fitness.values
-      }
-    )
+  def terminated(a1: IndexedSeq[I], a2: IndexedSeq[I]): Boolean = {
+    Math.allTheSame( firstRanked(a1).map { _.fitness.values },
+                     firstRanked(a2).map { _.fitness.values }
+                   )
   }
 
 }
