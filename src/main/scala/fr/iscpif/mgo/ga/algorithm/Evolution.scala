@@ -33,18 +33,22 @@ trait Evolution[ G <: GAGenome, F <: GAGenomeFactory[G]] {
 
   def mutate (genome: G, factory: F)(implicit aprng: Random): G
   def crossover(g1: G, g2: G, factory: F)(implicit aprng: Random) : IndexedSeq[G]
-  def terminated (oldPop: IndexedSeq[I], newPop: IndexedSeq[I]): Boolean
+  def terminated (oldPop: IndexedSeq[I], newPop: IndexedSeq[I], step: Int): Boolean
+  //def terminated(step:Int): Boolean //Peut etre pourrait on surcharger ?
+
   def selection (individuals: IndexedSeq[I])(implicit aprng: Random): I
 
   //Perform N step
   @tailrec private def evolveStep(population: IndexedSeq[I], step: Int = 0)(implicit aprng:Random):IndexedSeq[I]= {
-    if (step >= maxStep) population
-    else {
+
       val nextPop = evolve(population)
-      if (terminated(population, nextPop)) evolveStep(nextPop, 0)
+      if (terminated(population, nextPop, step)) population //evolveStep(nextPop, 0)
       else evolveStep(nextPop, step + 1)
-    }
+
   }
+
+  def evolveRun(population: IndexedSeq[I], step: Int = 0) ( implicit aprng: Random): IndexedSeq[I] = evolveStep(population,step)
+
   def evolve(population: IndexedSeq[I])(implicit aprng: Random): IndexedSeq[I]
 
 

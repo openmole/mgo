@@ -26,12 +26,24 @@ import fr.iscpif.mgo.ga.selection._
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 trait SameRankingTermination[I <: Individual[GAGenome, GAFitness] with Ranking]
-  extends AbstractTermination[I] {
+  extends AbstractTermination[I] with CounterTermination {
 
-  def terminated(a1: IndexedSeq[I], a2: IndexedSeq[I]): Boolean = {
-    Math.allTheSame( firstRanked(a1).map { _.fitness.values },
-                     firstRanked(a2).map { _.fitness.values }
-                   )
-  }
+  def maxSameValue:Int
+
+  private var counter:Int = 0
+
+  def terminated(a1: IndexedSeq[I], a2: IndexedSeq[I], step: Int): Boolean = {
+
+    if ( Math.allTheSame(firstRanked(a1).map {_.fitness.values},firstRanked(a2).map {_.fitness.values}))
+      counter += 1
+    else
+      counter = 0
+
+    println ("generation : " + step)
+
+    if (counter >= maxSameValue || step >= maxStep) return true
+    else return false
+
+    }
 
 }

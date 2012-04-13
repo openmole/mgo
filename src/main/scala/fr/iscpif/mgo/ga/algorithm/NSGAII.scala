@@ -26,8 +26,7 @@ import termination.{AbstractTermination, SameRankingTermination}
 
 object NSGAII {
 
-  def buildIndividualsWithDistanceAndRanking[G <: GAGenome, FIT <: GAFitness](
-                                                                               individuals: IndexedSeq[Individual[G, FIT]],
+  def buildIndividualsWithDistanceAndRanking[G <: GAGenome, FIT <: GAFitness]( individuals: IndexedSeq[Individual[G, FIT]],
                                                                                dominance: Dominant,
                                                                                rank: Rank) = {
     val ranks = rank(individuals, dominance)
@@ -43,11 +42,10 @@ object NSGAII {
     }
   }
 
-
   def sigma(
+             _maxSameIndividual:Int,
              _maxStep: Int,
              _archiveSize: Int,
-             _genomeSize: Int,
              _factory: GAGenomeWithSigmaFactory,
              _evaluator: GAGenomeWithSigma => GAFitness,
              _sbxDistributionIndex: Double,
@@ -62,6 +60,8 @@ object NSGAII {
       with NonDominatedSorting[I]
       with CoEvolvingSigmaValuesMutation[GAGenomeWithSigma, GAGenomeWithSigmaFactory]
       with SBXBoundedCrossover[GAGenomeWithSigma, GAGenomeWithSigmaFactory]{
+
+      def maxSameValue = _maxSameIndividual
 
       def distributionIndex = _sbxDistributionIndex
 
@@ -81,7 +81,7 @@ object NSGAII {
 
 }
 
-// WORK NOTE :
+// WORK NOTE (A ne pas effacer) :
 /*
 Selection occurs two times in the evolutionary loop.First, in order to generate offsprings,
 parents must be selected from the current population (mating selection).Second, the new
@@ -106,6 +106,11 @@ trait NSGAII[G <: GAGenome, F <: GAGenomeFactory[G]]
 
   def archiveSize: Int
   def envSelection(individuals: IndexedSeq[I]): IndexedSeq[I]
+
+
+  implicit def indiv2IndivWithRankAndDistance[A <: Individual[G, GAFitness]] (i: Iterable[A]):IndexedSeq[I] = {
+   NSGAII.buildIndividualsWithDistanceAndRanking[G, GAFitness](i.toIndexedSeq, dominance, rank)
+ }
 
   override def evolve(population: IndexedSeq[I])(implicit aprng: Random): IndexedSeq[I] = {
 

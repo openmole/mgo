@@ -1,8 +1,5 @@
 package fr.iscpif.mgo.ga.termination
 
-import fr.iscpif.mgo.Individual
-import fr.iscpif.mgo.ga.{GAFitness, GAGenome}
-
 /*
  * Copyright (C) 2011 srey
  *
@@ -19,6 +16,6 @@ import fr.iscpif.mgo.ga.{GAFitness, GAGenome}
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-trait AbstractTermination[I <: Individual[GAGenome, GAFitness]] {
-  def terminated(oldPop: IndexedSeq[I],newPop: IndexedSeq[I], step:Int) : Boolean
+trait CounterTermination {
+  def maxStep: Int
 }
