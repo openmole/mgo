@@ -42,7 +42,7 @@ trait Evolution[ G <: GAGenome, F <: GAGenomeFactory[G]] {
   @tailrec private def evolveStep(population: IndexedSeq[I], step: Int = 0)(implicit aprng:Random):IndexedSeq[I]= {
 
       val nextPop = evolve(population)
-      if (terminated(population, nextPop, step)) population //evolveStep(nextPop, 0)
+      if (terminated(population, nextPop, step)) nextPop
       else evolveStep(nextPop, step + 1)
 
   }
