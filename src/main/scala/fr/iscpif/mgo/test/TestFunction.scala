@@ -18,9 +18,10 @@ object TestFunction extends App { self =>
   
   def scale(x: Double) = x.scale(-100, 100)
     
-  def evaluator(g: GAGenomeWithSigma) = new Fitness {
-    def values = IndexedSeq(math.abs(4 - f(scale(g.values(0)))))
-  }
+  def evaluator(g: GAGenomeWithSigma) = 
+    new Fitness {
+      def values = IndexedSeq(math.abs(4 - f(scale(g.values(0)))))
+    }
  
   implicit val rng = new Random
 
@@ -37,6 +38,4 @@ object TestFunction extends App { self =>
   val ranks = nsga2.rank(res)
   val firstRank = ranks zip res sortBy (_._1.rank) foreach { case(i, r) => println(i.rank + " " + r.genome.values) }
   
-  //, new RankPareto, new StrictDominant).foreach{i => println(scale(i.genome.values(0)))}
-
 }
