@@ -5,8 +5,10 @@
 
 package fr.iscpif.mgo.ga
 
+
 import fr.iscpif.mgo._
 
-trait GAGenomeFactory[+G <: GAGenome] extends GenomeFactory[G] {
-  def apply(g: GAGenome): G = this(g.wrappedValues)
+trait GAEvolution extends Evolution { self =>
+  type G <: GAGenome
+  type F <: GAGenomeFactory[G]
 }

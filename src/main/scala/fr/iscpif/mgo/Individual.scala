@@ -18,41 +18,39 @@
 package fr.iscpif.mgo
 
 
-import fr.iscpif.mgo.ga.GAFitness
-import fr.iscpif.mgo.ga.GAGenome
 import fr.iscpif.mgo.tools.Scaling._
 
 object Individual {
-  
-  import java.io.File
-
-  
-  implicit def indexedSeq2IndexedSeqDecorator[G <:GAGenome,F <: GAFitness](individuals:IndexedSeq[Individual[G,F]])= new {
-    
-    def toMatrix:Array[Array[Double]] = {
-      individuals.map{ _.fitness.values.toArray }.toArray 
-    }
-    
-    //Version scale, pas generique :(
-    def arrayWithGenome(max:Int,min:Int):Array[Array[Double]]= {
-      val nbObjective = individuals.head.fitness.values.size
-      var matrix:Array[Array[Double]] = { 
-        individuals.map{
-          i =>   ((0 until nbObjective).map{ o => i.fitness.values(o)} ++ i.genome.values.map{_.scale(min,max)}).toArray
-        }.toArray
-      }
-      matrix
-    }
-    
-    def toCsv(path:File,arrayOfValues:Array[Array[Double]]) = {
-      import java.io._
-      import fr.iscpif.mgo.tools.FileUtils._  
-      val data = arrayOfValues.map{ _.mkString("\t")}.mkString("\n")
-      writeToFile(path,data)   
-    }
-  }
-  
-  implicit def indiv2Fitness[F](i: Individual[_,F]) = i.fitness
+//  
+//  import java.io.File
+//
+//  
+//  implicit def indexedSeq2IndexedSeqDecorator[G <:GAGenome,F <: GAFitness](individuals:IndexedSeq[Individual[G,F]])= new {
+//    
+//    def toMatrix:Array[Array[Double]] = {
+//      individuals.map{ _.fitness.values.toArray }.toArray 
+//    }
+//    
+//    //Version scale, pas generique :(
+//    def arrayWithGenome(max:Int,min:Int):Array[Array[Double]]= {
+//      val nbObjective = individuals.head.fitness.values.size
+//      var matrix:Array[Array[Double]] = { 
+//        individuals.map{
+//          i =>   ((0 until nbObjective).map{ o => i.fitness.values(o)} ++ i.genome.values.map{_.scale(min,max)}).toArray
+//        }.toArray
+//      }
+//      matrix
+//    }
+//    
+//    def toCsv(path:File,arrayOfValues:Array[Array[Double]]) = {
+//      import java.io._
+//      import fr.iscpif.mgo.tools.FileUtils._  
+//      val data = arrayOfValues.map{ _.mkString("\t")}.mkString("\n")
+//      writeToFile(path,data)   
+//    }
+//  }
+//  
+//  implicit def indiv2Fitness[F](i: Individual[_,F]) = i.fitness
  
   def apply[G, F](g: G, e: G => F) = 
     new Individual[G, F] {

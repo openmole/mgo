@@ -9,11 +9,11 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga._
-import fr.iscpif.mgo.ga.operators.crossover._
-import fr.iscpif.mgo.ga.operators.mutation._
-import fr.iscpif.mgo.ga._
-import fr.iscpif.mgo.ga.algorithm._
+import fr.iscpif.mgo._
+import fr.iscpif.mgo.operators.crossover._
+import fr.iscpif.mgo.operators.mutation._
+import fr.iscpif.mgo._
+import fr.iscpif.mgo.algorithm._
 import scala.math._
 import fr.iscpif.mgo.tools.Scaling._
 

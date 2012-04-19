@@ -8,9 +8,9 @@
 //import org.junit.runner.RunWith
 //
 //import fr.iscpif.mgo._
-//import fr.iscpif.mgo.ga._
-//import fr.iscpif.mgo.ga.selection._
-//import fr.iscpif.mgo.ga.operators._
+//import fr.iscpif.mgo._
+//import fr.iscpif.mgo.selection._
+//import fr.iscpif.mgo.operators._
 //import scala.math._
 //import fr.iscpif.mgo.tools.Scaling._
 //

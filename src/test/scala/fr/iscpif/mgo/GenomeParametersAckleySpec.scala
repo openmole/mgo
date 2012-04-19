@@ -16,15 +16,15 @@
 //import org.junit.runner.RunWith
 //
 //import fr.iscpif.mgo._
-//import fr.iscpif.mgo.ga.algorithm.GAGenomeWithSigma
-//import fr.iscpif.mgo.ga.algorithm.GAGenomeWithSigmaFactory
-//import fr.iscpif.mgo.ga._
-//import fr.iscpif.mgo.ga.operators.crossover._
-//import fr.iscpif.mgo.ga.operators.mutation._
-//import fr.iscpif.mgo.ga.operators._
-//import fr.iscpif.mgo.ga._
-//import fr.iscpif.mgo.ga.GAFitness._
-//import fr.iscpif.mgo.ga.algorithm.NSGAII
+//import fr.iscpif.mgo.algorithm.GAGenomeWithSigma
+//import fr.iscpif.mgo.algorithm.GAGenomeWithSigmaFactory
+//import fr.iscpif.mgo._
+//import fr.iscpif.mgo.operators.crossover._
+//import fr.iscpif.mgo.operators.mutation._
+//import fr.iscpif.mgo.operators._
+//import fr.iscpif.mgo._
+//import fr.iscpif.mgo.GAFitness._
+//import fr.iscpif.mgo.algorithm.NSGAII
 //import scala.math._
 //import fr.iscpif.mgo.tools.FileUtils
 //import fr.iscpif.mgo.tools.Scaling._

@@ -12,9 +12,8 @@ import org.scalatest.junit.JUnitRunner
 import org.junit.runner.RunWith
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga._
-import fr.iscpif.mgo.ga.selection._
-import fr.iscpif.mgo.ga.operators._
+import fr.iscpif.mgo._
+import fr.iscpif.mgo.selection._
 import scala.math._
 import fr.iscpif.mgo.tools.Scaling._
 import java.util.Random
