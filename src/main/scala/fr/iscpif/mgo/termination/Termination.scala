@@ -21,8 +21,12 @@ import fr.iscpif.mgo._
 
 trait Termination { self: Evolution =>
   
+  type TerminationState
+  
+  def initialState: TerminationState
+  
   def terminated(
     oldPop: IndexedSeq[I],
     newPop: IndexedSeq[I],
-    step: Int) : Boolean
+    terminationState: TerminationState) : (Boolean, TerminationState)
 }

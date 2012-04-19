@@ -25,14 +25,16 @@ import fr.iscpif.mgo.tools.Math
 trait FirstRankedSteadyTermination extends Termination {
   self: Evolution { type I <: Individual[_, Fitness] with Rank} =>
   
+  type TerminationState = Int
+  
+  def initialState = 0
+  
   def steadySince: Int
 
-  private var counter = 0
-
-  def terminated(a1: IndexedSeq[I], a2: IndexedSeq[I], step: Int): Boolean = {
-    if ( Math.allTheSame(firstRanked(a1).map {_.fitness.values},firstRanked(a2).map {_.fitness.values})) counter += 1
-    else counter = 0
-    counter >= steadySince
+  def terminated(a1: IndexedSeq[I], a2: IndexedSeq[I], step: TerminationState): (Boolean, TerminationState) = {
+    val newStep = if ( Math.allTheSame(firstRanked(a1).map {_.fitness.values},firstRanked(a2).map {_.fitness.values})) step + 1
+    else  0
+    (newStep >= steadySince, newStep)
   }
 
   def sameFirstRanked(

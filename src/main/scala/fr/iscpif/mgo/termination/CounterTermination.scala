@@ -22,6 +22,12 @@ import fr.iscpif.mgo._
 
 trait CounterTermination extends Termination {
   self: Evolution =>
+  
+   type TerminationState = Int
+  
+  def initialState = 0
+  
   def maxStep: Int
-  def terminated(oldPop: IndexedSeq[I],newPop: IndexedSeq[I], step:Int) : Boolean = step >= maxStep
+  def terminated(oldPop: IndexedSeq[I],newPop: IndexedSeq[I], step: TerminationState) = 
+    (step >= maxStep, step + 1)
 }

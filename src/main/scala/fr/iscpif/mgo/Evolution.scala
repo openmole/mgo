@@ -36,13 +36,14 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   def evaluator: G => FIT
 
   //Perform N step
-  @tailrec private def evolveStep(population: IndexedSeq[I], step: Int = 0)(implicit aprng:Random):IndexedSeq[I]= {
+  @tailrec private def evolveStep(population: IndexedSeq[I], state: TerminationState = initialState)(implicit aprng:Random):IndexedSeq[I]= {
     val nextPop = evolve(population)
-    if (terminated(population, nextPop, step)) nextPop
-    else evolveStep(nextPop, step + 1)
+    val (end, newState) = terminated(population, nextPop, state)
+    if (end) nextPop
+    else evolveStep(nextPop, newState)
   }
 
-  def evolveRun(population: IndexedSeq[I], step: Int = 0) (implicit aprng: Random): IndexedSeq[I] = evolveStep(population,step)
+  def run(population: IndexedSeq[I]) (implicit aprng: Random): IndexedSeq[I] = evolveStep(population)
 
   def evolve(population: IndexedSeq[I])(implicit aprng: Random): IndexedSeq[I]
 
