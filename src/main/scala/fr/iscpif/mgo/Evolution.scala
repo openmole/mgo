@@ -45,15 +45,13 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   }
   
   def run(population: IndexedSeq[I]) (implicit aprng: Random): IndexedSeq[I] = evolveStep(population)
-  def run(populationSize: Int) 
-  (implicit aprng: Random): IndexedSeq[I] = 
-     evolveStep(
-      buildIndividuals((0 until populationSize).map{ 
-        i => Individual(factory.random, evaluator)
-      }).toIndexedSeq
-    )
+  def run(populationSize: Int)(implicit aprng: Random): IndexedSeq[I] = evolveStep(randomPopulation(populationSize))
   
   def evolve(population: IndexedSeq[I])(implicit aprng: Random): IndexedSeq[I]
-  def buildIndividuals(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I]
-
+  def toI(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I]
+  def randomPopulation(size: Int)(implicit aprng: Random): IndexedSeq[I] =
+    toI((0 until size).map{ 
+        i => Individual(factory.random, evaluator)
+      }).toIndexedSeq
+  
 }

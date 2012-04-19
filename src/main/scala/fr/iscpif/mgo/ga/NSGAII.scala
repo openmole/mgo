@@ -74,7 +74,7 @@ object NSGAII {
     def archiveSize: Int
  
  
-    def buildIndividuals(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I] = {
+    def toI(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I] = {
       val ranks = rank(individuals)
       val distances = diversity(individuals)
       (individuals zip ranks zip distances) map {
@@ -101,7 +101,7 @@ object NSGAII {
       val archive = population ++ offspring
 
       //Elitisme strategy
-      val individuals = buildIndividuals(archive)
+      val individuals = toI(archive)
       elitism(individuals)
     }
 
