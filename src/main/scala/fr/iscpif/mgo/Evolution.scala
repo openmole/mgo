@@ -24,6 +24,7 @@ import fr.iscpif.mgo.mutation.Mutation
 import fr.iscpif.mgo.selection.Selection
 import fr.iscpif.mgo.termination.Termination
 import java.util.Random
+import Individual._
 
 trait Evolution extends Mutation with CrossOver with Termination with Selection { self =>
 
@@ -34,7 +35,7 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   
   def factory: F
   def evaluator: G => FIT
-
+  
   //Perform N step
   @tailrec private def evolveStep(population: IndexedSeq[I], state: TerminationState = initialState)(implicit aprng:Random):IndexedSeq[I]= {
     val nextPop = evolve(population)
@@ -42,10 +43,17 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
     if (end) nextPop
     else evolveStep(nextPop, newState)
   }
-
+  
   def run(population: IndexedSeq[I]) (implicit aprng: Random): IndexedSeq[I] = evolveStep(population)
-
+  def run(populationSize: Int) 
+  (implicit aprng: Random): IndexedSeq[I] = 
+     evolveStep(
+      buildIndividuals((0 until populationSize).map{ 
+        i => Individual(factory.random, evaluator)
+      }).toIndexedSeq
+    )
+  
   def evolve(population: IndexedSeq[I])(implicit aprng: Random): IndexedSeq[I]
-
+  def buildIndividuals(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I]
 
 }

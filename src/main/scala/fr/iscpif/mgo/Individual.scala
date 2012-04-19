@@ -50,7 +50,8 @@ object Individual {
 //    }
 //  }
 //  
-//  implicit def indiv2Fitness[F](i: Individual[_,F]) = i.fitness
+//  implicit def genomeToIndividual[G, F](g: G, e: G => F) = apply(g, e)
+  implicit def individual2Fitness[F](i: Individual[_,F]) = i.fitness
  
   def apply[G, F](g: G, e: G => F) = 
     new Individual[G, F] {
@@ -58,7 +59,6 @@ object Individual {
       val fitness = e(g)
     }
   
-   
 }
 
 trait Individual[+G, +F] {

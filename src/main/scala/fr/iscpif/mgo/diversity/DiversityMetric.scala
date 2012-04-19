@@ -8,5 +8,5 @@ package fr.iscpif.mgo.diversity
 import fr.iscpif.mgo._
 
 trait DiversityMetric { this: Evolution =>
-  def diversity(indiv :IndexedSeq [I]): IndexedSeq[Diversity]
+  def diversity(indiv :IndexedSeq [Individual[_, FIT]]): IndexedSeq[Diversity]
 }

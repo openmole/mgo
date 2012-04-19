@@ -11,7 +11,7 @@ import fr.iscpif.mgo.selection._
 
 trait ParetoRanking extends Ranking { this: Evolution with MG =>
     
-  def rank(individuals: IndexedSeq [I]): IndexedSeq[Rank] = { 
+  def rank(individuals: IndexedSeq [Individual[_, FIT]]): IndexedSeq[Rank] = { 
     individuals.zipWithIndex.map { 
       case (indiv, index) =>
         new Rank {

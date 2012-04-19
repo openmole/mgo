@@ -21,20 +21,14 @@ import scala.annotation.tailrec
 
 object NSGAII {
 
-  trait NSGAIISigmaEvolution extends NSGAII with SigmaGAEvolution {
-    type G = GAGenomeWithSigma
-    type F = GAGenomeWithSigmaFactory
-    type I = Individual[GAGenomeWithSigma, Fitness] with Diversity with Rank
-    type FIT = Fitness
-  }
-  
   class NSGAIISigma(
     val distributionIndex: Double,
     val steadySince: Int,
     val archiveSize: Int,
     val evaluator: GAGenomeWithSigma => Fitness,
     val genomeSize: Int
-  ) extends NSGAII with SigmaGAEvolution
+  ) extends NSGAII 
+       with SigmaGAEvolution
        with MGBinaryTournamentSelection
        with FirstRankedSteadyTermination
        with NonDominatedSortingElitism
@@ -45,7 +39,6 @@ object NSGAII {
        with StrictDominance {
     type G = GAGenomeWithSigma
     type F = GAGenomeWithSigmaFactory
-    type I = Individual[GAGenomeWithSigma, Fitness] with Diversity with Rank
     type FIT = Fitness
     def factory = new GAGenomeWithSigmaFactory {
       def size = genomeSize
@@ -76,22 +69,17 @@ object NSGAII {
 
  trait NSGAII extends GAEvolution with MG with Archive with Elitism with DiversityMetric {
 
-    type I <: Individual[G, FIT] with Diversity with Rank
+    type I = Individual[G, FIT] with Diversity with Rank
   
     def archiveSize: Int
  
-    implicit def indiv2IndivWithRankAndDistance(
-      i: Iterable[Individual[G, Fitness]]
-    ) = buildIndividualsWithDistanceAndRanking(i.toIndexedSeq)
  
-    def buildIndividualsWithDistanceAndRanking(
-      individuals: IndexedSeq[Individual[G, Fitness]]
-    ): IndexedSeq[I] = {
+    def buildIndividuals(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I] = {
       val ranks = rank(individuals)
       val distances = diversity(individuals)
       (individuals zip ranks zip distances) map {
         case ((i, iranking), idistance) =>
-          new Individual[G, Fitness] with Diversity with Rank {
+          new Individual[G, FIT] with Diversity with Rank {
             val genome = i.genome
             val fitness = i.fitness
             val diversity = idistance.diversity
@@ -99,7 +87,7 @@ object NSGAII {
           }
       }
     }
-  
+    
 
     override def evolve(population: IndexedSeq[I])(implicit aprng: Random): IndexedSeq[I] = {
 
@@ -113,7 +101,7 @@ object NSGAII {
       val archive = population ++ offspring
 
       //Elitisme strategy
-      val individuals = buildIndividualsWithDistanceAndRanking(archive)
+      val individuals = buildIndividuals(archive)
       elitism(individuals)
     }
 

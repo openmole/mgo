@@ -9,7 +9,7 @@ import fr.iscpif.mgo._
 
 trait CrowdingDistance extends DiversityMetric { this: Evolution =>
 
-   def diversity(indiv :IndexedSeq [I]): IndexedSeq[Diversity] = {  
+   def diversity(indiv :IndexedSeq [Individual[_, FIT]]): IndexedSeq[Diversity] = {  
     if (indiv.size <= 2) 
       indiv.map {
         i => new Diversity {
@@ -17,7 +17,7 @@ trait CrowdingDistance extends DiversityMetric { this: Evolution =>
         }
       }        
     else {         
-      class CrowdingInfo(val multiGoal: I, var crowding: Double)
+      class CrowdingInfo(val multiGoal: Individual[_, FIT], var crowding: Double)
       
       val crowding = indiv.map(new CrowdingInfo(_, 0.))
 
