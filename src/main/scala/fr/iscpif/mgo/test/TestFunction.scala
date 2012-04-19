@@ -13,7 +13,7 @@ import fr.iscpif.mgo.tools.Scaling._
 import fr.iscpif.mgo.selection._
 import java.util.Random
 
-object TestFunction extends App { self =>
+object TestFunction extends App { 
   def f(x: Double) = x * x
   
   def scale(x: Double) = x.scale(-100, 100)
@@ -30,11 +30,10 @@ object TestFunction extends App { self =>
       distributionIndex = 2,
       steadySince = 1000,
       archiveSize = 50,
-      evaluator = self.evaluator,
       genomeSize = 1
     )
 
-  val res = nsga2.run(50)
+  val res = nsga2.run(50, evaluator _)
   val ranks = nsga2.rank(res)
   val firstRank = ranks zip res sortBy (_._1.rank) foreach { case(i, r) => println(i.rank + " " + r.genome.values) }
   

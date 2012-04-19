@@ -21,4 +21,5 @@ import fr.iscpif.mgo.dominance._
 import fr.iscpif.mgo.ranking._
 
 trait MG extends Dominance with Ranking { this: Evolution =>
+
 }

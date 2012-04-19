@@ -34,22 +34,23 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   type FIT <: Fitness
   
   def factory: F
-  def evaluator: G => FIT
-  
+
   //Perform N step
-  @tailrec private def evolveStep(population: IndexedSeq[I], state: TerminationState = initialState)(implicit aprng:Random):IndexedSeq[I]= {
-    val nextPop = evolve(population)
+  @tailrec private def evolveStep(population: IndexedSeq[I], evaluator: G => FIT, state: TerminationState = initialState)(implicit aprng:Random):IndexedSeq[I]= {
+    val nextPop = evolve(population, evaluator)
     val (end, newState) = terminated(population, nextPop, state)
     if (end) nextPop
-    else evolveStep(nextPop, newState)
+    else evolveStep(nextPop, evaluator, newState)
   }
   
-  def run(population: IndexedSeq[I]) (implicit aprng: Random): IndexedSeq[I] = evolveStep(population)
-  def run(populationSize: Int)(implicit aprng: Random): IndexedSeq[I] = evolveStep(randomPopulation(populationSize))
+  def run(population: IndexedSeq[I], evaluator: G => FIT) (implicit aprng: Random): IndexedSeq[I] = evolveStep(population, evaluator)
+  def run(populationSize: Int, evaluator: G => FIT)(implicit aprng: Random): IndexedSeq[I] = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
   
-  def evolve(population: IndexedSeq[I])(implicit aprng: Random): IndexedSeq[I]
+  def evolve(population: IndexedSeq[I], evaluator: G => FIT)(implicit aprng: Random): IndexedSeq[I]
+  
   def toI(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I]
-  def randomPopulation(size: Int)(implicit aprng: Random): IndexedSeq[I] =
+  
+  def randomPopulation(size: Int, evaluator: G => FIT)(implicit aprng: Random): IndexedSeq[I] =
     toI((0 until size).map{ 
         i => Individual(factory.random, evaluator)
       }).toIndexedSeq
