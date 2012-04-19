@@ -33,12 +33,8 @@ object TestFunction extends App { self =>
       genomeSize = 1
     )
 
-  import nsga2._
-  
-  val popInitiale = (0 until 50).map {i => evaluator(factory.random)}
-  val res = run(50)
-
-  val ranks = rank(res)
+  val res = nsga2.run(50)
+  val ranks = nsga2.rank(res)
   val firstRank = ranks zip res sortBy (_._1.rank) foreach { case(i, r) => println(i.rank + " " + r.genome.values) }
   
   //, new RankPareto, new StrictDominant).foreach{i => println(scale(i.genome.values(0)))}
