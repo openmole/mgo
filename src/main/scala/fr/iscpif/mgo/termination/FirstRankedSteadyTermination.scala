@@ -40,13 +40,13 @@ import FirstRankedSteadyTermination._
 trait FirstRankedSteadyTermination extends Termination {
   self: Evolution { type I <: Individual[_, Fitness] with Rank} =>
   
-  type TerminationState = Int
+  type STATE = Int
   
   def initialState = 0
   
   def steadySince: Int
 
-  def terminated(a1: IndexedSeq[I], a2: IndexedSeq[I], step: TerminationState): (Boolean, TerminationState) = {
+  def terminated(a1: IndexedSeq[I], a2: IndexedSeq[I], step: STATE): (Boolean, STATE) = {
     val newStep = if ( Math.allTheSame(firstRanked(a1).map {_.fitness.values},firstRanked(a2).map {_.fitness.values})) step + 1
     else  0
     (newStep >= steadySince, newStep)

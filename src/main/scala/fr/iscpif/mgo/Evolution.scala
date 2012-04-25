@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (C) 2011 srey
  *
  * This program is free software: you can redistribute it and/or modify
@@ -36,7 +36,7 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   def factory: F
 
   //Perform N step
-  @tailrec private def evolveStep(population: IndexedSeq[I], evaluator: G => FIT, state: TerminationState = initialState)(implicit aprng:Random):IndexedSeq[I]= {
+  @tailrec private def evolveStep(population: IndexedSeq[I], evaluator: G => FIT, state: STATE = initialState)(implicit aprng:Random):IndexedSeq[I]= {
     val nextPop = evolve(population, evaluator)
     val (end, newState) = terminated(population, nextPop, state)
     if (end) nextPop

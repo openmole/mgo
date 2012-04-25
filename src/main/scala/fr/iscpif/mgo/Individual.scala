@@ -62,6 +62,7 @@ object Individual {
 }
 
 trait Individual[+G, +F] {
+  
   def genome: G
   def fitness: F
   
