@@ -15,7 +15,7 @@ trait ParetoRanking extends Ranking { this: Evolution with MG =>
     individuals.zipWithIndex.map { 
       case (indiv, index) =>
         new Rank {
-          val rank = 
+          lazy val rank = 
             individuals.zipWithIndex.filter {
               case (_, index2) => index != index2
             }.count { 
