@@ -6,11 +6,13 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga._
+import fr.iscpif.mgo.algorithm.ga._
 import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.elitism._
 import fr.iscpif.mgo.tools.Scaling._
 import fr.iscpif.mgo.selection._
+import fr.iscpif.mgo.ga._
+
 import java.util.Random
 
 object TestFunction extends App { 
@@ -26,12 +28,12 @@ object TestFunction extends App {
   implicit val rng = new Random
 
   val nsga2 =
-    new NSGAII.NSGAIISigma(
-      distributionIndex = 2,
-      steadySince = 1000,
-      archiveSize = 50,
-      genomeSize = 1
-    )
+    new NSGAIISigma {
+      def distributionIndex = 2
+      def steadySince = 1000
+      def archiveSize = 50
+      def genomeSize = 1
+    }
 
   val res = nsga2.run(50, evaluator _)
   val ranks = nsga2.rank(res)

@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package fr.iscpif.mgo.ga
+package fr.iscpif.mgo.algorithm
 
 import java.util.Random
 import fr.iscpif.mgo.crossover._
@@ -19,34 +19,7 @@ import fr.iscpif.mgo.tools.Math
 import ga._
 import scala.annotation.tailrec
 
-object NSGAII {
 
-  class NSGAIISigma(
-    val distributionIndex: Double,
-    val steadySince: Int,
-    val archiveSize: Int,
-    val genomeSize: Int
-  ) extends NSGAII 
-       with SigmaGAEvolution
-       with MGBinaryTournamentSelection
-       with FirstRankedSteadyTermination
-       with NonDominatedSortingElitism
-       with CoEvolvingSigmaValuesMutation
-       with SBXBoundedCrossover 
-       with CrowdingDistance
-       with ParetoRanking
-       with StrictDominance {
-    type G = GAGenomeWithSigma
-    type F = GAGenomeWithSigmaFactory
-    type FIT = Fitness
-    def factory = new GAGenomeWithSigmaFactory {
-      def size = genomeSize
-    }
-    
-  }
-  
-
-}
 
 // WORK NOTE (A ne pas effacer) :
 /*
@@ -66,16 +39,16 @@ object NSGAII {
 
 // @fixme Refaire un check sur Ranking
 
- trait NSGAII extends GAEvolution with MG with Archive with Elitism with DiversityMetric {
+ trait NSGAII extends Evolution with MG with Archive with Elitism with DiversityMetric {
 
     type I = Individual[G, FIT] with Diversity with Rank
   
     def archiveSize: Int
  
- 
     def toI(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I] = {
       val ranks = rank(individuals)
       val distances = diversity(individuals)
+      
       (individuals zip ranks zip distances) map {
         case ((i, iranking), idistance) =>
           new Individual[G, FIT] with Diversity with Rank {

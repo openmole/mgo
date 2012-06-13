@@ -28,10 +28,11 @@ import Individual._
 
 trait Evolution extends Mutation with CrossOver with Termination with Selection { self =>
 
-  type I <: Individual[G, FIT]
+  type I 
   type G <: Genome
   type F <: GenomeFactory[G]
   type FIT <: Fitness
+  type RAWFIT <: Fitness
   
   def factory: F
 
