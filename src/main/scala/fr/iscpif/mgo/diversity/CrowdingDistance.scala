@@ -7,33 +7,28 @@ package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
 
-trait CrowdingDistance extends DiversityMetric { this: Evolution =>
-
-   def diversity(indiv :IndexedSeq [Individual[_, FIT]]): IndexedSeq[Diversity] = {  
-    if (indiv.size <= 2) 
-      indiv.map {
-        i => new Diversity {
-          val diversity = Double.PositiveInfinity
-        }
-      }        
+object CrowdingDistance {
+  
+  def apply(data: IndexedSeq[Seq[Double]]): IndexedSeq[Double] = {
+    if (data.size <= 2) data.map(d => Double.PositiveInfinity)
     else {         
-      class CrowdingInfo(val multiGoal: Individual[_, FIT], var crowding: Double)
+      class CrowdingInfo(val d: Seq[Double], var crowding: Double)
       
-      val crowding = indiv.map(new CrowdingInfo(_, 0.))
+      val crowding = data.map(new CrowdingInfo(_, 0.))
 
       // for each objective
-      for (curDim <- 0 until indiv.head.fitness.values.size) {
+      for (curDim <- 0 until data.head.size) {
         
-        val curCrowding = crowding.sortBy(_.multiGoal.fitness.values(curDim))
+        val curCrowding = crowding.sortBy(_.d(curDim))
 
         val firstCrowdingInfo = curCrowding.head
         val lastCrowdingInfo = curCrowding.last
 
-        val first = firstCrowdingInfo.multiGoal.fitness
-        val last = lastCrowdingInfo.multiGoal.fitness
+        val first = firstCrowdingInfo.d
+        val last = lastCrowdingInfo.d
 
-        val min = first.values(curDim)
-        val max = last.values(curDim)
+        val min = first(curDim)
+        val max = last(curDim)
 
         firstCrowdingInfo.crowding = Double.PositiveInfinity
         lastCrowdingInfo.crowding = Double.PositiveInfinity
@@ -46,7 +41,7 @@ trait CrowdingDistance extends DiversityMetric { this: Evolution =>
 
         while (itOpod.hasNext) {
           val ptPlus1 = itOpod.next
-          val distance =  (ptPlus1.multiGoal.fitness.values(curDim) - ptMinus1.multiGoal.fitness.values(curDim)) / maxMinusMin
+          val distance =  (ptPlus1.d(curDim) - ptMinus1.d(curDim)) / maxMinusMin
           pt.crowding += distance.toDouble
   
           ptMinus1 = pt
@@ -54,11 +49,20 @@ trait CrowdingDistance extends DiversityMetric { this: Evolution =>
         }
       }
 
-      crowding.map(c =>
-        new Diversity {
-          val diversity = c.crowding
-        }
-      )
+      crowding.map(_.crowding)
     }
   }
+  
+}
+
+
+trait CrowdingDistance extends DiversityMetric {
+
+   def diversity(indiv :IndexedSeq [Individual[_]]): IndexedSeq[Diversity] =   
+      CrowdingDistance(indiv.map{_.fitness.values}).map(c =>
+        new Diversity {
+          val diversity = c
+        }
+      )
+    
 }

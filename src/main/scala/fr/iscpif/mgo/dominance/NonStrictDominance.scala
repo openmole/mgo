@@ -7,9 +7,9 @@ package fr.iscpif.mgo.dominance
 
 import fr.iscpif.mgo._
 
-trait NonStrictDominance extends Dominance { this: Evolution =>
+trait NonStrictDominance extends Dominance {
 
-  def isDominated(p1: FIT, p2: FIT): Boolean = {
+  def isDominated(p1: Fitness, p2: Fitness): Boolean = {
     for((g1, g2) <- p1.values zip p2.values) {
       if(g1 <= g2) return false
     }   

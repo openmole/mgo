@@ -28,32 +28,34 @@ import Individual._
 
 trait Evolution extends Mutation with CrossOver with Termination with Selection { self =>
 
-  type I 
+  type I <: Individual[G]
   type G <: Genome
   type F <: GenomeFactory[G]
-  type FIT <: Fitness
-  type RAWFIT <: Fitness
   
   def factory: F
 
   //Perform N step
-  @tailrec private def evolveStep(population: IndexedSeq[I], evaluator: G => FIT, state: STATE = initialState)(implicit aprng:Random):IndexedSeq[I]= {
+  @tailrec private def evolveStep(
+    population: IndexedSeq[I],
+    evaluator: G => Fitness,
+    state: STATE = initialState)(implicit aprng:Random): IndexedSeq[I]= {
     val nextPop = evolve(population, evaluator)
+    stepListner(nextPop, state)
     val (end, newState) = terminated(population, nextPop, state)
     if (end) nextPop
     else evolveStep(nextPop, evaluator, newState)
   }
   
-  def run(population: IndexedSeq[I], evaluator: G => FIT) (implicit aprng: Random): IndexedSeq[I] = evolveStep(population, evaluator)
-  def run(populationSize: Int, evaluator: G => FIT)(implicit aprng: Random): IndexedSeq[I] = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
+  def run(population: IndexedSeq[I], evaluator: G => Fitness) (implicit aprng: Random): IndexedSeq[I] = evolveStep(population, evaluator)
+  def run(populationSize: Int, evaluator: G => Fitness)(implicit aprng: Random): IndexedSeq[I] = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
   
-  def evolve(population: IndexedSeq[I], evaluator: G => FIT)(implicit aprng: Random): IndexedSeq[I]
+  def evolve(population: IndexedSeq[I], evaluator: G => Fitness)(implicit aprng: Random): IndexedSeq[I]
   
-  def toI(individuals: IndexedSeq[Individual[G, FIT]]): IndexedSeq[I]
+  def toI(individuals: IndexedSeq[(G, Fitness)]): IndexedSeq[I]
   
-  def randomPopulation(size: Int, evaluator: G => FIT)(implicit aprng: Random): IndexedSeq[I] =
-    toI((0 until size).map{ 
-        i => Individual(factory.random, evaluator)
-      }).toIndexedSeq
+  def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random): IndexedSeq[I] =
+    toI((0 until size).map{ _ => factory.random }.map{ g => g -> evaluator(g)}).toIndexedSeq
+  
+  def stepListner(population: IndexedSeq[I], state: STATE) = {}
   
 }

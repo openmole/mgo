@@ -19,26 +19,12 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.ranking.Rank
+import fr.iscpif.mgo.ranking.Rank._
 import fr.iscpif.mgo.selection._
 import fr.iscpif.mgo.tools.Math
 
-object FirstRankedSteadyTermination {
-  
-   def firstRanked[I <: Individual[_,_] with Rank](individuals: IndexedSeq[I]): IndexedSeq[I] = {
-    if(individuals.isEmpty) individuals
-    else {
-      val ranks = individuals.map{_.rank}
-      val firstRank = ranks.min
-      individuals filter { i => i.rank == firstRank }
-    }
-  }
-}
-
-import FirstRankedSteadyTermination._
-
-
 trait FirstRankedSteadyTermination extends Termination {
-  self: Evolution { type I <: Individual[_, Fitness] with Rank} =>
+  self: Evolution { type I <: Individual[_] with Rank} =>
   
   type STATE = Int
   

@@ -27,9 +27,9 @@ import fr.iscpif.mgo.ranking.Rank
 
 //Utiliser par NSGA2 et MO-CMA-ES
 trait NonDominatedSortingElitism { 
-  self: GAEvolution with Archive with Dominance { type I <: Individual[_, _] with Diversity with Rank }  =>
+  self: GAEvolution with Archive with Dominance { type I <: Individual[_] with Diversity with Rank } =>
 
-  def elitism( individuals: IndexedSeq[I]): IndexedSeq[I] = {
+  def elitism(individuals: IndexedSeq[I]): IndexedSeq[I] = {
 
     if (individuals.size < archiveSize) individuals
     else {

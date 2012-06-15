@@ -21,51 +21,29 @@ package fr.iscpif.mgo
 import fr.iscpif.mgo.tools.Scaling._
 
 object Individual {
-//  
-//  import java.io.File
-//
-//  
-//  implicit def indexedSeq2IndexedSeqDecorator[G <:GAGenome,F <: GAFitness](individuals:IndexedSeq[Individual[G,F]])= new {
-//    
-//    def toMatrix:Array[Array[Double]] = {
-//      individuals.map{ _.fitness.values.toArray }.toArray 
-//    }
-//    
-//    //Version scale, pas generique :(
-//    def arrayWithGenome(max:Int,min:Int):Array[Array[Double]]= {
-//      val nbObjective = individuals.head.fitness.values.size
-//      var matrix:Array[Array[Double]] = { 
-//        individuals.map{
-//          i =>   ((0 until nbObjective).map{ o => i.fitness.values(o)} ++ i.genome.values.map{_.scale(min,max)}).toArray
-//        }.toArray
-//      }
-//      matrix
-//    }
-//    
-//    def toCsv(path:File,arrayOfValues:Array[Array[Double]]) = {
-//      import java.io._
-//      import fr.iscpif.mgo.tools.FileUtils._  
-//      val data = arrayOfValues.map{ _.mkString("\t")}.mkString("\n")
-//      writeToFile(path,data)   
-//    }
-//  }
-//  
-//  implicit def genomeToIndividual[G, F](g: G, e: G => F) = apply(g, e)
-  implicit def individual2Fitness[F](i: Individual[_,F]) = i.fitness
- 
-  def apply[G, F](g: G, e: G => F) = 
-    new Individual[G, F] {
+
+  implicit def individual2Fitness(i: Individual[_]) = i.fitness
+  
+  def apply[G](g: G, e: G => Fitness) = 
+    new Individual[G] {
       val genome = g
       val fitness = e(g)
+    }
+
+  def apply[G](g: G, f: Fitness) = 
+    new Individual[G] {
+      val genome = g
+      val fitness = f
     }
   
 }
 
-trait Individual[+G, +F] {
+trait Individual[+G] {
   
   def genome: G
-  def fitness: F
+  def fitness: Fitness
   
+  def toTuple = genome -> fitness
   override def toString = "(" + genome.toString + ", " + fitness.toString + ")"
 }
 
