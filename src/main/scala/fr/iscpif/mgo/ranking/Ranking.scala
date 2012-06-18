@@ -8,5 +8,5 @@ package fr.iscpif.mgo.ranking
 import fr.iscpif.mgo._
 
 trait Ranking { this: Evolution =>
-  def rank(evaluated: IndexedSeq[(G, Fitness)]): IndexedSeq[Int]
+  def rank(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Int]
 }

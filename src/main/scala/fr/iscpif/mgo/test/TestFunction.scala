@@ -42,13 +42,13 @@ object TestFunction extends App {
                      with SBXBoundedCrossover 
                      with CrowdingDistance
                      with ParetoRanking
-                     with EpsilonDominance
+                     with StrictDominance
                      with RankDiversityGenomicCrowdingModifier {
       def distributionIndex = 2
       def maxStep = 1000
       def archiveSize = 50
       def genomeSize = 1
-      def epsilons = Seq(0.1, 0.0)
+      //def epsilons = Seq(0.1, 0.0)
       
       override def stepListner(pop: P, state: STATE): Unit = println(state)
      /* override def stepListner(pop: P, state: STATE): Unit = {
@@ -61,9 +61,7 @@ object TestFunction extends App {
     }
 
   val res = nsga2.run(50, evaluator _)
-  val ranks = ParetoRanking(res.evaluated, nsga2)
+  val ranks = ParetoRanking(res.individuals, nsga2)
   ranks zip res sortBy (_._1) foreach { case(i, r) => println(i + " " + r.genome.values + " " + r.fitness.values) }
 
-
-  
 }

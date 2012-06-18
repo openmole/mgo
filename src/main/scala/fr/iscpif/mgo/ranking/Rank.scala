@@ -10,12 +10,12 @@ import fr.iscpif.mgo._
 
 object Rank {
   
-  def firstRanked[I <: Individual[_] with Rank](individuals: IndexedSeq[I]): IndexedSeq[I] = {
+  def firstRanked[G, MF <: Rank](individuals: Population[G, MF]): IndexedSeq[PopulationElement[G, MF]] = {
     if(individuals.isEmpty) individuals
     else {
-      val ranks = individuals.map{_.rank}
+      val ranks = individuals.map{_.metaFitness.rank}
       val firstRank = ranks.min
-      individuals filter { i => i.rank == firstRank }
+      individuals filter { i => i.metaFitness.rank == firstRank }
     }
   }
   

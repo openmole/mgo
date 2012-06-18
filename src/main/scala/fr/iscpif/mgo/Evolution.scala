@@ -29,11 +29,10 @@ import Individual._
 
 trait Evolution extends Mutation with CrossOver with Termination with Selection with Modifier { self =>
 
-  //type POP <: Population[G, I]
-  type I <: Individual[G]
+  type MF 
   type G <: Genome
   type F <: GenomeFactory[G]
-  type P = Population[G, I]
+  type P = Population[G, MF]
   
   def factory: F
 
@@ -41,7 +40,7 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   @tailrec private def evolveStep(
     population: P,
     evaluator: G => Fitness,
-    state: STATE = initialState)(implicit aprng:Random): Population[G, I] = {
+    state: STATE = initialState)(implicit aprng:Random): P = {
     val nextPop = evolve(population, evaluator)
     stepListner(nextPop, state)
     val (end, newState) = terminated(population, nextPop, state)
@@ -50,12 +49,12 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   }
   
   def run(population: P, evaluator: G => Fitness) (implicit aprng: Random): P = evolveStep(population, evaluator)
-  def run(populationSize: Int, evaluator: G => Fitness)(implicit aprng: Random): Population[G, I] = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
+  def run(populationSize: Int, evaluator: G => Fitness)(implicit aprng: Random): P = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
   
   def evolve(population: P, evaluator: G => Fitness)(implicit aprng: Random): P
   
-  def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random): Population[G, I] =
-    toPopulation((0 until size).map{ _ => factory.random }.map{ g => g -> evaluator(g)})
+  def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random): P =
+    toPopulation((0 until size).map{ _ => factory.random }.map{ g => Individual(g, evaluator)})
   
   def stepListner(population: P, state: STATE) = {}
   

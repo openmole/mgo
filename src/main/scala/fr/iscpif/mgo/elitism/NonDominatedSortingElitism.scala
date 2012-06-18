@@ -26,14 +26,14 @@ import fr.iscpif.mgo.ga._
 import fr.iscpif.mgo.ranking.Rank
 
 //Utiliser par NSGA2 et MO-CMA-ES
-trait NonDominatedSortingElitism { 
-  self: GAEvolution with Archive with Dominance { type I <: Individual[_] with Diversity with Rank } =>
+trait NonDominatedSortingElitism extends Elitism { 
+  self: GAEvolution with Archive with Dominance { type MF <: Diversity with Rank } =>
 
   def elitism(population: P): P = {
     
     if (population.size < archiveSize) population
     else {
-      val fronts = population.groupBy(_.individual.rank).toList.sortBy(_._1).map { _._2: P }
+      val fronts = population.groupBy(_.metaFitness.rank).toList.sortBy(_._1).map { _._2: P }
 
       //FIXME: No idea why but it is not tailrec
       def addFronts[I](fronts: List[P], acc: List[P], size: Int = 0): (P, P) = {
@@ -45,7 +45,7 @@ trait NonDominatedSortingElitism {
 
       
       (if (selected.size < archiveSize) 
-        selected ++ lastFront.sortBy(_.individual.diversity).reverse.slice(0, archiveSize - selected.size) 
+        selected ++ lastFront.sortBy(_.metaFitness.diversity).reverse.slice(0, archiveSize - selected.size) 
        else selected)
     }
   }

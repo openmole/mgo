@@ -47,11 +47,9 @@ trait NSGAII extends Evolution with MG with Archive with Elitism with DiversityM
     val offspring = breed(
       population,
       population.size
-    ).map {
-      g => g -> evaluator(g)
-    }
+    ).map { Individual(_, evaluator) }
 
-    val archive = population.evaluated ++ offspring
+    val archive = population.individuals ++ offspring
 
     //Elitisme strategy
     val individuals = toPopulation(archive)

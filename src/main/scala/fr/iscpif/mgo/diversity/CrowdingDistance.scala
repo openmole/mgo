@@ -58,7 +58,7 @@ object CrowdingDistance {
 
 trait CrowdingDistance extends DiversityMetric { this: Evolution =>
 
-   def diversity(evaluated: IndexedSeq[(G, Fitness)]): IndexedSeq[Double] =   
-      CrowdingDistance(evaluated.map{_._2.values})
+   def diversity(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Double] =   
+     CrowdingDistance(evaluated.map{_.fitness.values})
     
 }

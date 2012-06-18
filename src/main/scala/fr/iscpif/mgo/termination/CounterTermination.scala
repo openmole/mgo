@@ -28,6 +28,6 @@ trait CounterTermination extends Termination {
   def initialState = 0
   
   def maxStep: Int
-  def terminated(oldPop: Population[G, I], newPop: Population[G, I], step: STATE) = 
+  def terminated(oldPop: Population[G, MF], newPop: Population[G, MF], step: STATE) = 
     (step >= maxStep, step + 1)
 }

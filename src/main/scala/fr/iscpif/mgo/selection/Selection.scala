@@ -12,6 +12,6 @@ import java.util.Random
 // + pas generique car on utilise IndividualMG With With ... et il existe aussi Individual tout court ...
 // le operate est pas du tout generique
 trait Selection { this: Evolution =>
-  def selection (individuals: P) (implicit aprng : Random): I
+  def selection (individuals: P) (implicit aprng : Random): Individual[G]
 }
 

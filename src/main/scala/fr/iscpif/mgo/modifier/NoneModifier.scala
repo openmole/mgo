@@ -9,11 +9,11 @@ import fr.iscpif.mgo._
 
 trait NoneModifier extends Modifier { this: Evolution =>
   
-  type I = Individual[G]
+  type MF = None.type
   
-  def toPopulation(e: IndexedSeq[(G, Fitness)]) =
-    new Population[G, I] {
-      lazy val content = e.map{case(g, f) => PopulationElement(g, f, Individual(g, f))}
+  def toPopulation(e: IndexedSeq[Individual[G]]) =
+    new Population[G, MF] {
+      lazy val content = e.map{ PopulationElement(_, None) }
     }
   
 }

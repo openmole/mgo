@@ -26,16 +26,16 @@ import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.tools.Random._
 
 trait MGBinaryTournamentSelection extends Selection { 
-  self: GAEvolution with MG {type I <: Individual[_] with Diversity with Rank} =>
+  self: GAEvolution with MG {type MF <: Diversity with Rank} =>
 
-  def selection(population: P)(implicit aprng: Random): I =
-    binaryTournament(population.individuals.random(aprng), population.individuals.random(aprng))
+  def selection(population: P)(implicit aprng: Random): Individual[G] =
+    binaryTournament(population.content.random(aprng), population.content.random(aprng)).toIndividual
 
-  def binaryTournament(individual1: I, individual2: I)(implicit aprng: Random): I =
-    if (individual1.rank < individual2.rank) return individual1
-    else if (individual1.rank > individual2.rank) return individual2
-    else if (individual1.diversity > individual2.diversity) return individual1
-    else if (individual2.diversity > individual1.diversity) return individual2
+  def binaryTournament(individual1: PopulationElement[G, MF], individual2: PopulationElement[G, MF])(implicit aprng: Random): PopulationElement[G, MF] =
+    if (individual1.metaFitness.rank < individual2.metaFitness.rank) return individual1
+    else if (individual1.metaFitness.rank > individual2.metaFitness.rank) return individual2
+    else if (individual1.metaFitness.diversity > individual2.metaFitness.diversity) return individual1
+    else if (individual2.metaFitness.diversity > individual1.metaFitness.diversity) return individual2
     else if (aprng.nextDouble < 0.5) individual1 else individual2
 
 }

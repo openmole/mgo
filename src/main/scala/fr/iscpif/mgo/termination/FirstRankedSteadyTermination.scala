@@ -34,8 +34,8 @@ trait FirstRankedSteadyTermination extends Termination {
 
   def terminated(a1: Population[G, I], a2: Population[G, I], step: STATE): (Boolean, STATE) = {
     val newStep = if ( 
-      Math.allTheSame(firstRanked(a1.individuals).map {_.fitness.values},
-                      firstRanked(a2.individuals).map {_.fitness.values})
+      Math.allTheSame(firstRanked(a1).map {_.fitness.values},
+                      firstRanked(a2).map {_.fitness.values})
     ) step + 1 else  0
     (newStep >= steadySince, newStep)
   }

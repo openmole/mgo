@@ -12,49 +12,41 @@ object Population {
 }
 
 object PopulationElement {
-  def apply[G, I](genome: G, fitness: Fitness, individual: I) = {
-    val (g, f, i) = (genome, fitness, individual)
-    new PopulationElement[G, I] {
+  def apply[G, MF](genome: G, fitness: Fitness, metaFitness: MF) = {
+    val (g, f, mf) = (genome, fitness, metaFitness)
+    new PopulationElement[G, MF] {
       def genome = g
       def fitness = f
-      def individual = i
+      def metaFitness = mf
     }
   }
   
-  def apply[G, I <: Individual[G]](i: I) = 
-    new PopulationElement[G, I] {
+  def apply[G, MF](i: Individual[G], mf: MF) = 
+    new PopulationElement[G, MF] {
       lazy val genome = i.genome
       lazy val fitness = i.fitness
-      lazy val individual = i
+      lazy val metaFitness = mf
     }
 }
 
-trait Population[+G, +I]  {
+trait Population[+G, +MF]  {
    
-  def content: IndexedSeq[PopulationElement[G, I]]
+  def content: IndexedSeq[PopulationElement[G, MF]]
   
-  def evaluated: IndexedSeq[(G, Fitness)] = 
-    content map {
-      e => e.genome -> e.fitness
-    }
-  
-  def individuals: IndexedSeq[I] =
-    content map {
-      e => e.individual
-    }
-  
-  def evaluatedToIndividuals = evaluated map {case(g, f) => Individual(g, f)}
+  def individuals: IndexedSeq[Individual[G]] = content map { _.toIndividual }
   
   override def toString = content.toString
   
 }
 
-trait PopulationElement[+G, +I] {
+trait PopulationElement[+G, +MF] {
   def genome: G
   def fitness: Fitness
-  def individual: I
+  def metaFitness: MF
   
-  override def equals(o: Any) = (genome, fitness, individual).equals(o)
-  override def hashCode = (genome, fitness, individual).hashCode
-  override def toString = "(genome = " + genome + ", fitness = " + fitness + ", individual = " + individual + ")"
+  def toIndividual = Individual(genome, fitness)
+  
+  //override def equals(o: Any) = (genome, fitness, individual).equals(o)
+  //override def hashCode = (genome, fitness, individual).hashCode
+  override def toString = "(genome = " + genome + ", fitness = " + fitness + ", metaFitness = " + metaFitness + ")"
 }
