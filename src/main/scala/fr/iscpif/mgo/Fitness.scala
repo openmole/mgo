@@ -13,6 +13,10 @@ object Fitness {
     }
   }
   
+  def apply(v: Traversable[Double]) = new Fitness {
+    val values = v.toIndexedSeq
+  }
+  
 }
 
 

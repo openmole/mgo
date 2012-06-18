@@ -39,28 +39,11 @@ import scala.annotation.tailrec
 
 trait NSGAII extends Evolution with MG with Archive with Elitism with DiversityMetric {
 
-  type I = Individual[G] with Diversity with Rank
+  //type I = Individual[G] with Diversity with Rank
   
   def archiveSize: Int
- 
-  def toI(evaluated: IndexedSeq[(G, Fitness)]): IndexedSeq[I] = {
-    val individuals = evaluated.map{case (g, f) => Individual(g, f)}
-    val ranks = rank(individuals)
-    val distances = diversity(individuals)
-      
-    (individuals zip ranks zip distances) map {
-      case ((i, iranking), idistance) =>
-        new Individual[G] with Diversity with Rank {
-          val genome = i.genome
-          val fitness = i.fitness
-          val diversity = idistance.diversity
-          val rank = iranking.rank
-        }
-    }
-  }
 
-  override def evolve(population: IndexedSeq[I], evaluator: G => Fitness)(implicit aprng: Random): IndexedSeq[I] = {
-
+  override def evolve(population: P, evaluator: G => Fitness)(implicit aprng: Random): P = {
     val offspring = breed(
       population,
       population.size
@@ -68,14 +51,14 @@ trait NSGAII extends Evolution with MG with Archive with Elitism with DiversityM
       g => g -> evaluator(g)
     }
 
-    val archive = population.map{_.toTuple} ++ offspring
+    val archive = population.evaluated ++ offspring
 
     //Elitisme strategy
-    val individuals = toI(archive)
+    val individuals = toPopulation(archive)
     elitism(individuals)
   }
 
-  def breed(archive: IndexedSeq[I], offSpringSize: Int)(implicit aprng: Random): IndexedSeq[G] = {
+  def breed(archive: P, offSpringSize: Int)(implicit aprng: Random): IndexedSeq[G] = {
 
     //Crossover sur matingPopulation puis mutation
     def breed(acc: List[G] = List.empty): List[G] = {

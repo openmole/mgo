@@ -7,8 +7,14 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.algorithm.ga._
+import fr.iscpif.mgo.modifier._
+import fr.iscpif.mgo.mutation._
 import fr.iscpif.mgo.ranking._
+import fr.iscpif.mgo.crossover._
+import fr.iscpif.mgo.diversity._
+import fr.iscpif.mgo.dominance._
 import fr.iscpif.mgo.elitism._
+import fr.iscpif.mgo.termination._
 import fr.iscpif.mgo.tools.Scaling._
 import fr.iscpif.mgo.selection._
 import fr.iscpif.mgo.ga._
@@ -28,25 +34,35 @@ object TestFunction extends App {
   implicit val rng = new Random
 
   val nsga2 =
-    new NSGAIISigma.NSGAIISigmaBasic {
+      new NSGAIISigma
+                     with MGBinaryTournamentSelection
+                     with CounterTermination
+                     with NonDominatedSortingElitism
+                     with CoEvolvingSigmaValuesMutation
+                     with SBXBoundedCrossover 
+                     with CrowdingDistance
+                     with ParetoRanking
+                     with EpsilonDominance
+                     with RankDiversityGenomicCrowdingModifier {
       def distributionIndex = 2
       def maxStep = 1000
       def archiveSize = 50
       def genomeSize = 1
       def epsilons = Seq(0.1, 0.0)
       
-      override def stepListner(pop: IndexedSeq[I], state: STATE): Unit = println(state)
-      /*override def stepListner(pop: IndexedSeq[I], state: STATE): Unit = {
-        val ranks = ParetoRanking(pop, this)
-        ranks zip pop sortBy (_._1.rank) foreach { case(i, r) => println(i.rank + " " + r.genome.values + " " + r.fitness.values) }
+      override def stepListner(pop: P, state: STATE): Unit = println(state)
+     /* override def stepListner(pop: P, state: STATE): Unit = {
+        println(pop)
+       /* val ranks = ParetoRanking(pop, this)
+        ranks zip pop sortBy (_._1.rank) foreach { case(i, r) => println(i.rank + " " + r.genome.values + " " + r.fitness.values) }*/
         println("------------------------------------")
       }*/
       
     }
 
   val res = nsga2.run(50, evaluator _)
-  val ranks = ParetoRanking(res, nsga2)
-  ranks zip res sortBy (_._1.rank) foreach { case(i, r) => println(i.rank + " " + r.genome.values + " " + r.fitness.values) }
+  val ranks = ParetoRanking(res.evaluated, nsga2)
+  ranks zip res sortBy (_._1) foreach { case(i, r) => println(i + " " + r.genome.values + " " + r.fitness.values) }
 
 
   

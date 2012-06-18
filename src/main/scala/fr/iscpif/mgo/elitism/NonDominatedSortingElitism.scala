@@ -29,20 +29,24 @@ import fr.iscpif.mgo.ranking.Rank
 trait NonDominatedSortingElitism { 
   self: GAEvolution with Archive with Dominance { type I <: Individual[_] with Diversity with Rank } =>
 
-  def elitism(individuals: IndexedSeq[I]): IndexedSeq[I] = {
-
-    if (individuals.size < archiveSize) individuals
+  def elitism(population: P): P = {
+    
+    if (population.size < archiveSize) population
     else {
-      val fronts = individuals.groupBy(_.rank).toList.sortBy(_._1).map { _._2 }
+      val fronts = population.groupBy(_.individual.rank).toList.sortBy(_._1).map { _._2: P }
 
-      @tailrec def addFronts[I](fronts: List[IndexedSeq[I]], acc: List[I]): (IndexedSeq[I], List[I]) = {
-        if (acc.size + fronts.head.size < archiveSize) addFronts(fronts.tail, acc ++ fronts.head)
-        else (fronts.headOption.getOrElse(IndexedSeq.empty), acc)
+      //FIXME: No idea why but it is not tailrec
+      def addFronts[I](fronts: List[P], acc: List[P], size: Int = 0): (P, P) = {
+        if (size + fronts.head.size < archiveSize) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
+        else (fronts.headOption.getOrElse(Population.empty), acc.flatten)
       }
 
       val (lastFront, selected) = addFronts(fronts, List.empty)
 
-      (if (selected.size < archiveSize) selected ++ lastFront.sortBy(_.diversity).reverse.slice(0, archiveSize - selected.size) else selected).toIndexedSeq
+      
+      (if (selected.size < archiveSize) 
+        selected ++ lastFront.sortBy(_.individual.diversity).reverse.slice(0, archiveSize - selected.size) 
+       else selected)
     }
   }
 }

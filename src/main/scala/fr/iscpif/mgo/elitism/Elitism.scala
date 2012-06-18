@@ -8,5 +8,5 @@ package fr.iscpif.mgo.elitism
 import fr.iscpif.mgo._
 
 trait Elitism { this: Evolution =>
-  def elitism(individuals: IndexedSeq[I]): IndexedSeq[I]
+  def elitism(individuals: P): P
 }

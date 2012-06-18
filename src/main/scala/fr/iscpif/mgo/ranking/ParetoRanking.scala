@@ -11,16 +11,13 @@ import fr.iscpif.mgo.selection._
 
 object ParetoRanking {
   
-  def apply[G <: Genome](individuals: IndexedSeq [Individual[G]], dominance: Dominance): IndexedSeq[Rank] = { 
-    individuals.zipWithIndex.map { 
+  def apply[G](evaluated: IndexedSeq[(G, Fitness)], dominance: Dominance): IndexedSeq[Int] = { 
+    evaluated.zipWithIndex.map { 
       case (indiv, index) =>
-        new Rank {
-          lazy val rank = 
-            individuals.zipWithIndex.filter {
-              case (_, index2) => index != index2
-            }.count { 
-              case(indiv2, _) => dominance.isDominated(indiv.fitness, indiv2.fitness)
-            }
+        evaluated.zipWithIndex.filter {
+          case (_, index2) => index != index2
+        }.count { 
+          case(indiv2, _) => dominance.isDominated(indiv._2, indiv2._2)
         }
     }
   }
@@ -31,8 +28,7 @@ object ParetoRanking {
 
 trait ParetoRanking extends Ranking { this: Evolution with MG =>
     
-  def rank(individuals: IndexedSeq [Individual[G]]): IndexedSeq[Rank] = 
-    ParetoRanking(individuals, this)
+  def rank(evaluated: IndexedSeq[(G, Fitness)]): IndexedSeq[Int] = ParetoRanking(evaluated, this)
   
 }
 

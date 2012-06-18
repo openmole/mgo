@@ -39,12 +39,9 @@ object Individual {
 }
 
 trait Individual[+G] {
-  
   def genome: G
   def fitness: Fitness
   
   def toTuple = genome -> fitness
-  override def toString = "(" + genome.toString + ", " + fitness.toString + ")"
+  override def toString = "( genome = " + genome.toString + ", fitness = " + fitness.toString + ")"
 }
-
-

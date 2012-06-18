@@ -28,8 +28,8 @@ import fr.iscpif.mgo.tools.Random._
 trait MGBinaryTournamentSelection extends Selection { 
   self: GAEvolution with MG {type I <: Individual[_] with Diversity with Rank} =>
 
-  def selection(individuals: IndexedSeq[I])(implicit aprng: Random): I =
-    binaryTournament(individuals.random(aprng), individuals.random(aprng))
+  def selection(population: P)(implicit aprng: Random): I =
+    binaryTournament(population.individuals.random(aprng), population.individuals.random(aprng))
 
   def binaryTournament(individual1: I, individual2: I)(implicit aprng: Random): I =
     if (individual1.rank < individual2.rank) return individual1

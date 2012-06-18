@@ -26,7 +26,7 @@ trait Termination { self: Evolution =>
   def initialState: STATE
   
   def terminated(
-    oldPop: IndexedSeq[I],
-    newPop: IndexedSeq[I],
+    oldPop: Population[G, I],
+    newPop: Population[G, I],
     terminationState: STATE) : (Boolean, STATE)
 }
