@@ -5,13 +5,15 @@
 
 package fr.iscpif.mgo.ga
 
-import fr.iscpif.mgo.Genome
+import fr.iscpif.mgo._
 
 trait GAGenome extends Genome {
-  def wrappedValues : IndexedSeq [Double]
-  def values : IndexedSeq [Double] 
+  type T = IndexedSeq[Double]
   
-  def updatedValues(values: IndexedSeq [Double]): GAGenome
+  def content: T
   
-  override def toString = wrappedValues.toString
+  def values: IndexedSeq[Double] 
+  def updatedValues(values: IndexedSeq[Double]): T
+  
+  override def toString = content.toString
 }

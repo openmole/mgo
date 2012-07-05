@@ -11,5 +11,5 @@ import fr.iscpif.mgo._
 import java.util.Random
 
 trait Mutation { this: Evolution =>
-  def mutate(genomes: G, factory: F) (implicit aprng : Random): G
+  def mutate(genomes: G) (implicit aprng : Random, factory: Factory[G]): G
 }

@@ -39,14 +39,13 @@ trait SBXBoundedCrossover extends CrossOver { self: GAEvolution =>
   
   def crossover (
     g1: G, 
-    g2: G,
-    factory: F) (implicit aprng : Random) = {
-    val numberOfVariables = g1.wrappedValues.size
+    g2: G) (implicit aprng : Random, factory: Factory[G]) = {
+    val numberOfVariables = g1.content.size
       
     //crossover probability
     val offspring = {
       if (aprng.nextDouble <= crossoverRate) {      
-        (g1.wrappedValues zip g2.wrappedValues).map {
+        (g1.content zip g2.content).map {
           case (g1e, g2e) =>
             if(aprng.nextBoolean) {
               if (abs(g1e - g2e) > epsilon){
@@ -88,7 +87,7 @@ trait SBXBoundedCrossover extends CrossOver { self: GAEvolution =>
               } else(g1e, g2e)
             } else (g2e, g1e)
         }
-      } else(g1.wrappedValues zip g2.wrappedValues)
+      } else(g1.content zip g2.content)
     }
     IndexedSeq(factory(offspring.map{_._1}),  factory(offspring.map{_._2}))
   }

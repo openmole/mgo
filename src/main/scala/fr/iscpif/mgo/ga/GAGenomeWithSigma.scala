@@ -5,26 +5,35 @@
 
 package fr.iscpif.mgo.ga
 
-trait GAGenomeWithSigma extends GAGenome with Sigma { self =>
-  def size: Int
-  def wrappedValues = values ++ sigma
-  
-  override def updatedValues(_values: IndexedSeq [Double]) = 
-    new GAGenomeWithSigma {
-      def values = _values
-      def sigma = self.sigma
-      def size = self.size
-    }
-   
+import fr.iscpif.mgo.Factory
+import java.util.Random
 
-  override def updatedSigma(_sigma: IndexedSeq [Double]) = 
-    new GAGenomeWithSigma {
-      def values = self.values
-      def sigma = _sigma
-      def size = self.size
+object GAGenomeWithSigma {
+  def factory(size: Int) = 
+    new Factory[GAGenomeWithSigma] {
+      def apply(content: IndexedSeq[Double]) = {
+        assert(content.size / 2 == size)
+        new GAGenomeWithSigma(
+          content.slice(0, content.size / 2),
+          content.slice(content.size / 2, content.size)
+        )
+      }
+      
+      def random(implicit rng: Random) = apply(Stream.continually(rng.nextDouble).take(size * 2).toIndexedSeq)
     }
-    
+}
+
+
+
+case class GAGenomeWithSigma(
+  val values: IndexedSeq[Double],
+  val sigma: IndexedSeq[Double]) extends GAGenome with Sigma {
   
+  def content = values ++ sigma
+  
+  override def updatedValues(values: IndexedSeq [Double]) = copy(values = values).content
+
+  override def updatedSigma(sigma: IndexedSeq [Double]) = copy(sigma = sigma).content
                                   
 }
 

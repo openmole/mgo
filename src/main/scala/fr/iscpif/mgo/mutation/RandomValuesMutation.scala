@@ -15,9 +15,9 @@ trait RandomValuesMutation extends Mutation {
   
   def mutationRate: Double = 0.5
   
-  override def mutate(genome: G, factory: F)(implicit aprng: Random): G = {
+  override def mutate(genome: G)(implicit aprng: Random, factory: Factory[G]): G = {
    
-    /* @todo Faire en sorte d'utiliser plutot un genome généré par buildRandomGenome, 
+    /* FIXME Faire en sorte d'utiliser plutot un genome généré par buildRandomGenome, 
      * plutot qu'une valeur tiré au hasard avec aprng... */
     val newValues = genome.values map { v => 
       if (aprng.nextDouble < mutationRate) aprng.nextDouble

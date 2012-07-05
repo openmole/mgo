@@ -28,11 +28,15 @@ object TestFunction extends App {
     
   def evaluator(g: GAGenomeWithSigma) = 
     new Fitness {
-      def values = IndexedSeq(math.abs(4 - f(scale(g.values(0)))))
+      def values = IndexedSeq(
+        math.abs(4 - f(scale(g.values(0)))),
+        math.abs(4 - f(scale(g.values(1))))
+      )
     }
  
   implicit val rng = new Random
-
+  implicit val factory = GAGenomeWithSigma.factory(2)
+  
   val nsga2 =
       new NSGAIISigma
                      with MGBinaryTournamentSelection
@@ -45,10 +49,8 @@ object TestFunction extends App {
                      with StrictDominance
                      with RankDiversityGenomicCrowdingModifier {
       def distributionIndex = 2
-      def maxStep = 1000
+      def maxStep = 10000
       def archiveSize = 50
-      def genomeSize = 1
-      //def epsilons = Seq(0.1, 0.0)
       
       override def stepListner(pop: P, state: STATE): Unit = println(state)
      /* override def stepListner(pop: P, state: STATE): Unit = {

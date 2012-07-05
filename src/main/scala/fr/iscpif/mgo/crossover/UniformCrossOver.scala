@@ -17,10 +17,10 @@ trait UniformCrossOver extends CrossOver { this: GAEvolution =>
   
   def crossoverRate: Double = 0.5
 
-  def crossover (g1: G, g2: G, factory: F) (implicit aprng : Random) = {
+  def crossover (g1: G, g2: G) (implicit aprng : Random, factory: Factory[G]) = {
     // False on echange, true on maintient
-    val rngValue = (0 until g1.wrappedValues.size).map{x => !(aprng.nextDouble < crossoverRate)}
-    val offspringValues = (rngValue zip (g1.wrappedValues zip g2.wrappedValues)) map {
+    val rngValue = (0 until g1.content.size).map{x => !(aprng.nextDouble < crossoverRate)}
+    val offspringValues = (rngValue zip (g1.content zip g2.content)) map {
       case (b, (g1e, g2e)) =>
         if(b) (g1e, g2e) else (g2e, g1e)
     }

@@ -15,10 +15,9 @@ trait RandomMutation extends Mutation  {
     
   def mutationRate = 0.5
 
-  override def mutate(genome: G, factory: F)(implicit aprng: Random): G = {
-
+  override def mutate(genome: G)(implicit aprng: Random, factory: Factory[G]): G = {
     val randomGenome = factory.random
-    val valMutationZipped = genome.wrappedValues.zip(randomGenome.wrappedValues)   
+    val valMutationZipped = genome.content.zip(randomGenome.content)   
     val newValues = valMutationZipped map { 
       case(v,vrg) => 
         if (aprng.nextDouble < mutationRate) vrg else v 

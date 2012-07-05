@@ -10,5 +10,4 @@ import fr.iscpif.mgo._
 
 trait GAEvolution extends Evolution { self =>
   type G <: GAGenome
-  type F <: GAGenomeFactory[G]
 }

@@ -21,13 +21,5 @@ import fr.iscpif.mgo.termination._
 trait NSGAIISigma extends NSGAII 
                      with SigmaGAEvolution {
 
-  type G = GAGenomeWithSigma
-  type F = GAGenomeWithSigmaFactory
-    
-  def genomeSize: Int
-  
-  def factory = new GAGenomeWithSigmaFactory {
-    def size = genomeSize
-  }
-    
+  type G = GAGenomeWithSigma  
 }

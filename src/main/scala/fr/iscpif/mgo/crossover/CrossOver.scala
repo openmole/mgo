@@ -9,5 +9,5 @@ import fr.iscpif.mgo._
 import java.util.Random
 
 trait CrossOver { self: Evolution =>
-  def crossover(g1: G, g2: G, factory: F) (implicit aprng : Random): IndexedSeq[G]
+  def crossover(g1: G, g2: G)(implicit aprng : Random, factory: Factory[G]): IndexedSeq[G]
 }

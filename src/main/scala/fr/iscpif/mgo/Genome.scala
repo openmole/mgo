@@ -5,4 +5,8 @@
 
 package fr.iscpif.mgo
 
-trait Genome
+trait Genome {
+  type T
+  
+  def content: T
+}
