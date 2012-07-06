@@ -10,8 +10,6 @@ import fr.iscpif.mgo._
 trait GAGenome extends Genome {
   type T = IndexedSeq[Double]
   
-  def content: T
-  
   def values: IndexedSeq[Double] 
   def updatedValues(values: IndexedSeq[Double]): T
   

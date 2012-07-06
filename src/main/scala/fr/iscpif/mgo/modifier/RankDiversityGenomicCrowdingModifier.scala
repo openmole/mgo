@@ -19,7 +19,9 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier { this: Evolution wi
     val genomeDiversity = CrowdingDistance(evaluated.map{_.genome.values})
     
     val diversityFitnesses = 
-      (evaluated zip genomeDiversity).map{ case(i, gd) => Fitness(i.fitness.values.toList ::: 1 / gd :: Nil)}
+      (evaluated zip genomeDiversity).map{ 
+        case(i, gd) => Fitness(i.fitness.values.toList ::: 1 / gd :: Nil)
+      }
     
     val ranks = 
       rank( (evaluated zip diversityFitnesses).map{ case(i, fd) =>  Individual(i.genome, fd) } )
