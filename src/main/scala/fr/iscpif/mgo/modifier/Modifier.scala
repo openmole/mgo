@@ -8,5 +8,5 @@ package fr.iscpif.mgo.modifier
 import fr.iscpif.mgo._
 
 trait Modifier { this: Evolution =>
-  def toPopulation(evaluated: IndexedSeq[Individual[G]]): P
+  def toPopulation(evaluated: IndexedSeq[Individual[G]]): Population[G, MF]
 }

@@ -14,6 +14,7 @@ import fr.iscpif.mgo.diversity._
 import fr.iscpif.mgo.selection._
 import fr.iscpif.mgo.dominance._
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.breed._
 import fr.iscpif.mgo.termination._
 import fr.iscpif.mgo.tools.Math
 import ga._
@@ -37,13 +38,13 @@ import scala.annotation.tailrec
 
 // @fixme Refaire un check sur Ranking
 
-trait NSGAII extends Evolution with MG with Archive with Elitism with DiversityMetric {
+trait NSGAII extends Evolution with MG with Archive with Elitism with Breeding with DiversityMetric {
 
   //type I = Individual[G] with Diversity with Rank
   
   def archiveSize: Int
 
-  override def evolve(population: P, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): P = {
+  override def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF] = {
     val offspring = breed(
       population,
       population.size
@@ -56,22 +57,6 @@ trait NSGAII extends Evolution with MG with Archive with Elitism with DiversityM
     elitism(individuals)
   }
 
-  def breed(archive: P, offSpringSize: Int)(implicit aprng: Random, factory: Factory[G]): IndexedSeq[G] = {
-
-    //Crossover sur matingPopulation puis mutation
-    def breed(acc: List[G] = List.empty): List[G] = {
-      if (acc.size >= offSpringSize) acc
-      else {
-        val newIndividuals = crossover(
-          selection(archive).genome,
-          selection(archive).genome).
-        map { mutate(_) }.take(offSpringSize).toIndexedSeq
-        breed(acc ++ newIndividuals)
-      }
-    }
-
-    breed().toIndexedSeq
-  }
 
 
 }

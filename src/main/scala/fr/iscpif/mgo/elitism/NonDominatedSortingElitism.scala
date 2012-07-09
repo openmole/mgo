@@ -29,14 +29,14 @@ import fr.iscpif.mgo.ranking.Rank
 trait NonDominatedSortingElitism extends Elitism { 
   self: GAEvolution with Archive with Dominance { type MF <: Diversity with Rank } =>
 
-  def elitism(population: P): P = {
+  def elitism(population: Population[G, MF]): Population[G, MF] = {
     
     if (population.size < archiveSize) population
     else {
-      val fronts = population.groupBy(_.metaFitness.rank).toList.sortBy(_._1).map { _._2: P }
+      val fronts = population.groupBy(_.metaFitness.rank).toList.sortBy(_._1).map { _._2: Population[G, MF] }
 
       //FIXME: No idea why but it is not tailrec
-      def addFronts[I](fronts: List[P], acc: List[P], size: Int = 0): (P, P) = {
+      def addFronts[I](fronts: List[Population[G, MF]], acc: List[Population[G, MF]], size: Int = 0): (Population[G, MF], Population[G, MF]) = {
         if (size + fronts.head.size < archiveSize) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
         else (fronts.headOption.getOrElse(Population.empty), acc.flatten)
       }

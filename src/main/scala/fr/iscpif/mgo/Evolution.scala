@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (C) 2011 srey
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,14 +31,16 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
 
   type G <: Genome
   type MF 
-    
-  type P = Population[G, MF]
   
+  implicit val manifestGenome: Manifest[G] = implicitly
+  implicit val manifestIndividual: Manifest[Individual[G]] = implicitly
+  implicit val manifestPopulation: Manifest[Population[G, MF]] = implicitly
+
   //Perform N step
   @tailrec private def evolveStep(
-    population: P,
+    population: Population[G, MF],
     evaluator: G => Fitness,
-    state: STATE = initialState)(implicit aprng:Random, factory: Factory[G]): P = {
+    state: STATE = initialState)(implicit aprng:Random, factory: Factory[G]): Population[G, MF] = {
     val nextPop = evolve(population, evaluator)
     stepListner(nextPop, state)
     val (end, newState) = terminated(population, nextPop, state)
@@ -46,14 +48,16 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
     else evolveStep(nextPop, evaluator, newState)
   }
   
-  def run(population: P, evaluator: G => Fitness) (implicit aprng: Random, factory: Factory[G]): P = evolveStep(population, evaluator)
-  def run(populationSize: Int, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): P = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
+  def run(population: Population[G, MF], evaluator: G => Fitness) (implicit aprng: Random, factory: Factory[G]): Population[G, MF] = evolveStep(population, evaluator)
+  def run(populationSize: Int, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF] = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
   
-  def evolve(population: P, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): P
+  def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF]
   
-  def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): P =
+  def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF] =
     toPopulation((0 until size).map{ _ => factory.random }.map{ g => Individual(g, evaluator)})
   
-  def stepListner(population: P, state: STATE) = {}
+  def emptyPopulation: Population[G, MF] = toPopulation(IndexedSeq.empty)
+  
+  def stepListner(population: Population[G, MF], state: STATE) = {}
   
 }

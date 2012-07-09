@@ -52,7 +52,7 @@ object TestFunction extends App {
       def maxStep = 10000
       def archiveSize = 50
       
-      override def stepListner(pop: P, state: STATE): Unit = println(state)
+      override def stepListner(pop: Population[G, MF], state: STATE): Unit = println(state)
      /* override def stepListner(pop: P, state: STATE): Unit = {
         println(pop)
        /* val ranks = ParetoRanking(pop, this)
