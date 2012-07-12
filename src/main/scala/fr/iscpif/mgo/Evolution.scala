@@ -54,7 +54,7 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF]
   
   def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF] =
-    toPopulation((0 until size).map{ _ => factory.random }.map{ g => Individual(g, evaluator)})
+    toPopulation((0 until size).map{ _ => factory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
   
   def emptyPopulation: Population[G, MF] = toPopulation(IndexedSeq.empty)
   
