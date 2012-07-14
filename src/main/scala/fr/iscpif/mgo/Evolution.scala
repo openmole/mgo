@@ -33,10 +33,6 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   type MF 
 
   implicit val factory: Factory[G]
-  
-  implicit val manifestGenome: Manifest[G] = implicitly
-  implicit val manifestIndividual: Manifest[Individual[G]] = implicitly
-  implicit val manifestPopulation: Manifest[Population[G, MF]] = implicitly
 
   //Perform N step
   @tailrec private def evolveStep(

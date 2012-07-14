@@ -61,9 +61,8 @@ object TestFunction extends App {
       }*/
       
     }
-
+  
   val res = nsga2.run(50, evaluator _)
   val ranks = ParetoRanking(res.individuals, nsga2)
   ranks zip res sortBy (_._1) foreach { case(i, r) => println(i + " " + r.genome.values + " " + r.fitness.values) }
-
 }
