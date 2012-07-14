@@ -10,7 +10,7 @@ import java.util.Random
 
 trait Breeding { this: Evolution =>
   
-  def breed(archive: Population[G, MF], offSpringSize: Int)(implicit aprng: Random, factory: Factory[G]): IndexedSeq[G] = {
+  def breed(archive: Population[G, MF], offSpringSize: Int)(implicit aprng: Random): IndexedSeq[G] = {
 
     //Crossover sur matingPopulation puis mutation
     def breed(acc: List[G] = List.empty): List[G] = {
