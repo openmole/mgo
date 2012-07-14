@@ -23,8 +23,6 @@ trait Termination { self: Evolution =>
   
   type STATE
   
-  implicit val manifestState: Manifest[STATE] = implicitly
-  
   def initialState: STATE
   
   def terminated(oldPop: Population[G, MF], newPop: Population[G, MF], terminationState: STATE) : (Boolean, STATE)
