@@ -5,7 +5,7 @@
     <groupId>fr.iscpif</groupId>
     <packaging>jar</packaging>
     <artifactId>mgo</artifactId>
-    <version>1.15</version>
+    <version>1.16-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
