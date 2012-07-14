@@ -22,4 +22,7 @@ trait NSGAIISigma extends NSGAII
                      with SigmaGAEvolution {
 
   type G = GAGenomeWithSigma  
+  
+  val factory = GAGenomeWithSigma.factory(2)
+  
 }

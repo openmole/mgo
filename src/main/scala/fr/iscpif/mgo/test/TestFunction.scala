@@ -35,7 +35,6 @@ object TestFunction extends App {
     }
  
   implicit val rng = new Random
-  implicit val factory = GAGenomeWithSigma.factory(2)
   
   val nsga2 =
       new NSGAIISigma
@@ -51,6 +50,7 @@ object TestFunction extends App {
       def distributionIndex = 2
       def maxStep = 10000
       def archiveSize = 50
+      def genomeSize = 2
       
       override def stepListner(pop: Population[G, MF], state: STATE): Unit = println(state)
      /* override def stepListner(pop: P, state: STATE): Unit = {

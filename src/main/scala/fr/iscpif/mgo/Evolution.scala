@@ -31,6 +31,8 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
 
   type G <: Genome
   type MF 
+
+  implicit val factory: Factory[G]
   
   implicit val manifestGenome: Manifest[G] = implicitly
   implicit val manifestIndividual: Manifest[Individual[G]] = implicitly
@@ -40,7 +42,7 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   @tailrec private def evolveStep(
     population: Population[G, MF],
     evaluator: G => Fitness,
-    state: STATE = initialState)(implicit aprng:Random, factory: Factory[G]): Population[G, MF] = {
+    state: STATE = initialState)(implicit aprng:Random): Population[G, MF] = {
     val nextPop = evolve(population, evaluator)
     stepListner(nextPop, state)
     val (end, newState) = terminated(population, nextPop, state)
@@ -48,12 +50,12 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
     else evolveStep(nextPop, evaluator, newState)
   }
   
-  def run(population: Population[G, MF], evaluator: G => Fitness) (implicit aprng: Random, factory: Factory[G]): Population[G, MF] = evolveStep(population, evaluator)
-  def run(populationSize: Int, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF] = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
+  def run(population: Population[G, MF], evaluator: G => Fitness) (implicit aprng: Random): Population[G, MF] = evolveStep(population, evaluator)
+  def run(populationSize: Int, evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
   
-  def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF]
+  def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF]
   
-  def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF] =
+  def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] =
     toPopulation((0 until size).map{ _ => factory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
   
   def emptyPopulation: Population[G, MF] = toPopulation(IndexedSeq.empty)

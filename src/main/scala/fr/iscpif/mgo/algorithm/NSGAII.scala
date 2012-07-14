@@ -40,11 +40,7 @@ import scala.annotation.tailrec
 
 trait NSGAII extends Evolution with MG with Archive with Elitism with Breeding with DiversityMetric {
 
-  //type I = Individual[G] with Diversity with Rank
-  
-  def archiveSize: Int
-
-  override def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random, factory: Factory[G]): Population[G, MF] = {
+  override def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = {
     val offspring = breed(
       population,
       population.size
