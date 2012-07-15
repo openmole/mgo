@@ -1,7 +1,5 @@
-package fr.iscpif.mgo.termination
-
 /*
- * Copyright (C) 2011 srey
+ * Copyright (C) 2011 Sebastien Rey
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,6 +15,7 @@ package fr.iscpif.mgo.termination
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 
