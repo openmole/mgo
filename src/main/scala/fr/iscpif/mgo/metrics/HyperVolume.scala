@@ -25,9 +25,9 @@ object HyperVolume extends App{
     def weaklyDominates(point: IndexedSeq[Double], other: IndexedSeq[Double]): Boolean = {
       for (i <- Range(0, point.size)) {
         if (point(i) > other(i))
-          false
+          return false
       }
-      true
+      return true
     }
 
     var relevantPoints: IndexedSeq[IndexedSeq[Double]] = IndexedSeq.empty
