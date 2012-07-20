@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.algorithm.ga
 
 import fr.iscpif.mgo.ga._
-import fr.iscpif.mgo.algorithm._
+import fr.iscpif.mgo.algorithm.NSGAII
 import fr.iscpif.mgo.crossover._
 import fr.iscpif.mgo.elitism._
 import fr.iscpif.mgo.mutation._

@@ -17,13 +17,13 @@ import fr.iscpif.mgo.selection._
 import scala.math._
 import fr.iscpif.mgo.tools.Scaling._
 import java.util.Random
-
+/*
 @RunWith(classOf[JUnitRunner])
 class SCHSpec extends FlatSpec with ShouldMatchers{
 
   "SCHSpec" should "create and initialize with good values" in {
     
-    
+  */
     ////////////////////////////////
     // ZDT1
     ////////////////////////////////    
@@ -188,8 +188,9 @@ class SCHSpec extends FlatSpec with ShouldMatchers{
     println(archive.individuals.map{e => e.multiGoal.toString})
   
   }
-  */
+
   
   }
   
 }
+  */
