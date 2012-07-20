@@ -5,7 +5,8 @@
 //
 package fr.iscpif.mgo.metrics
 
-import scala.collection.mutable._
+import collection.mutable._
+import collection.immutable.{IndexedSeq => IIndexedSeq}
 
 // REF A RAJOUTER
 // BASE SUR LE CODE PYTHON ICI MEME : http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
@@ -31,7 +32,7 @@ object HyperVolume extends App{
 
     var relevantPoints: IndexedSeq[IndexedSeq[Double]] = IndexedSeq.empty
 
-    var dimensions = referencePoint.size
+    val dimensions = referencePoint.size
 
     for (point <- front) {
       if (weaklyDominates(point, referencePoint)) {
@@ -40,15 +41,17 @@ object HyperVolume extends App{
     }
 
     /*
-    relevantPoints.map { _.zipWith(referencePoints).map{ case(c, r) => c - r} }
+     relevantPoints.map { _.zipWith(referencePoints).map{ case(c, r) => c - r} }
      */
-    if (relevantPoints.size > 0) {
-      relevantPoints =  relevantPoints.map {
-        Point => Range(0, dimensions).map {
-          i => Point(i) - referencePoint(i)
+    //if (relevantPoints.size > 0) {
+    relevantPoints = 
+      relevantPoints.map {
+        point =>
+        ArrayBuffer() ++ Range(0, dimensions).map {
+          i => point(i) - referencePoint(i)
         }
       }
-    }
+    //}
     println("RELEVANT POINTS = " + relevantPoints)
     var list = preProcess(relevantPoints)
     println("LIST = " + list)
@@ -112,8 +115,8 @@ object HyperVolume extends App{
           hvol = qPrevDimIndex.volume(dimIndex) + qPrevDimIndex.area(dimIndex) * (qCargo(dimIndex) - qPrevDimIndex.cargo(dimIndex))
         } else {
           qArea = (IndexedSeq(1.0) ++ Range(0, dimIndex).map {
-            i => qArea(i) * -qCargo(i)
-          })
+              i => qArea(i) * -qCargo(i)
+            })
 
           //qArea.slice(1, dimIndex + 1) = Range(0, dimIndex).map{ i => qArea(i) * -qCargo(i)}
           //qArea[ 1: dimIndex + 1] =[qArea[i] * -qCargo[i] for i in xrange(dimIndex)]
@@ -170,15 +173,17 @@ object HyperVolume extends App{
 
     Range(0, dimensions).map {
       i =>
-        nodes = sortByDimension(nodes, i)
-        nodeList.extend(nodes, i)
-        println( "i  = " + i)
+      nodes = sortByDimension(nodes, i)
+      nodeList.extend(nodes, i)
+      println( "i  = " + i)
     }
     println("sentinel = " + nodeList.sentinel.toString())
     nodeList
   }
 
-  def sortByDimension(nodes: IndexedSeq[Node], i: Int): IndexedSeq[Node] = {
+  def sortByDimension(nodes: IndexedSeq[Node], i: Int): IndexedSeq[Node] = 
+    nodes.sortBy(_.cargo(i))
+  /*{
     //build a list of tuples of(point[i], node)
     var decorated = nodes.map {
       node => (node.cargo(i), node)
@@ -189,7 +194,7 @@ object HyperVolume extends App{
     decorated.map {
       case (_, node) => node
     }
-  }
+  }*/
 
 
   class Node(numberLists: Int, var cargo: IndexedSeq[Double] = IndexedSeq.empty) {
