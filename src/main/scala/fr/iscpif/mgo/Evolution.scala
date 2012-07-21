@@ -18,14 +18,8 @@
 package fr.iscpif.mgo
 
 import annotation.tailrec
-import fr.iscpif.mgo.crossover.CrossOver
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.modifier.Modifier
-import fr.iscpif.mgo.mutation.Mutation
-import fr.iscpif.mgo.selection.Selection
-import fr.iscpif.mgo.termination.Termination
-import java.util.Random
 import Individual._
+import java.util.Random
 
 trait Evolution extends Mutation with CrossOver with Termination with Selection with Modifier { self =>
 
@@ -34,6 +28,8 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
 
   implicit val factory: Factory[G]
 
+  def lambda: Int
+  
   //Perform N step
   @tailrec private def evolveStep(
     population: Population[G, MF],
@@ -47,12 +43,12 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   }
   
   def run(population: Population[G, MF], evaluator: G => Fitness) (implicit aprng: Random): Population[G, MF] = evolveStep(population, evaluator)
-  def run(populationSize: Int, evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = evolveStep(randomPopulation(populationSize, evaluator), evaluator)
+  def run(evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = evolveStep(randomPopulation(evaluator), evaluator)
   
   def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF]
   
-  def randomPopulation(size: Int, evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] =
-    toPopulation((0 until size).map{ _ => factory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
+  def randomPopulation(evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] =
+    toPopulation((0 until lambda).map{ _ => factory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
   
   def emptyPopulation: Population[G, MF] = toPopulation(IndexedSeq.empty)
   

@@ -18,8 +18,6 @@
 package fr.iscpif.mgo.ranking
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.dominance._
-import fr.iscpif.mgo.selection._
 
 object ParetoRanking {
   

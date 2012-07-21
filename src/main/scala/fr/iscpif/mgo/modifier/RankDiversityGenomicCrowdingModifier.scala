@@ -18,9 +18,7 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.diversity._
-import fr.iscpif.mgo.ranking._
-import fr.iscpif.mgo.ga._
+import fr.iscpif.mgo.diversity.CrowdingDistance
 
 trait RankDiversityGenomicCrowdingModifier extends Modifier { this: Evolution with Ranking with DiversityMetric {type G <: GAGenome} =>
 

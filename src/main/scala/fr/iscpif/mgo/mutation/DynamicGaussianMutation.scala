@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga._
 import tools.Math._
 import tools.Random._
 import java.util.Random

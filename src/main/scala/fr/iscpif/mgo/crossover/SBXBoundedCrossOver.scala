@@ -37,11 +37,9 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga._
-import java.util.Random
-import fr.iscpif.mgo.tools.Random._
-import scala.math._
 import fr.iscpif.mgo.tools.Math._
+import math._
+import java.util.Random
 
 trait SBXBoundedCrossover extends CrossOver { self: GAEvolution =>
   

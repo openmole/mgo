@@ -17,5 +17,5 @@
 package fr.iscpif.mgo
 
 trait Archive { this: Evolution =>
-  def archiveSize: Int
+  def mu: Int
 }

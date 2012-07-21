@@ -18,8 +18,6 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.diversity._
-import fr.iscpif.mgo.ranking._
 
 trait RankDiversityModifier extends Modifier { this: Evolution with Ranking with DiversityMetric =>
 
@@ -36,6 +34,7 @@ trait RankDiversityModifier extends Modifier { this: Evolution with Ranking with
             new Diversity with Rank {
               val diversity = d
               val rank = r
+              override def toString = diversity + " " + rank
             }
         )
     }
