@@ -18,11 +18,13 @@
 package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
+import tools.Lazy
 
 object CrowdingDistance {
   
-  def apply(data: IndexedSeq[Seq[Double]]): IndexedSeq[Double] = {
-    if (data.size <= 2) data.map(d => Double.PositiveInfinity)
+  //FIXME make it functionnal and take advantage of the lazyness
+  def apply(data: IndexedSeq[Seq[Double]]): IndexedSeq[Lazy[Double]] = {
+    if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
     else {         
       class CrowdingInfo(val d: Seq[Double], var crowding: Double)
       
@@ -61,7 +63,7 @@ object CrowdingDistance {
         }
       }
 
-      crowding.map(_.crowding)
+      crowding.map(c => Lazy(c.crowding))
     }
   }
   
@@ -70,7 +72,7 @@ object CrowdingDistance {
 
 trait CrowdingDistance extends DiversityMetric { this: Evolution =>
 
-   def diversity(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Double] =   
+   def diversity(evaluated: IndexedSeq[Individual[G]]) =   
      CrowdingDistance(evaluated.map{_.fitness.values})
     
 }

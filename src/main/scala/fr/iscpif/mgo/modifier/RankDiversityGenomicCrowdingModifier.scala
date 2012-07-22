@@ -30,7 +30,7 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier { this: Evolution wi
     
     val diversityFitnesses = 
       (evaluated zip genomeDiversity).map{ 
-        case(i, gd) => Fitness(i.fitness.values.toList ::: 1 / gd :: Nil)
+        case(i, gd) => Fitness(i.fitness.values.toList ::: 1 / gd() :: Nil)
       }
     
     val ranks = 
@@ -40,8 +40,8 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier { this: Evolution wi
       case ((i, r), d) => 
         PopulationElement(i,
             new Diversity with Rank {
-              val diversity = d
-              val rank = r
+              lazy val diversity = d()
+              lazy val rank = r()
             }
         )
     }

@@ -18,11 +18,10 @@
 package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga.GAEvolution
 
 trait GenomeCrowdingDistance extends DiversityMetric { this: GAEvolution =>
 
-  def diversity(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Double] =   
+  def diversity(evaluated: IndexedSeq[Individual[G]]) =   
     CrowdingDistance(evaluated.map{_.genome.values})
     
 }

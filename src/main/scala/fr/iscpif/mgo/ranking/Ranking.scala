@@ -18,7 +18,8 @@
 package fr.iscpif.mgo.ranking
 
 import fr.iscpif.mgo._
+import tools.Lazy
 
 trait Ranking { this: Evolution =>
-  def rank(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Int]
+  def rank(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Lazy[Int]]
 }

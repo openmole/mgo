@@ -32,8 +32,8 @@ trait RankDiversityModifier extends Modifier { this: Evolution with Ranking with
         PopulationElement(
             i,
             new Diversity with Rank {
-              val diversity = d
-              val rank = r
+              lazy val diversity = d()
+              lazy val rank = r()
               override def toString = diversity + " " + rank
             }
         )

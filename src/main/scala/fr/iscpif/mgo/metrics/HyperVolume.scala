@@ -10,16 +10,24 @@ package fr.iscpif.mgo.metrics
 //import collection.mutable
 import collection.mutable.{IndexedSeq => MIndexedSeq}
 import scala.collection.mutable.ArrayBuffer
+import math._
 // REF A RAJOUTER
 // BASE SUR LE CODE PYTHON ICI MEME : http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
 
 object HyperVolume extends App{
 
   
-  val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
+  //val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
   //val front = IndexedSeq(IndexedSeq(1.0, 0.0 ,1.0), IndexedSeq(0.0, 1.0, 0.0))
   val front = IndexedSeq(IndexedSeq(0.2, 1.2, 0.4), IndexedSeq(0.2, 0.8, 0.1), IndexedSeq(0.1, 0.2, 0.9), IndexedSeq(0.4, 0.05, 0.2))
-
+  val referencePoint = front.reduce {
+    (i1, i2) => (i1 zip i2).map { case (i1, i2) => max(i1, i2) }
+  }
+ //val referencePoint = IndexedSeq(0.0, 0.0, 0.0)
+  
+  println(referencePoint)
+  //val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
+  
   println("reference Point = " + referencePoint.mkString(" "))
   println("Front = " + front.mkString(" "))
   println("value of volume = " + compute(front) )
@@ -49,7 +57,7 @@ object HyperVolume extends App{
     def hvRecursive(dimIndex: Int, length: Int, bounds: MIndexedSeq[Double]): Double = {
 
       var hvol = 0.0
-      var sentinel:Node = list.sentinel
+      var sentinel = list.sentinel
       var newLength = length
 
       if (newLength == 0) {
@@ -57,18 +65,18 @@ object HyperVolume extends App{
       } else if (dimIndex == 0) {
         sentinel.next(0) match {
          case None => 0.0
-         case Some(n: Node) => -n.cargo(0)
+         case Some(n) => -n.cargo(0)
        }
       } else if (dimIndex == 1) {
 
         //Transform q option to node
         var q:Node = sentinel.next(1) match {
-          case Some(n:Node) => n
+          case Some(n) => n
         }
 
         var h:Double = q.cargo(0)
         //Transform p option to node
-        var p:Node = q.next(1) match { case Some(n:Node) => n}
+        var p:Node = q.next(1) match { case Some(n) => n}
 
         while (p != sentinel) {
 
