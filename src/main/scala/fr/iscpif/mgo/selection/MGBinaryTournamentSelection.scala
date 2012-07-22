@@ -18,11 +18,7 @@
 package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga._
-import fr.iscpif.mgo.diversity._
-import fr.iscpif.mgo.dominance._
 import java.util.Random
-import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.tools.Random._
 
 trait MGBinaryTournamentSelection extends Selection { 

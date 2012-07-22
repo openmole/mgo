@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2012 reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,18 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.tools
+package fr.iscpif.mgo.ga
 
-object Scaling {
+import fr.iscpif.mgo._
 
-  implicit def double2Scalable(d: Double) = new {
-    def scale(min:Double, max:Double) = Scaling.scale(d, 0, 1, min, max)
-    def unscale(min: Double, max: Double) = Scaling.scale(d, min, max, 0, 1)
-  }
-  
-  def scale(v:Double, min:Double, max:Double, boundaryMin:Double, boundaryMax:Double) = {
-    val factor = (boundaryMax - boundaryMin)  / (max - min)
-    (factor * (v - min) + boundaryMin)
+trait NSGAIISigma extends NSGAII 
+                     with SigmaGAEvolution {
+
+  type G = GAGenomeWithSigma  
+      
+  val factory = new GAGenomeWithSigmaFactory {
+    def size = genomeSize
   }
   
 }

@@ -18,7 +18,6 @@
 package fr.iscpif.mgo
 
 
-import fr.iscpif.mgo.tools.Scaling._
 
 object Individual {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 reuillon
+ * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,25 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm.ga
+package fr.iscpif.mgo.problem
 
-import fr.iscpif.mgo.ga._
-import fr.iscpif.mgo.algorithm.NSGAII
-import fr.iscpif.mgo.crossover._
-import fr.iscpif.mgo.elitism._
-import fr.iscpif.mgo.mutation._
-import fr.iscpif.mgo.ranking._
-import fr.iscpif.mgo.diversity._
-import fr.iscpif.mgo.selection._
-import fr.iscpif.mgo.dominance._
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.termination._
 
-trait NSGAIISigma extends NSGAII 
-                     with SigmaGAEvolution {
-
-  type G = GAGenomeWithSigma  
-      
-  val factory = GAGenomeWithSigma.factory(genomeSize)
+object Scaling {
   
+
+  
+}
+
+trait Scaling {
+  
+  def min: Seq[Double]
+  def max: Seq[Double]
+  
+  def apply(x: Seq[Double]) =
+    (x zip (min zip max)) map { case(x, (min, max)) => x scale (min, max) }
+    
 }

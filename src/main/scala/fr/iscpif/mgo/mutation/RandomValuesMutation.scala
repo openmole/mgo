@@ -19,7 +19,6 @@ package fr.iscpif.mgo.mutation
 
 import java.util.Random
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga._
 import fr.iscpif.mgo.tools.Random._
 
 trait RandomValuesMutation extends Mutation { 

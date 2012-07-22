@@ -15,26 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
+package fr.iscpif.mgo.problem
 
-import java.util.Random
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Random._
-
-trait RandomMutation extends Mutation  { 
-  self: GAEvolution =>
-    
-  def mutationRate = 0.5
-
-  override def mutate(genome: G)(implicit aprng: Random, factory: Factory[G]): G = {
-    val randomGenome = factory.random
-    val valMutationZipped = genome.content.zip(randomGenome.content)   
-    val newValues = valMutationZipped map { 
-      case(v,vrg) => 
-        if (aprng.nextDouble < mutationRate) vrg else v 
-    }
-    
-    factory(newValues)
-  }
-  
+trait Problem {
+  def scale: Scaling
+  def apply(x: IndexedSeq[Double]): IndexedSeq[Double] = compute(scale(x).toIndexedSeq)
+  def compute(x: IndexedSeq[Double]): IndexedSeq[Double]
 }

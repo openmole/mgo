@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.ga._
 import java.util.Random
 
 trait AverageCrossover extends CrossOver { self: GAEvolution =>
