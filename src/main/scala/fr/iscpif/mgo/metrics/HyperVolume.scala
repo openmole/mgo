@@ -5,15 +5,17 @@
 //
 package fr.iscpif.mgo.metrics
 
-import collection.mutable._
-import collection.immutable.{IndexedSeq => IIndexedSeq}
-import collection.mutable
-
+//import collection.mutable._
+//import collection.immutable.{IndexedSeq => IIndexedSeq}
+//import collection.mutable
+import collection.mutable.{IndexedSeq => MIndexedSeq}
+import scala.collection.mutable.ArrayBuffer
 // REF A RAJOUTER
 // BASE SUR LE CODE PYTHON ICI MEME : http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
 
 object HyperVolume extends App{
 
+  
   val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
   //val front = IndexedSeq(IndexedSeq(1.0, 0.0 ,1.0), IndexedSeq(0.0, 1.0, 0.0))
   val front = IndexedSeq(IndexedSeq(0.2, 1.2, 0.4), IndexedSeq(0.2, 0.8, 0.1), IndexedSeq(0.1, 0.2, 0.9), IndexedSeq(0.4, 0.05, 0.2))
@@ -32,33 +34,19 @@ object HyperVolume extends App{
       return true
     }
 
-    var relevantPoints: IndexedSeq[IndexedSeq[Double]] = IndexedSeq.empty
-
     val dimensions = referencePoint.size
+    
+    val relevantPoints = front.filter(weaklyDominates(_, referencePoint)).map{
+      point => (point zip referencePoint).map{case(p, r) => p - r}
+    }    
 
-    for (point <- front) {
-      if (weaklyDominates(point, referencePoint)) {
-        relevantPoints = relevantPoints :+ point
-      }
-    }
-
-    /*
-     relevantPoints.map { _.zipWith(referencePoints).map{ case(c, r) => c - r} }
-     */
-    relevantPoints =
-      relevantPoints.map {
-        point =>
-        ArrayBuffer() ++ Range(0, dimensions).map {
-          i => point(i) - referencePoint(i)
-        }
-      }
     var list = preProcess(relevantPoints)
 
-    var bounds = IndexedSeq.fill(dimensions) {
+    var bounds = MIndexedSeq.fill(dimensions) {
       -1.0e308
     }
 
-    def hvRecursive(dimIndex: Int, length: Int, bounds: IndexedSeq[Double]): Double = {
+    def hvRecursive(dimIndex: Int, length: Int, bounds: MIndexedSeq[Double]): Double = {
 
       var hvol = 0.0
       var sentinel:Node = list.sentinel
@@ -198,33 +186,19 @@ object HyperVolume extends App{
     nodeList
   }
 
-  def sortByDimension(nodes: IndexedSeq[Node], i: Int): IndexedSeq[Node] = 
-    nodes.sortBy(_.cargo(i))
-  /*{
-    //build a list of tuples of(point[i], node)
-    var decorated = nodes.map {
-      node => (node.cargo(i), node)
-    }
-    decorated.sortBy(_._1)
-    println("decorated = " + decorated.toString)
-
-    decorated.map {
-      case (_, node) => node
-    }
-  }*/
-
+  def sortByDimension(nodes: IndexedSeq[Node], i: Int): IndexedSeq[Node] = nodes.sortBy(_.cargo(i))
 
   class Node(numberLists: Int, var cargo: IndexedSeq[Double] = IndexedSeq.empty) {
 
-    var next: IndexedSeq[Option[Node]] = IndexedSeq.fill(numberLists){None}
-    var prev: IndexedSeq[Option[Node]] = IndexedSeq.fill(numberLists) {None}
+    var next: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists){None}
+    var prev: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists) {None}
     var ignore = 0
 
-    var area = IndexedSeq.fill(numberLists) {
+    var area = MIndexedSeq.fill(numberLists) {
       0.0
     }
 
-    var volume = IndexedSeq.fill(numberLists) {
+    var volume = MIndexedSeq.fill(numberLists) {
       0.0
     }
 
@@ -235,10 +209,10 @@ object HyperVolume extends App{
   class MultiList(numberLists: Int) {
 
     var sentinel = new Node(numberLists)
-    sentinel.next = IndexedSeq.fill(numberLists) {
+    sentinel.next = MIndexedSeq.fill(numberLists) {
       Some(sentinel)
     }
-    sentinel.prev = IndexedSeq.fill(numberLists) {
+    sentinel.prev = MIndexedSeq.fill(numberLists) {
       Some(sentinel)
     }
 
@@ -282,7 +256,7 @@ object HyperVolume extends App{
       }
     }
 
-    def remove(node: Node, index: Int, bounds: IndexedSeq[Double]) = {
+    def remove(node: Node, index: Int, bounds: MIndexedSeq[Double]) = {
       for (i <- Range(0, index)) {
         val predecessor = node.prev(i)
         val successor = node.next(i)
@@ -304,7 +278,7 @@ object HyperVolume extends App{
       }
     }
 
-    def reinsert(node: Node, index: Int, bounds: IndexedSeq[Double]) = {
+    def reinsert(node: Node, index: Int, bounds: MIndexedSeq[Double]) = {
       for (i <- Range(0, index)) {
 
 
@@ -326,131 +300,3 @@ object HyperVolume extends App{
     }
   }
 }
-
-//class HyperVolume(fileName:String) {
-//
-//  val loadParetoTrueFront = FileUtils.readFront(fileName)
-//  
-//  def oppositeByFront(paretoFront:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]) = {
-//    
-//    val nbObjective = paretoFront.head.fitness.values.size
-//    
-//    var arrayOfMin = new Array[Double](nbObjective)
-//    var arrayOfMax = new Array[Double](nbObjective)
-//    
-//    for (curDim <- 0 until nbObjective) {  
-//      var curList = paretoFront.sortBy(_.fitness.values(curDim))
-//      arrayOfMin(curDim) = curList.head.fitness.values(curDim)
-//      arrayOfMax(curDim) = curList.last.fitness.values(curDim) 
-//    }
-//    
-//    Seq(arrayOfMin,arrayOfMax)
-//  }
-//  
-//  def toNormalize(value:Double,min:Double,max:Double):Double={
-//    ( value - min ) / (max - min)
-//  }
-//  
-//  def invertedFront(paretoFront:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]) = {
-//    
-//    val nbObjective = paretoFront.head.fitness.values.size
-//    var invertedFront = IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]()
-//    
-//    for (curObjectives <- 0 until nbObjective) {  
-//      invertedFront :+ paretoFront.map{i => 
-//        new Individual[GAGenome, GAFitness] {
-//          def genome = i.genome
-//          def fitness = new GAFitness {
-//            val values = i.fitness.values.map{e => 
-//              if (e <= 1.0 && e >= 0.0) 1.0 - e
-//              else if (e > 1.0) 0.0
-//              else 1.0 //if (e < 0.0 )
-//            }
-//          }
-//        }
-//      }
-//    }
-//    invertedFront
-//  }
-//  
-//  def normalizedFront(paretoFront:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]) = {
-//    
-//    val arrayOfMinMaxValues = oppositeByFront(paretoFront)
-//    val arrayMin = arrayOfMinMaxValues(0)
-//    val arrayMax = arrayOfMinMaxValues(1)
-//    
-//    var normalizedFront = IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]()
-//    val nbObjective = paretoFront.head.fitness.values.size
-//    
-//    // On re-calcule un front d'individu normalisé a partir du front actuel(a priori le meilleur ...), selon le min max de chaque objectif
-//    for (curObjectives <- 0 until nbObjective) {  
-//      normalizedFront :+ paretoFront.map{i => 
-//        new Individual[GAGenome, GAFitness] {
-//          def genome = i.genome
-//          def fitness = new GAFitness {
-//            val values = i.fitness.values.map{toNormalize(_,arrayMin(curObjectives),arrayMax(curObjectives))}
-//          }
-//        }
-//      }
-//    }
-//    normalizedFront
-//  }
-//  
-//  /**
-//   * R version http://www.statistik.tu-dortmund.de/~olafm/software/emoa/
-//   * http://ls11-www.cs.tu-dortmund.de/rudolph/hypervolume/start
-//   *
-//   * This class implements the hypervolume indicator. The code is the a Java version
-//   * of the original metric implementation by Eckart Zitzler.
-//   * It can be used also as a command line program just by typing
-//   * $java jmetal.qualityIndicator.Hypervolume <solutionFrontFile> <trueFrontFile> <numberOfOjbectives>
-//   * Reference: E. Zitzler and L. Thiele
-//   *           Multiobjective Evolutionary Algorithms: A Comparative Case Study 
-//   *           and the Strength Pareto Approach,
-//   *           IEEE Transactions on Evolutionary Computation, vol. 3, no. 4, 
-//   *           pp. 257-271, 1999.
-//   */
-//
-//  // Peut etre serait il mieux de convertir notre indexedSeq d'invidual en matrice de double ... et de re
-//  // reprendre l'algorithme de Zitzler par la suite ...
-//  /*def calculateHypervolume(front:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking],
-//                           noPoints:Int,
-//                           noObjectives:Int) ={
-//    var n:Int = noPoints
-//    var volume:Double = 0
-//    var distance:Double = 0
-//    
-//    while (n > 0) {
-//      
-//     // renvoie le front d'individu non dominé, et non pas une valeur donc avec un rank = 0
-//     var noNonDominatedSize = noNondominatedPoints.size - front.filter{i => i.rank == 0}
-//     var noNondominatedPoints = front.filter{i => i.rank == 0}
-//     
-//     
-//      var tempVolume : Double = 0
-//      var tempDistance:Double
-//      
-//      if (noObjectives < 3)
-//        if (noNondominatedPoints.size < 1)  
-//          
-//      
-//      
-//     }  
-//  }
-//  
-//  def surfaceUnchangedTo(front:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking], noPoints : Int, objective:Int):Double={
-//     (front.head.fitness.fitness(objective).min
-//  }
-//    
-//    
-//
-//  def getHyperVolume(front:IndexedSeq[Individual[GAGenome, GAFitness] with Distance with Ranking]) = {
-//    
-//    //val normalizedFront = normalizedFront(front)
-//    //val invertedFront = invertedFront(front)
-//    
-//    //Fonction recursive pour le calcul de l'hypervolume'
-//    
-//  }*/
-//  
-//}
