@@ -40,9 +40,9 @@ object HyperVolume extends App{
       point => (point zip referencePoint).map{case(p, r) => p - r}
     }    
 
-    var list = preProcess(relevantPoints)
+    val list = preProcess(relevantPoints)
 
-    var bounds = MIndexedSeq.fill(dimensions) {
+    val bounds = MIndexedSeq.fill(dimensions) {
       -1.0e308
     }
 
@@ -57,7 +57,7 @@ object HyperVolume extends App{
       } else if (dimIndex == 0) {
         sentinel.next(0) match {
          case None => 0.0
-         case Some(n:Node) => -n.cargo(0)
+         case Some(n: Node) => -n.cargo(0)
        }
       } else if (dimIndex == 1) {
 
@@ -79,7 +79,7 @@ object HyperVolume extends App{
           }
           q = p
           p = q.next(1) match {
-            case Some(n: Node) => n
+            case Some(n) => n
           }
         }
         hvol += h * q.cargo(1)
@@ -90,7 +90,7 @@ object HyperVolume extends App{
         var p: Node = sentinel
         //Transform q option to node
         var q: Node = p.prev(dimIndex) match {
-          case Some(n: Node) => n
+          case Some(n) => n
         }
 
         while (!q.cargo.isEmpty) {
@@ -98,19 +98,19 @@ object HyperVolume extends App{
             q.ignore = 0
           }
           q = q.prev(dimIndex) match {
-            case Some(n: Node) => n
+            case Some(n) => n
           }
         }
 
         q = p.prev(dimIndex) match {
-          case Some(n: Node) => n
+          case Some(n) => n
         }
 
         while (newLength > 1 && (q.cargo(dimIndex) > bounds(dimIndex) || (q.prev(dimIndex) match { case Some(n: Node) => n }).cargo(dimIndex) >= bounds(dimIndex))) {
           p = q
           list.remove(p, dimIndex, bounds)
           q = p.prev(dimIndex) match {
-            case Some(n: Node) => n
+            case Some(n) => n
           }
           newLength = newLength - 1
         }
@@ -147,7 +147,9 @@ object HyperVolume extends App{
           list.reinsert(p, dimIndex, bounds)
           newLength += 1
           q = p
-          p = p.next(dimIndex) match { case Some(n: Node) => n }
+          p = p.next(dimIndex) match { 
+            case Some(n) => n 
+          }
           q.volume(dimIndex) = hvol
 
           if (q.ignore >= dimIndex) {
@@ -187,8 +189,8 @@ object HyperVolume extends App{
   }
 
   def sortByDimension(nodes: IndexedSeq[Node], i: Int): IndexedSeq[Node] = nodes.sortBy(_.cargo(i))
-
-  class Node(numberLists: Int, var cargo: IndexedSeq[Double] = IndexedSeq.empty) {
+  
+  class Node(numberLists: Int, val cargo: IndexedSeq[Double] = IndexedSeq.empty) {
 
     var next: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists){None}
     var prev: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists) {None}
@@ -202,7 +204,7 @@ object HyperVolume extends App{
       0.0
     }
 
-   override def toString():String = cargo.toString
+   override def toString = cargo.toString
 
   }
 
@@ -224,7 +226,7 @@ object HyperVolume extends App{
       while (node != sentinel) {
         length += 1
         node = node match {
-          case Some(n: Node) => n.next(i)
+          case Some(n) => n.next(i)
         }
       }
       length
@@ -237,7 +239,7 @@ object HyperVolume extends App{
       sentinel.prev(index) = Some(node)
       lastButOne match {
         case None => println("empty last But One")
-        case Some(n:Node) => n.next(index) = Some(node)
+        case Some(n) => n.next(index) = Some(node)
       }
     }
 
@@ -251,7 +253,7 @@ object HyperVolume extends App{
         sentinel.prev(index) = Some(node)
         lastButOne match {
           case None => println("empty last but one")
-          case Some(n:Node) => n.next(index) = Some(node)
+          case Some(n) => n.next(index) = Some(node)
         }
       }
     }
@@ -263,12 +265,12 @@ object HyperVolume extends App{
 
         predecessor match {
           case None =>
-          case Some(n:Node) => n.next(i) = successor
+          case Some(n) => n.next(i) = successor
         }
 
        successor match {
           case None =>
-          case Some(n: Node) => n.prev(i) = predecessor
+          case Some(n) => n.prev(i) = predecessor
         }
 
         if (bounds(i) > node.cargo(i)) {
@@ -284,12 +286,12 @@ object HyperVolume extends App{
 
         node.prev(i) match {
           case None =>
-          case Some(n:Node) => n.next(i) = Some(node)
+          case Some(n) => n.next(i) = Some(node)
         }
 
         node.next(i) match {
           case None =>
-          case Some(n: Node) => n.prev(i) = Some(node)
+          case Some(n) => n.prev(i) = Some(node)
         }
 
         if (bounds(i) > node.cargo(i)) {
