@@ -1,8 +1,20 @@
-///*
-// * To change this template, choose Tools | Templates
-// * and open the template in the editor.
-// */
-//
+/*
+ * Copyright (C) 2012 Sebastien Rey
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package fr.iscpif.mgo.metrics
 
 //import collection.mutable._
@@ -11,12 +23,21 @@ package fr.iscpif.mgo.metrics
 import collection.mutable.{IndexedSeq => MIndexedSeq}
 import scala.collection.mutable.ArrayBuffer
 import math._
-// REF A RAJOUTER
-// BASE SUR LE CODE PYTHON ICI MEME : http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
+
+// A translation/adaptation based on the python source code by Simon Wessing :
+// http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
+
+/**
+ * Hypervolume computation based on variant 3 of the algorithm in the paper:
+ * C. M. Fonseca, L. Paquete, and M. Lopez-Ibanez. An improved dimension-sweep
+ * algorithm for the hypervolume indicator. In IEEE Congress on Evolutionary
+ * Computation, pages 1157-1163, Vancouver, Canada, July 2006.
+ *
+ * Minimization is implicitly assumed here!
+ */
 
 object HyperVolume extends App{
 
-  
   //val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
   //val front = IndexedSeq(IndexedSeq(1.0, 0.0 ,1.0), IndexedSeq(0.0, 1.0, 0.0))
   val front = IndexedSeq(IndexedSeq(0.2, 1.2, 0.4), IndexedSeq(0.2, 0.8, 0.1), IndexedSeq(0.1, 0.2, 0.9), IndexedSeq(0.4, 0.05, 0.2))
@@ -32,8 +53,13 @@ object HyperVolume extends App{
   println("Front = " + front.mkString(" "))
   println("value of volume = " + compute(front) )
 
-  def compute(front: IndexedSeq[IndexedSeq[Double]]):Double = {
+  /**
+   * Returns the hypervolume that is dominated by a non-dominated front.
+   * Before the HV computation, front and reference point are translated, so
+   * that the reference point is [0, ..., 0].
+   */
 
+  def compute(front: IndexedSeq[IndexedSeq[Double]]):Double = {
     def weaklyDominates(point: IndexedSeq[Double], other: IndexedSeq[Double]): Boolean = {
       for (i <- Range(0, point.size)) {
         if (point(i) > other(i))
@@ -54,6 +80,12 @@ object HyperVolume extends App{
       -1.0e308
     }
 
+    /**
+     * Recursive call to hypervolume calculation.
+     *
+     * In contrast to the paper, the code assumes that the reference point
+     * is [0, ..., 0]. This allows the avoidance of a few operations.
+     */
     def hvRecursive(dimIndex: Int, length: Int, bounds: MIndexedSeq[Double]): Double = {
 
       var hvol = 0.0
@@ -176,10 +208,10 @@ object HyperVolume extends App{
     }
 
     //MAIN COMPUTE
-    println("START COMPUTATION OF RECURSIVE")
     return hvRecursive(dimensions - 1, relevantPoints.size, bounds)
   }
 
+  /* Sets up the list data structure needed for calculation. */
   def preProcess(front: IndexedSeq[IndexedSeq[Double]]): MultiList = {
     val dimensions = referencePoint.size
     var nodeList = new MultiList(dimensions)
@@ -196,6 +228,7 @@ object HyperVolume extends App{
     nodeList
   }
 
+  /* Sorts the list of nodes by the i -th value of the contained points. */
   def sortByDimension(nodes: IndexedSeq[Node], i: Int): IndexedSeq[Node] = nodes.sortBy(_.cargo(i))
   
   class Node(numberLists: Int, val cargo: IndexedSeq[Double] = IndexedSeq.empty) {
@@ -216,6 +249,12 @@ object HyperVolume extends App{
 
   }
 
+  /**
+   * A special data structure needed by FonsecaHyperVolume.
+   *
+   * It consists of several doubly linked lists that share common nodes. So,
+   * every node has multiple predecessors and successors, one in every list.
+   */
   class MultiList(numberLists: Int) {
 
     var sentinel = new Node(numberLists)
@@ -226,8 +265,10 @@ object HyperVolume extends App{
       Some(sentinel)
     }
 
+    /* Returns the number of lists that are included in this MultiList. */
     def len = numberLists
 
+    /* Returns the length of the i-th list. */
     def getLength(i: Int): Int = {
       var length = 0
       var node = sentinel.next(i)
@@ -240,6 +281,7 @@ object HyperVolume extends App{
       length
     }
 
+    /* Appends a node to the end of the list at the given index. */
     def append(node: Node, index: Int) = {
       val lastButOne = sentinel.prev(index)
       node.next(index) = Some(sentinel)
@@ -251,7 +293,7 @@ object HyperVolume extends App{
       }
     }
 
-
+    /* Extends the list at the given index with the nodes. */
     def extend(nodes: IndexedSeq[Node], index: Int) = {
 
       for (node <- nodes) {
@@ -266,6 +308,7 @@ object HyperVolume extends App{
       }
     }
 
+    /* Removes and returns 'node' from all lists in [0, 'index'[. */
     def remove(node: Node, index: Int, bounds: MIndexedSeq[Double]) = {
       for (i <- Range(0, index)) {
         val predecessor = node.prev(i)
@@ -287,6 +330,12 @@ object HyperVolume extends App{
 
       }
     }
+
+    /**
+     * Inserts 'node ' at the position it had in all lists in[ 0, 'index '[
+     * before it was removed.This method assumes that the next and previous
+     * nodes of the node that is reinserted are in the list.
+     */
 
     def reinsert(node: Node, index: Int, bounds: MIndexedSeq[Double]) = {
       for (i <- Range(0, index)) {
