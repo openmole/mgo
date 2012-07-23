@@ -69,6 +69,7 @@ package object mgo {
   type RandomMutation = mutation.RandomMutation
   type RandomValuesMutation = mutation.RandomValuesMutation
   type Problem = problem.Problem
+  type GAProblem = problem.GAProblem
   type Scaling = problem.Scaling
   type ParetoRanking = ranking.ParetoRanking
   type Rank = ranking.Rank

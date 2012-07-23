@@ -19,12 +19,11 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 
-trait Scaling {
+trait GAProblem extends Problem with Scaling{
+  type G <: GAGenome
   
-  def min: Seq[Double]
-  def max: Seq[Double]
-  
-  def scale(x: Seq[Double]) =
-    (x zip (min zip max)) map { case(x, (min, max)) => x scale (min, max) }
-    
+  def apply(g: G): Fitness = new Fitness {
+    val values = apply(scale(g.values).toIndexedSeq)
+  }
+  def apply(x: IndexedSeq[Double]): IndexedSeq[Double]
 }

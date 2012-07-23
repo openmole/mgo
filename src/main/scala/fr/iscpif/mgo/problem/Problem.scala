@@ -17,8 +17,10 @@
 
 package fr.iscpif.mgo.problem
 
+import fr.iscpif.mgo._
+
 trait Problem {
-  def scale: Scaling
-  def apply(x: IndexedSeq[Double]): IndexedSeq[Double] = compute(scale(x).toIndexedSeq)
-  def compute(x: IndexedSeq[Double]): IndexedSeq[Double]
+  type G <: Genome
+  
+  def apply(genome: G): Fitness
 }

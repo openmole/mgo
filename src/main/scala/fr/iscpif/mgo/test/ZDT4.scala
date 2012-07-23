@@ -8,14 +8,12 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import math._
 
-trait ZDT4 extends Problem {
+trait ZDT4 extends GAProblem {
   
-  val scale = new Scaling {
-    def min = Vector.fill(10)(0.0)
-    def max = Vector(1.0 :: List.fill(9)(5.0) ::: Nil: _*)
-  }
+  def min = Vector.fill(10)(0.0)
+  def max = Vector(1.0 :: List.fill(9)(5.0) ::: Nil: _*)
   
-  def compute(x: IndexedSeq[Double]) = Vector(f1(x), f2(x))
+  def apply(x: IndexedSeq[Double]) = Vector(f1(x), f2(x))
   def n: Int
   
   def f1(x: IndexedSeq[Double]) = x(0)

@@ -55,6 +55,5 @@ object TestFunction extends App {
     }
   
   val res = nsga2.run(evaluator _)
-  //val ranks = ParetoRanking(res.individuals, nsga2)
   res sortBy (_.metaFitness.rank) foreach { r => println(r.metaFitness + " " + zdt.scale(r.genome.values) + " " + r.fitness.values) }
 }
