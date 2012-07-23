@@ -19,11 +19,15 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 
-trait GAProblem extends Problem with Scaling{
-  type G <: GAGenome
+trait GAProblem extends Problem with Scaling {
+  type G = GAGenome
   
   def apply(g: G): Fitness = new Fitness {
     val values = apply(scale(g.values).toIndexedSeq)
   }
+  
+  def scale(g: G): Seq[Double] = scale(g.values)
+  def scale[MF](i: PopulationElement[G, MF]): (Seq[Double], Fitness, MF) = (scale(i.genome), i.fitness, i.metaFitness)
+  
   def apply(x: IndexedSeq[Double]): IndexedSeq[Double]
 }

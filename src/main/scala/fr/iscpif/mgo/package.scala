@@ -80,5 +80,5 @@ package object mgo {
   type FirstRankedSteadyTermination = termination.FirstRankedSteadyTermination
   type Termination = termination.Termination
   type TerminationManifest = termination.TerminationManifest
-
+  
 }

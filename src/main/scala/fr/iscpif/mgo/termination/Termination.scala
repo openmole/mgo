@@ -23,7 +23,7 @@ trait Termination { self: Evolution =>
   
   type STATE
   
-  def initialState: STATE
+  def initialState(p: Population[G, MF]): STATE
   
-  def terminated(oldPop: Population[G, MF], newPop: Population[G, MF], terminationState: STATE) : (Boolean, STATE)
+  def terminated(population: Population[G, MF], terminationState: STATE) : (Boolean, STATE)
 }

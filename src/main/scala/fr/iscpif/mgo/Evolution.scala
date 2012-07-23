@@ -17,7 +17,6 @@
 
 package fr.iscpif.mgo
 
-import annotation.tailrec
 import Individual._
 import java.util.Random
 
@@ -30,20 +29,20 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
 
   def lambda: Int
   
-  //Perform N step
-  @tailrec private def evolveStep(
-    population: Population[G, MF],
-    evaluator: G => Fitness,
-    state: STATE = initialState)(implicit aprng:Random): Population[G, MF] = {
-    val nextPop = evolve(population, evaluator)
-    stepListner(nextPop, state)
-    val (end, newState) = terminated(population, nextPop, state)
-    if (end) nextPop
-    else evolveStep(nextPop, evaluator, newState)
-  }
+  def run(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Iterator[(Population[G, MF], STATE, Boolean)] = 
+    Iterator.iterate((population, initialState(population), false)){
+      case(population, state, _) => 
+        val newPop = evolve(population, evaluator) 
+        val (stop, newState) = terminated(population, state)
+        (newPop, newState, stop)                        
+    }
   
-  def run(population: Population[G, MF], evaluator: G => Fitness) (implicit aprng: Random): Population[G, MF] = evolveStep(population, evaluator)
-  def run(evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = evolveStep(randomPopulation(evaluator), evaluator)
+  
+  def run(evaluator: G => Fitness)(implicit aprng: Random): Iterator[(Population[G, MF], STATE, Boolean)] = 
+    run(randomPopulation(evaluator), evaluator)
+  
+  def run[P <: Problem {type G >: self.G}](problem: P)(implicit aprng: Random): Iterator[(Population[G, MF], STATE, Boolean)] = 
+    run(problem.apply _)
   
   def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF]
   

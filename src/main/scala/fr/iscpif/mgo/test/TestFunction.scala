@@ -25,11 +25,6 @@ object TestFunction extends App {
   val zdt = new ZDT4 {
     def n = 10
   }
-  
-  def evaluator(g: GAGenomeWithSigma) = 
-    new Fitness {
-      def values = zdt(g.values)
-    }
  
   implicit val rng = new Random
   
@@ -48,12 +43,9 @@ object TestFunction extends App {
       def maxStep = 1000
       def mu = 200
       def lambda = 200
-      def genomeSize = 10
-      
-      override def stepListner(pop: Population[G, MF], state: STATE): Unit = println(state)
-      
+      def genomeSize = 10      
     }
   
-  val res = nsga2.run(evaluator _)
-  res sortBy (_.metaFitness.rank) foreach { r => println(r.metaFitness + " " + zdt.scale(r.genome.values) + " " + r.fitness.values) }
+  val (res,_,_) = nsga2.run(zdt).dropWhile{ case(_,state,stop) => println(state) ; !stop }.next
+  res sortBy (_.metaFitness.rank) foreach { e => println(zdt.scale(e)) }
 }

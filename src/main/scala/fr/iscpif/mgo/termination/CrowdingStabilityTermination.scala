@@ -30,10 +30,10 @@ trait CrowdingStabilityTermination extends Termination {
   
   type STATE = CrowdingStabilityState
   
-  def initialState: STATE = new CrowdingStabilityState
+  def initialState(p: Population[G, MF]): STATE = new CrowdingStabilityState
   
-  def terminated(oldPop: Population[G, MF], newPop: Population[G, MF], terminationState: STATE) : (Boolean, STATE) = {
-    val maxCrowding = newPop.map{_.metaFitness.diversity}.filter(_ != Double.PositiveInfinity).max
+  def terminated(population: Population[G, MF], terminationState: STATE) : (Boolean, STATE) = {
+    val maxCrowding = population.map{_.metaFitness.diversity}.filter(_ != Double.PositiveInfinity).max
    
     val newState = (maxCrowding :: terminationState.history).slice(0, windowSize)
     if(newState.size < windowSize) (false, new CrowdingStabilityState(newState))

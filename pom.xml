@@ -50,6 +50,12 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <args>
+                        <arg>-Ydependent-method-types</arg>
+                    </args>
+                </configuration>
             </plugin>
 
             <plugin>
