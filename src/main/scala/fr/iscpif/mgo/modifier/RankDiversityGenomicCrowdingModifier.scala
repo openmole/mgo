@@ -42,8 +42,8 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier { this: Evolution wi
       case ((i, r), d) => 
         PopulationElement(i,
             new Diversity with Rank {
-              lazy val diversity = d()
-              lazy val rank = r()
+              val diversity = d
+              val rank = r
             }
         )
     }
