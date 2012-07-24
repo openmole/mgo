@@ -5,6 +5,7 @@
       <configuration>
         <option name="compilerLibraryLevel" value="Project" />
         <option name="compilerLibraryName" value="Maven: org.scala-lang:scala-compiler-bundle:2.9.2" />
+        <option name="compilerOptions" value="-Ydependent-method-types" />
         <option name="vmOptions" value="" />
       </configuration>
     </facet>

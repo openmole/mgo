@@ -36,22 +36,14 @@ import math._
  * Minimization is implicitly assumed here!
  */
 
-object HyperVolume extends App{
+object HyperVolume {
 
   //val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
   //val front = IndexedSeq(IndexedSeq(1.0, 0.0 ,1.0), IndexedSeq(0.0, 1.0, 0.0))
-  val front = IndexedSeq(IndexedSeq(0.2, 1.2, 0.4), IndexedSeq(0.2, 0.8, 0.1), IndexedSeq(0.1, 0.2, 0.9), IndexedSeq(0.4, 0.05, 0.2))
+  /*val front = IndexedSeq(IndexedSeq(0.2, 1.2, 0.4), IndexedSeq(0.2, 0.8, 0.1), IndexedSeq(0.1, 0.2, 0.9), IndexedSeq(0.4, 0.05, 0.2))
   val referencePoint = front.reduce {
     (i1, i2) => (i1 zip i2).map { case (i1, i2) => max(i1, i2) }
-  }
- //val referencePoint = IndexedSeq(0.0, 0.0, 0.0)
-  
-  println(referencePoint)
-  //val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
-  
-  println("reference Point = " + referencePoint.mkString(" "))
-  println("Front = " + front.mkString(" "))
-  println("value of volume = " + compute(front) )
+  } */
 
   /**
    * Returns the hypervolume that is dominated by a non-dominated front.
@@ -59,7 +51,7 @@ object HyperVolume extends App{
    * that the reference point is [0, ..., 0].
    */
 
-  def compute(front: IndexedSeq[IndexedSeq[Double]]):Double = {
+  def apply(front: IndexedSeq[IndexedSeq[Double]],referencePoint:IndexedSeq[Double]):Double = {
     def weaklyDominates(point: IndexedSeq[Double], other: IndexedSeq[Double]): Boolean = {
       for (i <- Range(0, point.size)) {
         if (point(i) > other(i))
