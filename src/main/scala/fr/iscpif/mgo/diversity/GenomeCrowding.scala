@@ -18,11 +18,12 @@
 package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
 import metric._
 
-trait GenomeCrowding extends DiversityMetric { this: GAEvolution =>
+trait GenomeCrowding extends DiversityMetric { this: GAEvolution with Ranking =>
 
-  def diversity(evaluated: IndexedSeq[Individual[G]]) =   
-    CrowdingDistance(evaluated.map{_.genome.values})
+  def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]) =   
+    CrowdingDistance(evaluated.unzip._1.map{_.genome.values})
     
 }

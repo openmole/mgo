@@ -25,15 +25,15 @@ trait RankDiversityModifier extends Modifier { this: Evolution with Ranking with
   
   override def toPopulation(evaluated: IndexedSeq[Individual[G]]) = {  
     val ranks = rank(evaluated)
-    val distances = diversity(evaluated)
+    val distances = diversity(evaluated zip ranks)
       
     (evaluated zip ranks zip distances) map {
       case ((i, r), d) => 
         PopulationElement(
             i,
             new Diversity with Rank {
-              lazy val diversity = d()
-              lazy val rank = r()
+              val diversity = d
+              val rank = r
               override def toString = diversity + " " + rank
             }
         )

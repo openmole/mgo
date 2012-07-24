@@ -20,5 +20,5 @@ import fr.iscpif.mgo.tools.Lazy
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 trait HypervolumeMetric extends DiversityMetric{ this: Evolution with Ranking =>
-  def diversity(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Lazy[Double]]
+  def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]): IndexedSeq[Lazy[Double]]
 }

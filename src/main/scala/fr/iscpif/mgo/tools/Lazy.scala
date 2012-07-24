@@ -9,6 +9,8 @@ object Lazy {
   
   def apply[T](f: => T) = new Lazy(f)
   
+  implicit def Lazy[T](implicit ord: Ordering[T]): Ordering[Lazy[T]] = Ordering.by(_.apply)
+  
 }
 
 class Lazy[T](f: => T) {

@@ -19,13 +19,14 @@ package fr.iscpif.mgo.ranking
 
 import fr.iscpif.mgo.dominance._
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
 
 object Rank {
   
   def firstRanked[G, MF <: Rank](individuals: Population[G, MF]): IndexedSeq[PopulationElement[G, MF]] = {
     if(individuals.isEmpty) individuals
     else {
-      val ranks = individuals.map{_.metaFitness.rank}
+      val ranks = individuals.map{_.metaFitness.rank()}
       val firstRank = ranks.min
       individuals filter { i => i.metaFitness.rank == firstRank }
     }
@@ -34,5 +35,5 @@ object Rank {
 }
 
 trait Rank {
-  def rank: Int
+  def rank: Lazy[Int]
 }

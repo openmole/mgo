@@ -28,10 +28,10 @@ trait MGBinaryTournamentSelection extends Selection {
     binaryTournament(population.content.random(aprng), population.content.random(aprng)).toIndividual
 
   def binaryTournament(individual1: PopulationElement[G, MF], individual2: PopulationElement[G, MF])(implicit aprng: Random): PopulationElement[G, MF] =
-    if (individual1.metaFitness.rank < individual2.metaFitness.rank) individual1
-    else if (individual1.metaFitness.rank > individual2.metaFitness.rank) individual2
-    else if (individual1.metaFitness.diversity > individual2.metaFitness.diversity) individual1
-    else if (individual2.metaFitness.diversity > individual1.metaFitness.diversity) individual2
+    if (individual1.metaFitness.rank() < individual2.metaFitness.rank()) individual1
+    else if (individual1.metaFitness.rank() > individual2.metaFitness.rank()) individual2
+    else if (individual1.metaFitness.diversity() > individual2.metaFitness.diversity()) individual1
+    else if (individual2.metaFitness.diversity() > individual1.metaFitness.diversity()) individual2
     else if (aprng.nextDouble < 0.5) individual1 else individual2
 
 }

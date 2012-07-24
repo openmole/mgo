@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 reuillon
+ * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,15 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.diversity
+package fr.iscpif.mgo.modifier
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Lazy
-import metric._
+trait RankModifier {
 
-trait Crowding extends DiversityMetric { this: Evolution with Ranking =>
-
-   def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]) =   
-     CrowdingDistance(evaluated.unzip._1.map{_.fitness.values})
-    
 }

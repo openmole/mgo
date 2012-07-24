@@ -20,6 +20,6 @@ package fr.iscpif.mgo.diversity
 import fr.iscpif.mgo._
 import tools.Lazy
 
-trait DiversityMetric { this: Evolution =>
-  def diversity(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Lazy[Double]]
+trait DiversityMetric { this: Evolution with Ranking =>
+  def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]): IndexedSeq[Lazy[Double]]
 }

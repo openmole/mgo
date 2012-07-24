@@ -28,7 +28,7 @@ trait NonDominatedSortingElitism extends Elitism {
     
     if (population.size < mu) population
     else {
-      val fronts = population.groupBy(_.metaFitness.rank).toList.sortBy(_._1).map { _._2: Population[G, MF] }
+      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { _._2: Population[G, MF] }
 
       //FIXME: No idea why but it is not tailrec
       def addFronts[I](fronts: List[Population[G, MF]], acc: List[Population[G, MF]], size: Int = 0): (Population[G, MF], Population[G, MF]) = {
@@ -40,7 +40,7 @@ trait NonDominatedSortingElitism extends Elitism {
 
       
       (if (selected.size < mu) 
-        selected ++ lastFront.sortBy(_.metaFitness.diversity).reverse.slice(0, mu - selected.size) 
+        selected ++ lastFront.sortBy(_.metaFitness.diversity()).reverse.slice(0, mu - selected.size) 
        else selected)
     }
   }

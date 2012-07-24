@@ -24,5 +24,5 @@ import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo.dominance._
 
 trait Diversity {
-  def diversity: Double
+  def diversity: Lazy[Double]
 }
