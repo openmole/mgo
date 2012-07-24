@@ -41,12 +41,12 @@ object TestFunction extends App {
                      with RankDiversityModifier {
       def distributionIndex = 2
       def windowSize = 100
-      def crowdingDeviationEpsilon = 0.001
+      def crowdingDeviationEpsilon = 0.01
       def mu = 200
       def lambda = 200
       def genomeSize = 10      
     }
   
-  val (res,_,_) = nsga2.run(zdt).dropWhile{ case(_,state,stop) => println(state) ; !stop }.next
+  val res = nsga2.run(zdt).dropWhile{ s => println(s.terminationState) ; !s.terminated }.next.population
   res sortBy (_.metaFitness.rank) foreach { e => println(zdt.scale(e)) }
 }

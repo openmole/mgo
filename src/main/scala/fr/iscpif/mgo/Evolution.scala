@@ -27,21 +27,28 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
 
   implicit val factory: Factory[G]
 
+  case class EvolutionState(
+    val population: Population[G, MF],
+    val generation: Int,
+    val terminationState: STATE,
+    val terminated: Boolean
+  )
+  
   def lambda: Int
   
-  def run(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Iterator[(Population[G, MF], STATE, Boolean)] = 
-    Iterator.iterate((population, initialState(population), false)){
-      case(population, state, _) => 
-        val newPop = evolve(population, evaluator) 
-        val (stop, newState) = terminated(population, state)
-        (newPop, newState, stop)                        
+  def run(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Iterator[EvolutionState] = 
+    Iterator.iterate(EvolutionState(population, 0, initialState(population), false)){
+      s => 
+        val newPop = evolve(s.population, evaluator) 
+        val (stop, newState) = terminated(s.population, s.terminationState)
+        EvolutionState(newPop, s.generation + 1, newState, stop)                        
     }
   
   
-  def run(evaluator: G => Fitness)(implicit aprng: Random): Iterator[(Population[G, MF], STATE, Boolean)] = 
+  def run(evaluator: G => Fitness)(implicit aprng: Random): Iterator[EvolutionState] = 
     run(randomPopulation(evaluator), evaluator)
   
-  def run[P <: Problem {type G >: self.G}](problem: P)(implicit aprng: Random): Iterator[(Population[G, MF], STATE, Boolean)] = 
+  def run[P <: Problem {type G >: self.G}](problem: P)(implicit aprng: Random): Iterator[EvolutionState] = 
     run(problem.apply _)
   
   def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF]
