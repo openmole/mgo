@@ -76,6 +76,7 @@ package object mgo {
   type Ranking = ranking.Ranking
   type MGBinaryTournamentSelection = selection.MGBinaryTournamentSelection
   type Selection = selection.Selection
+  type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
   type CounterTermination = termination.CounterTermination
   type FirstRankedSteadyTermination = termination.FirstRankedSteadyTermination
   type Termination = termination.Termination

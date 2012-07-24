@@ -24,9 +24,9 @@ trait CrowdingStabilityTermination extends Termination {
   self: Evolution with CrowdingDistance {type MF <: Diversity } =>
   
   def windowSize: Int
-  def stdEpsilon: Double
+  def crowdingDeviationEpsilon: Double
   
-  case class CrowdingStabilityState(val history: List[Double] = List.empty, val std: Double = Double.PositiveInfinity)
+  case class CrowdingStabilityState(val std: Double = Double.PositiveInfinity, val history: List[Double] = List.empty)
   
   type STATE = CrowdingStabilityState
   
@@ -36,11 +36,11 @@ trait CrowdingStabilityTermination extends Termination {
     val maxCrowding = population.map{_.metaFitness.diversity}.filter(_ != Double.PositiveInfinity).max
    
     val newState = (maxCrowding :: terminationState.history).slice(0, windowSize)
-    if(newState.size < windowSize) (false, new CrowdingStabilityState(newState))
+    if(newState.size < windowSize) (false, new CrowdingStabilityState(history = newState))
     else {
       val avg = newState.sum / newState.size
       val std = sqrt(newState.map{ v => pow(v - avg, 2) }.sum)
-      (std < stdEpsilon, new CrowdingStabilityState(newState, std))
+      (std < crowdingDeviationEpsilon, new CrowdingStabilityState(std, newState))
     } 
   }
   

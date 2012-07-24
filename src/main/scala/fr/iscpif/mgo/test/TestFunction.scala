@@ -31,7 +31,7 @@ object TestFunction extends App {
   val nsga2 =
       new NSGAIISigma
                      with MGBinaryTournamentSelection
-                     with CounterTermination
+                     with CrowdingStabilityTermination
                      with NonDominatedSortingElitism
                      with CoEvolvingSigmaValuesMutation
                      with SBXBoundedCrossover 
@@ -40,7 +40,8 @@ object TestFunction extends App {
                      with StrictDominance
                      with RankDiversityModifier {
       def distributionIndex = 2
-      def maxStep = 1000
+      def windowSize = 100
+      def crowdingDeviationEpsilon = 0.05
       def mu = 200
       def lambda = 200
       def genomeSize = 10      
