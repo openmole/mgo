@@ -66,7 +66,7 @@ object HyperVolume {
       point => (point zip referencePoint).map{case(p, r) => p - r}
     }    
 
-    val list = preProcess(relevantPoints)
+    val list = preProcess(relevantPoints, referencePoint)
 
     val bounds = MIndexedSeq.fill(dimensions) {
       -1.0e308
@@ -204,7 +204,7 @@ object HyperVolume {
   }
 
   /* Sets up the list data structure needed for calculation. */
-  def preProcess(front: IndexedSeq[IndexedSeq[Double]]): MultiList = {
+  def preProcess(front: IndexedSeq[IndexedSeq[Double]],referencePoint: IndexedSeq[Double]): MultiList = {
     val dimensions = referencePoint.size
     var nodeList = new MultiList(dimensions)
 
