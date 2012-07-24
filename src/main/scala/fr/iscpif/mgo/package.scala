@@ -45,6 +45,7 @@ package object mgo {
   type Crowding = diversity.Crowding
   type Diversity = diversity.Diversity
   type DiversityMetric = diversity.DiversityMetric
+  type HypervolumeMetric = diversity.HypervolumeMetric
   type GenomeCrowding = diversity.GenomeCrowding
   type Dominance = dominance.Dominance
   type EpsilonDominance = dominance.EpsilonDominance
