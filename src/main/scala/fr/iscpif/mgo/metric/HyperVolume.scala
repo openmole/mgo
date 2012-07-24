@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.metrics
+package fr.iscpif.mgo.metric
 
 //import collection.mutable._
 //import collection.immutable.{IndexedSeq => IIndexedSeq}

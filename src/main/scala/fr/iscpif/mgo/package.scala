@@ -42,10 +42,10 @@ package object mgo {
   type CrossOver = crossover.CrossOver
   type SBXBoundedCrossover = crossover.SBXBoundedCrossover
   type UniformCrossOver = crossover.UniformCrossOver
-  type CrowdingDistance = diversity.CrowdingDistance
+  type Crowding = diversity.Crowding
   type Diversity = diversity.Diversity
   type DiversityMetric = diversity.DiversityMetric
-  type GenomeCrowdingDistance = diversity.GenomeCrowdingDistance
+  type GenomeCrowding = diversity.GenomeCrowding
   type Dominance = dominance.Dominance
   type EpsilonDominance = dominance.EpsilonDominance
   type NonStrictDominance = dominance.NonStrictDominance

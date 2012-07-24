@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2012 reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,10 +18,11 @@
 package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
+import metric._
 
-trait GenomeCrowdingDistance extends DiversityMetric { this: GAEvolution =>
+trait Crowding extends DiversityMetric { this: Evolution =>
 
-  def diversity(evaluated: IndexedSeq[Individual[G]]) =   
-    CrowdingDistance(evaluated.map{_.genome.values})
+   def diversity(evaluated: IndexedSeq[Individual[G]]) =   
+     CrowdingDistance(evaluated.map{_.fitness.values})
     
 }

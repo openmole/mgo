@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 import math._
 
 trait CrowdingStabilityTermination extends Termination {
-  self: Evolution with CrowdingDistance {type MF <: Diversity } =>
+  self: Evolution with Crowding {type MF <: Diversity } =>
   
   def windowSize: Int
   def crowdingDeviationEpsilon: Double

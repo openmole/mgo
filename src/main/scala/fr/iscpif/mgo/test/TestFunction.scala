@@ -35,13 +35,13 @@ object TestFunction extends App {
                      with NonDominatedSortingElitism
                      with CoEvolvingSigmaValuesMutation
                      with SBXBoundedCrossover 
-                     with CrowdingDistance
+                     with Crowding
                      with ParetoRanking
                      with StrictDominance
                      with RankDiversityModifier {
       def distributionIndex = 2
       def windowSize = 100
-      def crowdingDeviationEpsilon = 0.05
+      def crowdingDeviationEpsilon = 0.001
       def mu = 200
       def lambda = 200
       def genomeSize = 10      
