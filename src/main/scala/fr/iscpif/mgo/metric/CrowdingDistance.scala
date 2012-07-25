@@ -22,7 +22,6 @@ import fr.iscpif.mgo.tools.Lazy
 
 object CrowdingDistance {
   
-  //FIXME make it functionnal and take advantage of the lazyness
   def apply(data: IndexedSeq[Seq[Double]]): IndexedSeq[Lazy[Double]] = {
     if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
     else {         
