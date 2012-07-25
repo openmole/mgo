@@ -17,6 +17,24 @@
 
 package fr.iscpif.mgo.algorithm
 
-trait SMSEMOEA {
+import fr.iscpif.mgo._
+import java.util.Random
 
-}
+  trait SMSEMOEA extends GAEvolution with MG with Archive with Elitism with Breeding with HypervolumeMetric {
+
+    override def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = {
+      val offspring = breed(
+        population
+      ).par.map {
+        g => Individual(g, evaluator)
+      }
+
+      val archive = population.individuals ++ offspring
+
+      //Elitisme strategy
+      val individuals = toPopulation(archive)
+      elitism(individuals)
+    }
+
+
+  }
