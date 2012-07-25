@@ -27,8 +27,9 @@ trait HypervolumeMetric extends DiversityMetric{ this: GAEvolution with Ranking 
   //Ok et le pire front est calculé comme d'habitude, meme principe que pour le crowding, en lazy.
   def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]) = {
 
-   // Transform individual to list of all genomes values in all front
-   lazy val fronts = evaluated.map{_._1}.map{ ind => ind.genome.values}
+   // Transform individual to list of all genome fitness values in all front
+   // println("list of evaluated " + evaluated.map{_._2})
+    lazy val fronts = evaluated.map{_._1}.map{ ind => ind.fitness.values}
 
    lazy val referencePoint = fronts.reduce {
       (i1, i2) => (i1 zip i2).map {
@@ -37,18 +38,13 @@ trait HypervolumeMetric extends DiversityMetric{ this: GAEvolution with Ranking 
    }
 
    // Lazy method computation of global contribution for all front
-   // Perd l'indexation ... ca va pas
-   /*val front = evaluated.groupBy{case (i,r) => r}.values.map{_.unzip._1}.map{ front =>
-    computeHypervolume(front.map {ind => ind.genome.values}, referencePoint)
-   */
-
     //Class individual by group of rank
     val groupOfFront = evaluated.zipWithIndex.map{
       case ((i, r), index) => (i, r, index)}.groupBy {
-      case (i,r,index) => r}.values
+      case (i,r,index) => r()}.values
 
     //Return contribution
-    val contributionByPoint = groupOfFront.map{ front => computeHypervolume(front, referencePoint)}.toIndexedSeq
+    val contributionByPoint = groupOfFront.map{ front =>  computeHypervolume(front, referencePoint)}.toIndexedSeq
     //Merge group of front, and reclass individual by initial index
     val orderingByInitialIndex = contributionByPoint.flatten.sortBy{case (contribution,index) => index}
     //return only the contribution
@@ -64,7 +60,7 @@ trait HypervolumeMetric extends DiversityMetric{ this: GAEvolution with Ranking 
   def computeHypervolume (front:IndexedSeq[(Individual[G],Lazy[Int],Int)],referencePoint:IndexedSeq[Double]):IndexedSeq[(Lazy[Double],Int)] = {
 
    //return an indexedSeq of (IndexedSeq[Double],index)
-   val frontValues = front.map{case(ind,r,i) =>  (ind.genome.values,i)}
+   val frontValues = front.map{case(ind,r,i) =>  (ind.fitness.values,i)}
 
    lazy val globalHypervolume = HyperVolume(frontValues.map {e => e._1}, referencePoint)
 

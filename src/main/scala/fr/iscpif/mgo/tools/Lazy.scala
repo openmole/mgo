@@ -16,4 +16,5 @@ object Lazy {
 class Lazy[T](f: => T) {
   lazy val value: T = f
   def apply() = value
+  override def toString() = value.toString
 }

@@ -37,6 +37,7 @@ package object mgo {
   }
   
   type NSGAII = algorithm.NSGAII
+  type SMSEMOEA = algorithm.SMSEMOEA
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover
   type CrossOver = crossover.CrossOver
@@ -57,6 +58,7 @@ package object mgo {
   type GAGenome = ga.GAGenome
   type GAGenomeWithSigma = ga.GAGenomeWithSigma
   type NSGAIISigma = ga.NSGAIISigma
+  type SMSEMOEASigma = ga.SMSEMOEASigma
   type Sigma = ga.Sigma
   type SigmaGAEvolution = ga.SigmaGAEvolution
   type Modifier = modifier.Modifier

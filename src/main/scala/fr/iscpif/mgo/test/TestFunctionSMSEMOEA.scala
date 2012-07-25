@@ -20,34 +20,40 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import java.util.Random
 
-object TestFunction extends App { 
-  
+object TestFunctionSMSEMOEA extends App {
+
   val zdt = new ZDT4 {
     def n = 10
   }
- 
+
   implicit val rng = new Random
-  
-  val nsga2 =
-      new NSGAIISigma
-                     with MGBinaryTournamentSelection
-                     with CounterTermination
-                     with NonDominatedSortingElitism
-                     with CoEvolvingSigmaValuesMutation
-                     with SBXBoundedCrossover 
-                     with Crowding
-                     with ParetoRanking
-                     with StrictDominance
-                     with RankDiversityModifier {
+
+  val smsemoea =
+    new SMSEMOEASigma
+      with MGBinaryTournamentSelection
+      with CounterTermination
+      with NonDominatedSortingElitism
+      with CoEvolvingSigmaValuesMutation
+      with SBXBoundedCrossover
+      with HypervolumeMetric
+      with ParetoRanking
+      with StrictDominance
+      with RankDiversityModifier {
       def distributionIndex = 2
-      //def windowSize = 100
-      //def crowdingDeviationEpsilon = 0.01
+
       def maxStep = 150
+
       def mu = 15
+
       def lambda = 200
+
       def genomeSize = 10
     }
-  
-  val res = nsga2.run(zdt).dropWhile{ s => println(s.terminationState) ; !s.terminated }.next.population
-  res sortBy (_.metaFitness.rank) foreach { e => println(zdt.scale(e)._2.values.mkString(",")) }
+
+  val res = smsemoea.run(zdt).dropWhile {
+    s => println(s.generation); !s.terminated
+  }.next.population
+  res sortBy (_.metaFitness.rank) foreach {
+    e => println(zdt.scale(e)._2.values.mkString(","))
+  }
 }
