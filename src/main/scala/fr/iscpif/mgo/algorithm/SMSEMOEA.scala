@@ -15,11 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
-
-import fr.iscpif.mgo._
-import java.util.Random
-
 /**
  * This class implements the SMS-EMOA algorithm, as described in
  *
@@ -37,21 +32,8 @@ import java.util.Random
  * IEEE Press, Piscataway NJ, 2005.
  */
 
-  trait SMSEMOEA extends GAEvolution with MG with Archive with Elitism with Breeding with HypervolumeMetric {
+package fr.iscpif.mgo.algorithm
 
-    override def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = {
-      val offspring = breed(
-        population
-      ).par.map {
-        g => Individual(g, evaluator)
-      }
+import fr.iscpif.mgo._
 
-      val archive = population.individuals ++ offspring
-
-      //Elitisme strategy
-      val individuals = toPopulation(archive)
-      elitism(individuals)
-    }
-
-
-  }
+trait SMSEMOEA extends NSGAII with HypervolumeMetric

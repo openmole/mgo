@@ -19,12 +19,4 @@ package fr.iscpif.mgo.ga
 
 import fr.iscpif.mgo._
 
-trait SMSEMOEASigma extends SMSEMOEA with SigmaGAEvolution {
-
-  type G = GAGenomeWithSigma
-
-  val factory = new GAGenomeWithSigmaFactory {
-    def size = genomeSize
-  }
-
-}
+trait SMSEMOEASigma extends SMSEMOEA with NSGAIISigma
