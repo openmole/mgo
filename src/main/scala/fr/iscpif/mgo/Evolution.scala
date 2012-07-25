@@ -40,7 +40,7 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
     Iterator.iterate(EvolutionState(population, 0, initialState(population), false)){
       s => 
         val newPop = evolve(s.population, evaluator) 
-        val (stop, newState) = terminated(s.population, s.terminationState)
+        val (stop, newState) = terminated(newPop, s.terminationState)
         EvolutionState(newPop, s.generation + 1, newState, stop)                        
     }
   

@@ -31,23 +31,24 @@ object TestFunction extends App {
   val nsga2 =
       new NSGAIISigma
                      with MGBinaryTournamentSelection
-                     with CounterTermination
+                     with HyperVolumeStabilityTermination
                      with NonDominatedSortingElitism
                      with CoEvolvingSigmaValuesMutation
-                     with SBXBoundedCrossover 
-                     with Crowding
+                     with SBXBoundedCrossover
+                     with HypervolumeMetric
+                     with ManualReferencePoint
                      with ParetoRanking
                      with StrictDominance
                      with RankDiversityModifier {
       def distributionIndex = 2
-      //def windowSize = 100
-      //def crowdingDeviationEpsilon = 0.01
-      def maxStep = 150
-      def mu = 15
+      def windowSize = 100
+      def deviationEpsilon = 0.001
+      def mu = 200
       def lambda = 200
       def genomeSize = 10
-    }
+      def referencePoint = IndexedSeq(2.0, 2.0)
+      }
   
-  val res = nsga2.run(zdt).dropWhile{ s => println(s.terminationState) ; !s.terminated }.next.population
+  val res = nsga2.run(zdt).dropWhile{ s => println(s.terminationState + " " + s.generation) ; !s.terminated }.next.population
   res sortBy (_.metaFitness.rank) foreach { e => println(zdt.scale(e)._2.values.mkString(",")) }
 }

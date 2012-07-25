@@ -54,7 +54,7 @@ object CrowdingDistance {
 
         while (itOpod.hasNext) {
           val ptPlus1 = itOpod.next
-          val distance =  (ptPlus1.d(curDim) - ptMinus1.d(curDim)) / maxMinusMin
+          val distance =  (ptPlus1.d(curDim) - ptMinus1.d(curDim))  / maxMinusMin
           pt.crowding += distance.toDouble
   
           ptMinus1 = pt

@@ -45,7 +45,17 @@ object HyperVolume {
     (i1, i2) => (i1 zip i2).map { case (i1, i2) => max(i1, i2) }
   } */
 
-  /**
+  def apply(front: IndexedSeq[IndexedSeq[Double]]): Double =
+    apply(front, nadir(front))
+
+  def nadir(front: IndexedSeq[IndexedSeq[Double]]) =
+    front.reduce {
+      (i1, i2) => (i1 zip i2).map {
+        case (i1, i2) => max(i1, i2)
+      }
+    }
+
+    /**
    * Returns the hypervolume that is dominated by a non-dominated front.
    * Before the HV computation, front and reference point are translated, so
    * that the reference point is [0, ..., 0].

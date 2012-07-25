@@ -61,6 +61,10 @@ package object mgo {
   type SMSEMOEASigma = ga.SMSEMOEASigma
   type Sigma = ga.Sigma
   type SigmaGAEvolution = ga.SigmaGAEvolution
+  val HyperVolume = metric.HyperVolume
+  type ReferencePoint = metric.ReferencePoint
+  type NadirReferencePoint = metric.NadirReferencePoint
+  type ManualReferencePoint = metric.ManualReferencePoint
   type Modifier = modifier.Modifier
   type NoneModifier = modifier.NoneModifier
   type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
@@ -82,6 +86,7 @@ package object mgo {
   type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
   type CounterTermination = termination.CounterTermination
   type FirstRankedSteadyTermination = termination.FirstRankedSteadyTermination
+  type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination
   type Termination = termination.Termination
   type TerminationManifest = termination.TerminationManifest
   
