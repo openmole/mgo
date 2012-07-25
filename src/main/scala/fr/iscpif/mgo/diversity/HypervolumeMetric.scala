@@ -68,6 +68,7 @@ trait HypervolumeMetric extends DiversityMetric{ this: GAEvolution with Ranking 
 
    lazy val globalHypervolume = HyperVolume(frontValues.map {e => e._1}, referencePoint)
 
+   //compute a new collection with automatic removed incremental of frontValues item by item
     shadowMap(frontValues){case(e,indexShadowed) =>
       (e,indexShadowed)}.map{ case(e,indexShadowed)  =>
       (Lazy(globalHypervolume - HyperVolume(e.map{_._1},referencePoint)),frontValues(indexShadowed)._2) }

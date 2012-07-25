@@ -20,6 +20,23 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import java.util.Random
 
+/**
+ * This class implements the SMS-EMOA algorithm, as described in
+ *
+ * Michael Emmerich, Nicola Beume, and Boris Naujoks.
+ * An EMO algorithm using the hypervolume measure as selection criterion.
+ * In C. A. Coello Coello et al., Eds., Proc. Evolutionary Multi-Criterion Optimization,
+ * 3rd Int'l Conf. (EMO 2005), LNCS 3410, pp. 62-76. Springer, Berlin, 2005.
+ *
+ * and
+ *
+ * Boris Naujoks, Nicola Beume, and Michael Emmerich.
+ * Multi-objective optimisation using S-metric selection: Application to
+ * three-dimensional solution spaces. In B. McKay et al., Eds., Proc. of the 2005
+ * Congress on Evolutionary Computation (CEC 2005), Edinburgh, Band 2, pp. 1282-1289.
+ * IEEE Press, Piscataway NJ, 2005.
+ */
+
   trait SMSEMOEA extends GAEvolution with MG with Archive with Elitism with Breeding with HypervolumeMetric {
 
     override def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = {
