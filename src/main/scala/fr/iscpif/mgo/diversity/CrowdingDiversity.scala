@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import metric._
 
-trait Crowding extends DiversityMetric { this: Evolution with Ranking =>
+trait CrowdingDiversity extends DiversityMetric { this: Evolution with Ranking =>
 
    def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]) =   
      CrowdingDistance(evaluated.unzip._1.map{_.fitness.values})

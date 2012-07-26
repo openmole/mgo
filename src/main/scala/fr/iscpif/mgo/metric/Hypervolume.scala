@@ -36,7 +36,7 @@ import math._
  * Minimization is implicitly assumed here!
  */
 
-object HyperVolume {
+object Hypervolume {
 
   //val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
   //val front = IndexedSeq(IndexedSeq(1.0, 0.0 ,1.0), IndexedSeq(0.0, 1.0, 0.0))

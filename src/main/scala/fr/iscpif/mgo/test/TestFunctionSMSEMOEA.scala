@@ -31,23 +31,22 @@ object TestFunctionSMSEMOEA extends App {
   val smsemoea =
     new SMSEMOEASigma
       with MGBinaryTournamentSelection
-      with CounterTermination
+      with HyperVolumeStabilityTermination
       with NonDominatedSortingElitism
       with CoEvolvingSigmaValuesMutation
       with SBXBoundedCrossover
-      with HypervolumeMetric
+      with HypervolumeDiversity
       with ParetoRanking
       with StrictDominance
       with RankDiversityModifier {
       def distributionIndex = 2
-
-      def maxStep = 150
-
-      def mu = 15
-
+      
+      def windowSize = 100
+      def deviationEpsilon = 0.001
+      def mu = 200
       def lambda = 200
-
       def genomeSize = 10
+      def referencePoint = IndexedSeq(2.0, 2.0)
     }
 
   val res = smsemoea.run(zdt).dropWhile {

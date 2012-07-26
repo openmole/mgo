@@ -36,4 +36,4 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait SMSEMOEA extends NSGAII with HypervolumeMetric
+trait SMSEMOEA extends NSGAII with HypervolumeDiversity

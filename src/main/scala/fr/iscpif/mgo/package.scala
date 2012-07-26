@@ -43,11 +43,11 @@ package object mgo {
   type CrossOver = crossover.CrossOver
   type SBXBoundedCrossover = crossover.SBXBoundedCrossover
   type UniformCrossOver = crossover.UniformCrossOver
-  type Crowding = diversity.Crowding
+  type CrowdingDiversity = diversity.CrowdingDiversity
   type Diversity = diversity.Diversity
   type DiversityMetric = diversity.DiversityMetric
-  type HypervolumeMetric = diversity.HypervolumeMetric
-  type GenomeCrowding = diversity.GenomeCrowding
+  type HypervolumeDiversity = diversity.HypervolumeDiversity
+  type GenomeCrowdingDiversity = diversity.GenomeCrowdingDiversity
   type Dominance = dominance.Dominance
   type EpsilonDominance = dominance.EpsilonDominance
   type NonStrictDominance = dominance.NonStrictDominance
@@ -61,7 +61,7 @@ package object mgo {
   type SMSEMOEASigma = ga.SMSEMOEASigma
   type Sigma = ga.Sigma
   type SigmaGAEvolution = ga.SigmaGAEvolution
-  val HyperVolume = metric.HyperVolume
+  val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
   type NadirReferencePoint = metric.NadirReferencePoint
   type ManualReferencePoint = metric.ManualReferencePoint

@@ -31,18 +31,18 @@ object TestFunction extends App {
   val nsga2 =
       new NSGAIISigma
                      with MGBinaryTournamentSelection
-                     with HyperVolumeStabilityTermination
+                     with CrowdingStabilityTermination
                      with NonDominatedSortingElitism
                      with CoEvolvingSigmaValuesMutation
                      with SBXBoundedCrossover
-                     with HypervolumeMetric
+                     with CrowdingDiversity
                      with ManualReferencePoint
                      with ParetoRanking
                      with StrictDominance
                      with RankDiversityModifier {
       def distributionIndex = 2
       def windowSize = 100
-      def deviationEpsilon = 0.001
+      def deviationEpsilon = 0.01
       def mu = 200
       def lambda = 200
       def genomeSize = 10
