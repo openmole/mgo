@@ -17,6 +17,6 @@ package fr.iscpif.mgo.metric
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 trait ManualReferencePoint extends ReferencePoint {
-  def referencePoint: IndexedSeq[Double]
-  def referencePoint (front: IndexedSeq[IndexedSeq[Double]]): IndexedSeq[Double] = referencePoint
+  def referencePoint: Seq[Double]
+  def referencePoint (front: IndexedSeq[IndexedSeq[Double]]): Seq[Double] = referencePoint
 }

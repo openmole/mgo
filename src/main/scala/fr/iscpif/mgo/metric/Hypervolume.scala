@@ -22,6 +22,7 @@ package fr.iscpif.mgo.metric
 //import collection.mutable
 import collection.mutable.{IndexedSeq => MIndexedSeq}
 import scala.collection.mutable.ArrayBuffer
+import fr.iscpif.mgo.Dominance
 import math._
 
 // A translation/adaptation based on the python source code by Simon Wessing :
@@ -38,15 +39,8 @@ import math._
 
 object Hypervolume {
 
-  //val referencePoint = IndexedSeq(2.0, 2.0, 2.0)
-  //val front = IndexedSeq(IndexedSeq(1.0, 0.0 ,1.0), IndexedSeq(0.0, 1.0, 0.0))
-  /*val front = IndexedSeq(IndexedSeq(0.2, 1.2, 0.4), IndexedSeq(0.2, 0.8, 0.1), IndexedSeq(0.1, 0.2, 0.9), IndexedSeq(0.4, 0.05, 0.2))
-  val referencePoint = front.reduce {
-    (i1, i2) => (i1 zip i2).map { case (i1, i2) => max(i1, i2) }
-  } */
-
-  def apply(front: IndexedSeq[IndexedSeq[Double]]): Double =
-    apply(front, nadir(front))
+  def apply(front: IndexedSeq[IndexedSeq[Double]], d: Dominance): Double =
+    apply(front, nadir(front), d)
 
   def nadir(front: IndexedSeq[IndexedSeq[Double]]) =
     front.reduce {
@@ -61,18 +55,13 @@ object Hypervolume {
    * that the reference point is [0, ..., 0].
    */
 
-  def apply(front: IndexedSeq[IndexedSeq[Double]],referencePoint:IndexedSeq[Double]):Double = {
-    def weaklyDominates(point: IndexedSeq[Double], other: IndexedSeq[Double]): Boolean = {
-      for (i <- Range(0, point.size)) {
-        if (point(i) > other(i))
-          return false
-      }
-      return true
-    }
+  def apply(front: IndexedSeq[IndexedSeq[Double]],referencePoint:Seq[Double], d: Dominance):Double = {
+    def dominates(point: Seq[Double], other: Seq[Double]): Boolean = 
+      d.isDominated(other, point)
 
     val dimensions = referencePoint.size
     
-    val relevantPoints = front.filter(weaklyDominates(_, referencePoint)).map{
+    val relevantPoints = front.filter(dominates(_, referencePoint)).map{
       point => (point zip referencePoint).map{case(p, r) => p - r}
     }    
 
@@ -221,7 +210,7 @@ object Hypervolume {
   }
 
   /* Sets up the list data structure needed for calculation. */
-  def preProcess(front: IndexedSeq[IndexedSeq[Double]],referencePoint: IndexedSeq[Double]): MultiList = {
+  def preProcess(front: IndexedSeq[IndexedSeq[Double]],referencePoint: Seq[Double]): MultiList = {
     val dimensions = referencePoint.size
     var nodeList = new MultiList(dimensions)
 

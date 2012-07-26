@@ -28,7 +28,7 @@ object ParetoRanking {
         Lazy(evaluated.zipWithIndex.filter {
           case (_, index2) => index != index2
         }.count { 
-          case(indiv2, _) => dominance.isDominated(indiv.fitness, indiv2.fitness)
+          case(indiv2, _) => dominance.isDominated(indiv.fitness.values, indiv2.fitness.values)
         })
     }
   }

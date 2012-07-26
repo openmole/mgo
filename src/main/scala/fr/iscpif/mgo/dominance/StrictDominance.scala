@@ -22,8 +22,8 @@ import fr.iscpif.mgo._
 
 trait StrictDominance extends Dominance {
   
-  def isDominated(p1: Fitness, p2: Fitness): Boolean = {
-    for((g1, g2) <- p1.values zip p2.values) {
+  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean = {
+    for((g1, g2) <- p1 zip p2) {
       if(g1 < g2) return false
     }   
     true

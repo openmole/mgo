@@ -17,5 +17,5 @@ package fr.iscpif.mgo.metric
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 trait NadirReferencePoint extends ReferencePoint {
-  def referencePoint(front: IndexedSeq[IndexedSeq[Double]]): IndexedSeq[Double] = Hypervolume.nadir(front)
+  def referencePoint(front: IndexedSeq[IndexedSeq[Double]]): Seq[Double] = Hypervolume.nadir(front)
 }

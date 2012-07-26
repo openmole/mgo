@@ -20,8 +20,8 @@ package fr.iscpif.mgo.termination
 import fr.iscpif.mgo._
 import math._
 
-trait HyperVolumeStabilityTermination extends Termination {
-  self: Evolution with ReferencePoint  {type MF <:  Rank}  =>
+trait HyperVolumeStabilityTermination extends Termination with ReferencePoint{
+  self: Evolution with Dominance {type MF <:  Rank}  =>
 
   def windowSize: Int
 
@@ -36,7 +36,7 @@ trait HyperVolumeStabilityTermination extends Termination {
   def terminated(population: Population[G, MF], terminationState: STATE): (Boolean, STATE) = {
     val rankMax = population.map{_.metaFitness.rank()}.max
     val front = population.filter(_.metaFitness.rank() == rankMax).map{_.fitness.values}
-    val hv = Hypervolume(front, referencePoint(front))
+    val hv = Hypervolume(front, referencePoint(front), this)
 
     val newState = (hv :: terminationState.history).slice(0, windowSize)
     if (newState.size < windowSize) (false, new HyperVolumeStabilityState(history = newState))

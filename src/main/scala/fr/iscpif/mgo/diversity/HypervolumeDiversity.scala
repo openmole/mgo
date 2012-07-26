@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import scala.math._
 
-trait HypervolumeDiversity extends DiversityMetric { this: GAEvolution with Ranking with ReferencePoint =>
+trait HypervolumeDiversity extends DiversityMetric with ReferencePoint { this: GAEvolution with Ranking with Dominance =>
 
   //Ok et le pire front est calculé comme d'habitude, meme principe que pour le crowding, en lazy.
   def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]) = {
@@ -52,17 +52,17 @@ trait HypervolumeDiversity extends DiversityMetric { this: GAEvolution with Rank
   }
 
   //Compute for each front
-  def computeHypervolume (front:IndexedSeq[(Individual[G],Lazy[Int],Int)],referencePoint:IndexedSeq[Double]):IndexedSeq[(Lazy[Double],Int)] = {
+  def computeHypervolume (front:IndexedSeq[(Individual[G],Lazy[Int],Int)],referencePoint:Seq[Double]):IndexedSeq[(Lazy[Double],Int)] = {
 
    //return an indexedSeq of (IndexedSeq[Double],index)
    val frontValues = front.map{case(ind,r,i) =>  (ind.fitness.values,i)}
 
-   lazy val globalHypervolume = Hypervolume(frontValues.map {e => e._1}, referencePoint)
+   lazy val globalHypervolume = Hypervolume(frontValues.map {e => e._1}, referencePoint, this)
 
    //compute a new collection with automatic removed incremental of frontValues item by item
     shadowMap(frontValues){case(e,indexShadowed) =>
       (e,indexShadowed)}.map{ case(e,indexShadowed)  =>
-      (Lazy(globalHypervolume - Hypervolume(e.map{_._1},referencePoint)),frontValues(indexShadowed)._2) }
+      (Lazy(globalHypervolume - Hypervolume(e.map{_._1},referencePoint, this)),frontValues(indexShadowed)._2) }
   }
 
 }

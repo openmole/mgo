@@ -23,8 +23,8 @@ trait EpsilonDominance extends Dominance {
 
   def epsilons: Seq[Double]
   
-  def isDominated(p1: Fitness, p2: Fitness): Boolean = {
-    for(((g1, g2), e) <- p1.values zip p2.values zip epsilons) {
+  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean = {
+    for(((g1, g2), e) <- p1 zip p2 zip epsilons) {
       if(g1 + e < g2) return false
     }   
     true

@@ -38,7 +38,8 @@ object TestFunctionSMSEMOEA extends App {
       with HypervolumeDiversity
       with ParetoRanking
       with StrictDominance
-      with RankDiversityModifier {
+      with RankDiversityModifier
+      with ManualReferencePoint {
       def distributionIndex = 2
       
       def windowSize = 100
@@ -50,7 +51,7 @@ object TestFunctionSMSEMOEA extends App {
     }
 
   val res = smsemoea.run(zdt).dropWhile {
-    s => println(s.generation); !s.terminated
+    s => println(s.terminationState.std); !s.terminated
   }.next.population
   res sortBy (_.metaFitness.rank) foreach {
     e => println(zdt.scale(e)._2.values.mkString(","))

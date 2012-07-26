@@ -20,5 +20,5 @@ package fr.iscpif.mgo.dominance
 import fr.iscpif.mgo._
 
 trait Dominance { 
-  def isDominated (p1: Fitness, p2: Fitness): Boolean
+  def isDominated (p1: Seq[Double], p2: Seq[Double]): Boolean
 }
