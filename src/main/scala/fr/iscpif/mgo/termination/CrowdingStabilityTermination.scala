@@ -26,7 +26,9 @@ trait CrowdingStabilityTermination extends Termination {
   def windowSize: Int
   def deviationEpsilon: Double
   
-  case class CrowdingStabilityState(val std: Double = Double.PositiveInfinity, val history: List[Double] = List.empty)
+  case class CrowdingStabilityState(val std: Double = Double.PositiveInfinity, val history: List[Double] = List.empty) {
+    override def toString = std.toString
+  }
   
   type STATE = CrowdingStabilityState
   

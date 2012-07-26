@@ -23,12 +23,9 @@ import scala.math._
 
 trait HypervolumeDiversity extends DiversityMetric with ReferencePoint { this: GAEvolution with Ranking with Dominance =>
 
-  //Ok et le pire front est calculé comme d'habitude, meme principe que pour le crowding, en lazy.
   def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]) = {
 
-   // Transform individual to list of all genome fitness values in all front
-   // println("list of evaluated " + evaluated.map{_._2})
-    lazy val fronts = evaluated.map{_._1}.map{ ind => ind.fitness.values}
+   lazy val fronts = evaluated.map{_._1}.map{ ind => ind.fitness.values}
 
    lazy val rp = referencePoint(fronts)
 

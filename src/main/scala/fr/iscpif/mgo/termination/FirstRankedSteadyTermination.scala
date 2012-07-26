@@ -26,19 +26,23 @@ import fr.iscpif.mgo.tools.Math
 trait FirstRankedSteadyTermination extends Termination {
   self: Evolution { type MF <: Rank } =>
   
-  type STATE = (Int, Population[G, MF])
+  case class FirstRankedState(val steady: Int = 0, previousPopulation: Population[G, MF]) {
+    override def toString = steady.toString
+  }
   
-  def initialState(p: Population[G, MF]) = (0, p)
+  type STATE = FirstRankedState
+  
+  def initialState(p: Population[G, MF]) = new FirstRankedState(0, p)
   
   def steadySince: Int
 
   def terminated(population: Population[G, MF], state: STATE): (Boolean, STATE) = {
-    val (step, oldPop) = state
+    val FirstRankedState(step, oldPop) = state
     val newStep = if ( 
       Math.allTheSame(firstRanked(population).map {_.fitness.values},
                       firstRanked(oldPop).map {_.fitness.values})
     ) step + 1 else  0
-    (newStep >= steadySince, newStep -> population)
+    (newStep >= steadySince, FirstRankedState(newStep, population))
   } 
   
   

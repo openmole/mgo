@@ -27,7 +27,9 @@ trait HyperVolumeStabilityTermination extends Termination with ReferencePoint{
 
   def deviationEpsilon: Double
 
-  case class HyperVolumeStabilityState(val std: Double = Double.PositiveInfinity, val history: List[Double] = List.empty)
+  case class HyperVolumeStabilityState(val std: Double = Double.PositiveInfinity, val history: List[Double] = List.empty) {
+    override def toString = std.toString
+  }
 
   type STATE = HyperVolumeStabilityState
 
