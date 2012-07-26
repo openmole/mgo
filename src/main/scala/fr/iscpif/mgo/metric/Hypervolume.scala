@@ -161,17 +161,10 @@ object Hypervolume {
           }
 
         q.volume(dimIndex) = hvol
-        println("q.IGNORE = " + q.ignore)
-        println("dimIndex " + dimIndex)
         if (q.ignore >= dimIndex) {
           q.area(dimIndex) = qPrevDimIndex.area(dimIndex)
         } else {
-
-          println("newLength " + newLength)
-          println("bounds " + bounds)
           q.area(dimIndex) = hvRecursive(dimIndex - 1, newLength, bounds)
-          println("q.area " + q.area)
-          println("qPrevDimIndex " + qPrevDimIndex)
 
           if (q.area(dimIndex) <= qPrevDimIndex.area(dimIndex)) {
             q.ignore = dimIndex
