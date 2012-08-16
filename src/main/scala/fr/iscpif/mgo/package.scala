@@ -89,5 +89,6 @@ package object mgo {
   type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination
   type Termination = termination.Termination
   type TerminationManifest = termination.TerminationManifest
+  type TimedTermination = termination.TimedTermination
   
 }
