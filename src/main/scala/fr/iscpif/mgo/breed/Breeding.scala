@@ -22,21 +22,9 @@ import java.util.Random
 
 trait Breeding { this: Evolution =>
   
-  def breed(archive: Population[G, MF])(implicit aprng: Random): IndexedSeq[G] = {
-
-    //Crossover sur matingPopulation puis mutation
-    def breed(acc: List[G] = List.empty): List[G] = {
-      if (acc.size >= lambda) acc
-      else {
-        val newIndividuals = crossover(
-          selection(archive).genome,
-          selection(archive).genome).
-        map { mutate(_) }.take(lambda).toIndexedSeq
-        breed(acc ++ newIndividuals)
-      }
-    }
-
-    breed().toIndexedSeq
-  }
-  
+  def breed(archive: Population[G, MF])(implicit aprng: Random): IndexedSeq[G] =  
+    Iterator.continually {
+      crossover(selection(archive).genome, selection(archive).genome).map { mutate(_) }
+    }.flatten.take(lambda).toIndexedSeq
+    
 }
