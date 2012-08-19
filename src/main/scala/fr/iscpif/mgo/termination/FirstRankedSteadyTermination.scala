@@ -24,7 +24,7 @@ import fr.iscpif.mgo.selection._
 import fr.iscpif.mgo.tools.Math
 
 trait FirstRankedSteadyTermination extends Termination {
-  self: Evolution { type MF <: Rank } =>
+  self: { type MF <: Rank } =>
   
   case class FirstRankedState(val steady: Int = 0, previousPopulation: Population[G, MF]) {
     override def toString = steady.toString

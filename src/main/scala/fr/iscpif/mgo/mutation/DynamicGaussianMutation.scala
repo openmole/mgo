@@ -23,7 +23,7 @@ import tools.Random._
 import java.util.Random
 
 trait DynamicGaussianMutation extends Mutation  { 
-  self: G with GenomeFactory { type G <: GAGenome with Sigma } =>
+  self: GenomeFactory { type G <: GAGenome with Sigma } =>
   
   //http://c-faq.com/lib/gaussian.html
   //http://www.developpez.net/forums/d331848/autres-langages/algorithmes/contribuez/generation-nombre-aleatoire-suivant-loi-gaussienne/

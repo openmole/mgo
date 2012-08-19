@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 reuillon
+ * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,20 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.crossover
+package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import java.util.Random
 
-trait AverageCrossover extends CrossOver with GAG with GenomeFactory {
-  
-  def crossover (g1: G, g2: G) (implicit aprng : Random) = {
-    val pds = aprng.nextDouble
-      
-    val newValues = IndexedSeq.tabulate (g1.values.size) (i => 
-      (pds*g1.values (i) + (1 - pds) * g2.values (i)) / 2)
-
-    IndexedSeq(genomeFactory(newValues))
-  }
+trait RankModifier extends Modifier {
+  type MF <: Rank 
 }
-

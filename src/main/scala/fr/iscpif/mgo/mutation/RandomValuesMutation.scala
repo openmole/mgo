@@ -21,8 +21,7 @@ import java.util.Random
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Random._
 
-trait RandomValuesMutation extends Mutation { 
-  self: G with GenomeFactory { type G <: GAGenome } =>
+trait RandomValuesMutation extends Mutation with GAG with GenomeFactory {
   
   def mutationRate: Double = 0.5
   

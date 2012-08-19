@@ -20,7 +20,6 @@ package fr.iscpif.mgo.termination
 import fr.iscpif.mgo._
 
 trait TimedTermination extends Termination {
-  self: Evolution =>
   
   type STATE = Long
   

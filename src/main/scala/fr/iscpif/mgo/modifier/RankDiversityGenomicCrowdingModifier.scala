@@ -20,8 +20,7 @@ package fr.iscpif.mgo.modifier
 import fr.iscpif.mgo._
 import metric._
 
-trait RankDiversityGenomicCrowdingModifier extends Modifier with Ranking with DiversityMetric {
-  self: G { type G <: GAGenome } => 
+trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier with DiversityModifier with GAG with Ranking with DiversityMetric {
   
   override type MF = Diversity with Rank
   

@@ -20,8 +20,7 @@ package fr.iscpif.mgo.termination
 import fr.iscpif.mgo._
 import math._
 
-trait HyperVolumeStabilityTermination extends Termination with ReferencePoint{
-  self: Evolution with Dominance {type MF <:  Rank}  =>
+trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with Dominance with RankModifier {
 
   def windowSize: Int
 

@@ -23,9 +23,8 @@ import fr.iscpif.mgo.tools.Random._
 
 
 // TODO: Self-Adaptive pour crossover; à chercher ?
-trait UniformCrossOver extends CrossOver { this: G with GenomeFactory { type G <: GAGenome } => 
+trait UniformCrossOver extends CrossOver with GAG with GenomeFactory {
     
-  
   def crossoverRate: Double = 0.5
 
   def crossover (g1: G, g2: G) (implicit aprng : Random) = {

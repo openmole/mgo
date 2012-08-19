@@ -56,6 +56,7 @@ package object mgo {
   type Elitism = elitism.Elitism
   type NonDominatedSortingElitism = elitism.NonDominatedSortingElitism
   type GAEvolution = ga.GAEvolution
+  type GAG = ga.GAG
   type GAGenome = ga.GAGenome
   type GAGenomeWithSigma = ga.GAGenomeWithSigma
   type NSGAIISigma = ga.NSGAIISigma
@@ -66,8 +67,10 @@ package object mgo {
   type ReferencePoint = metric.ReferencePoint
   type NadirReferencePoint = metric.NadirReferencePoint
   type ManualReferencePoint = metric.ManualReferencePoint
+  type DiversityModifier = modifier.DiversityModifier
   type Modifier = modifier.Modifier
   type NoneModifier = modifier.NoneModifier
+  type RankModifier = modifier.RankModifier
   type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
   type RankDiversityModifier = modifier.RankDiversityModifier
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation

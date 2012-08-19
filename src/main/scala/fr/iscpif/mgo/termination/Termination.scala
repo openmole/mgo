@@ -19,7 +19,7 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 
-trait Termination { self: Evolution =>
+trait Termination extends G with MF {
   
   type STATE
   

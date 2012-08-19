@@ -21,8 +21,8 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import scala.math._
 
-trait HypervolumeDiversity extends DiversityMetric with ReferencePoint { this: GAEvolution with Ranking with Dominance =>
-
+trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Dominance {
+  
   def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]) = {
 
    lazy val fronts = evaluated.map{_._1}.map{ ind => ind.fitness.values}

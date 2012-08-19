@@ -55,7 +55,7 @@ object Hypervolume {
    * that the reference point is [0, ..., 0].
    */
 
-  def apply(front: IndexedSeq[IndexedSeq[Double]],referencePoint:Seq[Double], d: Dominance):Double = {
+  def apply(front: IndexedSeq[IndexedSeq[Double]], referencePoint:Seq[Double], d: Dominance):Double = {
     def dominates(point: Seq[Double], other: Seq[Double]): Boolean = 
       d.isDominated(other, point)
 

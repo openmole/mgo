@@ -41,9 +41,8 @@ import fr.iscpif.mgo.tools.Math._
 import math._
 import java.util.Random
 
-trait SBXBoundedCrossover extends CrossOver { self: G with GenomeFactory { type G <: GAGenome } =>
+trait SBXBoundedCrossover extends CrossOver with GAG with GenomeFactory {
   
-     
   def distributionIndex: Double
   def crossoverRate: Double = 0.5
   

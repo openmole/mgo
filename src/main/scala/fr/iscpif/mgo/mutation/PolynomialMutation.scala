@@ -25,8 +25,7 @@ import scala.math._
  * Based on the source code of Jmetal library
  * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
  */
-trait PolynomialMutation extends Mutation {
-  self: G with GenomeFactory { type G <: GAGenome } =>
+trait PolynomialMutation extends Mutation with GAG with GenomeFactory {
 
   def mutationRate = 0.5
 

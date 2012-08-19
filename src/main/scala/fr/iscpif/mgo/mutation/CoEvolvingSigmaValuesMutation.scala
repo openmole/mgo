@@ -24,8 +24,8 @@ import java.util.Random
 import scala.math._
 
 
-trait CoEvolvingSigmaValuesMutation extends Mutation  { 
-  self: G with GenomeFactory {type G <: GAGenome with Sigma} =>
+trait CoEvolvingSigmaValuesMutation extends Mutation with GAG with GenomeFactory  { 
+  self: GenomeFactory {type G <: GAGenome with Sigma} =>
   
   override def mutate (genome : G) (implicit aprng : Random) : G = {
     // See on the web : http://www.nashcoding.com/2010/07/07/evolutionary-algorithms-the-little-things-youd-never-guess-part-1/#fnref-28-1

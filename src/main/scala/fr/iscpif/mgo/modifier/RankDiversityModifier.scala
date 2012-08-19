@@ -19,7 +19,7 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
-trait RankDiversityModifier extends Modifier with Ranking with DiversityMetric {
+trait RankDiversityModifier extends RankModifier with DiversityModifier with Ranking with DiversityMetric {
   
   override type MF = Diversity with Rank
   

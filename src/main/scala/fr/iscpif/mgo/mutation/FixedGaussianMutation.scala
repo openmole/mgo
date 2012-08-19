@@ -22,8 +22,7 @@ import tools.Random._
 import tools.Math._
 import java.util.Random
 
-trait FixedGaussianMutation extends Mutation {
-  self: G with GenomeFactory { type G <: GAGenome } =>
+trait FixedGaussianMutation extends Mutation with GAG with GenomeFactory {
    
   def sigma : Double
 
