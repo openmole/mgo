@@ -20,11 +20,14 @@ package fr.iscpif.mgo.breed
 import fr.iscpif.mgo._
 import java.util.Random
 
-trait Breeding extends Lambda with G with MF with Selection with CrossOver with Mutation {
+trait Breeding extends Lambda with G with MF with Selection with CrossOver with Mutation with GenomeFactory {
   
-  def breed(archive: Population[G, MF])(implicit aprng: Random): IndexedSeq[G] =  
+  def breed(archive: Population[G, MF])(implicit aprng: Random): IndexedSeq[G] = breed(archive, lambda)
+  
+  def breed(archive: Population[G, MF], size: Int)(implicit aprng: Random): IndexedSeq[G] =  
     Iterator.continually {
-      crossover(selection(archive).genome, selection(archive).genome).map { mutate(_) }
-    }.flatten.take(lambda).toIndexedSeq
+      if(archive.isEmpty) IndexedSeq(genomeFactory.random)
+      else crossover(selection(archive).genome, selection(archive).genome).map { mutate(_) }
+    }.flatten.take(size).toIndexedSeq
     
 }
