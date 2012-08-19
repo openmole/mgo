@@ -15,8 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo
 
-trait RankModifier {
-
+trait GManifest extends G {
+  implicit val gManifest: Manifest[G]
 }

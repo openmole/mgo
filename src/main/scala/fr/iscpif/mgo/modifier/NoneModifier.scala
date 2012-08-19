@@ -19,7 +19,7 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
-trait NoneModifier extends Modifier { this: Evolution =>
+trait NoneModifier extends Modifier {
   
   type MF = None.type
   

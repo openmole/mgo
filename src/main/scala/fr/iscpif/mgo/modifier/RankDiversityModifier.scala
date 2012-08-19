@@ -19,8 +19,8 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
-trait RankDiversityModifier extends Modifier { this: Evolution with Ranking with DiversityMetric =>
-
+trait RankDiversityModifier extends Modifier with Ranking with DiversityMetric {
+  
   override type MF = Diversity with Rank
   
   override def toPopulation(evaluated: IndexedSeq[Individual[G]]) = {  

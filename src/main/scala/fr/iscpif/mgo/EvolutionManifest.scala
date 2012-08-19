@@ -17,8 +17,7 @@
 
 package fr.iscpif.mgo
 
-trait EvolutionManifest{ this: Evolution =>
-  implicit val genomeManifest: Manifest[G]
+trait EvolutionManifest extends GManifest { this: Evolution =>
   implicit val individualManifest: Manifest[Individual[G]]
   implicit val populationManifest: Manifest[Population[G, MF]]
 }

@@ -58,9 +58,7 @@ trait Evolution extends Mutation
   
   def randomPopulation(evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] =
     toPopulation((0 until lambda).map{ _ => genomeFactory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
-  
-  def emptyPopulation: Population[G, MF] = toPopulation(IndexedSeq.empty)
-  
+    
   def stepListner(population: Population[G, MF], state: STATE) = {}
   
 }
