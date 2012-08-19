@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 reuillon
+ * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,25 +19,7 @@ package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
 import java.util.Random
-import fr.iscpif.mgo.tools.Random._
 
-
-// TODO: Self-Adaptive pour crossover; à chercher ?
-trait UniformCrossOver extends CrossOver { this: G with GenomeFactory { type G <: GAGenome } => 
-    
-  
-  def crossoverRate: Double = 0.5
-
-  def crossover (g1: G, g2: G) (implicit aprng : Random) = {
-    // False on echange, true on maintient
-    val rngValue = (0 until g1.content.size).map{x => !(aprng.nextDouble < crossoverRate)}
-    val offspringValues = (rngValue zip (g1.content zip g2.content)) map {
-      case (b, (g1e, g2e)) =>
-        if(b) (g1e, g2e) else (g2e, g1e)
-    }
-    
-    IndexedSeq(genomeFactory(offspringValues.map{_._1}),  genomeFactory(offspringValues.map{_._2}))
-  }
-
+trait NoneCrossOver extends CrossOver { this: G => 
+  def crossover (g1: G, g2: G) (implicit aprng : Random) = IndexedSeq(g1, g2)
 }
-

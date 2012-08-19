@@ -20,12 +20,16 @@ package fr.iscpif.mgo
 import Individual._
 import java.util.Random
 
-trait Evolution extends Mutation with CrossOver with Termination with Selection with Modifier { self =>
+trait Evolution extends Mutation 
+     with CrossOver 
+     with Termination 
+     with Selection 
+     with Modifier 
+     with Lambda 
+     with G 
+     with MF 
+     with GenomeFactory { self =>
 
-  type G <: Genome
-  type MF 
-
-  implicit val factory: Factory[G]
 
   case class EvolutionState(
     val population: Population[G, MF],
@@ -33,8 +37,7 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
     val terminationState: STATE,
     val terminated: Boolean
   )
-  
-  def lambda: Int
+ 
   
   def run(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Iterator[EvolutionState] = 
     Iterator.iterate(EvolutionState(population, 0, initialState(population), false)){
@@ -54,7 +57,7 @@ trait Evolution extends Mutation with CrossOver with Termination with Selection 
   def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF]
   
   def randomPopulation(evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] =
-    toPopulation((0 until lambda).map{ _ => factory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
+    toPopulation((0 until lambda).map{ _ => genomeFactory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
   
   def emptyPopulation: Population[G, MF] = toPopulation(IndexedSeq.empty)
   

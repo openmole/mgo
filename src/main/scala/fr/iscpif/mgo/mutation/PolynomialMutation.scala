@@ -26,13 +26,13 @@ import scala.math._
  * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
  */
 trait PolynomialMutation extends Mutation {
-  self: GAEvolution =>
+  self: G with GenomeFactory { type G <: GAGenome } =>
 
   def mutationRate = 0.5
 
   def distributionIndex: Double
 
-  override def mutate(genome: G)(implicit aprng: Random, factory: Factory[G]): G = {
+  override def mutate(genome: G)(implicit aprng: Random): G = {
     val newValues = genome.values map {
       v =>
         if (aprng.nextDouble <= mutationRate) {
@@ -61,6 +61,6 @@ trait PolynomialMutation extends Mutation {
         }
         v
     }
-    factory(genome.updatedValues(newValues))
+    genomeFactory(genome.updatedValues(newValues))
   }
 }

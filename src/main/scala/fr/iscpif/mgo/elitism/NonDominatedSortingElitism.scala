@@ -21,8 +21,8 @@ import annotation.tailrec
 import fr.iscpif.mgo._
 
 //Utiliser par NSGA2 et MO-CMA-ES
-trait NonDominatedSortingElitism extends Elitism { 
-  self: GAEvolution with Archive with Dominance { type MF <: Diversity with Rank } =>
+trait NonDominatedSortingElitism extends Elitism with Mu { 
+  /*self: MF {*/ type MF <: Diversity with Rank // } =>
 
   def elitism(population: Population[G, MF]): Population[G, MF] = {
     
@@ -32,7 +32,7 @@ trait NonDominatedSortingElitism extends Elitism {
 
       //FIXME: No idea why but it is not tailrec
       def addFronts[I](fronts: List[Population[G, MF]], acc: List[Population[G, MF]], size: Int = 0): (Population[G, MF], Population[G, MF]) = {
-        if (size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
+        if (size + fronts.head.size < size) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
         else (fronts.headOption.getOrElse(Population.empty), acc.flatten)
       }
 

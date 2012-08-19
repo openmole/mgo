@@ -41,6 +41,7 @@ package object mgo {
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover
   type CrossOver = crossover.CrossOver
+  type NoneCrossOver = crossover.NoneCrossOver
   type SBXBoundedCrossover = crossover.SBXBoundedCrossover
   type UniformCrossOver = crossover.UniformCrossOver
   type CrowdingDiversity = diversity.CrowdingDiversity
@@ -73,6 +74,7 @@ package object mgo {
   type DynamicGaussianMutation = mutation.DynamicGaussianMutation
   type FixedGaussianMutation = mutation.FixedGaussianMutation
   type Mutation = mutation.Mutation
+  type NoneMutation = mutation.NoneMutation
   type RandomMutation = mutation.RandomMutation
   type RandomValuesMutation = mutation.RandomValuesMutation
   type Problem = problem.Problem

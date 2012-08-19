@@ -23,7 +23,7 @@ import java.util.Random
 // TODO : on ne peut pas etendre de operator, car on traite des individu ici et non pas des genomes :(
 // + pas generique car on utilise IndividualMG With With ... et il existe aussi Individual tout court ...
 // le operate est pas du tout generique
-trait Selection { this: Evolution =>
+trait Selection { this: G with MF =>
   def selection (individuals: Population[G, MF]) (implicit aprng : Random): Individual[G]
 }
 

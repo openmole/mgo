@@ -22,6 +22,6 @@ package fr.iscpif.mgo.mutation
 import fr.iscpif.mgo._
 import java.util.Random
 
-trait Mutation { this: Evolution =>
-  def mutate(genomes: G) (implicit aprng : Random, factory: Factory[G]): G
+trait Mutation { this: G =>
+  def mutate(genomes: G) (implicit aprng : Random): G
 }

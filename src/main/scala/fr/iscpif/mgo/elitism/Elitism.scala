@@ -19,6 +19,6 @@ package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
 
-trait Elitism { this: Evolution =>
+trait Elitism extends G with MF {
   def elitism(individuals: Population[G, MF]): Population[G, MF]
 }

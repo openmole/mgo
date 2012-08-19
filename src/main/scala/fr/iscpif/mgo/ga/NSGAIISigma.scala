@@ -24,7 +24,7 @@ trait NSGAIISigma extends NSGAII
 
   type G = GAGenomeWithSigma  
       
-  val factory = new GAGenomeWithSigmaFactory {
+  val genomeFactory = new GAGenomeWithSigmaFactory {
     def size = genomeSize
   }
   

@@ -22,7 +22,7 @@ import java.util.Random
 import fr.iscpif.mgo.tools.Random._
 
 trait MGBinaryTournamentSelection extends Selection { 
-  self: GAEvolution with MG {type MF <: Diversity with Rank} =>
+  self: G with MF {type MF <: Diversity with Rank} =>
 
   def selection(population: Population[G, MF])(implicit aprng: Random): Individual[G] =
     binaryTournament(population.content.random(aprng), population.content.random(aprng)).toIndividual

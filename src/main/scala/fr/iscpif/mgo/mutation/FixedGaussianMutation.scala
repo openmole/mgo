@@ -23,13 +23,13 @@ import tools.Math._
 import java.util.Random
 
 trait FixedGaussianMutation extends Mutation {
-  self: GAEvolution =>
+  self: G with GenomeFactory { type G <: GAGenome } =>
    
   def sigma : Double
 
-  override def mutate (genome: G) (implicit aprng: Random, factory: Factory[G]) : G = {
+  override def mutate (genome: G) (implicit aprng: Random) : G = {
     val newValues = genome.values map (v => 
       clamp (v + (aprng.nextGaussian * sigma), 0, 1))
-    factory(genome.updatedValues(newValues))
+    genomeFactory(genome.updatedValues(newValues))
   }  
 }

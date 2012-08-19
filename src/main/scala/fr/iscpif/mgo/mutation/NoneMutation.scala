@@ -17,24 +17,9 @@
 
 package fr.iscpif.mgo.mutation
 
-import java.util.Random
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Random._
+import java.util.Random
 
-trait RandomMutation extends Mutation  { 
-  self: G with GenomeFactory { type G <: GAGenome } =>
-    
-  def mutationRate = 0.5
-
-  override def mutate(genome: G)(implicit aprng: Random): G = {
-    val randomGenome = genomeFactory.random
-    val valMutationZipped = genome.content.zip(randomGenome.content)   
-    val newValues = valMutationZipped map { 
-      case(v,vrg) => 
-        if (aprng.nextDouble < mutationRate) vrg else v 
-    }
-    
-    genomeFactory(newValues)
-  }
-  
+trait NoneMutation extends Mutation { self: G =>
+  override def mutate(genome: G)(implicit aprng: Random): G = genome
 }

@@ -41,7 +41,7 @@ import fr.iscpif.mgo.tools.Math._
 import math._
 import java.util.Random
 
-trait SBXBoundedCrossover extends CrossOver { self: GAEvolution =>
+trait SBXBoundedCrossover extends CrossOver { self: G with GenomeFactory { type G <: GAGenome } =>
   
      
   def distributionIndex: Double
@@ -49,7 +49,7 @@ trait SBXBoundedCrossover extends CrossOver { self: GAEvolution =>
   
   def crossover (
     g1: G, 
-    g2: G) (implicit aprng : Random, factory: Factory[G]) = {
+    g2: G) (implicit aprng : Random) = {
     val numberOfVariables = g1.content.size
       
     //crossover probability
@@ -99,7 +99,7 @@ trait SBXBoundedCrossover extends CrossOver { self: GAEvolution =>
         }
       } else(g1.content zip g2.content)
     }
-    IndexedSeq(factory(offspring.map{_._1}),  factory(offspring.map{_._2}))
+    IndexedSeq(genomeFactory(offspring.map{_._1}),  genomeFactory(offspring.map{_._2}))
   }
   
   

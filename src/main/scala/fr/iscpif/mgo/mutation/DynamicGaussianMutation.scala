@@ -23,15 +23,15 @@ import tools.Random._
 import java.util.Random
 
 trait DynamicGaussianMutation extends Mutation  { 
-  self: SigmaGAEvolution =>
+  self: G with GenomeFactory { type G <: GAGenome with Sigma } =>
   
   //http://c-faq.com/lib/gaussian.html
   //http://www.developpez.net/forums/d331848/autres-langages/algorithmes/contribuez/generation-nombre-aleatoire-suivant-loi-gaussienne/
   //http://www.taygeta.com/random/gaussian.html
-  override def mutate (genome : G) (implicit aprng : Random, factory: Factory[G]) : G = {
+  override def mutate (genome : G) (implicit aprng : Random) : G = {
     val newValues = (genome.values zip genome.sigma) map {
       case (v, s) => clamp (aprng.nextGaussian * s + v, 0, 1)
     }
-    factory(genome.updatedValues(newValues))
+    genomeFactory(genome.updatedValues(newValues))
   }
 }

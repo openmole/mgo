@@ -56,4 +56,23 @@ object TestFunctionSMSEMOEA extends App {
   res sortBy (_.metaFitness.rank) foreach {
     e => println(zdt.scale(e)._2.values.mkString(","))
   }
+  
+  
+  val breed = new Breeding with NoneCrossOver with NoneMutation with MGBinaryTournamentSelection {
+    type G = smsemoea.G
+    type MF = smsemoea.MF
+    def lambda = 10
+  }
+  
+  breed.breed(res)
+  
+  val elitism = new NonDominatedSortingElitism {
+    type G = smsemoea.G
+    type MF = smsemoea.MF
+    
+    def mu = 10
+  }
+  
+  elitism.elitism(res)
+  
 }

@@ -20,7 +20,7 @@ package fr.iscpif.mgo.breed
 import fr.iscpif.mgo._
 import java.util.Random
 
-trait Breeding { this: Evolution =>
+trait Breeding extends Lambda with G with MF with Selection with CrossOver with Mutation {
   
   def breed(archive: Population[G, MF])(implicit aprng: Random): IndexedSeq[G] =  
     Iterator.continually {

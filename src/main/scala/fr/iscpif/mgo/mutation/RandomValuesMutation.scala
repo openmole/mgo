@@ -22,11 +22,11 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Random._
 
 trait RandomValuesMutation extends Mutation { 
-  self: GAEvolution =>
+  self: G with GenomeFactory { type G <: GAGenome } =>
   
   def mutationRate: Double = 0.5
   
-  override def mutate(genome: G)(implicit aprng: Random, factory: Factory[G]): G = {
+  override def mutate(genome: G)(implicit aprng: Random): G = {
    
     /* FIXME Faire en sorte d'utiliser plutot un genome généré par buildRandomGenome, 
      * plutot qu'une valeur tiré au hasard avec aprng... */
@@ -34,7 +34,7 @@ trait RandomValuesMutation extends Mutation {
       if (aprng.nextDouble < mutationRate) aprng.nextDouble
       else v 
     }
-    factory(genome.updatedValues(newValues))
+    genomeFactory(genome.updatedValues(newValues))
   }
   
 }
