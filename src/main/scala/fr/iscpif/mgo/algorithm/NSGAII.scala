@@ -22,7 +22,7 @@ import java.util.Random
 import fr.iscpif.mgo._
 import scala.annotation.tailrec
 
-trait NSGAII extends GAEvolution with MG with Archive with Elitism with Breeding with DiversityMetric {
+trait NSGAII extends GAEvolution with Archive with Elitism with Breeding with DiversityMetric {
 
   
   override def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] = {

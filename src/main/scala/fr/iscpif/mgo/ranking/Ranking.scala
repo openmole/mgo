@@ -20,6 +20,6 @@ package fr.iscpif.mgo.ranking
 import fr.iscpif.mgo._
 import tools.Lazy
 
-trait Ranking { this: Evolution =>
+trait Ranking extends G {
   def rank(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Lazy[Int]]
 }

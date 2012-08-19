@@ -20,27 +20,17 @@ package fr.iscpif.mgo.ranking
 import fr.iscpif.mgo._
 import tools.Lazy
 
-object ParetoRanking {
-  
-  def apply[G](evaluated: IndexedSeq[Individual[G]], dominance: Dominance) = { 
+trait ParetoRanking extends Dominance with G {
+  def rank(evaluated: IndexedSeq[Individual[G]]) = { 
     evaluated.zipWithIndex.map { 
       case (indiv, index) =>
         Lazy(evaluated.zipWithIndex.filter {
-          case (_, index2) => index != index2
-        }.count { 
-          case(indiv2, _) => dominance.isDominated(indiv.fitness.values, indiv2.fitness.values)
-        })
+            case (_, index2) => index != index2
+          }.count { 
+            case(indiv2, _) => isDominated(indiv.fitness.values, indiv2.fitness.values)
+          })
     }
   }
-  
-  
-}
-
-
-trait ParetoRanking extends Ranking { this: Evolution with MG =>
-    
-  def rank(evaluated: IndexedSeq[Individual[G]]) = ParetoRanking(evaluated, this)
-  
 }
 
 
