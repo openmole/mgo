@@ -25,20 +25,18 @@ trait NonDominatedSortingElitism extends Elitism with Mu {
   /*self: MF {*/ type MF <: Diversity with Rank // } =>
 
   def elitism(population: Population[G, MF]): Population[G, MF] = {
-    
     if (population.size < mu) population
     else {
       val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { _._2: Population[G, MF] }
 
       //FIXME: No idea why but it is not tailrec
       def addFronts[I](fronts: List[Population[G, MF]], acc: List[Population[G, MF]], size: Int = 0): (Population[G, MF], Population[G, MF]) = {
-        if (size + fronts.head.size < size) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
+        if (size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
         else (fronts.headOption.getOrElse(Population.empty), acc.flatten)
       }
 
       val (lastFront, selected) = addFronts(fronts, List.empty)
 
-      
       (if (selected.size < mu) 
         selected ++ lastFront.sortBy(_.metaFitness.diversity()).reverse.slice(0, mu - selected.size) 
        else selected)
