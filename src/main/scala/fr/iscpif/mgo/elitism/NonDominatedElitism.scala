@@ -17,12 +17,10 @@
 
 package fr.iscpif.mgo.elitism
 
-import annotation.tailrec
 import fr.iscpif.mgo._
 
-//Utiliser par NSGA2 et MO-CMA-ES
-trait NonDominatedSortingElitism extends Elitism with Mu { 
-  /*self: MF {*/ type MF <: Diversity with Rank // } =>
+trait NonDominatedElitism extends Elitism with Mu { 
+  type MF <: Diversity with Rank
 
   def elitism(population: Population[G, MF]): Population[G, MF] = {
     if (population.size < mu) population

@@ -28,7 +28,7 @@ object PopulationElement {
     new PopulationElement[G, MF](i.genome, i.fitness, mf)
 }
 
-trait Population[+G, +MF]  {
+trait Population[+G, +MF] {
 
   def content: IndexedSeq[PopulationElement[G, MF]]
   def individuals: IndexedSeq[Individual[G]] = content map { _.toIndividual }

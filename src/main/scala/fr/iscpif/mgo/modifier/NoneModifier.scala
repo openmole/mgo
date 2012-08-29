@@ -23,7 +23,7 @@ trait NoneModifier extends Modifier {
   
   type MF = None.type
   
-  def toPopulation(e: IndexedSeq[Individual[G]]) =
+  def modify(e: IndexedSeq[Individual[G]]) =
     new Population[G, MF] {
       lazy val content = e.map{ PopulationElement(_, None) }
     }

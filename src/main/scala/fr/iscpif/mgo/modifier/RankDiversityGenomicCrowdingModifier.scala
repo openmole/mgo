@@ -24,7 +24,7 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier wi
   
   override type MF = Diversity with Rank
   
-  override def toPopulation(evaluated: IndexedSeq[Individual[G]]) = {  
+  override def modify(evaluated: IndexedSeq[Individual[G]]) = {  
     val genomeDiversity = CrowdingDistance(evaluated.map{_.genome.values})
     
     val diversityFitnesses = 

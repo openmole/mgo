@@ -19,7 +19,8 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
-trait Modifier extends G with MF {
-  def toPopulation(evaluated: IndexedSeq[Individual[G]]): Population[G, MF]
+trait Modifier extends G with MF with IndividualFilter {
+  def toPopulation(evaluated: IndexedSeq[Individual[G]]): Population[G, MF] = modify(filter(evaluated))
+  def modify(evaluated: IndexedSeq[Individual[G]]): Population[G, MF]
   def emptyPopulation: Population[G, MF] = toPopulation(IndexedSeq.empty)
 }

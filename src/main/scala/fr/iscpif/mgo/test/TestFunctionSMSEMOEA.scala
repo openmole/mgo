@@ -32,7 +32,7 @@ object TestFunctionSMSEMOEA extends App {
     new SMSEMOEASigma
       with MGBinaryTournamentSelection
       with HyperVolumeStabilityTermination
-      with NonDominatedSortingElitism
+      with NonDominatedElitism
       with CoEvolvingSigmaValuesMutation
       with SBXBoundedCrossover
       with HypervolumeDiversity

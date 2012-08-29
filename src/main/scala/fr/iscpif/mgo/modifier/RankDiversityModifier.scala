@@ -23,7 +23,7 @@ trait RankDiversityModifier extends RankModifier with DiversityModifier with Ran
   
   override type MF = Diversity with Rank
   
-  override def toPopulation(evaluated: IndexedSeq[Individual[G]]) = {  
+  override def modify(evaluated: IndexedSeq[Individual[G]]) = {  
     val ranks = rank(evaluated)
     val distances = diversity(evaluated zip ranks)
       

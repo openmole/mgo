@@ -279,7 +279,7 @@ object Hypervolume {
       node.prev(index) = lastButOne //set the last element as the new one
       sentinel.prev(index) = Some(node)
       lastButOne match {
-        case None => println("empty last But One")
+        case None => 
         case Some(n) => n.next(index) = Some(node)
       }
     }
@@ -293,7 +293,7 @@ object Hypervolume {
         node.prev(index) = lastButOne //set the last element as the new one
         sentinel.prev(index) = Some(node)
         lastButOne match {
-          case None => println("empty last but one")
+          case None => 
           case Some(n) => n.next(index) = Some(node)
         }
       }

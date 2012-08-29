@@ -16,6 +16,4 @@
  */
 package fr.iscpif.mgo
 
-trait Archive extends Mu { this: Evolution  =>
- 
-}
+trait Archive extends Mu 

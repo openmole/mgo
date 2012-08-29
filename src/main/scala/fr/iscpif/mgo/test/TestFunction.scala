@@ -32,7 +32,7 @@ object TestFunction extends App {
       new NSGAIISigma
                      with MGBinaryTournamentSelection
                      with CrowdingStabilityTermination
-                     with NonDominatedSortingElitism
+                     with NonDominatedElitism
                      with CoEvolvingSigmaValuesMutation
                      with SBXBoundedCrossover
                      with CrowdingDiversity
