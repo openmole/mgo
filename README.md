@@ -65,4 +65,3 @@ Maven dependency
       <url>http://maven.iscpif.fr/public/</url>
     </repository>
 
-

@@ -1,0 +1,139 @@
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>fr.iscpif</groupId>
+    <packaging>jar</packaging>
+    <artifactId>mgo</artifactId>
+    <version>1.33-SNAPSHOT</version>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${lib.org.scala-lang.scala.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest</artifactId>
+            <version>1.4.RC2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <properties>
+        <lib.org.scala-lang.scala.version>2.9.2</lib.org.scala-lang.scala.version>
+        <maven.scala.version>${lib.org.scala-lang.scala.version}</maven.scala.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.scala-tools</groupId>
+                <artifactId>maven-scala-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>scala-compile-first</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                            <goal>compile</goal>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <args>
+                        <arg>-Ydependent-method-types</arg>
+                    </args>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/*Spec.class</include>
+                    </includes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>2.4.3</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <name>${project.artifactId} ${project.version}</name>
+
+    <distributionManagement>
+        <repository>
+            <id>maven.iscpif.fr</id>
+            <url>http://maven.iscpif.fr/releases</url>
+        </repository>
+        <snapshotRepository>
+            <id>maven.iscpif.fr</id>
+            <url>http://maven.iscpif.fr/snapshots</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+    <scm>
+        <connection>scm:git:git://sources.iscpif.fr:mgo</connection>
+        <developerConnection>scm:git:gitosis@sources.iscpif.fr:mgo</developerConnection>
+        <url>git://sources.iscpif.fr:mgo</url>
+    </scm>
+
+
+    <repositories>
+        <!-- Iscpif repository  -->
+        <repository>
+            <id>maven.iscpif.fr</id>
+            <name>ISCPIF repository</name>
+            <url>http://maven.iscpif.fr/public/</url>
+        </repository>
+        <repository>
+            <id>snapshot.maven.iscpif.fr</id>
+            <name>ISCPIF repository</name>
+            <url>http://maven.iscpif.fr/public-snapshots/</url>
+        </repository>
+
+        <repository>
+            <id>scala-tools.org</id>
+            <name>Scala repository</name>
+            <url>http://scala-tools.org/repo-releases/</url>
+        </repository>
+        <repository>
+            <id>Scala snapshots</id>
+            <name>Scala Repo Snapshots</name>
+            <url>http://scala-tools.org/repo-snapshots/</url>
+        </repository>
+
+    </repositories>
+
+</project>
+
+
+
+

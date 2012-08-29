@@ -2,7 +2,7 @@ organization := "fr.iscpif"
 
 name := "mgo"
 
-version := "1.33"
+version := "1.32-SNAPSHOT"
 
 scalaVersion := "2.9.2"
 
@@ -13,5 +13,15 @@ resolvers ++= Seq(
   "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 )
 
-
 seq(netbeans.NetbeansTasks.netbeansSettings:_*)
+
+//publishMavenStyle := true
+
+publishTo <<= version { (v: String) =>
+  val maven = "http://maven.iscpif.fr/"
+  if (v.trim.endsWith("SNAPSHOT")) 
+    Some("snapshots" at maven + "snapshots/") 
+  else
+    Some("releases"  at maven + "release/")
+}
+
