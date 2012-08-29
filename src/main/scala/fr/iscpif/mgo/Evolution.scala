@@ -20,6 +20,9 @@ package fr.iscpif.mgo
 import Individual._
 import java.util.Random
 
+/**
+ * Trait evolution provide the feature to define an evolutionary algorithm
+ */
 trait Evolution extends Mutation 
      with CrossOver 
      with Termination 
@@ -31,14 +34,28 @@ trait Evolution extends Mutation
      with GenomeFactory { self =>
 
 
+  /** 
+   * Represent a state of the evolution algorithm
+   */
   case class EvolutionState(
+    /// The current population of solution
     val population: Population[G, MF],
+    /// The number of the generation
     val generation: Int,
+    /// The state maintained for the termination criterium
     val terminationState: STATE,
+    /// true if the termination criterium is met false otherwhise
     val terminated: Boolean
   )
  
-  
+  /**
+   * Run the evolutionary algorithm
+   * 
+   * @param population the initial population
+   * @param evaluator the fitness evaluation function
+   * @param aprng the random number generator
+   * @return an iterator over the states of the evolution
+   */
   def run(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Iterator[EvolutionState] = 
     Iterator.iterate(EvolutionState(population, 0, initialState(population), false)){
       s => 
