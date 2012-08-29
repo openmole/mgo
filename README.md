@@ -53,16 +53,16 @@ Example
 Maven dependency
 ----------------
 
-<dependency>
-  <groupId>fr.iscpif</groupId>
-  <artifactId>mgo</artifactId>
-  <version>1.XX</version>
-</dependency>
-
-<repository>
-  <id>maven.iscpif.fr</id>
-  <name>ISC-PIF Repository</name>
-  <url>http://maven.iscpif.fr/public/</url>
-</repository>
+    <dependency>
+      <groupId>fr.iscpif</groupId>
+      <artifactId>mgo</artifactId>
+      <version>1.XX</version>
+    </dependency>
+    
+    <repository>
+      <id>maven.iscpif.fr</id>
+      <name>ISC-PIF Repository</name>
+      <url>http://maven.iscpif.fr/public/</url>
+    </repository>
 
 
