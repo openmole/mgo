@@ -19,6 +19,10 @@ package fr.iscpif.mgo.ga
 
 import fr.iscpif.mgo._
 
+/**
+ * Implementation of the NSGAII algorithm using genome with auto-adaptive sigma
+ * values for the mutation
+ */
 trait NSGAIISigma extends NSGAII 
                      with SigmaGAEvolution {
 

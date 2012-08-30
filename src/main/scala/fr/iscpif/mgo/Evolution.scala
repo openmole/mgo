@@ -53,7 +53,6 @@ trait Evolution extends Mutation
    * 
    * @param population the initial population
    * @param evaluator the fitness evaluation function
-   * @param aprng the random number generator
    * @return an iterator over the states of the evolution
    */
   def run(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Iterator[EvolutionState] = 
@@ -64,18 +63,40 @@ trait Evolution extends Mutation
         EvolutionState(newPop, s.generation + 1, newState, stop)                        
     }
   
-  
+  /** 
+   * Run the evlutionary algorithm
+   * 
+   * @param evaluator the fitness evaluator
+   * @return an iterator over the states of the evolution
+   */
   def run(evaluator: G => Fitness)(implicit aprng: Random): Iterator[EvolutionState] = 
     run(randomPopulation(evaluator), evaluator)
   
+  /**
+   * Run the evlutionary algorithm
+   * 
+   * @param problem an optimization problem to solve
+   */
   def run[P <: Problem {type G >: self.G}](problem: P)(implicit aprng: Random): Iterator[EvolutionState] = 
     run(problem.apply _)
   
+  /**
+   * Evolve one step
+   * 
+   * @param population the current population
+   * @param evaluator the fitness evaluation function
+   * @return a new population of evaluated solutions
+   * 
+   */
   def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF]
   
+  /**
+   * Generate an random population
+   * 
+   * @param evaluator the fitness evaluation function
+   * @return a random population of evaluated solutions
+   */
   def randomPopulation(evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] =
     toPopulation((0 until lambda).map{ _ => genomeFactory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
-    
-  def stepListner(population: Population[G, MF], state: STATE) = {}
   
 }

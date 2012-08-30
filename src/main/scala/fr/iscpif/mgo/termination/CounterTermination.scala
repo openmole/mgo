@@ -19,13 +19,18 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 
+/**
+ * Stop after a finite number of state
+ */
 trait CounterTermination extends Termination {
   
-   type STATE = Int
+  /// Number of steps before the algorithm stops
+  def steps: Int
+  
+  type STATE = Int
   
   def initialState(p: Population[G, MF]) = 0
-  
-  def maxStep: Int
+    
   def terminated(population: Population[G, MF], step: STATE) = 
-    (step >= maxStep, step + 1)
+    (step >= steps, step + 1)
 }

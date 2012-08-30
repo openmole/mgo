@@ -21,6 +21,9 @@ import java.util.Random
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Random._
 
+/**
+ * Randomly changes components with a uniformly drawn number
+ */
 trait RandomMutation extends Mutation with GAG with GenomeFactory {
     
   def mutationRate = 0.5

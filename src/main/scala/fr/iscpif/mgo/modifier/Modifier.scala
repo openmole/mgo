@@ -19,8 +19,31 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
+/**
+ * The modifier layer decorates individuals with a meta-fitness which is function of
+ * the population.
+ */
 trait Modifier extends G with MF with IndividualFilter {
-  def toPopulation(evaluated: IndexedSeq[Individual[G]]): Population[G, MF] = modify(filter(evaluated))
-  def modify(evaluated: IndexedSeq[Individual[G]]): Population[G, MF]
+  /**
+   * Generate a population from a set of indiviuals that is filtered in a first time
+   * 
+   * @param individuals a set of individual
+   * @return the filtred population with the meta-fitness for each individual
+   */
+  def toPopulation(individuals: IndexedSeq[Individual[G]]): Population[G, MF] = modify(filter(individuals))
+  
+  /**
+   * Generate a population from a set of indiviuals
+   * 
+   * @param individuals a set of individual
+   * @return the population with the meta-fitness for each individual
+   */
+  def modify(individuals: IndexedSeq[Individual[G]]): Population[G, MF]
+  
+  /**
+   * Build an empty population
+   * 
+   * @return an empty population
+   */
   def emptyPopulation: Population[G, MF] = toPopulation(IndexedSeq.empty)
 }

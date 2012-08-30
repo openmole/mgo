@@ -17,4 +17,7 @@
 
 package fr.iscpif.mgo
 
+/**
+ * Cake layer with the manifests of the types used by the evolution
+ */
 trait EvolutionManifest extends GManifest with PopulationManifest with IndividualManifest

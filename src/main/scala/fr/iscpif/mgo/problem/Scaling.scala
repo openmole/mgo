@@ -19,11 +19,23 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 
+/**
+ * Layer to scale a sequence of Double in [0.0, 1.0]
+ */
 trait Scaling {
   
+  /// Minimum scaled value in the correct order
   def min: Seq[Double]
+  
+  /// Maximum scaled value in the correct order
   def max: Seq[Double]
   
+  /**
+   * Scale a vector according to the minimun and maximum
+   * 
+   * @param x the vector to scale
+   * @return the scaled vector
+   */
   def scale(x: Seq[Double]) =
     (x zip (min zip max)) map { case(x, (min, max)) => x scale (min, max) }
     

@@ -19,6 +19,9 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
+/**
+ * Layer for modifier that adds a rank to the meta-fitness
+ */
 trait RankModifier extends Modifier {
   type MF <: Rank 
 }

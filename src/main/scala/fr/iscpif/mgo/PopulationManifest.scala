@@ -17,6 +17,10 @@
 
 package fr.iscpif.mgo
 
+/**
+ * Layer of the cake that exposes the manifest for the population
+ */
 trait PopulationManifest extends G with MF {
+  /// Manifest for the population type
   implicit val populationManifest: Manifest[Population[G, MF]]
 }

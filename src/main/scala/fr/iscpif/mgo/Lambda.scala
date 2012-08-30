@@ -17,6 +17,10 @@
 
 package fr.iscpif.mgo
 
+/**
+ * The cake layer with the size of the offspring for the evolution
+ */
 trait Lambda {
+  /// The size of the offspring
   def lambda: Int
 }

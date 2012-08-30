@@ -22,13 +22,20 @@ import tools.Random._
 import tools.Math._
 import java.util.Random
 
+/**
+ * Mutation of a genome based on gausian distribution arrount the genome with 
+ * fixed sigma values.
+ */
 trait FixedGaussianMutation extends Mutation with GAG with GenomeFactory {
    
-  def sigma : Double
+  def sigma : Seq[Double]
 
   override def mutate (genome: G) (implicit aprng: Random) : G = {
-    val newValues = genome.values map (v => 
-      clamp (v + (aprng.nextGaussian * sigma), 0, 1))
+    val newValues = (genome.values zip sigma) map {
+      case (v, s) => 
+        clamp (v + (aprng.nextGaussian * s), 0, 1)
+ 
+    }
     genomeFactory(genome.updatedValues(newValues))
   }  
 }

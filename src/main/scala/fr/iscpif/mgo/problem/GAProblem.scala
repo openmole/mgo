@@ -19,15 +19,44 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 
+/**
+ * Cake to define a problem for a genetic algorithm
+ */
 trait GAProblem extends Problem with Scaling {
   type G = GAGenome
   
+  /**
+   * Compute the fitness value from a genome values.
+   * 
+   * @param g the genome to evaluate
+   * @return the fitness for this genome
+   */
   def apply(g: G): Fitness = new Fitness {
     val values = apply(scale(g.values).toIndexedSeq)
   }
   
+  /**
+   * Scale the genenome from [0.0, 1.0] to the correct scale for the fitness
+   * evaluation
+   * 
+   * @param g the genome to scale
+   * @return the scaled genome
+   */
   def scale(g: G): Seq[Double] = scale(g.values)
+  
+  /**
+   * Scale a population element genome from [0.0, 1.0] to the correct scale
+   * 
+   * @param i the population element to scale
+   * @return the scaled population element
+   */
   def scale[MF](i: PopulationElement[G, MF]): (Seq[Double], Fitness, MF) = (scale(i.genome), i.fitness, i.metaFitness)
   
+  /**
+   * Compute the fitness for a point
+   * 
+   * @param x the point to evaluate
+   * @return the fitness of this point
+   */
   def apply(x: IndexedSeq[Double]): IndexedSeq[Double]
 }

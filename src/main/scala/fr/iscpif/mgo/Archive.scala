@@ -17,6 +17,6 @@
 package fr.iscpif.mgo
 
 /**
- * Archive based algorithm
+ * Cake layer for archive based algorithms
  */
 trait Archive extends Mu 

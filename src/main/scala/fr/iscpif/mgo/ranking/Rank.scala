@@ -17,23 +17,30 @@
 
 package fr.iscpif.mgo.ranking
 
-import fr.iscpif.mgo.dominance._
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 
 object Rank {
   
-  def firstRanked[G, MF <: Rank](individuals: Population[G, MF]): IndexedSeq[PopulationElement[G, MF]] = {
-    if(individuals.isEmpty) individuals
+  /**
+   * Compute the lower ranked elements in a population of ranked individuals.
+   * 
+   * @param population the population
+   * @return the lower ranked elements
+   */
+  def firstRanked[G, MF <: Rank](population: Population[G, MF]): IndexedSeq[PopulationElement[G, MF]] = {
+    if(population.isEmpty) population
     else {
-      val ranks = individuals.map{_.metaFitness.rank()}
-      val firstRank = ranks.min
-      individuals filter { i => i.metaFitness.rank == firstRank }
+      val firstRank =  population.map{_.metaFitness.rank()}.min
+      population filter { i => i.metaFitness.rank == firstRank }
     }
   }
   
 }
 
+/**
+ * Definition of a rank
+ */
 trait Rank {
   def rank: Lazy[Int]
 }

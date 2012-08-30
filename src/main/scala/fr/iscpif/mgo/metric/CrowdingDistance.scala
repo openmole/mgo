@@ -20,8 +20,20 @@ package fr.iscpif.mgo.metric
 
 import fr.iscpif.mgo.tools.Lazy
 
+/**
+ * Crowding distance computation see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T. 
+ * A fast elitist non-dominated sorting genetic algorithm for multi-objective 
+ * optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
+ */
 object CrowdingDistance {
   
+  /**
+   * Compute the crowding distance
+   * 
+   * @param data the set of point
+   * @return the crowding distance of each point in the same order as the input
+   * sequence
+   */
   def apply(data: IndexedSeq[Seq[Double]]): IndexedSeq[Lazy[Double]] = {
     if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
     else {         

@@ -15,6 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package fr.iscpif.mgo.crossover
+
+import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Math._
+import math._
+import java.util.Random
+
 /**
  * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :
  * 
@@ -32,15 +39,6 @@
  * http://www.iitk.ac.in/kangal/codes.shtml
  *  
  */
-
-
-package fr.iscpif.mgo.crossover
-
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Math._
-import math._
-import java.util.Random
-
 trait SBXBoundedCrossover extends CrossOver with GAG with GenomeFactory {
   
   def distributionIndex: Double

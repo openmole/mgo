@@ -30,13 +30,12 @@ object TestFunction extends App {
   
   val nsga2 =
       new NSGAIISigma
-                     with MGBinaryTournamentSelection
+                     with BinaryTournamentSelection
                      with CrowdingStabilityTermination
                      with NonDominatedElitism
                      with CoEvolvingSigmaValuesMutation
                      with SBXBoundedCrossover
                      with CrowdingDiversity
-                     with ManualReferencePoint
                      with ParetoRanking
                      with StrictDominance
                      with RankDiversityModifier {

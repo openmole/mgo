@@ -37,8 +37,14 @@ object Individual {
   
 }
 
+/**
+ * An individual of the evolution
+ */
 trait Individual[+G] {
+  /// The genome of this individual
   def genome: G
+  
+  /// The fitness evaluated for the genome
   def fitness: Fitness
   
   def toTuple = genome -> fitness

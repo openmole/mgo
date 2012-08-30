@@ -20,14 +20,22 @@ package fr.iscpif.mgo.breed
 import fr.iscpif.mgo._
 import java.util.Random
 
+/**
+ * Layer of the cake for the breeding part of the evolution algorithm
+ */
 trait Breeding extends Lambda with G with MF with Selection with CrossOver with Mutation with GenomeFactory {
   
-  def breed(archive: Population[G, MF])(implicit aprng: Random): IndexedSeq[G] = breed(archive, lambda)
-  
-  def breed(archive: Population[G, MF], size: Int)(implicit aprng: Random): IndexedSeq[G] =  
+  /**
+   * Breed genomes from a population
+   * 
+   * @param population the population from which genomes are breeded
+   * @param size the size of the breeded set
+   * @return the breeded genomes
+   */
+  def breed(population: Population[G, MF], size: Int = lambda)(implicit aprng: Random): IndexedSeq[G] =  
     Iterator.continually {
-      if(archive.isEmpty) IndexedSeq(genomeFactory.random)
-      else crossover(selection(archive).genome, selection(archive).genome).map { mutate(_) }
+      if(population.isEmpty) IndexedSeq(genomeFactory.random)
+      else crossover(selection(population).genome, selection(population).genome).map { mutate(_) }
     }.flatten.take(size).toIndexedSeq
     
 }

@@ -19,8 +19,13 @@ package fr.iscpif.mgo.ga
 
 import fr.iscpif.mgo._
 
+/**
+ * Base of the cake for a genetic algorithm evolutions (algorithms evolving
+ * sequences of doubles).
+ */
 trait GAEvolution extends Evolution { self =>
   type G <: GAGenome
   
+  /// Size of the generated solutions
   def genomeSize: Int
 }

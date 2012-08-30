@@ -20,6 +20,17 @@ package fr.iscpif.mgo.diversity
 import fr.iscpif.mgo._
 import tools.Lazy
 
+/**
+ * Layer of the cake that compute a diversity metric for a set of individuals
+ */
 trait DiversityMetric extends G with Ranking {
-  def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]): IndexedSeq[Lazy[Double]]
+  
+  /**
+   * Compute the diversity of the individual
+   * 
+   * @param individuals a set of individual
+   * @return a diversity sequence in the diversity of the individual i at the
+   * position i
+   */
+  def diversity(individuals: IndexedSeq[(Individual[G], Lazy[Int])]): IndexedSeq[Lazy[Double]]
 }

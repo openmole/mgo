@@ -17,5 +17,5 @@ package fr.iscpif.mgo.metric
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 trait ReferencePoint {
-  def referencePoint(front: IndexedSeq[IndexedSeq[Double]]): Seq[Double]
+  def referencePoint: Seq[Double]
 }

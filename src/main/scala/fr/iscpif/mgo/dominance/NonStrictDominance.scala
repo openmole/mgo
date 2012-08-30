@@ -19,12 +19,12 @@ package fr.iscpif.mgo.dominance
 
 import fr.iscpif.mgo._
 
+/**
+ * A point dominates another if all its objective are smaller
+ */
 trait NonStrictDominance extends Dominance {
 
-  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean = {
-    for((g1, g2) <- p1 zip p2) {
-      if(g1 <= g2) return false
-    }   
-    true
-  }
+  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean = 
+    (p1 zip p2).forall { case (g1, g2) => g1 > g2 }
+
 }

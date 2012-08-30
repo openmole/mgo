@@ -17,9 +17,11 @@
 
 package fr.iscpif.mgo.ga
 
-import fr.iscpif.mgo.Factory
-import java.util.Random
+import fr.iscpif.mgo._
 
+/**
+ * Genome for genetic algorithm with an autoadaptative sigma component
+ */
 case class GAGenomeWithSigma(
   val values: IndexedSeq[Double],
   val sigma: IndexedSeq[Double]) extends GAGenome with Sigma {

@@ -17,6 +17,9 @@
 
 package fr.iscpif.mgo
 
+/**
+ * The cake layer for the genome factory
+ */
 trait GenomeFactory extends G {
   def genomeFactory: Factory[G]
 }

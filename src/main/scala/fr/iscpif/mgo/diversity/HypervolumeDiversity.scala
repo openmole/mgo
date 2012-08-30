@@ -21,13 +21,16 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import scala.math._
 
+/**
+ * Diversity computed from an hypervolume contribution metric
+ * 
+ * @see Hypervolume
+ */
 trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Dominance {
   
   def diversity(evaluated: IndexedSeq[(Individual[G], Lazy[Int])]) = {
 
    lazy val fronts = evaluated.map{_._1}.map{ ind => ind.fitness.values}
-
-   lazy val rp = referencePoint(fronts)
 
    // Lazy method computation of global contribution for all front
     //Class individual by group of rank
@@ -36,19 +39,24 @@ trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Domi
       case (i,r,index) => r()}.values
 
     //Return contribution
-    val contributionByPoint = groupOfFront.map{ front =>  computeHypervolume(front, rp)}.toIndexedSeq
+    val contributionByPoint = groupOfFront.map{ front =>  computeHypervolume(front, referencePoint)}.toIndexedSeq
     //Merge group of front, and reclass individual by initial index
     val orderingByInitialIndex = contributionByPoint.flatten.sortBy{case (contribution,index) => index}
     //return only the contribution
     orderingByInitialIndex.map{case (contribution,index) => contribution}
   }
 
+  /**
+   * Shadow each element of a set
+   */
   def shadowMap[A, B](xs: IndexedSeq[A])(f: A => B) = {
     val ys = xs map f
     for (i <- ys.indices; (as, bs) = ys splitAt i) yield (as ++ bs.tail , i)
   }
 
-  //Compute for each front
+  /**
+   * Compute the hypervolume contribution for each front
+   */ 
   def computeHypervolume (front:IndexedSeq[(Individual[G],Lazy[Int],Int)],referencePoint:Seq[Double]):IndexedSeq[(Lazy[Double],Int)] = {
 
    //return an indexedSeq of (IndexedSeq[Double],index)

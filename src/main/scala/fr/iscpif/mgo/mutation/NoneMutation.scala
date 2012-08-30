@@ -20,6 +20,9 @@ package fr.iscpif.mgo.mutation
 import fr.iscpif.mgo._
 import java.util.Random
 
+/**
+ * Mutation that doesn't modify the genome.
+ */
 trait NoneMutation extends Mutation { self: G =>
   override def mutate(genome: G)(implicit aprng: Random): G = genome
 }

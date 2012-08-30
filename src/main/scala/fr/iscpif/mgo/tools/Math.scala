@@ -19,11 +19,15 @@ package fr.iscpif.mgo.tools
 import scala.math.{max, min}
 import math._
 
+/**
+ * Mathematical tools for the library
+ */
 object Math {
   
-  val epsilon = 1.0e-20
-  
-  final def clamp(value:Double, min_v:Double, max_v:Double) : Double = 
+  /// Definintion of epsilon
+  val epsilon = 1.0e-30
+
+  def clamp(value:Double, min_v:Double, max_v:Double) : Double = 
     max (min (value, max_v), min_v)
   
   def same(i1: Iterable[Double], i2: Iterable[Double]): Boolean = 

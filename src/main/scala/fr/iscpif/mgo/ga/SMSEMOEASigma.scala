@@ -19,4 +19,8 @@ package fr.iscpif.mgo.ga
 
 import fr.iscpif.mgo._
 
+/**
+ * Implementation of the SMSEMOEA algorithm with auto-adaptive sigma values for
+ * the mutation
+ */
 trait SMSEMOEASigma extends SMSEMOEA with NSGAIISigma

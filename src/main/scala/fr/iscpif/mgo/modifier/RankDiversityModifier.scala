@@ -19,6 +19,9 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
+/**
+ * Compute a meta-fitness with a rank an a diversity
+ */
 trait RankDiversityModifier extends RankModifier with DiversityModifier with Ranking with DiversityMetric {
   
   override type MF = Diversity with Rank

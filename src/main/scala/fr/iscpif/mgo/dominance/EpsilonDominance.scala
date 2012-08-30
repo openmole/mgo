@@ -17,16 +17,21 @@
 
 package fr.iscpif.mgo.dominance
 
-import fr.iscpif.mgo.Fitness
+import fr.iscpif.mgo._
 
+/**
+ * A point is dominated if all its objectif are above another point in a range
+ * of epsilon A.G. Hernández-Díaz, L.V. Santana-Quintero, C.A.C. Coello,  and 
+ * J.M. Luque,   "Pareto-adaptive epsilon-dominance", 
+ *  presented at Evolutionary Computation, 2007, pp.493-517. 
+ */
 trait EpsilonDominance extends Dominance { 
 
   def epsilons: Seq[Double]
   
-  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean = {
-    for(((g1, g2), e) <- p1 zip p2 zip epsilons) {
-      if(g1 + e < g2) return false
-    }   
-    true
-  }
+  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean = 
+    (p1 zip p2 zip epsilons).forall { 
+      case(((g1, g2), e)) => g1 > e + g2
+    }
+
 }

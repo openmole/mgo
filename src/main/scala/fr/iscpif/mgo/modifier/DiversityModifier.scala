@@ -19,6 +19,9 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
+/**
+ * Layer of the cake that add diversity to the meta-fitness
+ */
 trait DiversityModifier extends Modifier {
   type MF <: Diversity 
 }

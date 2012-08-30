@@ -20,33 +20,16 @@ package fr.iscpif.mgo.termination
 import fr.iscpif.mgo._
 import math._
 
-trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with Dominance with RankModifier {
-
-  def windowSize: Int
-
-  def deviationEpsilon: Double
-
-  case class HyperVolumeStabilityState(val std: Double = Double.PositiveInfinity, val history: List[Double] = List.empty) {
-    override def toString = std.toString
-  }
-
-  type STATE = HyperVolumeStabilityState
-
-  def initialState(p: Population[G, MF]): STATE = new HyperVolumeStabilityState
+/**
+ * Terminates when the hypervolume contribution of the last ranked individuals
+ * in the population has been stabilized.
+ */
+trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with Dominance with RankModifier with StabilityTermination {
 
   def terminated(population: Population[G, MF], terminationState: STATE): (Boolean, STATE) = {
     val rankMax = population.map{_.metaFitness.rank()}.max
     val front = population.filter(_.metaFitness.rank() == rankMax).map{_.fitness.values}
-    val hv = Hypervolume(front, referencePoint(front), this)
-
-    val newState = (hv :: terminationState.history).slice(0, windowSize)
-    if (newState.size < windowSize) (false, new HyperVolumeStabilityState(history = newState))
-    else {
-      val avg = newState.sum / newState.size
-      val std = sqrt(newState.map {
-        v => pow(v - avg, 2)
-      }.sum)
-      (std < deviationEpsilon, new HyperVolumeStabilityState(std, newState))
-    }
+    val hv = Hypervolume(front, referencePoint, this)
+    stability(terminationState, hv)
   }
 }

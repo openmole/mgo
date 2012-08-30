@@ -8,11 +8,15 @@ package fr.iscpif.mgo.ga
 import fr.iscpif.mgo._
 import java.util.Random
 
+/**
+ * Factory associated with genomes with sigma
+ */
 trait GAGenomeWithSigmaFactory extends Factory[GAGenomeWithSigma] {
   
+  /// Size of the value part of the genome
   def size: Int
   
-  def apply(content: IndexedSeq[Double]) = {
+  def apply(content: GAGenomeWithSigma#T) = {
     assert(content.size / 2 == size)
     new GAGenomeWithSigma(
       content.slice(0, content.size / 2),

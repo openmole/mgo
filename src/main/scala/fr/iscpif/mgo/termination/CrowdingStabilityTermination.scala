@@ -20,30 +20,19 @@ package fr.iscpif.mgo.termination
 import fr.iscpif.mgo._
 import math._
 
-trait CrowdingStabilityTermination extends Termination with CrowdingDiversity with DiversityModifier {
-  
-  def windowSize: Int
-  def deviationEpsilon: Double
-  
-  case class CrowdingStabilityState(val std: Double = Double.PositiveInfinity, val history: List[Double] = List.empty) {
-    override def toString = std.toString
-  }
-  
-  type STATE = CrowdingStabilityState
-  
-  def initialState(p: Population[G, MF]): STATE = new CrowdingStabilityState
+/**
+ * Termination creterium computed from the variation of the maximum crowding distance
+ * among the population elements. It stop when this metric stabilize.
+ * 
+ * FIXME: take into account only the last ranked individual, pb it can be empty
+ * due to the filter on the positive infinity diversity
+ */
+trait CrowdingStabilityTermination extends Termination with CrowdingDiversity with DiversityModifier with StabilityTermination {
   
   def terminated(population: Population[G, MF], terminationState: STATE) : (Boolean, STATE) = {
     //val rankMax = population.map{_.metaFitness.rank()}.max
     val maxCrowding = population.map{_.metaFitness.diversity()}.filter(_ != Double.PositiveInfinity).max
-   
-    val newState = (maxCrowding :: terminationState.history).slice(0, windowSize)
-    if(newState.size < windowSize) (false, new CrowdingStabilityState(history = newState))
-    else {
-      val avg = newState.sum / newState.size
-      val std = sqrt(newState.map{ v => pow(v - avg, 2) }.sum)
-      (std < deviationEpsilon, new CrowdingStabilityState(std, newState))
-    } 
+    stability(terminationState, maxCrowding)
   }
   
 }

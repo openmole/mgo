@@ -18,7 +18,9 @@
 package fr.iscpif.mgo
 
 trait Genome {
+  /// Type for the internal representation of the genome
   type T
   
+  /// Internal structure of the genome
   def content: T
 }

@@ -19,6 +19,16 @@ package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
 
+/**
+ * Cake layer to eliminated elements of a population
+ */
 trait Elitism extends G with MF {
-  def elitism(individuals: Population[G, MF]): Population[G, MF]
+  
+  /**
+   * Reduce the number of elements of the population and return a new one
+   * 
+   * @param population the population to shrink
+   * @return the shrinked population
+   */
+  def elitism(population: Population[G, MF]): Population[G, MF]
 }

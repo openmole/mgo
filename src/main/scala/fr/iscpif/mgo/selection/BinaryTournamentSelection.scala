@@ -21,17 +21,29 @@ import fr.iscpif.mgo._
 import java.util.Random
 import fr.iscpif.mgo.tools.Random._
 
-trait MGBinaryTournamentSelection extends Selection { 
+/**
+ * Select the best ranked and if equal the more diverse individual between
+ * two individual randomly drawn in the population.
+ */
+trait BinaryTournamentSelection extends Selection { 
   self: G with MF {type MF <: Diversity with Rank} =>
 
   def selection(population: Population[G, MF])(implicit aprng: Random): Individual[G] =
     binaryTournament(population.content.random(aprng), population.content.random(aprng)).toIndividual
 
-  def binaryTournament(individual1: PopulationElement[G, MF], individual2: PopulationElement[G, MF])(implicit aprng: Random): PopulationElement[G, MF] =
-    if (individual1.metaFitness.rank() < individual2.metaFitness.rank()) individual1
-    else if (individual1.metaFitness.rank() > individual2.metaFitness.rank()) individual2
-    else if (individual1.metaFitness.diversity() > individual2.metaFitness.diversity()) individual1
-    else if (individual2.metaFitness.diversity() > individual1.metaFitness.diversity()) individual2
-    else if (aprng.nextDouble < 0.5) individual1 else individual2
+  /**
+   * Select the best ranked and if equal the more diverse individual between
+   * two population elements.
+   * 
+   * @param e1 the first population element
+   * @param e2 the second population element
+   * @return the winning population element
+   */
+  def binaryTournament(e1: PopulationElement[G, MF], e2: PopulationElement[G, MF])(implicit aprng: Random): PopulationElement[G, MF] =
+    if (e1.metaFitness.rank() < e2.metaFitness.rank()) e1
+    else if (e1.metaFitness.rank() > e2.metaFitness.rank()) e2
+    else if (e1.metaFitness.diversity() > e2.metaFitness.diversity()) e1
+    else if (e2.metaFitness.diversity() > e1.metaFitness.diversity()) e2
+    else if (aprng.nextDouble < 0.5) e1 else e2
 
 }

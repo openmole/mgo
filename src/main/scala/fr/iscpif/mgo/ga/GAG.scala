@@ -19,6 +19,9 @@ package fr.iscpif.mgo.ga
 
 import fr.iscpif.mgo._
 
+/**
+ * Layer of the cake with the genome type for genetic algorithms
+ */
 trait GAG extends G {
   type G <: GAGenome
 }

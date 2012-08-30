@@ -17,8 +17,18 @@
 
 package fr.iscpif.mgo.ga
 
+/**
+ * Auto-adaptative sigma values for the mutation of genetic algorithms
+ */
 trait Sigma { self: GAGenome =>
+  /// Sigma values, one for each genome component
   def sigma: IndexedSeq[Double]
   
+  /**
+   * Update the sigma part of the genome and retun the new internal structure
+   * 
+   * @param sigma the sigma part of the genome
+   * @return the updated internal representation
+   */
   def updatedSigma(sigma: IndexedSeq [Double]): IndexedSeq[Double]
 }

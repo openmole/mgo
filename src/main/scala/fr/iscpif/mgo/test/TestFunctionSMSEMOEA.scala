@@ -30,7 +30,7 @@ object TestFunctionSMSEMOEA extends App {
 
   val smsemoea =
     new SMSEMOEASigma
-      with MGBinaryTournamentSelection
+      with BinaryTournamentSelection
       with HyperVolumeStabilityTermination
       with NonDominatedElitism
       with CoEvolvingSigmaValuesMutation
@@ -38,8 +38,7 @@ object TestFunctionSMSEMOEA extends App {
       with HypervolumeDiversity
       with ParetoRanking
       with StrictDominance
-      with RankDiversityModifier
-      with ManualReferencePoint {
+      with RankDiversityModifier {
       def distributionIndex = 2
       
       def windowSize = 100

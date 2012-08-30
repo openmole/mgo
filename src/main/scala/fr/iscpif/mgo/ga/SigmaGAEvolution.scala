@@ -17,7 +17,9 @@
 
 package fr.iscpif.mgo.ga
 
-
+/**
+ * Base cake layer for evolution with auto-adaptive sigma for the mutation
+ */
 trait SigmaGAEvolution extends GAEvolution {
   type G <: GAGenome with Sigma
 }

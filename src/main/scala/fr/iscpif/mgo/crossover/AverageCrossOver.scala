@@ -20,6 +20,9 @@ package fr.iscpif.mgo.crossover
 import fr.iscpif.mgo._
 import java.util.Random
 
+/**
+ * Compute a ponderated average between 2 genomes
+ */
 trait AverageCrossover extends CrossOver with GAG with GenomeFactory {
   
   def crossover (g1: G, g2: G) (implicit aprng : Random) = {

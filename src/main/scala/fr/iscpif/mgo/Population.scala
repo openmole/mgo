@@ -18,9 +18,7 @@
 package fr.iscpif.mgo
 
 object Population {
-  
   def empty[G, I]: Population[G, I] = IndexedSeq.empty
-  //def apply(evaluated: IndexedSeq[(G, Fitness)], individuals: IndexedSeq[I]) = 
 }
 
 object PopulationElement {
@@ -28,15 +26,37 @@ object PopulationElement {
     new PopulationElement[G, MF](i.genome, i.fitness, mf)
 }
 
+/**
+ * A population of solution
+ * 
+ * @tparam G the genome type
+ * @tparam MF the meta-fitness type
+ */
 trait Population[+G, +MF] {
 
+  /// the content of the population
   def content: IndexedSeq[PopulationElement[G, MF]]
-  def individuals: IndexedSeq[Individual[G]] = content map { _.toIndividual }
+  
+  /// transform this population in a set of individual
+  def toIndividuals: IndexedSeq[Individual[G]] = content map { _.toIndividual }
   
   override def toString = content.toString  
 }
 
-case class PopulationElement[+G, +MF](val genome: G, val fitness: Fitness, val metaFitness: MF) {
-  def toIndividual = Individual(genome, fitness)
+/**
+ * An element of the population
+ * 
+ * @tparam G the genome type
+ * @tparam MF the meta-fitness type
+ * @param genome the genome of the element
+ * @param fitness the fitness evaluated for the genome
+ * @param metafitness the meta fitness of the element in the population
+ */
+class PopulationElement[+G, +MF](val genome: G, val fitness: Fitness, val metaFitness: MF) {
+  
+  def individualFitness = fitness
+  
+  /// transform the population element in an individual
+  def toIndividual = Individual(genome, individualFitness)
   override def toString = "(genome = " + genome + ", fitness = " + fitness + ", metaFitness = " + metaFitness + ")"
 }

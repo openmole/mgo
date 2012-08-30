@@ -20,6 +20,9 @@ package fr.iscpif.mgo.crossover
 import fr.iscpif.mgo._
 import java.util.Random
 
+/** 
+ * No modification to the genomes
+ */
 trait NoneCrossOver extends CrossOver { this: G => 
   def crossover (g1: G, g2: G) (implicit aprng : Random) = IndexedSeq(g1, g2)
 }

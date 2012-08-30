@@ -17,6 +17,9 @@
 
 package fr.iscpif.mgo
 
+/** 
+ * Cake layer for the genome
+ */
 trait G {
   type G <: Genome
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 sebastien rey
+ * Copyright (C) 2011 Sebastien Rey
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,6 +14,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+package fr.iscpif.mgo.algorithm
+
+import fr.iscpif.mgo._
 
 /**
  * This class implements the SMS-EMOA algorithm, as described in
@@ -31,9 +35,4 @@
  * Congress on Evolutionary Computation (CEC 2005), Edinburgh, Band 2, pp. 1282-1289.
  * IEEE Press, Piscataway NJ, 2005.
  */
-
-package fr.iscpif.mgo.algorithm
-
-import fr.iscpif.mgo._
-
 trait SMSEMOEA extends NSGAII with HypervolumeDiversity

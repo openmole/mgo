@@ -20,10 +20,17 @@ package fr.iscpif.mgo.selection
 import fr.iscpif.mgo._
 import java.util.Random
 
-// TODO : on ne peut pas etendre de operator, car on traite des individu ici et non pas des genomes :(
-// + pas generique car on utilise IndividualMG With With ... et il existe aussi Individual tout court ...
-// le operate est pas du tout generique
+/**
+ * Selection layer for the evolutionary algorithms.
+ */
 trait Selection { this: G with MF =>
-  def selection (individuals: Population[G, MF]) (implicit aprng : Random): Individual[G]
+  
+  /**
+   * Select an individual among the population.
+   * 
+   * @param population the population in which selection occurs
+   * @return the selected individual
+   */
+  def selection (population: Population[G, MF]) (implicit aprng : Random): Individual[G]
 }
 

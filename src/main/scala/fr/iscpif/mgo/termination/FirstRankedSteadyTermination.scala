@@ -23,6 +23,10 @@ import fr.iscpif.mgo.ranking.Rank._
 import fr.iscpif.mgo.selection._
 import fr.iscpif.mgo.tools.Math
 
+/**
+ * Stops when the elements of the parato front have not been modifed since n
+ * generations.
+ */
 trait FirstRankedSteadyTermination extends Termination {
   self: { type MF <: Rank } =>
   
@@ -34,6 +38,7 @@ trait FirstRankedSteadyTermination extends Termination {
   
   def initialState(p: Population[G, MF]) = new FirstRankedState(0, p)
   
+  /// Number of generation with no changes to the first front before stopping
   def steadySince: Int
 
   def terminated(population: Population[G, MF], state: STATE): (Boolean, STATE) = {

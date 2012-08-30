@@ -33,29 +33,37 @@ import math._
  * C. M. Fonseca, L. Paquete, and M. Lopez-Ibanez. An improved dimension-sweep
  * algorithm for the hypervolume indicator. In IEEE Congress on Evolutionary
  * Computation, pages 1157-1163, Vancouver, Canada, July 2006.
- *
- * Minimization is implicitly assumed here!
+ * 
+ * FIXE: The implementation is ugly, as the algorithm as directly been translated
+ * from python
+ * 
  */
-
 object Hypervolume {
 
-  def apply(front: IndexedSeq[IndexedSeq[Double]], d: Dominance): Double =
-    apply(front, nadir(front), d)
-
-  def nadir(front: IndexedSeq[IndexedSeq[Double]]) =
-    front.reduce {
+  /**
+   * Compute the nadir of a set of points
+   * 
+   * @param point a set of points
+   * @return the nadir point
+   */
+  def nadir(points: IndexedSeq[IndexedSeq[Double]]) =
+    points.reduce {
       (i1, i2) => (i1 zip i2).map {
         case (i1, i2) => max(i1, i2)
       }
     }
 
-    /**
-   * Returns the hypervolume that is dominated by a non-dominated front.
+  /**
+   * Compute the hypervolume that is dominated by a non-dominated front.
    * Before the HV computation, front and reference point are translated, so
    * that the reference point is [0, ..., 0].
+   * 
+   * @param front the parato front
+   * @param reference point the reference point for computing the volume from
+   * this point to the front
+   * @return the hypervolume
    */
-
-  def apply(front: IndexedSeq[IndexedSeq[Double]], referencePoint:Seq[Double], d: Dominance):Double = {
+  def apply(front: IndexedSeq[IndexedSeq[Double]], referencePoint:Seq[Double], d: Dominance): Double = {
     def dominates(point: Seq[Double], other: Seq[Double]): Boolean = 
       d.isDominated(other, point)
 
@@ -327,7 +335,6 @@ object Hypervolume {
      * before it was removed.This method assumes that the next and previous
      * nodes of the node that is reinserted are in the list.
      */
-
     def reinsert(node: Node, index: Int, bounds: MIndexedSeq[Double]) = {
       for (i <- Range(0, index)) {
 

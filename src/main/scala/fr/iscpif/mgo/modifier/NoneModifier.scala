@@ -19,6 +19,9 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
+/**
+ * Store raw individuals in the population
+ */
 trait NoneModifier extends Modifier {
   
   type MF = None.type

@@ -20,6 +20,15 @@ package fr.iscpif.mgo.ranking
 import fr.iscpif.mgo._
 import tools.Lazy
 
+/**
+ * Layer of the cake for algorithm with a ranking scheme.
+ */
 trait Ranking extends G {
-  def rank(evaluated: IndexedSeq[Individual[G]]): IndexedSeq[Lazy[Int]]
+  /**
+   * Compute the rank of a set of individuals.
+   * 
+   * @param individuals the individuals to rank
+   * @return the ranks of the individuals in the same order
+   */
+  def rank(individuals: IndexedSeq[Individual[G]]): IndexedSeq[Lazy[Int]]
 }

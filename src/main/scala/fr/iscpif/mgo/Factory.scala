@@ -19,9 +19,31 @@ package fr.iscpif.mgo
 
 import java.util.Random
 
+/**
+ * A factory of genome
+ */
 trait Factory[G <: Genome] {
+  
+  /**
+   * Generate a random genome
+   */
   def random(implicit rng: Random): G
+  
+  /**
+   * Generate a genome from its internal representation
+   * 
+   * @param content the internal representation of the genome
+   * @retun the genome
+   */
   def apply(t: G#T): G
+  
+  /**
+   * Generate an genome from a genome and functions modifing the internal structure
+   * of the genome
+   * 
+   * @param g a genome
+   * @param ops functions that modify the internal structure of the genome
+   */
   def apply(g: G, ops: G => G#T*): G = 
     ops.foldLeft(g)((g, op) => apply(op(g)))
 }

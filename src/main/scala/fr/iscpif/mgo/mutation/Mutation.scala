@@ -17,11 +17,12 @@
 
 package fr.iscpif.mgo.mutation
 
-//TODO : creer un decorateur qui permet d'automatiquement encapsulé un genome simple dans un indexedSeq pour les besoins de genericité entre
-//crossover(retour de 2 genomes) et mutation (retour de 1 genome)'
 import fr.iscpif.mgo._
 import java.util.Random
 
+/**
+ * Layer of the cake for the mutation operation.
+ */
 trait Mutation { this: G =>
   def mutate(genomes: G) (implicit aprng : Random): G
 }

@@ -20,7 +20,11 @@ package fr.iscpif.mgo.ranking
 import fr.iscpif.mgo._
 import tools.Lazy
 
-trait ParetoRanking extends Dominance with G {
+/**
+ * Layer to compute the rank according to the number individual that dominate a 
+ * given individual. 
+ */
+trait ParetoRanking extends Ranking with Dominance with G {
   def rank(evaluated: IndexedSeq[Individual[G]]) = { 
     evaluated.zipWithIndex.map { 
       case (indiv, index) =>

@@ -17,6 +17,10 @@
 
 package fr.iscpif.mgo
 
+/**
+ * Type of the meta-fitness (decorated fitness)
+ */
 trait MF {
+  /// Type of the meta-fitness
   type MF 
 }
