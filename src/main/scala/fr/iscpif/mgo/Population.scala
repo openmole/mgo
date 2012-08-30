@@ -21,7 +21,7 @@ object Population {
   /** 
    * @tparam G the genome type
    * @tparam MF the meta-fitness type
-   * @retun an empty population
+   * @return an empty population
    */
   def empty[G, MF]: Population[G, MF] = IndexedSeq.empty
 }
