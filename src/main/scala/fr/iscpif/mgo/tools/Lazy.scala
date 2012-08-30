@@ -30,10 +30,10 @@ object Lazy {
  */
 class Lazy[T](f: => T) {
   
-  /// Cache for value memoization
+  /** Cache for value memoization */
   lazy val value: T = f
   
-  /// Get the value
+  /** Get the value */
   def apply() = value
   
   override def toString() = value.toString

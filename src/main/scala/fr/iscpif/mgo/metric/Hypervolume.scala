@@ -17,9 +17,6 @@
 
 package fr.iscpif.mgo.metric
 
-//import collection.mutable._
-//import collection.immutable.{IndexedSeq => IIndexedSeq}
-//import collection.mutable
 import collection.mutable.{IndexedSeq => MIndexedSeq}
 import scala.collection.mutable.ArrayBuffer
 import fr.iscpif.mgo.Dominance

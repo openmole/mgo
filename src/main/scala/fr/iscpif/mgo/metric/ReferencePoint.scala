@@ -16,6 +16,11 @@ package fr.iscpif.mgo.metric
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
+/**
+ * Reference point for the hypervolume computation
+ */
 trait ReferencePoint {
+  /** value of the reference point for the hypervolume computation */
   def referencePoint: Seq[Double]
 }

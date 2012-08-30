@@ -21,5 +21,6 @@ package fr.iscpif.mgo.termination
  * Layer of the cake exposing a manifest of the STATE type
  */
 trait TerminationManifest { this: Termination =>
+  /** manifest of the termination state type */
   implicit val stateManifest: Manifest[STATE]
 }

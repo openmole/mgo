@@ -24,7 +24,7 @@ import fr.iscpif.mgo._
  */
 trait TimedTermination extends Termination {
     
-  /// Duration of the algorithm in ms
+  /** Duration of the algorithm in ms */
   def duration: Long
   
   type STATE = Long

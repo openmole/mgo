@@ -27,6 +27,7 @@ import fr.iscpif.mgo._
  */
 trait EpsilonDominance extends Dominance { 
 
+  /** epsilons values, one for each element in the fitness */
   def epsilons: Seq[Double]
   
   def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean = 

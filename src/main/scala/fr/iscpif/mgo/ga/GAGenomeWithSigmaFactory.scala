@@ -13,7 +13,7 @@ import java.util.Random
  */
 trait GAGenomeWithSigmaFactory extends Factory[GAGenomeWithSigma] {
   
-  /// Size of the value part of the genome
+  /** Size of the value part of the genome */
   def size: Int
   
   def apply(content: GAGenomeWithSigma#T) = {

@@ -24,10 +24,10 @@ import fr.iscpif.mgo._
  */
 trait Scaling {
   
-  /// Minimum scaled value in the correct order
+  /** minimum scaled value in the correct order */
   def min: Seq[Double]
   
-  /// Maximum scaled value in the correct order
+  /** Maximum scaled value in the correct order */
   def max: Seq[Double]
   
   /**

@@ -26,6 +26,6 @@ import fr.iscpif.mgo._
 trait GAEvolution extends Evolution { self =>
   type G <: GAGenome
   
-  /// Size of the generated solutions
+  /** Size of the generated solutions */
   def genomeSize: Int
 }

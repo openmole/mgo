@@ -41,7 +41,10 @@ import java.util.Random
  */
 trait SBXBoundedCrossover extends CrossOver with GAG with GenomeFactory {
   
+  /** distribution index parameter of the algorithm */
   def distributionIndex: Double
+  
+  /** crossever rate parameter of the algorithm */
   def crossoverRate: Double = 0.5
   
   def crossover (
@@ -49,7 +52,7 @@ trait SBXBoundedCrossover extends CrossOver with GAG with GenomeFactory {
     g2: G) (implicit aprng : Random) = {
     val numberOfVariables = g1.content.size
       
-    //crossover probability
+    /** crossover probability */
     val offspring = {
       if (aprng.nextDouble <= crossoverRate) {      
         (g1.content zip g2.content).map {
@@ -74,7 +77,6 @@ trait SBXBoundedCrossover extends CrossOver with GAG with GenomeFactory {
                   else pow ((1.0 / (2.0 - rand * alpha1)),(1.0 / (distributionIndex + 1.0)))
                 }
               
-                //calcul offspring 1 en utilisant betaq1, correspond au β barre
                 val c1 = inBound(0.5 * ((y1 + y2) - betaq1 * (y2 - y1))) 
               
                 // -----------------------------------------------
@@ -87,7 +89,6 @@ trait SBXBoundedCrossover extends CrossOver with GAG with GenomeFactory {
                   else pow ((1.0 / (2.0 - rand * alpha2)),(1.0 / (distributionIndex + 1.0)))
                 }
               
-                //calcul offspring2 en utilisant betaq2
                 val c2 = inBound(0.5 * ((y1 + y2) + betaq2 * (y2 - y1)))
        
                 if (aprng.nextBoolean) (c2, c1) else (c1, c2)

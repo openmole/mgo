@@ -38,13 +38,13 @@ trait Evolution extends Mutation
    * Represent a state of the evolution algorithm
    */
   case class EvolutionState(
-    /// The current population of solution
+    /** The current population of solution */
     val population: Population[G, MF],
-    /// The number of the generation
+    /** The number of the generation */
     val generation: Int,
-    /// The state maintained for the termination criterium
+    /** The state maintained for the termination criterium */
     val terminationState: STATE,
-    /// true if the termination criterium is met false otherwhise
+    /** true if the termination criterium is met false otherwhise */
     val terminated: Boolean
   )
  

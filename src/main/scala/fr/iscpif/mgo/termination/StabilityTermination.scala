@@ -17,10 +17,10 @@ object StabilityTermination {
 import StabilityTermination._
 
 trait StabilityTermination extends Termination {
-  /// Size of the sliding window to evaluate the deviation
+  /** Size of the sliding window to evaluate the deviation */
   def windowSize: Int
   
-  /// Deviation considered has sufficiently low to stop
+  /** Deviation considered has sufficiently low to stop */
   def deviationEpsilon: Double
   
   type STATE = StabilityState

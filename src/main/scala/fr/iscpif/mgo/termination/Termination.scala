@@ -24,7 +24,7 @@ import fr.iscpif.mgo._
  */
 trait Termination extends G with MF {
   
-  /// Type of the state maintained to study the evolution of the algorithm
+  /** Type of the state maintained to study the evolution of the algorithm */
   type STATE
   
   /**

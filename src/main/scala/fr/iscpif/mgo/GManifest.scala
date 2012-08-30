@@ -21,6 +21,6 @@ package fr.iscpif.mgo
  * Cake layer with the manifest for the genome type
  */
 trait GManifest extends G {
-  /// Manifest for the genome type
+  /** Manifest for the genome type */
   implicit val gManifest: Manifest[G]
 }

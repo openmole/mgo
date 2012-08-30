@@ -24,7 +24,7 @@ import fr.iscpif.mgo._
  */
 trait CounterTermination extends Termination {
   
-  /// Number of steps before the algorithm stops
+  /** Number of steps before the algorithm stops */
   def steps: Int
   
   type STATE = Int

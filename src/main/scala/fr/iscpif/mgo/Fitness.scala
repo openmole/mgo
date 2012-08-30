@@ -35,7 +35,7 @@ object Fitness {
  * The fitness is a vector a of Doubles, one Double for each objective.
  */
 trait Fitness {
-  /// The finess value
+  /** The finess value */
   def values: IndexedSeq[Double]
   override def toString = values.toString
 }

@@ -21,6 +21,6 @@ package fr.iscpif.mgo
  * Layer of the cake for the size of the population
  */
 trait Mu {
-  /// the size of the population
+  /** the size of the population */
   def mu: Int
 }

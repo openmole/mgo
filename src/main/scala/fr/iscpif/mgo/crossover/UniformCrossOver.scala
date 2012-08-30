@@ -27,6 +27,7 @@ import fr.iscpif.mgo.tools.Random._
  */
 trait UniformCrossOver extends CrossOver with GAG with GenomeFactory {
     
+  /** Average rate of exchange between the 2 genomes */
   def crossoverRate: Double = 0.5
 
   def crossover (g1: G, g2: G) (implicit aprng : Random) = {

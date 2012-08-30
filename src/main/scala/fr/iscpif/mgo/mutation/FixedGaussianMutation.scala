@@ -28,6 +28,7 @@ import java.util.Random
  */
 trait FixedGaussianMutation extends Mutation with GAG with GenomeFactory {
    
+  /** sigma values, one for each element in the rest of the genome */
   def sigma : Seq[Double]
 
   override def mutate (genome: G) (implicit aprng: Random) : G = {
