@@ -36,7 +36,7 @@ trait GAGenome extends Genome {
    * Update the value part of the genome
    * 
    * @param values the new values
-   * @retrun the new internal representation of the genome
+   * @return the new internal representation of the genome
    */ 
   def updatedValues(values: IndexedSeq[Double]): T
   

@@ -10,7 +10,7 @@ object Lazy {
   /**
    * Build a lazy proxy from a function
    * 
-   * @tpara the type of the lazily computed value
+   * @tparam the type of the lazily computed value
    * @param f the function to compute the value
    */
   def apply[T](f: => T) = new Lazy(f)

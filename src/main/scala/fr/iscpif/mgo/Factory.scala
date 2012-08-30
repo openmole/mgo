@@ -33,7 +33,7 @@ trait Factory[G <: Genome] {
    * Generate a genome from its internal representation
    * 
    * @param content the internal representation of the genome
-   * @retun the genome
+   * @return the genome
    */
   def apply(t: G#T): G
   
@@ -43,6 +43,7 @@ trait Factory[G <: Genome] {
    * 
    * @param g a genome
    * @param ops functions that modify the internal structure of the genome
+   * @return a genome for which ops have been applied
    */
   def apply(g: G, ops: G => G#T*): G = 
     ops.foldLeft(g)((g, op) => apply(op(g)))
