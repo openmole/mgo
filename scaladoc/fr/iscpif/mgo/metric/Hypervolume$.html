@@ -32,8 +32,8 @@
       <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Hypervolume computation based on variant 3 of the algorithm in the paper:
 C. M. Fonseca, L. Paquete, and M. Lopez-Ibanez. An improved dimension-sweep
 algorithm for the hypervolume indicator. In IEEE Congress on Evolutionary
-Computation, pages 1157-1163, Vancouver, Canada, July 2006.</p><p>Minimization is implicitly assumed here!
-</p></div><div class="toggleContainer block">
+Computation, pages 1157-1163, Vancouver, Canada, July 2006.</p><p>FIXE: The implementation is ugly, as the algorithm as directly been translated
+from python</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -165,22 +165,11 @@ Computation, pages 1157-1163, Vancouver, Canada, July 2006.</p><p>Minimization i
         <span class="name">apply</span><span class="params">(<span name="front">front: IndexedSeq[IndexedSeq[<span name="scala.Double" class="extype">Double</span>]]</span>, <span name="referencePoint">referencePoint: Seq[<span name="scala.Double" class="extype">Double</span>]</span>, <span name="d">d: Dominance</span>)</span><span class="result">: <span name="scala.Double" class="extype">Double</span></span>
       </span>
       </h4>
-      <p class="shortcomment cmt">Returns the hypervolume that is dominated by a non-dominated front.</p><div class="fullcomment"><div class="comment cmt"><p>Returns the hypervolume that is dominated by a non-dominated front.
+      <p class="shortcomment cmt">Compute the hypervolume that is dominated by a non-dominated front.</p><div class="fullcomment"><div class="comment cmt"><p>Compute the hypervolume that is dominated by a non-dominated front.
 Before the HV computation, front and reference point are translated, so
 that the reference point is [0, ..., 0].
-</p></div></div>
-    </li><li visbl="pub" name="fr.iscpif.mgo.metric.Hypervolume#apply" data-isabs="false">
-      <a id="apply(IndexedSeq[IndexedSeq[Double]],Dominance):Double"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="front">front: IndexedSeq[IndexedSeq[<span name="scala.Double" class="extype">Double</span>]]</span>, <span name="d">d: Dominance</span>)</span><span class="result">: <span name="scala.Double" class="extype">Double</span></span>
-      </span>
-      </h4>
-      
+</p></div><dl class="paramcmts block"><dt class="param">front</dt><dd class="cmt"><p>the parato front</p></dd><dt>returns</dt><dd class="cmt"><p>the hypervolume
+</p></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -291,10 +280,13 @@ that the reference point is [0, ..., 0].
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">nadir</span><span class="params">(<span name="front">front: IndexedSeq[IndexedSeq[<span name="scala.Double" class="extype">Double</span>]]</span>)</span><span class="result">: IndexedSeq[<span name="scala.Double" class="extype">Double</span>]</span>
+        <span class="name">nadir</span><span class="params">(<span name="points">points: IndexedSeq[IndexedSeq[<span name="scala.Double" class="extype">Double</span>]]</span>)</span><span class="result">: IndexedSeq[<span name="scala.Double" class="extype">Double</span>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Compute the nadir of a set of points
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the nadir of a set of points
+</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the nadir point
+</p></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">

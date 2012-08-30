@@ -29,12 +29,13 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Self Type</dt><dd><a name="fr.iscpif.mgo.selection.Selection" class="extype" href="">Selection</a> with <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a> with <a name="fr.iscpif.mgo.MF" class="extype" href="../MF.html">MF</a></dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Selection layer for the evolutionary algorithms.
+</p></div><dl class="attributes block"> <dt>Self Type</dt><dd><a name="fr.iscpif.mgo.selection.Selection" class="extype" href="">Selection</a> with <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a> with <a name="fr.iscpif.mgo.MF" class="extype" href="../MF.html">MF</a></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="fr.iscpif.mgo.breed.Breeding" class="extype" href="../breed/Breeding.html">Breeding</a>, <a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a>, <a name="fr.iscpif.mgo.ga.GAEvolution" class="extype" href="../ga/GAEvolution.html">GAEvolution</a>, <a name="fr.iscpif.mgo.selection.MGBinaryTournamentSelection" class="extype" href="MGBinaryTournamentSelection.html">MGBinaryTournamentSelection</a>, <a name="fr.iscpif.mgo.algorithm.NSGAII" class="extype" href="../algorithm/NSGAII.html">NSGAII</a>, <a name="fr.iscpif.mgo.ga.NSGAIISigma" class="extype" href="../ga/NSGAIISigma.html">NSGAIISigma</a>, <a name="fr.iscpif.mgo.algorithm.SMSEMOEA" class="extype" href="../algorithm/SMSEMOEA.html">SMSEMOEA</a>, <a name="fr.iscpif.mgo.ga.SMSEMOEASigma" class="extype" href="../ga/SMSEMOEASigma.html">SMSEMOEASigma</a>, <a name="fr.iscpif.mgo.ga.SigmaGAEvolution" class="extype" href="../ga/SigmaGAEvolution.html">SigmaGAEvolution</a></div>
+          <div class="subClasses hiddenContent"><a name="fr.iscpif.mgo.selection.BinaryTournamentSelection" class="extype" href="BinaryTournamentSelection.html">BinaryTournamentSelection</a>, <a name="fr.iscpif.mgo.breed.Breeding" class="extype" href="../breed/Breeding.html">Breeding</a>, <a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a>, <a name="fr.iscpif.mgo.ga.GAEvolution" class="extype" href="../ga/GAEvolution.html">GAEvolution</a>, <a name="fr.iscpif.mgo.algorithm.NSGAII" class="extype" href="../algorithm/NSGAII.html">NSGAII</a>, <a name="fr.iscpif.mgo.ga.NSGAIISigma" class="extype" href="../ga/NSGAIISigma.html">NSGAIISigma</a>, <a name="fr.iscpif.mgo.algorithm.SMSEMOEA" class="extype" href="../algorithm/SMSEMOEA.html">SMSEMOEA</a>, <a name="fr.iscpif.mgo.ga.SMSEMOEASigma" class="extype" href="../ga/SMSEMOEASigma.html">SMSEMOEASigma</a>, <a name="fr.iscpif.mgo.ga.SigmaGAEvolution" class="extype" href="../ga/SigmaGAEvolution.html">SigmaGAEvolution</a></div>
         </div></div>
     
 
@@ -72,10 +73,12 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">selection</span><span class="params">(<span name="individuals">individuals: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]</span>
+        <span class="name">selection</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Select an individual among the population.</p><div class="fullcomment"><div class="comment cmt"><p>Select an individual among the population.
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the population in which selection occurs</p></dd><dt>returns</dt><dd class="cmt"><p>the selected individual
+</p></dd></dl></div>
     </li></ol>
             </div>
 

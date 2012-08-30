@@ -123,18 +123,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="fr.iscpif.mgo.tools.Lazy#Lazy" data-isabs="false">
-      <a id="Lazy[T](Ordering[T]):Ordering[Lazy[T]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier">implicit </span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">Lazy</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="ord">ord: Ordering[T]</span>)</span><span class="result">: Ordering[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="Lazy.html">Lazy</a>[T]]</span>
-      </span>
-      </h4>
-      
     </li><li visbl="pub" name="fr.iscpif.mgo.tools.Lazy#apply" data-isabs="false">
       <a id="apply[T](⇒ T):Lazy[T]"></a>
       <h4 class="signature">
@@ -146,7 +134,10 @@
         <span class="name">apply</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span name="f">f: ⇒ T</span>)</span><span class="result">: <a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="Lazy.html">Lazy</a>[T]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Build a lazy proxy from a function
+</p><div class="fullcomment"><div class="comment cmt"><p>Build a lazy proxy from a function
+</p></div><dl class="paramcmts block"><dt class="param">f</dt><dd class="cmt"><p>the function to compute the value
+</p></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -249,6 +240,19 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
+    </li><li visbl="pub" name="fr.iscpif.mgo.tools.Lazy#lazyOrdering" data-isabs="false">
+      <a id="lazyOrdering[T](Ordering[T]):Ordering[Lazy[T]]"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">implicit </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">lazyOrdering</span><span class="tparams">[<span name="T">T</span>]</span><span class="params">(<span class="implicit">implicit </span><span name="ord">ord: Ordering[T]</span>)</span><span class="result">: Ordering[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="Lazy.html">Lazy</a>[T]]</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Defines ordering on lazy proxies
+</p>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">

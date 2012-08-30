@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>fr.iscpif.mgo.diversity.GenomeCrowdingDiversity</title>
+          <title>fr.iscpif.mgo.termination.StabilityTermination</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
@@ -14,9 +14,9 @@
         </head>
         <body onload="sh_highlightDocument('../lib/', '.min.js');" class="type">
       <div id="definition">
-        <img src="../../../../lib/trait_big.png" />
-        <p id="owner"><a name="fr" class="extype" href="../../../package.html">fr</a>.<a name="fr.iscpif" class="extype" href="../../package.html">iscpif</a>.<a name="fr.iscpif.mgo" class="extype" href="../package.html">mgo</a>.<a name="fr.iscpif.mgo.diversity" class="extype" href="package.html">diversity</a></p>
-        <h1>GenomeCrowdingDiversity</h1>
+        <a title="Go to companion" href="StabilityTermination$.html"><img src="../../../../lib/trait_to_object_big.png" /></a>
+        <p id="owner"><a name="fr" class="extype" href="../../../package.html">fr</a>.<a name="fr.iscpif" class="extype" href="../../package.html">iscpif</a>.<a name="fr.iscpif.mgo" class="extype" href="../package.html">mgo</a>.<a name="fr.iscpif.mgo.termination" class="extype" href="package.html">termination</a></p>
+        <h1><a title="Go to companion" href="StabilityTermination$.html">StabilityTermination</a></h1>
       </div>
 
       <h4 class="signature" id="signature">
@@ -25,13 +25,16 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <span class="name">GenomeCrowdingDiversity</span><span class="result"> extends <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a> with GAG</span>
+        <span class="name">StabilityTermination</span><span class="result"> extends <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></span>
       </span>
       </h4>
       
       <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.ga.GAG" class="extype" href="../ga/GAG.html">GAG</a>, <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a>, <a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a>, <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a>, <a name="fr.iscpif.mgo.MF" class="extype" href="../MF.html">MF</a>, <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+        </div><div class="toggleContainer block">
+          <span class="toggle">Known Subclasses</span>
+          <div class="subClasses hiddenContent"><a name="fr.iscpif.mgo.termination.CrowdingStabilityTermination" class="extype" href="CrowdingStabilityTermination.html">CrowdingStabilityTermination</a>, <a name="fr.iscpif.mgo.termination.HyperVolumeStabilityTermination" class="extype" href="HyperVolumeStabilityTermination.html">HyperVolumeStabilityTermination</a></div>
         </div></div>
     
 
@@ -45,7 +48,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="fr.iscpif.mgo.diversity.GenomeCrowdingDiversity" class="in"><span>GenomeCrowdingDiversity</span></li><li name="fr.iscpif.mgo.ga.GAG" class="in"><span>GAG</span></li><li name="fr.iscpif.mgo.diversity.DiversityMetric" class="in"><span>DiversityMetric</span></li><li name="fr.iscpif.mgo.ranking.Ranking" class="in"><span>Ranking</span></li><li name="fr.iscpif.mgo.G" class="in"><span>G</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="fr.iscpif.mgo.termination.StabilityTermination" class="in"><span>StabilityTermination</span></li><li name="fr.iscpif.mgo.termination.Termination" class="in"><span>Termination</span></li><li name="fr.iscpif.mgo.MF" class="in"><span>MF</span></li><li name="fr.iscpif.mgo.G" class="in"><span>G</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -59,7 +62,7 @@
 
         <div class="types members" id="types">
               <h3>Type Members</h3>
-              <ol><li visbl="pub" name="fr.iscpif.mgo.ga.GAG#G" data-isabs="true">
+              <ol><li visbl="pub" name="fr.iscpif.mgo.G#G" data-isabs="true">
       <a id="G:G"></a>
       <h4 class="signature">
       <span class="modifier_kind">
@@ -67,27 +70,78 @@
         <span class="kind">type</span>
       </span>
       <span class="symbol">
-        <span class="name">G</span><span class="result"> &lt;: <a name="fr.iscpif.mgo.ga.GAGenome" class="extype" href="../ga/GAGenome.html">GAGenome</a></span>
+        <span class="name">G</span><span class="result"> &lt;: <a name="fr.iscpif.mgo.Genome" class="extype" href="../Genome.html">Genome</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ga.GAG" class="extype" href="../ga/GAG.html">GAG</a> → <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a></dd></dl></div>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a></dd></dl></div>
+    </li><li visbl="pub" name="fr.iscpif.mgo.MF#MF" data-isabs="true">
+      <a id="MF:MF"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">MF</span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.MF" class="extype" href="../MF.html">MF</a></dd></dl></div>
+    </li><li visbl="pub" name="fr.iscpif.mgo.termination.StabilityTermination#STATE" data-isabs="false">
+      <a id="STATE:STATE"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">type</span>
+      </span>
+      <span class="symbol">
+        <span class="name">STATE</span><span class="result"> = <a name="fr.iscpif.mgo.termination.StabilityTermination.StabilityState" class="extype" href="StabilityTermination$$StabilityState.html">StabilityState</a></span>
+      </span>
+      </h4>
+      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.StabilityTermination" class="extype" href="">StabilityTermination</a> → <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></dd></dl></div>
     </li></ol>
             </div>
 
         <div class="values members" id="values">
               <h3>Abstract Value Members</h3>
-              <ol><li visbl="pub" name="fr.iscpif.mgo.ranking.Ranking#rank" data-isabs="true">
-      <a id="rank(IndexedSeq[Individual[G]]):IndexedSeq[Lazy[Int]]"></a>
+              <ol><li visbl="pub" name="fr.iscpif.mgo.termination.StabilityTermination#deviationEpsilon" data-isabs="true">
+      <a id="deviationEpsilon:Double"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">rank</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
+        <span class="name">deviationEpsilon</span><span class="result">: <span name="scala.Double" class="extype">Double</span></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a></dd></dl></div>
+      
+    </li><li visbl="pub" name="fr.iscpif.mgo.termination.Termination#terminated" data-isabs="true">
+      <a id="terminated(Population[G, MF],STATE):(Boolean, STATE)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">terminated</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="terminationState">terminationState: STATE</span>)</span><span class="result">: (<span name="scala.Boolean" class="extype">Boolean</span>, STATE)</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Test if the algorithm has converged.</p><div class="fullcomment"><div class="comment cmt"><p>Test if the algorithm has converged.
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the current population</p></dd><dt class="param">terminationState</dt><dd class="cmt"><p>the actual termination state</p></dd><dt>returns</dt><dd class="cmt"><p>a boolean which is equal to true if a terminal state has
+been detected and the new termination state
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></dd></dl></div>
+    </li><li visbl="pub" name="fr.iscpif.mgo.termination.StabilityTermination#windowSize" data-isabs="true">
+      <a id="windowSize:Int"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier">abstract </span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">windowSize</span><span class="result">: <span name="scala.Int" class="extype">Int</span></span>
+      </span>
+      </h4>
+      
     </li></ol>
             </div>
 
@@ -180,18 +234,6 @@
                 <span class="name">@throws</span><span class="args">()</span>
               
         </dd></dl></div>
-    </li><li visbl="pub" name="fr.iscpif.mgo.diversity.GenomeCrowdingDiversity#diversity" data-isabs="false">
-      <a id="diversity(IndexedSeq[(Individual[G], Lazy[Int])]):IndexedSeq[Lazy[Double]]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">diversity</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[(<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G], <a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>])]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Double" class="extype">Double</span>]]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.GenomeCrowdingDiversity" class="extype" href="">GenomeCrowdingDiversity</a> → <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -255,6 +297,21 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef → Any</dd></dl></div>
+    </li><li visbl="pub" name="fr.iscpif.mgo.termination.StabilityTermination#initialState" data-isabs="false">
+      <a id="initialState(Population[G, MF]):STATE"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">initialState</span><span class="params">(<span name="p">p: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="result">: STATE</span>
+      </span>
+      </h4>
+      <p class="shortcomment cmt">Compute the initial state
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the initial state
+</p></div><dl class="paramcmts block"><dt class="param">p</dt><dd class="cmt"><p>the initial population</p></dd><dt>returns</dt><dd class="cmt"><p>the initial state
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.StabilityTermination" class="extype" href="">StabilityTermination</a> → <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -303,6 +360,18 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>AnyRef</dd></dl></div>
+    </li><li visbl="pub" name="fr.iscpif.mgo.termination.StabilityTermination#stability" data-isabs="false">
+      <a id="stability(StabilityState,Double):(Boolean, StabilityState)"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">def</span>
+      </span>
+      <span class="symbol">
+        <span class="name">stability</span><span class="params">(<span name="state">state: <a name="fr.iscpif.mgo.termination.StabilityTermination.StabilityState" class="extype" href="StabilityTermination$$StabilityState.html">StabilityState</a></span>, <span name="newValue">newValue: <span name="scala.Double" class="extype">Double</span></span>)</span><span class="result">: (<span name="scala.Boolean" class="extype">Boolean</span>, <a name="fr.iscpif.mgo.termination.StabilityTermination.StabilityState" class="extype" href="StabilityTermination$$StabilityState.html">StabilityState</a>)</span>
+      </span>
+      </h4>
+      
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -379,12 +448,10 @@
         </div>
 
         <div id="inheritedMembers">
-        <div name="fr.iscpif.mgo.ga.GAG" class="parent">
-              <h3>Inherited from <a name="fr.iscpif.mgo.ga.GAG" class="extype" href="../ga/GAG.html">GAG</a></h3>
-            </div><div name="fr.iscpif.mgo.diversity.DiversityMetric" class="parent">
-              <h3>Inherited from <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a></h3>
-            </div><div name="fr.iscpif.mgo.ranking.Ranking" class="parent">
-              <h3>Inherited from <a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a></h3>
+        <div name="fr.iscpif.mgo.termination.Termination" class="parent">
+              <h3>Inherited from <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></h3>
+            </div><div name="fr.iscpif.mgo.MF" class="parent">
+              <h3>Inherited from <a name="fr.iscpif.mgo.MF" class="extype" href="../MF.html">MF</a></h3>
             </div><div name="fr.iscpif.mgo.G" class="parent">
               <h3>Inherited from <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a></h3>
             </div><div name="scala.AnyRef" class="parent">

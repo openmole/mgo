@@ -2,7 +2,7 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 <html>
         <head>
-          <title>fr.iscpif.mgo.mutation.DynamicGaussianMutation</title>
+          <title>fr.iscpif.mgo.termination.StabilityTermination</title>
           <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
           
       <link type="text/css" media="screen" rel="stylesheet" href="../../../../lib/template.css" />
@@ -12,26 +12,26 @@
       <script type="text/javascript" src="../../../../lib/tools.tooltip.js"></script>
     
         </head>
-        <body onload="sh_highlightDocument('../lib/', '.min.js');" class="type">
+        <body onload="sh_highlightDocument('../lib/', '.min.js');" class="value">
       <div id="definition">
-        <img src="../../../../lib/trait_big.png" />
-        <p id="owner"><a name="fr" class="extype" href="../../../package.html">fr</a>.<a name="fr.iscpif" class="extype" href="../../package.html">iscpif</a>.<a name="fr.iscpif.mgo" class="extype" href="../package.html">mgo</a>.<a name="fr.iscpif.mgo.mutation" class="extype" href="package.html">mutation</a></p>
-        <h1>DynamicGaussianMutation</h1>
+        <a title="Go to companion" href="StabilityTermination.html"><img src="../../../../lib/object_to_trait_big.png" /></a>
+        <p id="owner"><a name="fr" class="extype" href="../../../package.html">fr</a>.<a name="fr.iscpif" class="extype" href="../../package.html">iscpif</a>.<a name="fr.iscpif.mgo" class="extype" href="../package.html">mgo</a>.<a name="fr.iscpif.mgo.termination" class="extype" href="package.html">termination</a></p>
+        <h1><a title="Go to companion" href="StabilityTermination.html">StabilityTermination</a></h1>
       </div>
 
       <h4 class="signature" id="signature">
       <span class="modifier_kind">
         <span class="modifier"></span>
-        <span class="kind">trait</span>
+        <span class="kind">object</span>
       </span>
       <span class="symbol">
-        <span class="name">DynamicGaussianMutation</span><span class="result"> extends <a name="fr.iscpif.mgo.mutation.Mutation" class="extype" href="Mutation.html">Mutation</a></span>
+        <span class="name">StabilityTermination</span><span class="result"> extends AnyRef</span>
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Self Type</dt><dd><a name="fr.iscpif.mgo.mutation.DynamicGaussianMutation" class="extype" href="">DynamicGaussianMutation</a> with <a name="fr.iscpif.mgo.GenomeFactory" class="extype" href="../GenomeFactory.html">GenomeFactory</a> { type G &lt;: fr.iscpif.mgo.package.GAGenome with fr.iscpif.mgo.package.Sigma }</dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
-          <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.mutation.Mutation" class="extype" href="Mutation.html">Mutation</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
+          <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
     
 
@@ -45,7 +45,7 @@
               <span class="filtertype">Inherited</span>
               <ol><li class="hideall out"><span>Hide All</span></li>
               <li class="showall in"><span>Show all</span></li></ol>
-              <ol id="linearization"><li name="fr.iscpif.mgo.mutation.DynamicGaussianMutation" class="in"><span>DynamicGaussianMutation</span></li><li name="fr.iscpif.mgo.mutation.Mutation" class="in"><span>Mutation</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
+              <ol id="linearization"><li name="fr.iscpif.mgo.termination.StabilityTermination" class="in"><span>StabilityTermination</span></li><li name="scala.AnyRef" class="in"><span>AnyRef</span></li><li name="scala.Any" class="in"><span>Any</span></li></ol>
             </div>
         <div id="visbl">
             <span class="filtertype">Visibility</span>
@@ -57,7 +57,22 @@
         <div id="allMembers">
         
 
-        
+        <div class="types members" id="types">
+              <h3>Type Members</h3>
+              <ol><li visbl="pub" name="fr.iscpif.mgo.termination.StabilityTermination.StabilityState" data-isabs="false">
+      <a id="StabilityState:StabilityState"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">case class</span>
+      </span>
+      <span class="symbol">
+        <a href="StabilityTermination$$StabilityState.html"><span class="name">StabilityState</span></a><span class="params">(<span name="std">std: Double</span>, <span name="history">history: List[Double]</span>)</span><span class="result"> extends Product with Serializable</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
 
         
 
@@ -225,18 +240,6 @@
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd>Any</dd></dl></div>
-    </li><li visbl="pub" name="fr.iscpif.mgo.mutation.DynamicGaussianMutation#mutate" data-isabs="false">
-      <a id="mutate(G)(Random):G"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">mutate</span><span class="params">(<span name="genome">genome: G</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: G</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.mutation.DynamicGaussianMutation" class="extype" href="">DynamicGaussianMutation</a> → <a name="fr.iscpif.mgo.mutation.Mutation" class="extype" href="Mutation.html">Mutation</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#ne" data-isabs="false">
       <a id="ne(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -349,9 +352,7 @@
         </div>
 
         <div id="inheritedMembers">
-        <div name="fr.iscpif.mgo.mutation.Mutation" class="parent">
-              <h3>Inherited from <a name="fr.iscpif.mgo.mutation.Mutation" class="extype" href="Mutation.html">Mutation</a></h3>
-            </div><div name="scala.AnyRef" class="parent">
+        <div name="scala.AnyRef" class="parent">
               <h3>Inherited from AnyRef</h3>
             </div><div name="scala.Any" class="parent">
               <h3>Inherited from <span name="scala.Any" class="extype">Any</span></h3>

@@ -29,7 +29,8 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Cake to define a problem for a genetic algorithm
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.problem.Scaling" class="extype" href="Scaling.html">Scaling</a>, <a name="fr.iscpif.mgo.problem.Problem" class="extype" href="Problem.html">Problem</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
@@ -90,7 +91,10 @@
         <span class="name">apply</span><span class="params">(<span name="x">x: IndexedSeq[<span name="scala.Double" class="extype">Double</span>]</span>)</span><span class="result">: IndexedSeq[<span name="scala.Double" class="extype">Double</span>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Compute the fitness for a point
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the fitness for a point
+</p></div><dl class="paramcmts block"><dt class="param">x</dt><dd class="cmt"><p>the point to evaluate</p></dd><dt>returns</dt><dd class="cmt"><p>the fitness of this point
+</p></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.problem.Scaling#max" data-isabs="true">
       <a id="max:Seq[Double]"></a>
       <h4 class="signature">
@@ -191,7 +195,9 @@
         <span class="name">apply</span><span class="params">(<span name="g">g: G</span>)</span><span class="result">: <a name="fr.iscpif.mgo.Fitness" class="extype" href="../Fitness.html">Fitness</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.problem.GAProblem" class="extype" href="">GAProblem</a> → <a name="fr.iscpif.mgo.problem.Problem" class="extype" href="Problem.html">Problem</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the fitness value from a genome values.</p><div class="fullcomment"><div class="comment cmt"><p>Compute the fitness value from a genome values.
+</p></div><dl class="paramcmts block"><dt class="param">g</dt><dd class="cmt"><p>the genome to evaluate</p></dd><dt>returns</dt><dd class="cmt"><p>the fitness for this genome
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.problem.GAProblem" class="extype" href="">GAProblem</a> → <a name="fr.iscpif.mgo.problem.Problem" class="extype" href="Problem.html">Problem</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -341,7 +347,9 @@
         <span class="name">scale</span><span class="tparams">[<span name="MF">MF</span>]</span><span class="params">(<span name="i">i: <a name="fr.iscpif.mgo.PopulationElement" class="extype" href="../PopulationElement.html">PopulationElement</a>[G, MF]</span>)</span><span class="result">: (Seq[<span name="scala.Double" class="extype">Double</span>], <a name="fr.iscpif.mgo.Fitness" class="extype" href="../Fitness.html">Fitness</a>, MF)</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Scale a population element genome from [0.</p><div class="fullcomment"><div class="comment cmt"><p>Scale a population element genome from [0.0, 1.0] to the correct scale
+</p></div><dl class="paramcmts block"><dt class="param">i</dt><dd class="cmt"><p>the population element to scale</p></dd><dt>returns</dt><dd class="cmt"><p>the scaled population element
+</p></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.problem.GAProblem#scale" data-isabs="false">
       <a id="scale(G):Seq[Double]"></a>
       <h4 class="signature">
@@ -353,7 +361,10 @@
         <span class="name">scale</span><span class="params">(<span name="g">g: G</span>)</span><span class="result">: Seq[<span name="scala.Double" class="extype">Double</span>]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Scale the genenome from [0.</p><div class="fullcomment"><div class="comment cmt"><p>Scale the genenome from [0.0, 1.0] to the correct scale for the fitness
+evaluation
+</p></div><dl class="paramcmts block"><dt class="param">g</dt><dd class="cmt"><p>the genome to scale</p></dd><dt>returns</dt><dd class="cmt"><p>the scaled genome
+</p></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.problem.Scaling#scale" data-isabs="false">
       <a id="scale(Seq[Double]):Seq[Double]"></a>
       <h4 class="signature">
@@ -365,7 +376,10 @@
         <span class="name">scale</span><span class="params">(<span name="x">x: Seq[<span name="scala.Double" class="extype">Double</span>]</span>)</span><span class="result">: <span name="scala.collection.Seq" class="extype">Seq</span>[<span name="scala.Double" class="extype">Double</span>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.problem.Scaling" class="extype" href="Scaling.html">Scaling</a></dd></dl></div>
+      <p class="shortcomment cmt">Scale a vector according to the minimun and maximum
+</p><div class="fullcomment"><div class="comment cmt"><p>Scale a vector according to the minimun and maximum
+</p></div><dl class="paramcmts block"><dt class="param">x</dt><dd class="cmt"><p>the vector to scale</p></dd><dt>returns</dt><dd class="cmt"><p>the scaled vector
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.problem.Scaling" class="extype" href="Scaling.html">Scaling</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

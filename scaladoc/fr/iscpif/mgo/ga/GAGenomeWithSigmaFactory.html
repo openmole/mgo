@@ -29,7 +29,8 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Factory associated with genomes with sigma
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.Factory" class="extype" href="../Factory.html">Factory</a>[<a name="fr.iscpif.mgo.ga.GAGenomeWithSigma" class="extype" href="GAGenomeWithSigma.html">GAGenomeWithSigma</a>], AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -146,10 +147,13 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">apply</span><span class="params">(<span name="content">content: IndexedSeq[<span name="scala.Double" class="extype">Double</span>]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.ga.GAGenomeWithSigma" class="extype" href="GAGenomeWithSigma.html">GAGenomeWithSigma</a></span>
+        <span class="name">apply</span><span class="params">(<span name="content">content: <span name="scala.collection.IndexedSeq" class="extype">IndexedSeq</span>[<span name="scala.Double" class="extype">Double</span>]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.ga.GAGenomeWithSigma" class="extype" href="GAGenomeWithSigma.html">GAGenomeWithSigma</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ga.GAGenomeWithSigmaFactory" class="extype" href="">GAGenomeWithSigmaFactory</a> → <a name="fr.iscpif.mgo.Factory" class="extype" href="../Factory.html">Factory</a></dd></dl></div>
+      <p class="shortcomment cmt">Generate a genome from its internal representation
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate a genome from its internal representation
+</p></div><dl class="paramcmts block"><dt class="param">content</dt><dd class="cmt"><p>the internal representation of the genome</p></dd><dt>returns</dt><dd class="cmt"><p>the genome
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ga.GAGenomeWithSigmaFactory" class="extype" href="">GAGenomeWithSigmaFactory</a> → <a name="fr.iscpif.mgo.Factory" class="extype" href="../Factory.html">Factory</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.Factory#apply" data-isabs="false">
       <a id="apply(GAGenomeWithSigma,(GAGenomeWithSigma) ⇒ T*):GAGenomeWithSigma"></a>
       <h4 class="signature">
@@ -161,7 +165,12 @@
         <span class="name">apply</span><span class="params">(<span name="g">g: <a name="fr.iscpif.mgo.ga.GAGenomeWithSigma" class="extype" href="GAGenomeWithSigma.html">GAGenomeWithSigma</a></span>, <span name="ops">ops: (<a name="fr.iscpif.mgo.ga.GAGenomeWithSigma" class="extype" href="GAGenomeWithSigma.html">GAGenomeWithSigma</a>) ⇒ T*</span>)</span><span class="result">: <a name="fr.iscpif.mgo.ga.GAGenomeWithSigma" class="extype" href="GAGenomeWithSigma.html">GAGenomeWithSigma</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Factory" class="extype" href="../Factory.html">Factory</a></dd></dl></div>
+      <p class="shortcomment cmt">Generate an genome from a genome and functions modifing the internal structure
+of the genome
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate an genome from a genome and functions modifing the internal structure
+of the genome
+</p></div><dl class="paramcmts block"><dt class="param">g</dt><dd class="cmt"><p>a genome</p></dd><dt class="param">ops</dt><dd class="cmt"><p>functions that modify the internal structure of the genome</p></dd><dt>returns</dt><dd class="cmt"><p>a genome for which ops have been applied
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Factory" class="extype" href="../Factory.html">Factory</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">
@@ -311,7 +320,9 @@
         <span class="name">random</span><span class="params">(<span class="implicit">implicit </span><span name="rng">rng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.ga.GAGenomeWithSigma" class="extype" href="GAGenomeWithSigma.html">GAGenomeWithSigma</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ga.GAGenomeWithSigmaFactory" class="extype" href="">GAGenomeWithSigmaFactory</a> → <a name="fr.iscpif.mgo.Factory" class="extype" href="../Factory.html">Factory</a></dd></dl></div>
+      <p class="shortcomment cmt">Generate a random genome
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate a random genome
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ga.GAGenomeWithSigmaFactory" class="extype" href="">GAGenomeWithSigmaFactory</a> → <a name="fr.iscpif.mgo.Factory" class="extype" href="../Factory.html">Factory</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

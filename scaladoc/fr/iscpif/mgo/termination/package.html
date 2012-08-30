@@ -59,7 +59,8 @@
         <a href="CounterTermination.html"><span class="name">CounterTermination</span></a><span class="result"> extends Termination</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Stop after a finite number of state
+</p>
     </li><li visbl="pub" name="fr.iscpif.mgo.termination.CrowdingStabilityTermination" data-isabs="true">
       <a id="CrowdingStabilityTermination:CrowdingStabilityTermination"></a>
       <h4 class="signature">
@@ -68,10 +69,11 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="CrowdingStabilityTermination.html"><span class="name">CrowdingStabilityTermination</span></a><span class="result"> extends Termination with CrowdingDiversity with DiversityModifier</span>
+        <a href="CrowdingStabilityTermination.html"><span class="name">CrowdingStabilityTermination</span></a><span class="result"> extends Termination with CrowdingDiversity with DiversityModifier with StabilityTermination</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Termination creterium computed from the variation of the maximum crowding distance
+among the population elements.</p>
     </li><li visbl="pub" name="fr.iscpif.mgo.termination.FirstRankedSteadyTermination" data-isabs="true">
       <a id="FirstRankedSteadyTermination:FirstRankedSteadyTermination"></a>
       <h4 class="signature">
@@ -83,7 +85,8 @@
         <a href="FirstRankedSteadyTermination.html"><span class="name">FirstRankedSteadyTermination</span></a><span class="result"> extends Termination</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Stops when the elements of the parato front have not been modifed since n
+generations.</p>
     </li><li visbl="pub" name="fr.iscpif.mgo.termination.HyperVolumeStabilityTermination" data-isabs="true">
       <a id="HyperVolumeStabilityTermination:HyperVolumeStabilityTermination"></a>
       <h4 class="signature">
@@ -92,7 +95,20 @@
         <span class="kind">trait</span>
       </span>
       <span class="symbol">
-        <a href="HyperVolumeStabilityTermination.html"><span class="name">HyperVolumeStabilityTermination</span></a><span class="result"> extends Termination with ReferencePoint with Dominance with RankModifier</span>
+        <a href="HyperVolumeStabilityTermination.html"><span class="name">HyperVolumeStabilityTermination</span></a><span class="result"> extends Termination with ReferencePoint with Dominance with RankModifier with StabilityTermination</span>
+      </span>
+      </h4>
+      <p class="comment cmt">Terminates when the hypervolume contribution of the last ranked individuals
+in the population has been stabilized.</p>
+    </li><li visbl="pub" name="fr.iscpif.mgo.termination.StabilityTermination" data-isabs="true">
+      <a id="StabilityTermination:StabilityTermination"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">trait</span>
+      </span>
+      <span class="symbol">
+        <a href="StabilityTermination.html"><span class="name">StabilityTermination</span></a><span class="result"> extends Termination</span>
       </span>
       </h4>
       
@@ -107,7 +123,8 @@
         <a href="Termination.html"><span class="name">Termination</span></a><span class="result"> extends G with MF</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Layer to compute the stopping condition of the evolutionary algorithm
+</p>
     </li><li visbl="pub" name="fr.iscpif.mgo.termination.TerminationManifest" data-isabs="true">
       <a id="TerminationManifest:TerminationManifest"></a>
       <h4 class="signature">
@@ -119,7 +136,8 @@
         <a href="TerminationManifest.html"><span class="name">TerminationManifest</span></a><span class="result"> extends AnyRef</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Layer of the cake exposing a manifest of the STATE type
+</p>
     </li><li visbl="pub" name="fr.iscpif.mgo.termination.TimedTermination" data-isabs="true">
       <a id="TimedTermination:TimedTermination"></a>
       <h4 class="signature">
@@ -131,13 +149,28 @@
         <a href="TimedTermination.html"><span class="name">TimedTermination</span></a><span class="result"> extends Termination</span>
       </span>
       </h4>
-      
+      <p class="comment cmt">Terminate the algorithm after a given share of time.</p>
     </li></ol>
             </div>
 
         
 
-        
+        <div class="values members" id="values">
+              <h3>Value Members</h3>
+              <ol><li visbl="pub" name="fr.iscpif.mgo.termination.StabilityTermination" data-isabs="false">
+      <a id="StabilityTermination:StabilityTermination"></a>
+      <h4 class="signature">
+      <span class="modifier_kind">
+        <span class="modifier"></span>
+        <span class="kind">object</span>
+      </span>
+      <span class="symbol">
+        <a href="StabilityTermination$.html"><span class="name">StabilityTermination</span></a><span class="result"> extends AnyRef</span>
+      </span>
+      </h4>
+      
+    </li></ol>
+            </div>
 
         
         </div>

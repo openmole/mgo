@@ -29,7 +29,15 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>This class implements the SMS-EMOA algorithm, as described in</p><p>Michael Emmerich, Nicola Beume, and Boris Naujoks.
+An EMO algorithm using the hypervolume measure as selection criterion.
+In C. A. Coello Coello et al., Eds., Proc. Evolutionary Multi-Criterion Optimization,
+3rd Int'l Conf. (EMO 2005), LNCS 3410, pp. 62-76. Springer, Berlin, 2005.</p><p>and</p><p>Boris Naujoks, Nicola Beume, and Michael Emmerich.
+Multi-objective optimisation using S-metric selection: Application to
+three-dimensional solution spaces. In B. McKay et al., Eds., Proc. of the 2005
+Congress on Evolutionary Computation (CEC 2005), Edinburgh, Band 2, pp. 1282-1289.
+IEEE Press, Piscataway NJ, 2005.
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a>, <a name="fr.iscpif.mgo.dominance.Dominance" class="extype" href="../dominance/Dominance.html">Dominance</a>, <a name="fr.iscpif.mgo.metric.ReferencePoint" class="extype" href="../metric/ReferencePoint.html">ReferencePoint</a>, <a name="fr.iscpif.mgo.algorithm.NSGAII" class="extype" href="NSGAII.html">NSGAII</a>, <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="../diversity/DiversityMetric.html">DiversityMetric</a>, <a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a>, <a name="fr.iscpif.mgo.breed.Breeding" class="extype" href="../breed/Breeding.html">Breeding</a>, <a name="fr.iscpif.mgo.elitism.Elitism" class="extype" href="../elitism/Elitism.html">Elitism</a>, <a name="fr.iscpif.mgo.Archive" class="extype" href="../Archive.html">Archive</a>, <a name="fr.iscpif.mgo.Mu" class="extype" href="../Mu.html">Mu</a>, <a name="fr.iscpif.mgo.ga.GAEvolution" class="extype" href="../ga/GAEvolution.html">GAEvolution</a>, <a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a>, <a name="fr.iscpif.mgo.GenomeFactory" class="extype" href="../GenomeFactory.html">GenomeFactory</a>, <a name="fr.iscpif.mgo.Lambda" class="extype" href="../Lambda.html">Lambda</a>, <a name="fr.iscpif.mgo.modifier.Modifier" class="extype" href="../modifier/Modifier.html">Modifier</a>, <a name="fr.iscpif.mgo.modifier.IndividualFilter" class="extype" href="../modifier/IndividualFilter.html">IndividualFilter</a>, <a name="fr.iscpif.mgo.selection.Selection" class="extype" href="../selection/Selection.html">Selection</a>, <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="../termination/Termination.html">Termination</a>, <a name="fr.iscpif.mgo.MF" class="extype" href="../MF.html">MF</a>, <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a>, <a name="fr.iscpif.mgo.crossover.CrossOver" class="extype" href="../crossover/CrossOver.html">CrossOver</a>, <a name="fr.iscpif.mgo.mutation.Mutation" class="extype" href="../mutation/Mutation.html">Mutation</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
@@ -127,7 +135,10 @@
         <span class="name">crossover</span><span class="params">(<span name="g1">g1: G</span>, <span name="g2">g2: G</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: IndexedSeq[G]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.crossover.CrossOver" class="extype" href="../crossover/CrossOver.html">CrossOver</a></dd></dl></div>
+      <p class="shortcomment cmt">Crossover g1 and g2
+</p><div class="fullcomment"><div class="comment cmt"><p>Crossover g1 and g2
+</p></div><dl class="paramcmts block"><dt class="param">g1</dt><dd class="cmt"><p>a genome</p></dd><dt class="param">g2</dt><dd class="cmt"><p>anothe genome</p></dd><dt>returns</dt><dd class="cmt"><p>the result of the crossover
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.crossover.CrossOver" class="extype" href="../crossover/CrossOver.html">CrossOver</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.elitism.Elitism#elitism" data-isabs="true">
       <a id="elitism(Population[G, MF]):Population[G, MF]"></a>
       <h4 class="signature">
@@ -136,10 +147,13 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">elitism</span><span class="params">(<span name="individuals">individuals: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
+        <span class="name">elitism</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.elitism.Elitism" class="extype" href="../elitism/Elitism.html">Elitism</a></dd></dl></div>
+      <p class="shortcomment cmt">Reduce the number of elements of the population and return a new one
+</p><div class="fullcomment"><div class="comment cmt"><p>Reduce the number of elements of the population and return a new one
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the population to shrink</p></dd><dt>returns</dt><dd class="cmt"><p>the shrinked population
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.elitism.Elitism" class="extype" href="../elitism/Elitism.html">Elitism</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.GenomeFactory#genomeFactory" data-isabs="true">
       <a id="genomeFactory:Factory[G]"></a>
       <h4 class="signature">
@@ -175,7 +189,10 @@
         <span class="name">initialState</span><span class="params">(<span name="p">p: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="result">: STATE</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.Termination" class="extype" href="../termination/Termination.html">Termination</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the initial state
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the initial state
+</p></div><dl class="paramcmts block"><dt class="param">p</dt><dd class="cmt"><p>the initial population</p></dd><dt>returns</dt><dd class="cmt"><p>the initial state
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.Termination" class="extype" href="../termination/Termination.html">Termination</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.dominance.Dominance#isDominated" data-isabs="true">
       <a id="isDominated(Seq[Double],Seq[Double]):Boolean"></a>
       <h4 class="signature">
@@ -208,10 +225,13 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">modify</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
+        <span class="name">modify</span><span class="params">(<span name="individuals">individuals: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.modifier.Modifier" class="extype" href="../modifier/Modifier.html">Modifier</a></dd></dl></div>
+      <p class="shortcomment cmt">Generate a population from a set of indiviuals
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate a population from a set of indiviuals
+</p></div><dl class="paramcmts block"><dt class="param">individuals</dt><dd class="cmt"><p>a set of individual</p></dd><dt>returns</dt><dd class="cmt"><p>the population with the meta-fitness for each individual
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.modifier.Modifier" class="extype" href="../modifier/Modifier.html">Modifier</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.Mu#mu" data-isabs="true">
       <a id="mu:Int"></a>
       <h4 class="signature">
@@ -244,19 +264,21 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">rank</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
+        <span class="name">rank</span><span class="params">(<span name="individuals">individuals: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the rank of a set of individuals.</p><div class="fullcomment"><div class="comment cmt"><p>Compute the rank of a set of individuals.
+</p></div><dl class="paramcmts block"><dt class="param">individuals</dt><dd class="cmt"><p>the individuals to rank</p></dd><dt>returns</dt><dd class="cmt"><p>the ranks of the individuals in the same order
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.metric.ReferencePoint#referencePoint" data-isabs="true">
-      <a id="referencePoint(IndexedSeq[IndexedSeq[Double]]):Seq[Double]"></a>
+      <a id="referencePoint:Seq[Double]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">referencePoint</span><span class="params">(<span name="front">front: IndexedSeq[IndexedSeq[<span name="scala.Double" class="extype">Double</span>]]</span>)</span><span class="result">: Seq[<span name="scala.Double" class="extype">Double</span>]</span>
+        <span class="name">referencePoint</span><span class="result">: Seq[<span name="scala.Double" class="extype">Double</span>]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.metric.ReferencePoint" class="extype" href="../metric/ReferencePoint.html">ReferencePoint</a></dd></dl></div>
@@ -268,10 +290,12 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">selection</span><span class="params">(<span name="individuals">individuals: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]</span>
+        <span class="name">selection</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.selection.Selection" class="extype" href="../selection/Selection.html">Selection</a></dd></dl></div>
+      <p class="shortcomment cmt">Select an individual among the population.</p><div class="fullcomment"><div class="comment cmt"><p>Select an individual among the population.
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the population in which selection occurs</p></dd><dt>returns</dt><dd class="cmt"><p>the selected individual
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.selection.Selection" class="extype" href="../selection/Selection.html">Selection</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.termination.Termination#terminated" data-isabs="true">
       <a id="terminated(Population[G, MF],STATE):(Boolean, STATE)"></a>
       <h4 class="signature">
@@ -283,7 +307,10 @@
         <span class="name">terminated</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="terminationState">terminationState: STATE</span>)</span><span class="result">: (<span name="scala.Boolean" class="extype">Boolean</span>, STATE)</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.Termination" class="extype" href="../termination/Termination.html">Termination</a></dd></dl></div>
+      <p class="shortcomment cmt">Test if the algorithm has converged.</p><div class="fullcomment"><div class="comment cmt"><p>Test if the algorithm has converged.
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the current population</p></dd><dt class="param">terminationState</dt><dd class="cmt"><p>the actual termination state</p></dd><dt>returns</dt><dd class="cmt"><p>a boolean which is equal to true if a terminal state has
+been detected and the new termination state
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.Termination" class="extype" href="../termination/Termination.html">Termination</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -369,22 +396,13 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">breed</span><span class="params">(<span name="archive">archive: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="size">size: <span name="scala.Int" class="extype">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: IndexedSeq[G]</span>
+        <span class="name">breed</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="size">size: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="../Lambda.html#lambda:Int">lambda</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: IndexedSeq[G]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.breed.Breeding" class="extype" href="../breed/Breeding.html">Breeding</a></dd></dl></div>
-    </li><li visbl="pub" name="fr.iscpif.mgo.breed.Breeding#breed" data-isabs="false">
-      <a id="breed(Population[G, MF])(Random):IndexedSeq[G]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">breed</span><span class="params">(<span name="archive">archive: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: IndexedSeq[G]</span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.breed.Breeding" class="extype" href="../breed/Breeding.html">Breeding</a></dd></dl></div>
+      <p class="shortcomment cmt">Breed genomes from a population
+</p><div class="fullcomment"><div class="comment cmt"><p>Breed genomes from a population
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the population from which genomes are breeded</p></dd><dt class="param">size</dt><dd class="cmt"><p>the size of the breeded set</p></dd><dt>returns</dt><dd class="cmt"><p>the breeded genomes
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.breed.Breeding" class="extype" href="../breed/Breeding.html">Breeding</a></dd></dl></div>
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">
@@ -411,7 +429,9 @@
         <span class="name">computeHypervolume</span><span class="params">(<span name="front">front: IndexedSeq[(<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G], <a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>], <span name="scala.Int" class="extype">Int</span>)]</span>, <span name="referencePoint">referencePoint: Seq[<span name="scala.Double" class="extype">Double</span>]</span>)</span><span class="result">: IndexedSeq[(<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Double" class="extype">Double</span>], <span name="scala.Int" class="extype">Int</span>)]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the hypervolume contribution for each front
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the hypervolume contribution for each front
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.diversity.HypervolumeDiversity#diversity" data-isabs="false">
       <a id="diversity(IndexedSeq[(Individual[G], Lazy[Int])]):IndexedSeq[Lazy[Double]]"></a>
       <h4 class="signature">
@@ -423,7 +443,11 @@
         <span class="name">diversity</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[(<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G], <a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>])]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Double" class="extype">Double</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a> → <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="../diversity/DiversityMetric.html">DiversityMetric</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the diversity of the individual
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the diversity of the individual
+</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a diversity sequence in the diversity of the individual i at the
+position i
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a> → <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="../diversity/DiversityMetric.html">DiversityMetric</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.modifier.Modifier#emptyPopulation" data-isabs="false">
       <a id="emptyPopulation:Population[G, MF]"></a>
       <h4 class="signature">
@@ -435,7 +459,10 @@
         <span class="name">emptyPopulation</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.modifier.Modifier" class="extype" href="../modifier/Modifier.html">Modifier</a></dd></dl></div>
+      <p class="shortcomment cmt">Build an empty population
+</p><div class="fullcomment"><div class="comment cmt"><p>Build an empty population
+</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>an empty population
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.modifier.Modifier" class="extype" href="../modifier/Modifier.html">Modifier</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -471,7 +498,9 @@
         <span class="name">evolve</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="evaluator">evaluator: (G) ⇒ <a name="fr.iscpif.mgo.Fitness" class="extype" href="../Fitness.html">Fitness</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.algorithm.NSGAII" class="extype" href="NSGAII.html">NSGAII</a> → <a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
+      <p class="shortcomment cmt">Evolve one step
+</p><div class="fullcomment"><div class="comment cmt"><p>Evolve one step
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the current population</p></dd><dt class="param">evaluator</dt><dd class="cmt"><p>the fitness evaluation function</p></dd><dt>returns</dt><dd class="cmt"><p>a new population of evaluated solutions</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.algorithm.NSGAII" class="extype" href="NSGAII.html">NSGAII</a> → <a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.modifier.IndividualFilter#filter" data-isabs="false">
       <a id="filter(IndexedSeq[Individual[G]]):IndexedSeq[Individual[G]]"></a>
       <h4 class="signature">
@@ -483,7 +512,10 @@
         <span class="name">filter</span><span class="params">(<span name="individuals">individuals: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.modifier.IndividualFilter" class="extype" href="../modifier/IndividualFilter.html">IndividualFilter</a></dd></dl></div>
+      <p class="shortcomment cmt">Filter the individuals
+</p><div class="fullcomment"><div class="comment cmt"><p>Filter the individuals
+</p></div><dl class="paramcmts block"><dt class="param">individuals</dt><dd class="cmt"><p>the set of evaluated individuals</p></dd><dt>returns</dt><dd class="cmt"><p>the filtrated individuals
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.modifier.IndividualFilter" class="extype" href="../modifier/IndividualFilter.html">IndividualFilter</a></dd></dl></div>
     </li><li visbl="prt" name="scala.AnyRef#finalize" data-isabs="false">
       <a id="finalize():Unit"></a>
       <h4 class="signature">
@@ -582,7 +614,10 @@
         <span class="name">randomPopulation</span><span class="params">(<span name="evaluator">evaluator: (G) ⇒ <a name="fr.iscpif.mgo.Fitness" class="extype" href="../Fitness.html">Fitness</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
+      <p class="shortcomment cmt">Generate an random population
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate an random population
+</p></div><dl class="paramcmts block"><dt class="param">evaluator</dt><dd class="cmt"><p>the fitness evaluation function</p></dd><dt>returns</dt><dd class="cmt"><p>a random population of evaluated solutions
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.Evolution#run" data-isabs="false">
       <a id="run[P&lt;:Problem { type G &gt;: SMSEMOEA.this.G }](P)(Random):Iterator[EvolutionState]"></a>
       <h4 class="signature">
@@ -594,7 +629,10 @@
         <span class="name">run</span><span class="tparams">[<span name="P">P &lt;: Problem { type G &gt;: SMSEMOEA.this.G }</span>]</span><span class="params">(<span name="problem">problem: P</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: Iterator[<a name="fr.iscpif.mgo.Evolution.EvolutionState" class="extype" href="../Evolution$EvolutionState.html">EvolutionState</a>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
+      <p class="shortcomment cmt">Run the evlutionary algorithm
+</p><div class="fullcomment"><div class="comment cmt"><p>Run the evlutionary algorithm
+</p></div><dl class="paramcmts block"><dt class="param">problem</dt><dd class="cmt"><p>an optimization problem to solve
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.Evolution#run" data-isabs="false">
       <a id="run((G) ⇒ Fitness)(Random):Iterator[EvolutionState]"></a>
       <h4 class="signature">
@@ -606,7 +644,10 @@
         <span class="name">run</span><span class="params">(<span name="evaluator">evaluator: (G) ⇒ <a name="fr.iscpif.mgo.Fitness" class="extype" href="../Fitness.html">Fitness</a></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: Iterator[<a name="fr.iscpif.mgo.Evolution.EvolutionState" class="extype" href="../Evolution$EvolutionState.html">EvolutionState</a>]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
+      <p class="shortcomment cmt">Run the evlutionary algorithm
+</p><div class="fullcomment"><div class="comment cmt"><p>Run the evlutionary algorithm
+</p></div><dl class="paramcmts block"><dt class="param">evaluator</dt><dd class="cmt"><p>the fitness evaluator</p></dd><dt>returns</dt><dd class="cmt"><p>an iterator over the states of the evolution
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.Evolution#run" data-isabs="false">
       <a id="run(Population[G, MF],(G) ⇒ Fitness)(Random):Iterator[EvolutionState]"></a>
       <h4 class="signature">
@@ -620,7 +661,7 @@
       </h4>
       <p class="shortcomment cmt">Run the evolutionary algorithm
 </p><div class="fullcomment"><div class="comment cmt"><p>Run the evolutionary algorithm
-</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the initial population</p></dd><dt class="param">evaluator</dt><dd class="cmt"><p>the fitness evaluation function</p></dd><dt class="param">aprng</dt><dd class="cmt"><p>the random number generator</p></dd><dt>returns</dt><dd class="cmt"><p>an iterator over the states of the evolution
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the initial population</p></dd><dt class="param">evaluator</dt><dd class="cmt"><p>the fitness evaluation function</p></dd><dt>returns</dt><dd class="cmt"><p>an iterator over the states of the evolution
 </p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.diversity.HypervolumeDiversity#shadowMap" data-isabs="false">
       <a id="shadowMap[A, B](IndexedSeq[A])((A) ⇒ B):IndexedSeq[(IndexedSeq[B], Int)]"></a>
@@ -633,19 +674,9 @@
         <span class="name">shadowMap</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="xs">xs: IndexedSeq[A]</span>)</span><span class="params">(<span name="f">f: (A) ⇒ B</span>)</span><span class="result">: <span name="scala.collection.immutable.IndexedSeq" class="extype">IndexedSeq</span>[(<span name="scala.collection.IndexedSeq" class="extype">IndexedSeq</span>[B], <span name="scala.Int" class="extype">Int</span>)]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a></dd></dl></div>
-    </li><li visbl="pub" name="fr.iscpif.mgo.Evolution#stepListner" data-isabs="false">
-      <a id="stepListner(Population[G, MF],STATE):Unit"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">stepListner</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="state">state: STATE</span>)</span><span class="result">: <span name="scala.Unit" class="extype">Unit</span></span>
-      </span>
-      </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.Evolution" class="extype" href="../Evolution.html">Evolution</a></dd></dl></div>
+      <p class="shortcomment cmt">Shadow each element of a set
+</p><div class="fullcomment"><div class="comment cmt"><p>Shadow each element of a set
+</p></div><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">
@@ -666,10 +697,13 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">toPopulation</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
+        <span class="name">toPopulation</span><span class="params">(<span name="individuals">individuals: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.modifier.Modifier" class="extype" href="../modifier/Modifier.html">Modifier</a></dd></dl></div>
+      <p class="shortcomment cmt">Generate a population from a set of indiviuals that is filtered in a first time
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate a population from a set of indiviuals that is filtered in a first time
+</p></div><dl class="paramcmts block"><dt class="param">individuals</dt><dd class="cmt"><p>a set of individual</p></dd><dt>returns</dt><dd class="cmt"><p>the filtred population with the meta-fitness for each individual
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.modifier.Modifier" class="extype" href="../modifier/Modifier.html">Modifier</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">

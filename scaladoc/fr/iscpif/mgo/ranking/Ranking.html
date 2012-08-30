@@ -29,12 +29,13 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Layer of the cake for algorithm with a ranking scheme.
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
           <span class="toggle">Known Subclasses</span>
-          <div class="subClasses hiddenContent"><a name="fr.iscpif.mgo.diversity.CrowdingDiversity" class="extype" href="../diversity/CrowdingDiversity.html">CrowdingDiversity</a>, <a name="fr.iscpif.mgo.termination.CrowdingStabilityTermination" class="extype" href="../termination/CrowdingStabilityTermination.html">CrowdingStabilityTermination</a>, <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="../diversity/DiversityMetric.html">DiversityMetric</a>, <a name="fr.iscpif.mgo.diversity.GenomeCrowdingDiversity" class="extype" href="../diversity/GenomeCrowdingDiversity.html">GenomeCrowdingDiversity</a>, <a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a>, <a name="fr.iscpif.mgo.algorithm.NSGAII" class="extype" href="../algorithm/NSGAII.html">NSGAII</a>, <a name="fr.iscpif.mgo.ga.NSGAIISigma" class="extype" href="../ga/NSGAIISigma.html">NSGAIISigma</a>, <a name="fr.iscpif.mgo.modifier.RankDiversityGenomicCrowdingModifier" class="extype" href="../modifier/RankDiversityGenomicCrowdingModifier.html">RankDiversityGenomicCrowdingModifier</a>, <a name="fr.iscpif.mgo.modifier.RankDiversityModifier" class="extype" href="../modifier/RankDiversityModifier.html">RankDiversityModifier</a>, <a name="fr.iscpif.mgo.algorithm.SMSEMOEA" class="extype" href="../algorithm/SMSEMOEA.html">SMSEMOEA</a>, <a name="fr.iscpif.mgo.ga.SMSEMOEASigma" class="extype" href="../ga/SMSEMOEASigma.html">SMSEMOEASigma</a></div>
+          <div class="subClasses hiddenContent"><a name="fr.iscpif.mgo.diversity.CrowdingDiversity" class="extype" href="../diversity/CrowdingDiversity.html">CrowdingDiversity</a>, <a name="fr.iscpif.mgo.termination.CrowdingStabilityTermination" class="extype" href="../termination/CrowdingStabilityTermination.html">CrowdingStabilityTermination</a>, <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="../diversity/DiversityMetric.html">DiversityMetric</a>, <a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="../diversity/HypervolumeDiversity.html">HypervolumeDiversity</a>, <a name="fr.iscpif.mgo.algorithm.NSGAII" class="extype" href="../algorithm/NSGAII.html">NSGAII</a>, <a name="fr.iscpif.mgo.ga.NSGAIISigma" class="extype" href="../ga/NSGAIISigma.html">NSGAIISigma</a>, <a name="fr.iscpif.mgo.ranking.ParetoRanking" class="extype" href="ParetoRanking.html">ParetoRanking</a>, <a name="fr.iscpif.mgo.modifier.RankDiversityGenomicCrowdingModifier" class="extype" href="../modifier/RankDiversityGenomicCrowdingModifier.html">RankDiversityGenomicCrowdingModifier</a>, <a name="fr.iscpif.mgo.modifier.RankDiversityModifier" class="extype" href="../modifier/RankDiversityModifier.html">RankDiversityModifier</a>, <a name="fr.iscpif.mgo.algorithm.SMSEMOEA" class="extype" href="../algorithm/SMSEMOEA.html">SMSEMOEA</a>, <a name="fr.iscpif.mgo.ga.SMSEMOEASigma" class="extype" href="../ga/SMSEMOEASigma.html">SMSEMOEASigma</a></div>
         </div></div>
     
 
@@ -87,10 +88,12 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">rank</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
+        <span class="name">rank</span><span class="params">(<span name="individuals">individuals: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Compute the rank of a set of individuals.</p><div class="fullcomment"><div class="comment cmt"><p>Compute the rank of a set of individuals.
+</p></div><dl class="paramcmts block"><dt class="param">individuals</dt><dd class="cmt"><p>the individuals to rank</p></dd><dt>returns</dt><dd class="cmt"><p>the ranks of the individuals in the same order
+</p></dd></dl></div>
     </li></ol>
             </div>
 

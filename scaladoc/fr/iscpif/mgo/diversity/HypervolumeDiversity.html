@@ -29,7 +29,9 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Diversity computed from an hypervolume contribution metric
+</p></div><dl class="attributes block"> <dt>See also</dt><dd><span class="cmt"><p>Hypervolume
+</p></span></dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.dominance.Dominance" class="extype" href="../dominance/Dominance.html">Dominance</a>, <a name="fr.iscpif.mgo.metric.ReferencePoint" class="extype" href="../metric/ReferencePoint.html">ReferencePoint</a>, <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a>, <a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a>, <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
@@ -99,19 +101,21 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">rank</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
+        <span class="name">rank</span><span class="params">(<span name="individuals">individuals: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the rank of a set of individuals.</p><div class="fullcomment"><div class="comment cmt"><p>Compute the rank of a set of individuals.
+</p></div><dl class="paramcmts block"><dt class="param">individuals</dt><dd class="cmt"><p>the individuals to rank</p></dd><dt>returns</dt><dd class="cmt"><p>the ranks of the individuals in the same order
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.metric.ReferencePoint#referencePoint" data-isabs="true">
-      <a id="referencePoint(IndexedSeq[IndexedSeq[Double]]):Seq[Double]"></a>
+      <a id="referencePoint:Seq[Double]"></a>
       <h4 class="signature">
       <span class="modifier_kind">
         <span class="modifier">abstract </span>
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">referencePoint</span><span class="params">(<span name="front">front: IndexedSeq[IndexedSeq[<span name="scala.Double" class="extype">Double</span>]]</span>)</span><span class="result">: Seq[<span name="scala.Double" class="extype">Double</span>]</span>
+        <span class="name">referencePoint</span><span class="result">: Seq[<span name="scala.Double" class="extype">Double</span>]</span>
       </span>
       </h4>
       <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.metric.ReferencePoint" class="extype" href="../metric/ReferencePoint.html">ReferencePoint</a></dd></dl></div>
@@ -218,7 +222,8 @@
         <span class="name">computeHypervolume</span><span class="params">(<span name="front">front: IndexedSeq[(<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G], <a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>], <span name="scala.Int" class="extype">Int</span>)]</span>, <span name="referencePoint">referencePoint: Seq[<span name="scala.Double" class="extype">Double</span>]</span>)</span><span class="result">: IndexedSeq[(<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Double" class="extype">Double</span>], <span name="scala.Int" class="extype">Int</span>)]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Compute the hypervolume contribution for each front
+</p>
     </li><li visbl="pub" name="fr.iscpif.mgo.diversity.HypervolumeDiversity#diversity" data-isabs="false">
       <a id="diversity(IndexedSeq[(Individual[G], Lazy[Int])]):IndexedSeq[Lazy[Double]]"></a>
       <h4 class="signature">
@@ -230,7 +235,11 @@
         <span class="name">diversity</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[(<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G], <a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>])]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Double" class="extype">Double</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="">HypervolumeDiversity</a> → <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the diversity of the individual
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the diversity of the individual
+</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a diversity sequence in the diversity of the individual i at the
+position i
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.HypervolumeDiversity" class="extype" href="">HypervolumeDiversity</a> → <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
@@ -353,7 +362,8 @@
         <span class="name">shadowMap</span><span class="tparams">[<span name="A">A</span>, <span name="B">B</span>]</span><span class="params">(<span name="xs">xs: IndexedSeq[A]</span>)</span><span class="params">(<span name="f">f: (A) ⇒ B</span>)</span><span class="result">: <span name="scala.collection.immutable.IndexedSeq" class="extype">IndexedSeq</span>[(<span name="scala.collection.IndexedSeq" class="extype">IndexedSeq</span>[B], <span name="scala.Int" class="extype">Int</span>)]</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Shadow each element of a set
+</p>
     </li><li visbl="pub" name="scala.AnyRef#synchronized" data-isabs="false">
       <a id="synchronized[T0](⇒ T0):T0"></a>
       <h4 class="signature">

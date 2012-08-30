@@ -29,7 +29,8 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>A factory of genome
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent">AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
@@ -75,7 +76,10 @@
         <span class="name">apply</span><span class="params">(<span name="t">t: T</span>)</span><span class="result">: G</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Generate a genome from its internal representation
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate a genome from its internal representation
+</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>the genome
+</p></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.Factory#random" data-isabs="true">
       <a id="random(Random):G"></a>
       <h4 class="signature">
@@ -87,7 +91,8 @@
         <span class="name">random</span><span class="params">(<span class="implicit">implicit </span><span name="rng">rng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: G</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Generate a random genome
+</p>
     </li></ol>
             </div>
 
@@ -164,7 +169,12 @@
         <span class="name">apply</span><span class="params">(<span name="g">g: G</span>, <span name="ops">ops: (G) ⇒ T*</span>)</span><span class="result">: G</span>
       </span>
       </h4>
-      
+      <p class="shortcomment cmt">Generate an genome from a genome and functions modifing the internal structure
+of the genome
+</p><div class="fullcomment"><div class="comment cmt"><p>Generate an genome from a genome and functions modifing the internal structure
+of the genome
+</p></div><dl class="paramcmts block"><dt class="param">g</dt><dd class="cmt"><p>a genome</p></dd><dt class="param">ops</dt><dd class="cmt"><p>functions that modify the internal structure of the genome</p></dd><dt>returns</dt><dd class="cmt"><p>a genome for which ops have been applied
+</p></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#asInstanceOf" data-isabs="false">
       <a id="asInstanceOf[T0]:T0"></a>
       <h4 class="signature">

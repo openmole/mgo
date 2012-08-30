@@ -29,7 +29,8 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Layer of the cake for the breeding part of the evolution algorithm
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.GenomeFactory" class="extype" href="../GenomeFactory.html">GenomeFactory</a>, <a name="fr.iscpif.mgo.mutation.Mutation" class="extype" href="../mutation/Mutation.html">Mutation</a>, <a name="fr.iscpif.mgo.crossover.CrossOver" class="extype" href="../crossover/CrossOver.html">CrossOver</a>, <a name="fr.iscpif.mgo.selection.Selection" class="extype" href="../selection/Selection.html">Selection</a>, <a name="fr.iscpif.mgo.MF" class="extype" href="../MF.html">MF</a>, <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a>, <a name="fr.iscpif.mgo.Lambda" class="extype" href="../Lambda.html">Lambda</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
@@ -102,7 +103,10 @@
         <span class="name">crossover</span><span class="params">(<span name="g1">g1: G</span>, <span name="g2">g2: G</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: IndexedSeq[G]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.crossover.CrossOver" class="extype" href="../crossover/CrossOver.html">CrossOver</a></dd></dl></div>
+      <p class="shortcomment cmt">Crossover g1 and g2
+</p><div class="fullcomment"><div class="comment cmt"><p>Crossover g1 and g2
+</p></div><dl class="paramcmts block"><dt class="param">g1</dt><dd class="cmt"><p>a genome</p></dd><dt class="param">g2</dt><dd class="cmt"><p>anothe genome</p></dd><dt>returns</dt><dd class="cmt"><p>the result of the crossover
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.crossover.CrossOver" class="extype" href="../crossover/CrossOver.html">CrossOver</a></dd></dl></div>
     </li><li visbl="pub" name="fr.iscpif.mgo.GenomeFactory#genomeFactory" data-isabs="true">
       <a id="genomeFactory:Factory[G]"></a>
       <h4 class="signature">
@@ -147,10 +151,12 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">selection</span><span class="params">(<span name="individuals">individuals: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]</span>
+        <span class="name">selection</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: <a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.selection.Selection" class="extype" href="../selection/Selection.html">Selection</a></dd></dl></div>
+      <p class="shortcomment cmt">Select an individual among the population.</p><div class="fullcomment"><div class="comment cmt"><p>Select an individual among the population.
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the population in which selection occurs</p></dd><dt>returns</dt><dd class="cmt"><p>the selected individual
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.selection.Selection" class="extype" href="../selection/Selection.html">Selection</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -236,22 +242,13 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">breed</span><span class="params">(<span name="archive">archive: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="size">size: <span name="scala.Int" class="extype">Int</span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: IndexedSeq[G]</span>
+        <span class="name">breed</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="size">size: <span name="scala.Int" class="extype">Int</span> = <span class="symbol"><span class="name"><a href="../Lambda.html#lambda:Int">lambda</a></span></span></span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: IndexedSeq[G]</span>
       </span>
       </h4>
-      
-    </li><li visbl="pub" name="fr.iscpif.mgo.breed.Breeding#breed" data-isabs="false">
-      <a id="breed(Population[G, MF])(Random):IndexedSeq[G]"></a>
-      <h4 class="signature">
-      <span class="modifier_kind">
-        <span class="modifier"></span>
-        <span class="kind">def</span>
-      </span>
-      <span class="symbol">
-        <span class="name">breed</span><span class="params">(<span name="archive">archive: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="params">(<span class="implicit">implicit </span><span name="aprng">aprng: <span name="java.util.Random" class="extype">Random</span></span>)</span><span class="result">: IndexedSeq[G]</span>
-      </span>
-      </h4>
-      
+      <p class="shortcomment cmt">Breed genomes from a population
+</p><div class="fullcomment"><div class="comment cmt"><p>Breed genomes from a population
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the population from which genomes are breeded</p></dd><dt class="param">size</dt><dd class="cmt"><p>the size of the breeded set</p></dd><dt>returns</dt><dd class="cmt"><p>the breeded genomes
+</p></dd></dl></div>
     </li><li visbl="prt" name="scala.AnyRef#clone" data-isabs="false">
       <a id="clone():AnyRef"></a>
       <h4 class="signature">

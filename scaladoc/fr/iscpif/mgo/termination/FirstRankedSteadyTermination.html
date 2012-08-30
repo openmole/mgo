@@ -29,7 +29,9 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><dl class="attributes block"> <dt>Self Type</dt><dd><a name="fr.iscpif.mgo.termination.FirstRankedSteadyTermination" class="extype" href="">FirstRankedSteadyTermination</a> with AnyRef { type MF &lt;: fr.iscpif.mgo.ranking.Rank }</dd></dl><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Stops when the elements of the parato front have not been modifed since n
+generations.
+</p></div><dl class="attributes block"> <dt>Self Type</dt><dd><a name="fr.iscpif.mgo.termination.FirstRankedSteadyTermination" class="extype" href="">FirstRankedSteadyTermination</a> with AnyRef { type MF &lt;: fr.iscpif.mgo.ranking.Rank }</dd></dl><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a>, <a name="fr.iscpif.mgo.MF" class="extype" href="../MF.html">MF</a>, <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div></div>
@@ -290,7 +292,10 @@
         <span class="name">initialState</span><span class="params">(<span name="p">p: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>)</span><span class="result">: <a name="fr.iscpif.mgo.termination.FirstRankedSteadyTermination.FirstRankedState" class="extype" href="FirstRankedSteadyTermination$FirstRankedState.html">FirstRankedState</a></span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.FirstRankedSteadyTermination" class="extype" href="">FirstRankedSteadyTermination</a> → <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the initial state
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the initial state
+</p></div><dl class="paramcmts block"><dt class="param">p</dt><dd class="cmt"><p>the initial population</p></dd><dt>returns</dt><dd class="cmt"><p>the initial state
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.FirstRankedSteadyTermination" class="extype" href="">FirstRankedSteadyTermination</a> → <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></dd></dl></div>
     </li><li visbl="pub" name="scala.Any#isInstanceOf" data-isabs="false">
       <a id="isInstanceOf[T0]:Boolean"></a>
       <h4 class="signature">
@@ -362,7 +367,10 @@
         <span class="name">terminated</span><span class="params">(<span name="population">population: <a name="fr.iscpif.mgo.Population" class="extype" href="../Population.html">Population</a>[G, MF]</span>, <span name="state">state: STATE</span>)</span><span class="result">: (<span name="scala.Boolean" class="extype">Boolean</span>, STATE)</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.FirstRankedSteadyTermination" class="extype" href="">FirstRankedSteadyTermination</a> → <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></dd></dl></div>
+      <p class="shortcomment cmt">Test if the algorithm has converged.</p><div class="fullcomment"><div class="comment cmt"><p>Test if the algorithm has converged.
+</p></div><dl class="paramcmts block"><dt class="param">population</dt><dd class="cmt"><p>the current population</p></dd><dt>returns</dt><dd class="cmt"><p>a boolean which is equal to true if a terminal state has
+been detected and the new termination state
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.termination.FirstRankedSteadyTermination" class="extype" href="">FirstRankedSteadyTermination</a> → <a name="fr.iscpif.mgo.termination.Termination" class="extype" href="Termination.html">Termination</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#toString" data-isabs="false">
       <a id="toString():String"></a>
       <h4 class="signature">

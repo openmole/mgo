@@ -29,7 +29,10 @@
       </span>
       </h4>
       
-      <div class="fullcommenttop" id="comment"><div class="toggleContainer block">
+      <div class="fullcommenttop" id="comment"><div class="comment cmt"><p>Crowding distance, see Deb, K., Agrawal, S., Pratap, A. &amp; Meyarivan, T.
+A fast elitist non-dominated sorting genetic algorithm for multi-objective
+optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
+</p></div><div class="toggleContainer block">
           <span class="toggle">Linear Supertypes</span>
           <div class="superTypes hiddenContent"><a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a>, <a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a>, <a name="fr.iscpif.mgo.G" class="extype" href="../G.html">G</a>, AnyRef, <span name="scala.Any" class="extype">Any</span></div>
         </div><div class="toggleContainer block">
@@ -87,10 +90,12 @@
         <span class="kind">def</span>
       </span>
       <span class="symbol">
-        <span class="name">rank</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
+        <span class="name">rank</span><span class="params">(<span name="individuals">individuals: IndexedSeq[<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G]]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the rank of a set of individuals.</p><div class="fullcomment"><div class="comment cmt"><p>Compute the rank of a set of individuals.
+</p></div><dl class="paramcmts block"><dt class="param">individuals</dt><dd class="cmt"><p>the individuals to rank</p></dd><dt>returns</dt><dd class="cmt"><p>the ranks of the individuals in the same order
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.ranking.Ranking" class="extype" href="../ranking/Ranking.html">Ranking</a></dd></dl></div>
     </li></ol>
             </div>
 
@@ -194,7 +199,11 @@
         <span class="name">diversity</span><span class="params">(<span name="evaluated">evaluated: IndexedSeq[(<a name="fr.iscpif.mgo.Individual" class="extype" href="../Individual.html">Individual</a>[G], <a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Int" class="extype">Int</span>])]</span>)</span><span class="result">: IndexedSeq[<a name="fr.iscpif.mgo.tools.Lazy" class="extype" href="../tools/Lazy.html">Lazy</a>[<span name="scala.Double" class="extype">Double</span>]]</span>
       </span>
       </h4>
-      <div class="fullcomment"><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.CrowdingDiversity" class="extype" href="">CrowdingDiversity</a> → <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a></dd></dl></div>
+      <p class="shortcomment cmt">Compute the diversity of the individual
+</p><div class="fullcomment"><div class="comment cmt"><p>Compute the diversity of the individual
+</p></div><dl class="paramcmts block"><dt>returns</dt><dd class="cmt"><p>a diversity sequence in the diversity of the individual i at the
+position i
+</p></dd></dl><dl class="attributes block"> <dt>Definition Classes</dt><dd><a name="fr.iscpif.mgo.diversity.CrowdingDiversity" class="extype" href="">CrowdingDiversity</a> → <a name="fr.iscpif.mgo.diversity.DiversityMetric" class="extype" href="DiversityMetric.html">DiversityMetric</a></dd></dl></div>
     </li><li visbl="pub" name="scala.AnyRef#eq" data-isabs="false">
       <a id="eq(AnyRef):Boolean"></a>
       <h4 class="signature">
