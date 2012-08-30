@@ -7,6 +7,11 @@ MGO is a library based on the cake pattern for multi-objective evolutionary algo
 * exposes a modular and exetensible architechture,
 * implements state of the art algorithms.
 
+Documentation
+-------------
+
+The scaladoc of mgo is available here: [scaladoc](http://romainreuillon.github.com/mgo/scaladoc).
+
 Example
 -------
 
@@ -20,7 +25,7 @@ Example
   
     val smsemoea =
       new SMSEMOEASigma
-        with MGBinaryTournamentSelection
+        with BinaryTournamentSelection
         with HyperVolumeStabilityTermination
         with NonDominatedElitism
         with CoEvolvingSigmaValuesMutation
@@ -29,7 +34,6 @@ Example
         with ParetoRanking
         with StrictDominance
         with RankDiversityModifier
-        with ManualReferencePoint 
         with CloneRemoval {
   
         def distributionIndex = 2
