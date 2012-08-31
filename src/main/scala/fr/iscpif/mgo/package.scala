@@ -73,7 +73,7 @@ package object mgo {
   type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
   type RankDiversityModifier = modifier.RankDiversityModifier
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
-  type FixedGaussianMutation = mutation.FixedGaussianMutation
+  type GaussianMutation = mutation.GaussianMutation
   type Mutation = mutation.Mutation
   type NoneMutation = mutation.NoneMutation
   type RandomMutation = mutation.RandomMutation
