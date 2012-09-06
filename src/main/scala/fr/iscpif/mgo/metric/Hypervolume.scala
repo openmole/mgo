@@ -98,13 +98,11 @@ object Hypervolume {
       } else if (dimIndex == 1) {
 
         //Transform q option to node
-        var q:Node = sentinel.next(1) match {
-          case Some(n) => n
-        }
+        var q:Node = sentinel.next(1).get
 
         var h:Double = q.cargo(0)
         //Transform p option to node
-        var p:Node = q.next(1) match { case Some(n) => n}
+        var p:Node = q.next(1).get
 
         while (p != sentinel) {
 
@@ -114,9 +112,7 @@ object Hypervolume {
             h = pCargo(0)
           }
           q = p
-          p = q.next(1) match {
-            case Some(n) => n
-          }
+          p = q.next(1).get
         }
         hvol += h * q.cargo(1)
         hvol
@@ -125,34 +121,25 @@ object Hypervolume {
 
         var p: Node = sentinel
         //Transform q option to node
-        var q: Node = p.prev(dimIndex) match {
-          case Some(n) => n
-        }
+        var q: Node = p.prev(dimIndex).get
 
         while (!q.cargo.isEmpty) {
           if (q.ignore < dimIndex) {
             q.ignore = 0
           }
-          q = q.prev(dimIndex) match {
-            case Some(n) => n
-          }
+          q = q.prev(dimIndex).get
         }
 
-        q = p.prev(dimIndex) match {
-          case Some(n) => n
-        }
+        q = p.prev(dimIndex).get
 
-        while (newLength > 1 && (q.cargo(dimIndex) > bounds(dimIndex) || (q.prev(dimIndex) match { case Some(n: Node) => n }).cargo(dimIndex) >= bounds(dimIndex))) {
+        while (newLength > 1 && (q.cargo(dimIndex) > bounds(dimIndex) || (q.prev(dimIndex).get).cargo(dimIndex) >= bounds(dimIndex))) {
           p = q
           list.remove(p, dimIndex, bounds)
-          q = p.prev(dimIndex) match {
-            case Some(n) => n
-          }
+          q = p.prev(dimIndex).get
           newLength = newLength - 1
         }
 
-        var qPrevDimIndex = q.prev(dimIndex) match {case Some(n: Node) => n }
-
+        var qPrevDimIndex = q.prev(dimIndex).get
         if (newLength > 1) {
           hvol = qPrevDimIndex.volume(dimIndex) + qPrevDimIndex.area(dimIndex) * (q.cargo(dimIndex) - qPrevDimIndex.cargo(dimIndex))
         } else {
@@ -183,16 +170,14 @@ object Hypervolume {
           list.reinsert(p, dimIndex, bounds)
           newLength += 1
           q = p
-          p = p.next(dimIndex) match { 
-            case Some(n) => n 
-          }
+          p = p.next(dimIndex).get
           q.volume(dimIndex) = hvol
 
           if (q.ignore >= dimIndex) {
-            q.area(dimIndex) = (q.prev(dimIndex) match { case Some(n: Node) => n }).area(dimIndex)
+            q.area(dimIndex) = (q.prev(dimIndex).get).area(dimIndex)
           } else {
             q.area(dimIndex) = hvRecursive(dimIndex - 1, newLength, bounds)
-            if (q.area(dimIndex) <= (q.prev(dimIndex) match { case Some(n: Node) => n }).area(dimIndex)) {
+            if (q.area(dimIndex) <= (q.prev(dimIndex).get).area(dimIndex)) {
               q.ignore = dimIndex
             }
           }
@@ -268,11 +253,10 @@ object Hypervolume {
     def getLength(i: Int): Int = {
       var length = 0
       var node = sentinel.next(i)
-      while (node != sentinel) {
+      
+      while (node.get != sentinel) {
         length += 1
-        node = node match {
-          case Some(n) => n.next(i)
-        }
+        node = node.get.next(i)
       }
       length
     }

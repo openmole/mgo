@@ -23,8 +23,7 @@ import fr.iscpif.mgo._
  * Base of the cake for a genetic algorithm evolutions (algorithms evolving
  * sequences of doubles).
  */
-trait GAEvolution extends Evolution { self =>
-  type G <: GAGenome
+trait GAEvolution extends Evolution with GAG {
   
   /** Size of the generated solutions */
   def genomeSize: Int

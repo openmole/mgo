@@ -32,7 +32,7 @@ object Rank {
     if(population.isEmpty) population
     else {
       val firstRank =  population.map{_.metaFitness.rank()}.min
-      population filter { i => i.metaFitness.rank == firstRank }
+      population filter { i => i.metaFitness.rank() == firstRank }
     }
   }
   
