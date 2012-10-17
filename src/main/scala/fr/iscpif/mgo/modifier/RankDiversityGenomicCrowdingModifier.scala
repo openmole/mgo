@@ -27,7 +27,7 @@ import metric._
  */
 trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier with DiversityModifier with GAG with Ranking with DiversityMetric {
   
-  override type MF = Diversity with Rank
+  override type MF = RankDiversity
   
   override def modify(evaluated: IndexedSeq[Individual[G]]) = {  
     val genomeDiversity = CrowdingDistance(evaluated.map{_.genome.values})
@@ -49,10 +49,10 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier wi
     (evaluated zip ranks zip distances) map {
       case ((i, r), d) => 
         PopulationElement(i,
-            new Diversity with Rank {
-              val diversity = d
-              val rank = r
-            }
+            new RankDiversity (
+              diversity = d,
+              rank = r
+            )
         )
     }
     

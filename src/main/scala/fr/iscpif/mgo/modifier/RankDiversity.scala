@@ -2,7 +2,7 @@
  * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -18,28 +18,8 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
 
-/**
- * Compute a meta-fitness with a rank an a diversity
- */
-trait RankDiversityModifier extends RankModifier with DiversityModifier with Ranking with DiversityMetric {
-  
-  override type MF = RankDiversity
-  
-  override def modify(evaluated: IndexedSeq[Individual[G]]) = {  
-    val ranks = rank(evaluated)
-    val distances = diversity(evaluated zip ranks)
-      
-    (evaluated zip ranks zip distances) map {
-      case ((i, r), d) => 
-        PopulationElement(
-            i,
-            new RankDiversity (
-              diversity = d,
-              rank = r
-            )
-        )
-    }
-    
-  }
+class RankDiversity(val rank: Lazy[Int], val diversity: Lazy[Double]) extends Rank with Diversity {
+  override def toString = rank + " " + diversity
 }
