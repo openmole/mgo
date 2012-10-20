@@ -12,6 +12,11 @@ Documentation
 
 The scaladoc of mgo is available here: [scaladoc](http://romainreuillon.github.com/mgo/scaladoc).
 
+Licence
+-------
+
+MGO is licenced under the GNU Affero GPLv3 software licence. 
+
 Example
 -------
 
