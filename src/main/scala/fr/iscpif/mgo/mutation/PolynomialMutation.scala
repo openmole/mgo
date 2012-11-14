@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.genome.GenomeFactory
 import java.util.Random
 import scala.math._
 
@@ -29,7 +30,9 @@ import scala.math._
  * Based on the source code of Jmetal library
  * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
  */
-trait PolynomialMutation extends Mutation with GAG with GenomeFactory {
+trait PolynomialMutation extends Mutation with GenomeFactory {
+
+  type G <: genome.GAGenome
 
   def mutationRate = 0.5
 

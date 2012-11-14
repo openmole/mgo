@@ -15,15 +15,30 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
+package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
-import genome.G
-import java.util.Random
 
 /**
- * Mutation that doesn't modify the genome.
+ * Genome for genetic algorithms
  */
-trait NoneMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
+trait GAGenome extends Genome {
+  type T = IndexedSeq[Double]
+  
+  /**
+   * The sequence of values representing the candidate solution. Values evolve
+   * in the interval [0.0, 1.0]. They are scaled when they are provided to the
+   * fitness function
+   */ 
+  def values: IndexedSeq[Double] 
+  
+  /**
+   * Update the value part of the genome
+   * 
+   * @param values the new values
+   * @return the new internal representation of the genome
+   */ 
+  def updatedValues(values: IndexedSeq[Double]): T
+  
+  override def toString = content.toString
 }

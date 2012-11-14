@@ -29,7 +29,7 @@ object TestFunctionSMSEMOEA extends App {
   implicit val rng = new Random
 
   val smsemoea =
-    new SMSEMOEASigma
+    new algorithm.SMSEMOEASigma
       with BinaryTournamentSelection
       with HyperVolumeStabilityTermination
       with NonDominatedElitism

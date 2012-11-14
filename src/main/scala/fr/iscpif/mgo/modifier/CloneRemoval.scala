@@ -6,11 +6,12 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
+import genome.G
 
 /**
  * Layer of the cake for removing duplicated genomes in the evaluted individuals
  */
-trait CloneRemoval extends IndividualFilter with G {
-  override def filter(individuals: IndexedSeq[Individual[G]]) = 
+trait CloneRemoval extends IndividualFilter with G with F {
+  override def filter(individuals: IndexedSeq[Individual[G, F]]) =
     individuals.groupBy(_.genome).unzip._2.map{_.head}.toIndexedSeq
 }

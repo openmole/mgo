@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Sebastien Rey
+ * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,28 +9,16 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU Affero General Public License
+ * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.termination
+package fr.iscpif.mgo.map
 
 import fr.iscpif.mgo._
 
-/**
- * Stop after a finite number of state
- */
-trait CounterTermination extends Termination {
-  
-  /** Number of steps before the algorithm stops */
-  def steps: Int
-  
-  type STATE = Int
-  
-  def initialState(p: Population[G, F, MF]) = 0
-    
-  def terminated(population: Population[G, F, MF], step: STATE) =
-    (step >= steps, step + 1)
+trait OptimumMap extends Breeding with Elitism with Aggregation {
+  def classifier(genome: G): (Int, Int)
 }

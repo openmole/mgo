@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
+import genome.G
 import java.util.Random
 
 /**

@@ -29,9 +29,9 @@ trait TimedTermination extends Termination {
   
   type STATE = Long
   
-  def initialState(p: Population[G, MF]) = System.currentTimeMillis
+  def initialState(p: Population[G, F, MF]) = System.currentTimeMillis
   
-  def terminated(population: Population[G, MF], begin: STATE) = 
+  def terminated(population: Population[G, F, MF], begin: STATE) =
     (begin + duration <= System.currentTimeMillis, begin)
   
 }

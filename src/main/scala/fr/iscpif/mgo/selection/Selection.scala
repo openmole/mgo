@@ -18,12 +18,13 @@
 package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
+import genome.G
 import java.util.Random
 
 /**
  * Selection layer for the evolutionary algorithms.
  */
-trait Selection { this: G with MF =>
+trait Selection extends G with F with MF {
   
   /**
    * Select an individual among the population.
@@ -31,6 +32,6 @@ trait Selection { this: G with MF =>
    * @param population the population in which selection occurs
    * @return the selected individual
    */
-  def selection (population: Population[G, MF]) (implicit aprng : Random): Individual[G]
+  def selection (population: Population[G, F, MF]) (implicit aprng : Random): Individual[G, F]
 }
 

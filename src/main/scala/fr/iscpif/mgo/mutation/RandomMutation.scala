@@ -20,12 +20,15 @@ package fr.iscpif.mgo.mutation
 import java.util.Random
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Random._
+import fr.iscpif.mgo.genome.GenomeFactory
 
 /**
  * Randomly changes components with a uniformly drawn number
  */
-trait RandomMutation extends Mutation with GAG with GenomeFactory {
-    
+trait RandomMutation extends Mutation with GenomeFactory {
+
+  type G <: genome.GAGenome
+
   def mutationRate = 0.5
 
   override def mutate(genome: G)(implicit aprng: Random): G = {

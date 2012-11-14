@@ -18,16 +18,19 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import tools.Random._
-import tools.Math._
+import fr.iscpif.mgo.genome.GenomeFactory
+import fr.iscpif.mgo.tools.Random._
+import fr.iscpif.mgo.tools.Math._
 import java.util.Random
 
 /**
  * Mutation of a genome based on gausian distribution arrount the genome with 
  * fixed sigma values.
  */
-trait GaussianMutation extends Mutation with GAG with GenomeFactory {
-   
+trait GaussianMutation extends Mutation with GenomeFactory {
+
+  type G <: genome.GAGenome
+
   /** sigma values, one for each element in the rest of the genome */
   def sigma : Double
 

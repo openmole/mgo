@@ -29,7 +29,7 @@ object TestFunction extends App {
   implicit val rng = new Random
   
   val nsga2 =
-      new NSGAIISigma
+      new algorithm.NSGAIISigma
                      with BinaryTournamentSelection
                      with CrowdingStabilityTermination
                      with NonDominatedElitism

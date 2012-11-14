@@ -25,7 +25,7 @@ trait StabilityTermination extends Termination {
   
   type STATE = StabilityState
   
-  def initialState(p: Population[G, MF]): STATE = new StabilityState
+  def initialState(p: Population[G, F, MF]): STATE = new StabilityState
   
   def stability(state: StabilityState, newValue: Double) = {
     val newState = (newValue :: state.history).slice(0, windowSize)

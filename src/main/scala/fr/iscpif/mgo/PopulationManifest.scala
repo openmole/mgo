@@ -20,7 +20,7 @@ package fr.iscpif.mgo
 /**
  * Layer of the cake that exposes the manifest for the population
  */
-trait PopulationManifest extends G with MF {
+trait PopulationManifest extends G with F with MF {
   /** manifest for the population type */
-  implicit val populationManifest: Manifest[Population[G, MF]]
+  implicit val populationManifest: Manifest[Population[G, F, MF]]
 }

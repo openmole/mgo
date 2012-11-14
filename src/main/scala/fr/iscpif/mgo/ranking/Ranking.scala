@@ -18,17 +18,18 @@
 package fr.iscpif.mgo.ranking
 
 import fr.iscpif.mgo._
+import genome.G
 import tools.Lazy
 
 /**
  * Layer of the cake for algorithm with a ranking scheme.
  */
-trait Ranking extends G {
+trait Ranking extends G with F {
   /**
    * Compute the rank of a set of individuals.
    * 
    * @param individuals the individuals to rank
    * @return the ranks of the individuals in the same order
    */
-  def rank(individuals: IndexedSeq[Individual[G]]): IndexedSeq[Lazy[Int]]
+  def rank(individuals: IndexedSeq[Individual[G, F]]): IndexedSeq[Lazy[Int]]
 }

@@ -18,12 +18,13 @@
 package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
+import genome.G
 import tools.Lazy
 
 /**
  * Layer of the cake that compute a diversity metric for a set of individuals
  */
-trait DiversityMetric extends G with Ranking {
+trait DiversityMetric extends G with F with Ranking {
   
   /**
    * Compute the diversity of the individual
@@ -32,5 +33,5 @@ trait DiversityMetric extends G with Ranking {
    * @return a diversity sequence in the diversity of the individual i at the
    * position i
    */
-  def diversity(individuals: IndexedSeq[(Individual[G], Lazy[Int])]): IndexedSeq[Lazy[Double]]
+  def diversity(individuals: IndexedSeq[(Individual[G, F], Lazy[Int])]): IndexedSeq[Lazy[Double]]
 }

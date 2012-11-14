@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2012 reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,15 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
+package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import genome.G
-import java.util.Random
 
 /**
- * Mutation that doesn't modify the genome.
+ * Implementation of the SMSEMOEA algorithm with auto-adaptive sigma values for
+ * the mutation
  */
-trait NoneMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
-}
+trait SMSEMOEASigma extends SMSEMOEA with algorithm.NSGAIISigma

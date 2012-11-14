@@ -18,14 +18,18 @@
 package fr.iscpif.mgo.ranking
 
 import fr.iscpif.mgo._
+import genome.G
 import tools.Lazy
 
 /**
  * Layer to compute the rank according to the number individual that dominate a 
  * given individual. 
  */
-trait ParetoRanking extends Ranking with Dominance with G {
-  def rank(evaluated: IndexedSeq[Individual[G]]) = { 
+trait ParetoRanking extends Ranking with Dominance with G with F {
+
+  type F <: MGFitness
+
+  def rank(evaluated: IndexedSeq[Individual[G, F]]) = {
     evaluated.zipWithIndex.map { 
       case (indiv, index) =>
         Lazy(evaluated.zipWithIndex.filter {

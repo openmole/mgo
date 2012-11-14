@@ -26,7 +26,9 @@ import math._
  */
 trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with Dominance with RankModifier with StabilityTermination {
 
-  def terminated(population: Population[G, MF], terminationState: STATE): (Boolean, STATE) = {
+  type F <: MGFitness
+
+  def terminated(population: Population[G, F, MF], terminationState: STATE): (Boolean, STATE) = {
     val rankMax = population.map{_.metaFitness.rank()}.max
     val front = population.filter(_.metaFitness.rank() == rankMax).map{_.fitness.values}
     val hv = Hypervolume(front, referencePoint, this)

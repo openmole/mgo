@@ -6,11 +6,12 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
+import genome.G
 
 /**
  * Layer of the cake for filtering individuals in the set of evaluted individuals
  */
-trait IndividualFilter extends G {
+trait IndividualFilter extends G with F {
   
   /**
    * Filter the individuals
@@ -18,5 +19,5 @@ trait IndividualFilter extends G {
    * @param individuals the set of evaluated individuals
    * @return the filtrated individuals
    */
-  def filter(individuals: IndexedSeq[Individual[G]]) = individuals
+  def filter(individuals: IndexedSeq[Individual[G, F]]) = individuals
 }

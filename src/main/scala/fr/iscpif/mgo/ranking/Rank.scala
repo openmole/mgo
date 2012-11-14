@@ -28,7 +28,7 @@ object Rank {
    * @param population the population
    * @return the lower ranked elements
    */
-  def firstRanked[G, MF <: Rank](population: Population[G, MF]): IndexedSeq[PopulationElement[G, MF]] = {
+  def firstRanked[G, F, MF <: Rank](population: Population[G, F, MF]): IndexedSeq[PopulationElement[G, F, MF]] = {
     if(population.isEmpty) population
     else {
       val firstRank =  population.map{_.metaFitness.rank()}.min

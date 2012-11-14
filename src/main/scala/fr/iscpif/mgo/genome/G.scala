@@ -15,15 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
-
-import fr.iscpif.mgo._
-import genome.G
-import java.util.Random
+package fr.iscpif.mgo.genome
 
 /**
- * Mutation that doesn't modify the genome.
+ * Cake layer for the genome
  */
-trait NoneMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
+trait G {
+  type G <: Genome
 }

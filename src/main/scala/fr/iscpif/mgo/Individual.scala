@@ -19,7 +19,7 @@ package fr.iscpif.mgo
 
 object Individual {
 
-  implicit def individual2Fitness(i: Individual[_]) = i.fitness
+  implicit def individual2Fitness[F](i: Individual[_, F]) = i.fitness
   
   /**
    * Build an individual given a genome and an evaluation function
@@ -29,8 +29,8 @@ object Individual {
    * @param e the evaluation function
    * @return the individual for the genome g
    */
-  def apply[G](g: G, e: G => Fitness) = 
-    new Individual[G] {
+  def apply[G, F](g: G, e: G => F) =
+    new Individual[G, F] {
       val genome = g
       val fitness = e(g)
     }
@@ -43,8 +43,8 @@ object Individual {
    * @param f the fitness
    * @return the individual
    */
-  def apply[G](g: G, f: Fitness) = 
-    new Individual[G] {
+  def apply[G, F](g: G, f: F) =
+    new Individual[G, F] {
       val genome = g
       val fitness = f
     }
@@ -54,12 +54,12 @@ object Individual {
 /**
  * An individual of the evolution
  */
-trait Individual[+G] {
+trait Individual[+G, +F] {
   /** the genome of this individual */
   def genome: G
   
   /** the fitness evaluated for the genome */
-  def fitness: Fitness
+  def fitness: F
   
   /** transform this individual in a tuple genome, fitness */
   def toTuple = genome -> fitness

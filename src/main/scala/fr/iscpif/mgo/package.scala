@@ -17,27 +17,33 @@
 
 package fr.iscpif
 
+import mgo.algorithm.{SigmaGAEvolution, SMSEMOEASigma, NSGAIISigma}
+import mgo.genome.{Sigma, GAGenomeWithSigma, GAGenome, GAEvolution}
+
 package object mgo {
-  
-  implicit def traversable2Population[G, I](seq: Traversable[PopulationElement[G, I]]) =
-    new Population[G, I] {
+  implicit def traversable2Population[G, F, I](seq: Traversable[PopulationElement[G, F, I]]) =
+    new Population[G, F, I] {
       override val content = seq.toIndexedSeq
     }
-  
-  implicit def population2IndexedSeq[G, I](pop: Population[G, I]) = pop.content
+
+
+  implicit def population2IndexedSeq[G, F, I](pop: Population[G, F, I]) = pop.content
 
   private def changeScale(v:Double, min:Double, max:Double, boundaryMin:Double, boundaryMax:Double) = {
     val factor = (boundaryMax - boundaryMin)  / (max - min)
     (factor * (v - min) + boundaryMin)
   }
-  
+
   implicit def double2Scalable(d: Double) = new {
     def scale(min:Double, max:Double) = changeScale(d, 0, 1, min, max)
     def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
   }
-  
+
   type NSGAII = algorithm.NSGAII
+  type NSGAIISigma = algorithm.NSGAIISigma
+  type SigmaGAEvolution = algorithm.SigmaGAEvolution
   type SMSEMOEA = algorithm.SMSEMOEA
+  type SMSEMOEASigma = algorithm.SMSEMOEASigma
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover
   type CrossOver = crossover.CrossOver
@@ -54,14 +60,20 @@ package object mgo {
   type StrictDominance = dominance.StrictDominance
   type Elitism = elitism.Elitism
   type NonDominatedElitism = elitism.NonDominatedElitism
-  type GAEvolution = ga.GAEvolution
-  type GAG = ga.GAG
-  type GAGenome = ga.GAGenome
-  type GAGenomeWithSigma = ga.GAGenomeWithSigma
-  type NSGAIISigma = ga.NSGAIISigma
-  type SMSEMOEASigma = ga.SMSEMOEASigma
-  type Sigma = ga.Sigma
-  type SigmaGAEvolution = ga.SigmaGAEvolution
+  type Aggregation = fitness.Aggregation
+  type F = fitness.F
+  type Fitness = fitness.Fitness
+  type MGFitness = fitness.MGFitness
+  val MGFitness = fitness.MGFitness
+  type G = genome.G
+  type GAGenome = genome.GAGenome
+  type GAGenomeWithSigma = genome.GAGenomeWithSigma
+  type GAEvolution = genome.GAEvolution
+  type Genome = genome.Genome
+  type GenomeFactory = genome.GenomeFactory
+  type GAGenomeWithSigmaFactory = genome.GAGenomeWithSigmaFactory
+  type GManifest = genome.GManifest
+  type Sigma = genome.Sigma
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
   type CloneRemoval = modifier.CloneRemoval

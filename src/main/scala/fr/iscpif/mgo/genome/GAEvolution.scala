@@ -15,15 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
+package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
-import genome.G
-import java.util.Random
 
 /**
- * Mutation that doesn't modify the genome.
+ * Base of the cake for a genetic algorithm evolutions (algorithms evolving
+ * sequences of doubles).
  */
-trait NoneMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
+trait GAEvolution extends Evolution {
+  type G <: genome.GAGenome
+
+  /** Size of the generated solutions */
+  def genomeSize: Int
 }

@@ -19,6 +19,7 @@ package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Math._
+import fr.iscpif.mgo.genome.GenomeFactory
 import math._
 import java.util.Random
 
@@ -39,7 +40,9 @@ import java.util.Random
  * http://www.iitk.ac.in/kangal/codes.shtml
  *  
  */
-trait SBXBoundedCrossover extends CrossOver with GAG with GenomeFactory {
+trait SBXBoundedCrossover extends CrossOver with GenomeFactory {
+
+  type G <: genome.GAGenome
   
   /** distribution index parameter of the algorithm */
   def distributionIndex: Double

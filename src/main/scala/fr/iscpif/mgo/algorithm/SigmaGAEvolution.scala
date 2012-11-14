@@ -15,15 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
+package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import genome.G
-import java.util.Random
 
 /**
- * Mutation that doesn't modify the genome.
+ * Base cake layer for evolution with auto-adaptive sigma for the mutation
  */
-trait NoneMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
+trait SigmaGAEvolution extends GAEvolution {
+  type G <: GAGenome with Sigma
 }

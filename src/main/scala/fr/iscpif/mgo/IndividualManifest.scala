@@ -20,7 +20,7 @@ package fr.iscpif.mgo
 /**
  * The cake layer containing the manifest for the individual type
  */
-trait IndividualManifest extends G {
+trait IndividualManifest extends G with F {
   /** the manifest for the individual type */
-  implicit val individualManifest: Manifest[Individual[G]]
+  implicit val individualManifest: Manifest[Individual[G, F]]
 }

@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.genome.GenomeFactory
 import java.util.Random
 import fr.iscpif.mgo.tools.Random._
 
@@ -25,8 +26,10 @@ import fr.iscpif.mgo.tools.Random._
 /**
  * Swap part of each genome
  */
-trait UniformCrossOver extends CrossOver with GAG with GenomeFactory {
-    
+trait UniformCrossOver extends CrossOver with GenomeFactory {
+
+  type G <: genome.GAGenome
+
   /** Average rate of exchange between the 2 genomes */
   def crossoverRate: Double = 0.5
 

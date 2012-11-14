@@ -29,7 +29,8 @@ trait Evolution extends Mutation
      with Selection 
      with Modifier 
      with Lambda 
-     with G 
+     with G
+     with F
      with MF 
      with GenomeFactory { self =>
 
@@ -39,7 +40,7 @@ trait Evolution extends Mutation
    */
   case class EvolutionState(
     /** The current population of solution */
-    val population: Population[G, MF],
+    val population: Population[G, F, MF],
     /** The number of the generation */
     val generation: Int,
     /** The state maintained for the termination criterium */
@@ -55,7 +56,7 @@ trait Evolution extends Mutation
    * @param evaluator the fitness evaluation function
    * @return an iterator over the states of the evolution
    */
-  def run(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Iterator[EvolutionState] = 
+  def run(population: Population[G, F, MF], evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
     Iterator.iterate(EvolutionState(population, 0, initialState(population), false)){
       s => 
         val newPop = evolve(s.population, evaluator) 
@@ -69,7 +70,7 @@ trait Evolution extends Mutation
    * @param evaluator the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def run(evaluator: G => Fitness)(implicit aprng: Random): Iterator[EvolutionState] = 
+  def run(evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
     run(randomPopulation(evaluator), evaluator)
   
   /**
@@ -77,8 +78,8 @@ trait Evolution extends Mutation
    * 
    * @param problem an optimization problem to solve
    */
-  def run[P <: Problem {type G >: self.G}](problem: P)(implicit aprng: Random): Iterator[EvolutionState] = 
-    run(problem.apply _)
+  def run[P <: Problem {type G >: self.G; type F <: self.F}](problem: P)(implicit aprng: Random): Iterator[EvolutionState] =
+    run(s => problem.apply(s))
   
   /**
    * Evolve one step
@@ -88,7 +89,7 @@ trait Evolution extends Mutation
    * @return a new population of evaluated solutions
    * 
    */
-  def evolve(population: Population[G, MF], evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF]
+  def evolve(population: Population[G, F, MF], evaluator: G => F)(implicit aprng: Random): Population[G, F, MF]
   
   /**
    * Generate an random population
@@ -96,7 +97,7 @@ trait Evolution extends Mutation
    * @param evaluator the fitness evaluation function
    * @return a random population of evaluated solutions
    */
-  def randomPopulation(evaluator: G => Fitness)(implicit aprng: Random): Population[G, MF] =
-    toPopulation((0 until lambda).map{ _ => genomeFactory.random }.par.map{ g => Individual(g, evaluator)}.toIndexedSeq)
+  def randomPopulation(evaluator: G => F)(implicit aprng: Random): Population[G, F, MF] =
+    toPopulation((0 until lambda).map{ _ => genomeFactory.random }.par.map{ g => Individual[G, F](g, evaluator)}.toIndexedSeq)
   
 }

@@ -15,15 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
+package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
-import genome.G
-import java.util.Random
 
 /**
- * Mutation that doesn't modify the genome.
+ * Genome for genetic algorithm with an autoadaptative sigma component
  */
-trait NoneMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
+case class GAGenomeWithSigma(
+  val values: IndexedSeq[Double],
+  val sigma: IndexedSeq[Double]) extends genome.GAGenome with genome.Sigma {
+  
+  def content = values ++ sigma
+  
+  override def updatedValues(values: IndexedSeq [Double]) = copy(values = values).content
+
+  override def updatedSigma(sigma: IndexedSeq [Double]) = copy(sigma = sigma).content
+                                  
 }
+
+
+

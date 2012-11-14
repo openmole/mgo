@@ -15,15 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
-
-import fr.iscpif.mgo._
-import genome.G
-import java.util.Random
+package fr.iscpif.mgo.genome
 
 /**
- * Mutation that doesn't modify the genome.
+ * Auto-adaptative sigma values for the mutation of genetic algorithms
  */
-trait NoneMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
+trait Sigma { self: GAGenome =>
+  /** Sigma values, one for each genome component */
+  def sigma: IndexedSeq[Double]
+  
+  /**
+   * Update the sigma part of the genome and retun the new internal structure
+   * 
+   * @param sigma the sigma part of the genome
+   * @return the updated internal representation
+   */
+  def updatedSigma(sigma: IndexedSeq [Double]): IndexedSeq[Double]
 }

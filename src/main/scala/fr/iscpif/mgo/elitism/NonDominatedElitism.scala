@@ -25,13 +25,13 @@ import fr.iscpif.mgo._
 trait NonDominatedElitism extends Elitism with Mu { 
   type MF <: Diversity with Rank
 
-  def elitism(population: Population[G, MF]): Population[G, MF] = {
+  def elitism(population: Population[G, F, MF]): Population[G, F, MF] = {
     if (population.size < mu) population
     else {
-      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { _._2: Population[G, MF] }
+      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { _._2: Population[G, F, MF] }
 
       //FIXME: No idea why but it is not tailrec
-      def addFronts[I](fronts: List[Population[G, MF]], acc: List[Population[G, MF]], size: Int = 0): (Population[G, MF], Population[G, MF]) = {
+      def addFronts[I](fronts: List[Population[G, F, MF]], acc: List[Population[G, F, MF]], size: Int = 0): (Population[G, F, MF], Population[G, F, MF]) = {
         if (size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
         else (fronts.headOption.getOrElse(Population.empty), acc.flatten)
       }

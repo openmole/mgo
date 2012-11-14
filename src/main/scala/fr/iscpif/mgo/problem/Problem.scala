@@ -18,12 +18,14 @@
 package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
+import genome.Genome
 
 /**
  * Definition of a problem
  */
 trait Problem {
   type G <: Genome
+  type F <: Fitness
   
   /**
    * Evaluate the fitness of a genome
@@ -31,5 +33,5 @@ trait Problem {
    * @param genome the genome to evaluate
    * @return the fitness of this genome
    */
-  def apply(genome: G): Fitness
+  def apply(genome: G): F
 }
