@@ -1,6 +1,6 @@
 target/
 target/*
-.idea/*
+.idea*/*
 build.xml
 nbactions.xml
 /nbproject/
