@@ -23,16 +23,14 @@ import java.util.Random
 /**
  * Trait evolution provide the feature to define an evolutionary algorithm
  */
-trait Evolution extends Mutation 
-     with CrossOver 
-     with Termination 
-     with Selection 
+trait Evolution extends Termination
      with Modifier 
      with Lambda 
      with G
      with F
      with MF 
-     with GenomeFactory { self =>
+     with GenomeFactory
+     with Archive { self =>
 
 
   /** 
@@ -41,6 +39,8 @@ trait Evolution extends Mutation
   case class EvolutionState(
     /** The current population of solution */
     val population: Population[G, F, MF],
+    /** The current achive */
+    val archive: A,
     /** The number of the generation */
     val generation: Int,
     /** The state maintained for the termination criterium */
@@ -57,11 +57,12 @@ trait Evolution extends Mutation
    * @return an iterator over the states of the evolution
    */
   def run(population: Population[G, F, MF], evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
-    Iterator.iterate(EvolutionState(population, 0, initialState(population), false)){
+    Iterator.iterate(EvolutionState(population, initialArchive, 0, initialState(population), false)){
       s => 
-        val newPop = evolve(s.population, evaluator) 
+        val newPop = evolve(s.population, evaluator)
+        val newArch = archive(initialArchive, newPop)
         val (stop, newState) = terminated(newPop, s.terminationState)
-        EvolutionState(newPop, s.generation + 1, newState, stop)                        
+        EvolutionState(newPop, newArch, s.generation + 1, newState, stop)
     }
   
   /** 

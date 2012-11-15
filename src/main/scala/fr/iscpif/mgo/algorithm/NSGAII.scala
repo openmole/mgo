@@ -28,7 +28,7 @@ import fr.iscpif.mgo._
  * 1917, 849–858 (2000).
  * 
  */
-trait NSGAII extends genome.GAEvolution with Mu with Elitism with Breeding with DiversityMetric {
+trait NSGAII extends genome.GAEvolution with Mu with Elitism with Breeding with DiversityMetric with NoArchive {
 
   type G <: GAGenome
   type F = MGFitness

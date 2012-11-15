@@ -44,6 +44,8 @@ package object mgo {
   type SigmaGAEvolution = algorithm.SigmaGAEvolution
   type SMSEMOEA = algorithm.SMSEMOEA
   type SMSEMOEASigma = algorithm.SMSEMOEASigma
+  type Archive = archive.Archive
+  type NoArchive = archive.NoArchive
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover
   type CrossOver = crossover.CrossOver
@@ -74,6 +76,8 @@ package object mgo {
   type GAGenomeWithSigmaFactory = genome.GAGenomeWithSigmaFactory
   type GManifest = genome.GManifest
   type Sigma = genome.Sigma
+  type OptimumMap = map.OptimumMap
+  type Plotter = map.Plotter
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
   type CloneRemoval = modifier.CloneRemoval

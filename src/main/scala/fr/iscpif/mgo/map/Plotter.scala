@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 15/11/12 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,11 +19,6 @@ package fr.iscpif.mgo.map
 
 import fr.iscpif.mgo._
 
-trait OptimumMap extends Plotter with Aggregation {
-
-  /*def elitism(population: Population[G, F, MF]): Population[G, F, MF] = {
-    val classified = population.map{_.genome}.map(classifier)
-
-
-  }*/
+trait Plotter extends G {
+  def ploter(genome: G): (Int, Int)
 }
