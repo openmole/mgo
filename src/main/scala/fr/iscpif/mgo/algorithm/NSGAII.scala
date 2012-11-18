@@ -33,15 +33,15 @@ trait NSGAII extends genome.GAEvolution with Mu with Elitism with Breeding with 
   type G <: GAGenome
   type F = MGFitness
 
-  override def evolve(population: Population[G, F, MF], evaluator: G => F)(implicit aprng: Random): Population[G, F, MF] = {
+  override def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): Population[G, F, MF] = {
     val offspring = breed(
       population
     ).par.map { g => Individual(g, evaluator) }
 
-    val archive = population.toIndividuals ++ offspring
+    val newIndividuals = population.toIndividuals ++ offspring
 
     //Elitism strategy
-    val individuals = toPopulation(archive)
+    val individuals = toPopulation(newIndividuals, archive)
     elitism(individuals)
   }
 

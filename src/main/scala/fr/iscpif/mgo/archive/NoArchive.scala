@@ -20,8 +20,8 @@ package fr.iscpif.mgo.archive
 import fr.iscpif.mgo._
 
 trait NoArchive extends Archive {
-  type A = None.type
+  type A = Population[G, F, MF]
 
-  def initialArchive: A = None
-  def archive(archive: A, population: Population[G, F, MF]): A = None
+  def initialArchive: A = Population.empty
+  def archive(archive: A, population: Population[G, F, MF]): A = population
 }
