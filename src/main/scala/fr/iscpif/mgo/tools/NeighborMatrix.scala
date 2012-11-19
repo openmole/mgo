@@ -21,58 +21,73 @@ import Function._
 
 
 object NeighborMatrix {
-  type COORDINATE = (Int, Int)
+  /*type COORDINATE = (Int, Int)
 
   implicit class Coordinate(val c: COORDINATE) extends AnyVal {
     def x = c._1
     def y = c._2
-  }
+  }  */
+
+  def empty[S] =
+    new NeighborMatrix {
+      type T = S
+      def maxX = 0
+      def maxY = 0
+      def matrix(x: Int, y: Int) = None
+    }
+
+  def apply[S](elements: Map[(Int, Int), S]) =
+    if (elements.isEmpty) empty[S]
+    else {
+      val mX = elements.keys.toSeq.map{case(x, _) => x}.max
+      val mY = elements.keys.toSeq.map{case(_, y) => y}.max
+      new NeighborMatrix {
+        type T = S
+        def maxX = mX
+        def maxY = mY
+        def matrix(x: Int, y: Int) = elements.get(x, y)
+      }
+    }
+
 }
 
-import NeighborMatrix._
 
 trait NeighborMatrix {
   type T
 
-  def matrix: IndexedSeq[IndexedSeq[Seq[T]]]
+  def matrix(x: Int, y: Int): Option[T]
   def maxX: Int
   def maxY: Int
 
-  def coordinate(t: T): COORDINATE
+  def knn(x: Int, y: Int, n: Int) =
+    growUntilEnough(x, y, n).sortBy{ case(x1, y1) => distance(x, y, x1, y1) }.take(n)
 
-  def knn(t: T, n: Int) =
-    growUntilEnough(coordinate(t), n).sortBy(e => distance(t, e)).take(n)
+  def distance(x1: Int, y1: Int, x2: Int, y2: Int) = math.hypot(x2 - x1, y2 - y1)
 
-  def distance(t1: T, t2: T) = {
-    val (x1, y1) = coordinate(t1)
-    val (x2, y2) = coordinate(t2)
-    math.hypot(x2 - x1, y2 - y1)
-  }
-
-  def isIn(c: COORDINATE) = {
+  def isIn(x: Int, y: Int) = {
     def isIn(c: Int, maxC: Int) = c >= 0 && c < maxC
-    isIn(c.x, maxX) && isIn(c.y, maxY)
+    isIn(x, maxX) && isIn(y, maxY)
   }
 
   lazy val maxRange = math.max(maxX / 2.0, maxY / 2.0)
 
-  def growUntilEnough(c: COORDINATE, n: Int, range: Int = 1): List[T] = {
-    val included = (extrema(c, range) ::: square(c, range).toList).flatMap{case(x, y) => matrix(x)(y)}
+  def growUntilEnough(x: Int, y: Int, n: Int, range: Int = 1): List[(Int, Int)] = {
+    val included = (extrema(x, y, range) ::: square(x, y, range).toList).filter{ case (x1, y1) => matrix(x1, y1).isDefined }
     if(included.size >= n || range > maxRange) included
-    else growUntilEnough(c, n, range + 1)
+    else growUntilEnough(x, y, n, range + 1)
   }
 
-  def extrema(c: COORDINATE, range: Int) =
+  def extrema(x: Int, y: Int, range: Int) =
     for {
-      dx <- List(c.x - range - 1, c.x + range + 1)
-      dy <- List(c.y - range - 1, c.y + range + 1)
+      dx <- List(x - range - 1, x + range + 1)
+      dy <- List(y - range - 1, y + range + 1)
       if isIn(dx, dy)
     } yield(dx, dy)
 
-  def square(c: COORDINATE, range: Int) =
+  def square(x: Int, y: Int, range: Int) =
     for {
-      dx <- (c.x - range) to (c.x + range)
-      dy <- (c.y - range) to (c.y + range)
+      dx <- (x - range) to (x + range)
+      dy <- (y - range) to (y + range)
       if isIn (dx, dy)
     } yield(dx, dy)
 

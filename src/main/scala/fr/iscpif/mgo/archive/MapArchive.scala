@@ -18,21 +18,25 @@
 package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
+import collection.mutable
 
 trait MapArchive extends Archive with Plotter with Aggregation {
-  type A = Seq[Seq[Individual[G, F]]]
+  type A = Map[(Int, Int), Individual[G, F]]
 
-  def initialArchive: A = Seq.empty
+  def initialArchive: A = Map.empty
 
   def archive(archive: A, individuals: Seq[Individual[G, F]]): A = {
-    val tmpArchive = archive.map(_.toBuffer).toBuffer
+    val tmpArchive = mutable.Map(archive.toSeq: _*)
     for {
       i <- individuals
     } {
       val (x, y) = plot(i.genome)
-      if (aggregate(i.fitness) > aggregate(tmpArchive(x)(y).fitness)) tmpArchive(x)(y) = i
+      tmpArchive.get(x, y) match {
+        case Some(ai) => if (aggregate(i.fitness) > aggregate(ai.fitness)) tmpArchive((x, y)) = i
+        case None => tmpArchive((x, y)) = i
+      }
     }
-    tmpArchive
+    tmpArchive.toMap
   }
 
 }

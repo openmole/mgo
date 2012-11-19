@@ -19,13 +19,12 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
-trait OptimumMapModifier extends Modifier with Plotter with Aggregation with RankModifier with DiversityModifier {
+trait OptimumMapModifier extends Modifier with Plotter with Aggregation with RankModifier with DiversityModifier with MapArchive {
 
   type F = MGFitness
   type MF = RankDiversity
 
   def modify(individuals: IndexedSeq[Individual[G, F]], archive: A): Population[G, F, MF] = {
-
     val ranks = rank(individuals)
     val distances = diversity(individuals, ranks)
 

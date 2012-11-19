@@ -45,6 +45,7 @@ package object mgo {
   type SMSEMOEA = algorithm.SMSEMOEA
   type SMSEMOEASigma = algorithm.SMSEMOEASigma
   type Archive = archive.Archive
+  type MapArchive = archive.MapArchive
   type NoArchive = archive.NoArchive
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover
