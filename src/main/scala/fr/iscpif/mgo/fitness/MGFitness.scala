@@ -25,10 +25,11 @@ object MGFitness {
     }
   }
 
-  def apply(v: Traversable[Double]) = new MGFitness {
+  def apply(v: Traversable[Double]): MGFitness = new MGFitness {
     val values = v.toIndexedSeq
   }
 
+  def apply(v: Double*): MGFitness = MGFitness(v)
 }
 
 /**

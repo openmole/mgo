@@ -51,10 +51,10 @@ object PopulationElement {
 trait Population[+G, +F, +MF] {
 
   /** the content of the population */
-  def content: IndexedSeq[PopulationElement[G, F, MF]]
+  def content: Seq[PopulationElement[G, F, MF]]
 
   /** transform this population in a set of individual */
-  def toIndividuals: IndexedSeq[Individual[G, F]] = content map { _.toIndividual }
+  def toIndividuals: Seq[Individual[G, F]] = content map { _.toIndividual }
 
   override def toString = content.toString
 }

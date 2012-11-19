@@ -22,7 +22,7 @@ import collection.mutable.ArrayBuffer
 
 object Random {
 
-  implicit def indexedSeq2IndexedSeqDecorator[T](elts: IndexedSeq[T]) = new {
+  implicit class SeqDecorator[T](elts: Seq[T]) {
 
     def random(implicit prng: JRandom) = elts(prng.nextInt(elts.size))
 

@@ -33,7 +33,7 @@ object CrowdingDistance {
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
-  def apply(data: IndexedSeq[Seq[Double]]): IndexedSeq[Lazy[Double]] = {
+  def apply(data: Seq[Seq[Double]]): Seq[Lazy[Double]] = {
     if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
     else {
       class CrowdingInfo(val d: Seq[Double], var crowding: Double = 0.0)

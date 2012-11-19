@@ -31,5 +31,5 @@ trait Ranking extends G with F {
    * @param individuals the individuals to rank
    * @return the ranks of the individuals in the same order
    */
-  def rank(individuals: IndexedSeq[Individual[G, F]]): IndexedSeq[Lazy[Int]]
+  def rank(individuals: Seq[Individual[G, F]]): Seq[Lazy[Int]]
 }

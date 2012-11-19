@@ -43,7 +43,7 @@ object Hypervolume {
    * @param point a set of points
    * @return the nadir point
    */
-  def nadir(points: IndexedSeq[IndexedSeq[Double]]) =
+  def nadir(points: Seq[Seq[Double]]) =
     points.reduce {
       (i1, i2) =>
         (i1 zip i2).map {
@@ -61,7 +61,7 @@ object Hypervolume {
    * this point to the front
    * @return the hypervolume
    */
-  def apply(front: IndexedSeq[IndexedSeq[Double]], referencePoint: Seq[Double], d: Dominance): Double = {
+  def apply(front: Seq[Seq[Double]], referencePoint: Seq[Double], d: Dominance): Double = {
     def dominates(point: Seq[Double], other: Seq[Double]): Boolean =
       d.isDominated(other, point)
 
@@ -193,7 +193,7 @@ object Hypervolume {
   }
 
   /* Sets up the list data structure needed for calculation. */
-  def preProcess(front: IndexedSeq[IndexedSeq[Double]], referencePoint: Seq[Double]): MultiList = {
+  def preProcess(front: Seq[Seq[Double]], referencePoint: Seq[Double]): MultiList = {
     val dimensions = referencePoint.size
     var nodeList = new MultiList(dimensions)
 
@@ -210,9 +210,9 @@ object Hypervolume {
   }
 
   /* Sorts the list of nodes by the i -th value of the contained points. */
-  def sortByDimension(nodes: IndexedSeq[Node], i: Int): IndexedSeq[Node] = nodes.sortBy(_.cargo(i))
+  def sortByDimension(nodes: Seq[Node], i: Int): Seq[Node] = nodes.sortBy(_.cargo(i))
 
-  class Node(numberLists: Int, val cargo: IndexedSeq[Double] = IndexedSeq.empty) {
+  class Node(numberLists: Int, val cargo: Seq[Double] = IndexedSeq.empty) {
 
     var next: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists) { None }
     var prev: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists) { None }
@@ -274,7 +274,7 @@ object Hypervolume {
     }
 
     /* Extends the list at the given index with the nodes. */
-    def extend(nodes: IndexedSeq[Node], index: Int) = {
+    def extend(nodes: Seq[Node], index: Int) = {
 
       for (node <- nodes) {
         val lastButOne = sentinel.prev(index)

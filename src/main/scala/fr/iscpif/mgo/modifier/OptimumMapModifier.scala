@@ -18,25 +18,30 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
+import tools.NeighborMatrix
+
+import RankDiversityModifier._
 
 trait OptimumMapModifier extends Modifier with Plotter with Aggregation with RankModifier with DiversityModifier with MapArchive {
 
   type F = MGFitness
   type MF = RankDiversity
 
-  def modify(individuals: IndexedSeq[Individual[G, F]], archive: A): Population[G, F, MF] = {
-    val ranks = rank(individuals)
-    val distances = diversity(individuals, ranks)
+  def neighbors: Int
 
-    (individuals zip ranks zip distances) map {
-      case ((i, r), d) =>
-        PopulationElement(
-          i,
-          new RankDiversity(
-            diversity = d,
-            rank = r
-          )
-        )
+  def modify(individuals: IndexedSeq[Individual[G, F]], archive: A): Population[G, F, MF] = {
+    val matrix = NeighborMatrix(archive)
+
+    def fitness(i: Individual[G, F]) = {
+      val (x, y) = plot(i.genome)
+      val distance =
+        matrix.knn(x, y, neighbors).map {
+          case (x1, y1) => matrix.distance(x, y, x1, y1)
+        }.sum
+      MGFitness(aggregate(i.fitness), 1.0 / distance)
     }
+
+    val modified = individuals.map(i => Individual(i.genome, fitness(i)))
+    toPopulationElements(modified, rank, diversity)
   }
 }

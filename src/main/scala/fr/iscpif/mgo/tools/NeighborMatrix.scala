@@ -20,12 +20,6 @@ package fr.iscpif.mgo.tools
 import Function._
 
 object NeighborMatrix {
-  /*type COORDINATE = (Int, Int)
-
-  implicit class Coordinate(val c: COORDINATE) extends AnyVal {
-    def x = c._1
-    def y = c._2
-  }  */
 
   def empty[S] =
     new NeighborMatrix {
