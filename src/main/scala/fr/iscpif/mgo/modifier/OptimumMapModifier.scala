@@ -23,10 +23,8 @@ trait OptimumMapModifier extends Modifier with Plotter with Aggregation with Ran
 
   type F = MGFitness
   type MF = RankDiversity
-  type A = Seq[Individual[G, F]]
 
   def modify(individuals: IndexedSeq[Individual[G, F]], archive: A): Population[G, F, MF] = {
-
 
     val ranks = rank(individuals)
     val distances = diversity(individuals, ranks)

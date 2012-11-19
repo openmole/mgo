@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 15/11/12 Romain Reuillon
+ * Copyright (C) 19/11/12 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,10 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.map
+package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 
-trait Plotter extends G {
-  def plot(genome: G): (Int, Int)
+trait MapArchive extends Archive with Plotter with Aggregation {
+  type A = Seq[Seq[Individual[G, F]]]
+
+  def initialArchive: A = Seq.empty
+
+  def archive(archive: A, individuals: Seq[Individual[G, F]]): A = {
+    val tmpArchive = archive.map(_.toBuffer).toBuffer
+    for {
+      i <- individuals
+    } {
+      val (x, y) = plot(i.genome)
+      if (aggregate(i.fitness) > aggregate(tmpArchive(x)(y).fitness)) tmpArchive(x)(y) = i
+    }
+    tmpArchive
+  }
+
 }

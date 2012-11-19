@@ -59,10 +59,9 @@ trait Evolution extends Termination
   def run(p: Population[G, F, MF], a: A, evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
     Iterator.iterate(EvolutionState(p, a, 0, initialState(p), false)){
       s => 
-        val (newPop, indivArchive) = evolve(s.population, s.archive, evaluator)
-        val newArch = archivePopulation(indivArchive, newPop)
+        val (newPop, newArchive) = evolve(s.population, s.archive, evaluator)
         val (stop, newState) = terminated(newPop, s.terminationState)
-        EvolutionState(newPop, newArch, s.generation + 1, newState, stop)
+        EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
   
   /** 
