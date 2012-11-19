@@ -37,9 +37,9 @@ object CrowdingDistance {
   def apply(data: IndexedSeq[Seq[Double]]): IndexedSeq[Lazy[Double]] = {
     if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
     else {         
-      class CrowdingInfo(val d: Seq[Double], var crowding: Double)
+      class CrowdingInfo(val d: Seq[Double], var crowding: Double = 0.0)
       
-      val crowding = data.map(new CrowdingInfo(_, 0.))
+      val crowding = data.map(new CrowdingInfo(_))
 
       // for each objective
       for (curDim <- 0 until data.head.size) {
@@ -66,9 +66,7 @@ object CrowdingDistance {
 
         while (itOpod.hasNext) {
           val ptPlus1 = itOpod.next
-          val distance =  (ptPlus1.d(curDim) - ptMinus1.d(curDim))  / maxMinusMin
-          pt.crowding += distance.toDouble
-  
+          pt.crowding += (ptPlus1.d(curDim) - ptMinus1.d(curDim))  / maxMinusMin
           ptMinus1 = pt
           pt = ptPlus1
         }

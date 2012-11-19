@@ -47,7 +47,7 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier wi
         } 
       )
 
-    val distances = diversity(evaluated zip ranks)
+    val distances = diversity(evaluated, ranks)
     
     (evaluated zip ranks zip distances) map {
       case ((i, r), d) => 

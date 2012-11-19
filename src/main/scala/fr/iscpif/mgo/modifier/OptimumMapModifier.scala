@@ -19,13 +19,27 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 
-trait OptimumMapModifier extends Modifier with Plotter with Aggregation {
+trait OptimumMapModifier extends Modifier with Plotter with Aggregation with RankModifier with DiversityModifier {
 
   type F = MGFitness
+  type MF = RankDiversity
+  type A = Seq[Individual[G, F]]
 
-  override type MF = None.type
+  def modify(individuals: IndexedSeq[Individual[G, F]], archive: A): Population[G, F, MF] = {
 
-  /*override def modify(evaluated: IndexedSeq[Individual[G, F]]) = {
 
-  } */
+    val ranks = rank(individuals)
+    val distances = diversity(individuals, ranks)
+
+    (individuals zip ranks zip distances) map {
+      case ((i, r), d) =>
+        PopulationElement(
+          i,
+          new RankDiversity(
+            diversity = d,
+            rank = r
+          )
+        )
+    }
+  }
 }

@@ -30,18 +30,18 @@ trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Domi
 
   type F <: MGFitness
 
-  def diversity(evaluated: IndexedSeq[(Individual[G, F], Lazy[Int])]) = {
+  def diversity(evaluated: Seq[Individual[G, F]], ranks: Seq[Lazy[Int]]) = {
 
-   lazy val fronts = evaluated.map{_._1}.map{ ind => ind.fitness.values}
+   lazy val fronts = evaluated.map{ _.fitness.values }
 
    // Lazy method computation of global contribution for all front
     //Class individual by group of rank
-    val groupOfFront = evaluated.zipWithIndex.map{
+    val groupOfFront = (evaluated zip ranks).zipWithIndex.map{
       case ((i, r), index) => (i, r, index)}.groupBy {
       case (i,r,index) => r()}.values
 
     //Return contribution
-    val contributionByPoint = groupOfFront.map{ front =>  computeHypervolume(front, referencePoint)}.toIndexedSeq
+    val contributionByPoint = groupOfFront.map{ front =>  computeHypervolume(front.toIndexedSeq, referencePoint)}.toIndexedSeq
     //Merge group of front, and reclass individual by initial index
     val orderingByInitialIndex = contributionByPoint.flatten.sortBy{case (contribution,index) => index}
     //return only the contribution

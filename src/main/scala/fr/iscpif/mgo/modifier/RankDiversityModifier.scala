@@ -22,13 +22,13 @@ import fr.iscpif.mgo._
 /**
  * Compute a meta-fitness with a rank an a diversity
  */
-trait RankDiversityModifier extends RankModifier with DiversityModifier with Ranking with DiversityMetric {
+trait RankDiversityModifier extends RankModifier with DiversityModifier {
   
   override type MF = RankDiversity
   
   override def modify(evaluated: IndexedSeq[Individual[G, F]], archive: A) = {
     val ranks = rank(evaluated)
-    val distances = diversity(evaluated zip ranks)
+    val distances = diversity(evaluated, ranks)
       
     (evaluated zip ranks zip distances) map {
       case ((i, r), d) => 

@@ -24,4 +24,7 @@ trait NoArchive extends Archive {
 
   def initialArchive: A = Population.empty
   def archive(archive: A, population: Population[G, F, MF]): A = population
+
+  def archiveIndividuals(archive: A, individuals: Seq[Individual[G, F]]): A = archive
+  def archivePopulation(archive: A, population: Population[G, F, MF]): A = population
 }

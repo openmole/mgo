@@ -59,8 +59,8 @@ trait Evolution extends Termination
   def run(p: Population[G, F, MF], a: A, evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
     Iterator.iterate(EvolutionState(p, a, 0, initialState(p), false)){
       s => 
-        val newPop = evolve(s.population, s.archive, evaluator)
-        val newArch = archive(s.archive, newPop)
+        val (newPop, indivArchive) = evolve(s.population, s.archive, evaluator)
+        val newArch = archivePopulation(indivArchive, newPop)
         val (stop, newState) = terminated(newPop, s.terminationState)
         EvolutionState(newPop, newArch, s.generation + 1, newState, stop)
     }
@@ -72,8 +72,8 @@ trait Evolution extends Termination
    * @return an iterator over the states of the evolution
    */
   def run(evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] = {
-    val archive = initialArchive
-    run(randomPopulation(evaluator, archive), archive, evaluator)
+    val (population, archive) = randomPopulation(evaluator, initialArchive)
+    run(population, archive, evaluator)
   }
   
   /**
@@ -92,7 +92,7 @@ trait Evolution extends Termination
    * @return a new population of evaluated solutions
    * 
    */
-  def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): Population[G, F, MF]
+  def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): (Population[G, F, MF], A)
   
   /**
    * Generate an random population
@@ -100,10 +100,7 @@ trait Evolution extends Termination
    * @param evaluator the fitness evaluation function
    * @return a random population of evaluated solutions
    */
-  def randomPopulation(evaluator: G => F, archive: A)(implicit aprng: Random): Population[G, F, MF] =
-    toPopulation(
-      (0 until lambda).map{ _ => genomeFactory.random }.par.map{ g => Individual[G, F](g, evaluator)}.toIndexedSeq,
-      archive
-    )
+  def randomPopulation(evaluator: G => F, archive: A)(implicit aprng: Random): (Population[G, F, MF], A) =
+    toPopulation((0 until lambda).map{ _ => genomeFactory.random }.par.map{ g => Individual[G, F](g, evaluator)}.toIndexedSeq,archive)
   
 }
