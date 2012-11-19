@@ -29,7 +29,7 @@ trait MapModifier extends Modifier with Plotter with Aggregation with RankModifi
 
   def neighbors: Int
 
-  def modify(individuals: IndexedSeq[Individual[G, F]], archive: A): Population[G, F, MF] = {
+  def modify(individuals: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
     val matrix = NeighborMatrix(archive)
 
     def fitness(i: Individual[G, F]) = {
