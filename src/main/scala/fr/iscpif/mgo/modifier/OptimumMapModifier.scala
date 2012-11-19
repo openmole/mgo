@@ -22,7 +22,7 @@ import tools.NeighborMatrix
 
 import RankDiversityModifier._
 
-trait OptimumMapModifier extends Modifier with Plotter with Aggregation with RankModifier with DiversityModifier with MapArchive {
+trait MapModifier extends Modifier with Plotter with Aggregation with RankModifier with DiversityModifier with MapArchive {
 
   type F = MGFitness
   type MF = RankDiversity
