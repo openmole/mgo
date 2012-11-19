@@ -25,13 +25,13 @@ import java.util.Random
  * Implement a crossover operamtion between 2 genomes
  */
 trait CrossOver { self: G =>
-  
-  /** 
+
+  /**
    * Crossover g1 and g2
-   * 
+   *
    *  @param g1 a genome
    *  @param g2 anothe genome
-   *  @return the result of the crossover  
+   *  @return the result of the crossover
    */
-  def crossover(g1: G, g2: G)(implicit aprng : Random): IndexedSeq[G]
+  def crossover(g1: G, g2: G)(implicit aprng: Random): IndexedSeq[G]
 }

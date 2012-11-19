@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.metric
 
-import collection.mutable.{IndexedSeq => MIndexedSeq}
+import collection.mutable.{ IndexedSeq => MIndexedSeq }
 import scala.collection.mutable.ArrayBuffer
 import fr.iscpif.mgo.Dominance
 import math._
@@ -30,45 +30,46 @@ import math._
  * C. M. Fonseca, L. Paquete, and M. Lopez-Ibanez. An improved dimension-sweep
  * algorithm for the hypervolume indicator. In IEEE Congress on Evolutionary
  * Computation, pages 1157-1163, Vancouver, Canada, July 2006.
- * 
+ *
  * FIXE: The implementation is ugly, as the algorithm as directly been translated
  * from python
- * 
+ *
  */
 object Hypervolume {
 
   /**
    * Compute the nadir of a set of points
-   * 
+   *
    * @param point a set of points
    * @return the nadir point
    */
   def nadir(points: IndexedSeq[IndexedSeq[Double]]) =
     points.reduce {
-      (i1, i2) => (i1 zip i2).map {
-        case (i1, i2) => max(i1, i2)
-      }
+      (i1, i2) =>
+        (i1 zip i2).map {
+          case (i1, i2) => max(i1, i2)
+        }
     }
 
   /**
    * Compute the hypervolume that is dominated by a non-dominated front.
    * Before the HV computation, front and reference point are translated, so
    * that the reference point is [0, ..., 0].
-   * 
+   *
    * @param front the parato front
    * @param reference point the reference point for computing the volume from
    * this point to the front
    * @return the hypervolume
    */
-  def apply(front: IndexedSeq[IndexedSeq[Double]], referencePoint:Seq[Double], d: Dominance): Double = {
-    def dominates(point: Seq[Double], other: Seq[Double]): Boolean = 
+  def apply(front: IndexedSeq[IndexedSeq[Double]], referencePoint: Seq[Double], d: Dominance): Double = {
+    def dominates(point: Seq[Double], other: Seq[Double]): Boolean =
       d.isDominated(other, point)
 
     val dimensions = referencePoint.size
-    
-    val relevantPoints = front.filter(dominates(_, referencePoint)).map{
-      point => (point zip referencePoint).map{case(p, r) => p - r}
-    }    
+
+    val relevantPoints = front.filter(dominates(_, referencePoint)).map {
+      point => (point zip referencePoint).map { case (p, r) => p - r }
+    }
 
     val list = preProcess(relevantPoints, referencePoint)
 
@@ -92,17 +93,17 @@ object Hypervolume {
         hvol
       } else if (dimIndex == 0) {
         sentinel.next(0) match {
-         case None => 0.0
-         case Some(n) => -n.cargo(0)
-       }
+          case None => 0.0
+          case Some(n) => -n.cargo(0)
+        }
       } else if (dimIndex == 1) {
 
         //Transform q option to node
-        var q:Node = sentinel.next(1).get
+        var q: Node = sentinel.next(1).get
 
-        var h:Double = q.cargo(0)
+        var h: Double = q.cargo(0)
         //Transform p option to node
-        var p:Node = q.next(1).get
+        var p: Node = q.next(1).get
 
         while (p != sentinel) {
 
@@ -116,8 +117,7 @@ object Hypervolume {
         }
         hvol += h * q.cargo(1)
         hvol
-      }
-      else {
+      } else {
 
         var p: Node = sentinel
         //Transform q option to node
@@ -146,11 +146,11 @@ object Hypervolume {
           // CODE POURRI , A REFAIRE car QAREA est un passage par ref en python ... sert a rien
           q.area(0) = 1.0
           q.area = ArrayBuffer(1.0) ++ (Range(0, dimIndex).map {
-              i =>  q.area(i) * -q.cargo(i)
-            })
+            i => q.area(i) * -q.cargo(i)
+          })
           q.area = q.area
 
-          }
+        }
 
         q.volume(dimIndex) = hvol
         if (q.ignore >= dimIndex) {
@@ -193,7 +193,7 @@ object Hypervolume {
   }
 
   /* Sets up the list data structure needed for calculation. */
-  def preProcess(front: IndexedSeq[IndexedSeq[Double]],referencePoint: Seq[Double]): MultiList = {
+  def preProcess(front: IndexedSeq[IndexedSeq[Double]], referencePoint: Seq[Double]): MultiList = {
     val dimensions = referencePoint.size
     var nodeList = new MultiList(dimensions)
 
@@ -203,19 +203,19 @@ object Hypervolume {
 
     Range(0, dimensions).map {
       i =>
-      nodes = sortByDimension(nodes, i)
-      nodeList.extend(nodes, i)
+        nodes = sortByDimension(nodes, i)
+        nodeList.extend(nodes, i)
     }
     nodeList
   }
 
   /* Sorts the list of nodes by the i -th value of the contained points. */
   def sortByDimension(nodes: IndexedSeq[Node], i: Int): IndexedSeq[Node] = nodes.sortBy(_.cargo(i))
-  
+
   class Node(numberLists: Int, val cargo: IndexedSeq[Double] = IndexedSeq.empty) {
 
-    var next: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists){None}
-    var prev: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists) {None}
+    var next: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists) { None }
+    var prev: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists) { None }
     var ignore = 0
 
     var area = MIndexedSeq.fill(numberLists) {
@@ -226,7 +226,7 @@ object Hypervolume {
       0.0
     }
 
-   override def toString = cargo.toString
+    override def toString = cargo.toString
 
   }
 
@@ -253,7 +253,7 @@ object Hypervolume {
     def getLength(i: Int): Int = {
       var length = 0
       var node = sentinel.next(i)
-      
+
       while (node.get != sentinel) {
         length += 1
         node = node.get.next(i)
@@ -268,7 +268,7 @@ object Hypervolume {
       node.prev(index) = lastButOne //set the last element as the new one
       sentinel.prev(index) = Some(node)
       lastButOne match {
-        case None => 
+        case None =>
         case Some(n) => n.next(index) = Some(node)
       }
     }
@@ -282,7 +282,7 @@ object Hypervolume {
         node.prev(index) = lastButOne //set the last element as the new one
         sentinel.prev(index) = Some(node)
         lastButOne match {
-          case None => 
+          case None =>
           case Some(n) => n.next(index) = Some(node)
         }
       }
@@ -299,7 +299,7 @@ object Hypervolume {
           case Some(n) => n.next(i) = successor
         }
 
-       successor match {
+        successor match {
           case None =>
           case Some(n) => n.prev(i) = predecessor
         }
@@ -318,7 +318,6 @@ object Hypervolume {
      */
     def reinsert(node: Node, index: Int, bounds: MIndexedSeq[Double]) = {
       for (i <- Range(0, index)) {
-
 
         node.prev(i) match {
           case None =>

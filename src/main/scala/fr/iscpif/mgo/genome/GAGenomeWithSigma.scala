@@ -23,16 +23,14 @@ import fr.iscpif.mgo._
  * Genome for genetic algorithm with an autoadaptative sigma component
  */
 case class GAGenomeWithSigma(
-  val values: IndexedSeq[Double],
-  val sigma: IndexedSeq[Double]) extends genome.GAGenome with genome.Sigma {
-  
+    val values: IndexedSeq[Double],
+    val sigma: IndexedSeq[Double]) extends genome.GAGenome with genome.Sigma {
+
   def content = values ++ sigma
-  
-  override def updatedValues(values: IndexedSeq [Double]) = copy(values = values).content
 
-  override def updatedSigma(sigma: IndexedSeq [Double]) = copy(sigma = sigma).content
-                                  
+  override def updatedValues(values: IndexedSeq[Double]) = copy(values = values).content
+
+  override def updatedSigma(sigma: IndexedSeq[Double]) = copy(sigma = sigma).content
+
 }
-
-
 

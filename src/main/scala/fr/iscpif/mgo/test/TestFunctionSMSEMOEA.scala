@@ -29,18 +29,9 @@ object TestFunctionSMSEMOEA extends App {
   implicit val rng = new Random
 
   val smsemoea =
-    new algorithm.SMSEMOEASigma
-      with BinaryTournamentSelection
-      with HyperVolumeStabilityTermination
-      with NonDominatedElitism
-      with CoEvolvingSigmaValuesMutation
-      with SBXBoundedCrossover
-      with HypervolumeDiversity
-      with ParetoRanking
-      with StrictDominance
-      with RankDiversityModifier {
+    new algorithm.SMSEMOEASigma with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier {
       def distributionIndex = 2
-      
+
       def windowSize = 100
       def deviationEpsilon = 0.001
       def mu = 200
@@ -55,5 +46,5 @@ object TestFunctionSMSEMOEA extends App {
   res sortBy (_.metaFitness.rank) foreach {
     e => println(zdt.scale(e)._2.values.mkString(","))
   }
-    
+
 }

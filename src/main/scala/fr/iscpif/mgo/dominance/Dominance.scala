@@ -22,6 +22,6 @@ import fr.iscpif.mgo._
 /**
  * Layer of the cake for the dominance type between 2 solution
  */
-trait Dominance { 
-  def isDominated (p1: Seq[Double], p2: Seq[Double]): Boolean
+trait Dominance {
+  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean
 }

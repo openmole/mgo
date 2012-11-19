@@ -23,12 +23,12 @@ import fr.iscpif.mgo._
  * Store raw individuals in the population
  */
 trait NoneModifier extends Modifier {
-  
+
   type MF = None.type
-  
+
   def modify(e: IndexedSeq[Individual[G, F]]) =
     new Population[G, F, MF] {
-      lazy val content = e.map{ PopulationElement(_, None) }
+      lazy val content = e.map { PopulationElement(_, None) }
     }
-  
+
 }

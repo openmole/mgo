@@ -17,33 +17,32 @@
 
 package fr.iscpif.mgo.metric
 
-
 import fr.iscpif.mgo.tools.Lazy
 
 /**
- * Crowding distance computation see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T. 
- * A fast elitist non-dominated sorting genetic algorithm for multi-objective 
+ * Crowding distance computation see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
+ * A fast elitist non-dominated sorting genetic algorithm for multi-objective
  * optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
  */
 object CrowdingDistance {
-  
+
   /**
    * Compute the crowding distance
-   * 
+   *
    * @param data the set of point
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
   def apply(data: IndexedSeq[Seq[Double]]): IndexedSeq[Lazy[Double]] = {
     if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
-    else {         
+    else {
       class CrowdingInfo(val d: Seq[Double], var crowding: Double = 0.0)
-      
+
       val crowding = data.map(new CrowdingInfo(_))
 
       // for each objective
       for (curDim <- 0 until data.head.size) {
-        
+
         val curCrowding = crowding.sortBy(_.d(curDim))
 
         val firstCrowdingInfo = curCrowding.head
@@ -66,7 +65,7 @@ object CrowdingDistance {
 
         while (itOpod.hasNext) {
           val ptPlus1 = itOpod.next
-          pt.crowding += (ptPlus1.d(curDim) - ptMinus1.d(curDim))  / maxMinusMin
+          pt.crowding += (ptPlus1.d(curDim) - ptMinus1.d(curDim)) / maxMinusMin
           ptMinus1 = pt
           pt = ptPlus1
         }
@@ -75,5 +74,5 @@ object CrowdingDistance {
       crowding.map(c => Lazy(c.crowding))
     }
   }
-  
+
 }

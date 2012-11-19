@@ -25,10 +25,10 @@ import tools.Lazy
  * Layer of the cake that compute a diversity metric for a set of individuals
  */
 trait DiversityMetric extends G with F with Ranking {
-  
+
   /**
    * Compute the diversity of the individual
-   * 
+   *
    * @param individuals a set of individual
    * @return a diversity sequence in the diversity of the individual i at the
    * position i

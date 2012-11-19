@@ -26,10 +26,10 @@ import genome.Genome
 trait Problem {
   type G <: Genome
   type F <: Fitness
-  
+
   /**
    * Evaluate the fitness of a genome
-   * 
+   *
    * @param genome the genome to evaluate
    * @return the fitness of this genome
    */

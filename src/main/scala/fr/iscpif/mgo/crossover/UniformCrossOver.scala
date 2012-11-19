@@ -22,7 +22,6 @@ import fr.iscpif.mgo.genome.GenomeFactory
 import java.util.Random
 import fr.iscpif.mgo.tools.Random._
 
-
 /**
  * Swap part of each genome
  */
@@ -33,14 +32,14 @@ trait UniformCrossOver extends CrossOver with GenomeFactory {
   /** Average rate of exchange between the 2 genomes */
   def crossoverRate: Double = 0.5
 
-  def crossover (g1: G, g2: G) (implicit aprng : Random) = {
-    val rngValue = (0 until g1.content.size).map{x => !(aprng.nextDouble < crossoverRate)}
+  def crossover(g1: G, g2: G)(implicit aprng: Random) = {
+    val rngValue = (0 until g1.content.size).map { x => !(aprng.nextDouble < crossoverRate) }
     val offspringValues = (rngValue zip (g1.content zip g2.content)) map {
       case (b, (g1e, g2e)) =>
-        if(b) (g1e, g2e) else (g2e, g1e)
+        if (b) (g1e, g2e) else (g2e, g1e)
     }
-    
-    IndexedSeq(genomeFactory(offspringValues.map{_._1}),  genomeFactory(offspringValues.map{_._2}))
+
+    IndexedSeq(genomeFactory(offspringValues.map { _._1 }), genomeFactory(offspringValues.map { _._2 }))
   }
 
 }

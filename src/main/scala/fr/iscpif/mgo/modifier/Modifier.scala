@@ -27,18 +27,18 @@ import genome.G
 trait Modifier extends G with F with MF with IndividualFilter with Archive {
   /**
    * Generate a population from a set of indiviuals that is filtered in a first time
-   * 
+   *
    * @param individuals a set of individual
    * @return the filtred population with the meta-fitness for each individual
    */
   def toPopulation(individuals: IndexedSeq[Individual[G, F]], a: A): (Population[G, F, MF], A) = {
-    val newArchive =  archive(a, individuals)
+    val newArchive = archive(a, individuals)
     (modify(filter(individuals), newArchive), newArchive)
   }
 
   /**
    * Generate a population from a set of indiviuals
-   * 
+   *
    * @param individuals a set of individual
    * @return the population with the meta-fitness for each individual
    */

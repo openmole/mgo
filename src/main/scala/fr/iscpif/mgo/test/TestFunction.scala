@@ -20,25 +20,16 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import java.util.Random
 
-object TestFunction extends App { 
-  
+object TestFunction extends App {
+
   val zdt = new ZDT4 {
     def n = 10
   }
- 
+
   implicit val rng = new Random
-  
+
   val nsga2 =
-      new algorithm.NSGAIISigma
-                     with BinaryTournamentSelection
-                     with CrowdingStabilityTermination
-                     with NonDominatedElitism
-                     with CoEvolvingSigmaValuesMutation
-                     with SBXBoundedCrossover
-                     with CrowdingDiversity
-                     with ParetoRanking
-                     with StrictDominance
-                     with RankDiversityModifier {
+    new algorithm.NSGAIISigma with BinaryTournamentSelection with CrowdingStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with CrowdingDiversity with ParetoRanking with StrictDominance with RankDiversityModifier {
       def distributionIndex = 2
       def windowSize = 100
       def deviationEpsilon = 0.01
@@ -46,8 +37,8 @@ object TestFunction extends App {
       def lambda = 200
       def genomeSize = 10
       def referencePoint = IndexedSeq(2.0, 2.0)
-      }
-  
-  val res = nsga2.run(zdt).dropWhile{ s => println(s.terminationState + " " + s.generation) ; !s.terminated }.next.population
+    }
+
+  val res = nsga2.run(zdt).dropWhile { s => println(s.terminationState + " " + s.generation); !s.terminated }.next.population
   res sortBy (_.metaFitness.rank) foreach { e => println(zdt.scale(e)._2.values.mkString(",")) }
 }

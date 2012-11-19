@@ -24,16 +24,15 @@ import java.util.Random
  * Trait evolution provide the feature to define an evolutionary algorithm
  */
 trait Evolution extends Termination
-     with Modifier 
-     with Lambda 
-     with G
-     with F
-     with MF 
-     with GenomeFactory
-     with Archive { self =>
+    with Modifier
+    with Lambda
+    with G
+    with F
+    with MF
+    with GenomeFactory
+    with Archive { self =>
 
-
-  /** 
+  /**
    * Represent a state of the evolution algorithm
    */
   case class EvolutionState(
@@ -46,27 +45,26 @@ trait Evolution extends Termination
     /** The state maintained for the termination criterium */
     val terminationState: STATE,
     /** true if the termination criterium is met false otherwhise */
-    val terminated: Boolean
-  )
- 
+    val terminated: Boolean)
+
   /**
    * Run the evolutionary algorithm
-   * 
+   *
    * @param population the initial population
    * @param evaluator the fitness evaluation function
    * @return an iterator over the states of the evolution
    */
   def run(p: Population[G, F, MF], a: A, evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
-    Iterator.iterate(EvolutionState(p, a, 0, initialState(p), false)){
-      s => 
+    Iterator.iterate(EvolutionState(p, a, 0, initialState(p), false)) {
+      s =>
         val (newPop, newArchive) = evolve(s.population, s.archive, evaluator)
         val (stop, newState) = terminated(newPop, s.terminationState)
         EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
-  
-  /** 
+
+  /**
    * Run the evolutionary algorithm
-   * 
+   *
    * @param evaluator the fitness evaluator
    * @return an iterator over the states of the evolution
    */
@@ -74,32 +72,32 @@ trait Evolution extends Termination
     val (population, archive) = randomPopulation(evaluator, initialArchive)
     run(population, archive, evaluator)
   }
-  
+
   /**
    * Run the evlutionary algorithm
-   * 
+   *
    * @param problem an optimization problem to solve
    */
-  def run[P <: Problem {type G >: self.G; type F <: self.F}](problem: P)(implicit aprng: Random): Iterator[EvolutionState] =
+  def run[P <: Problem { type G >: self.G; type F <: self.F }](problem: P)(implicit aprng: Random): Iterator[EvolutionState] =
     run(s => problem.apply(s))
-  
+
   /**
    * Evolve one step
-   * 
+   *
    * @param population the current population
    * @param evaluator the fitness evaluation function
    * @return a new population of evaluated solutions
-   * 
+   *
    */
   def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): (Population[G, F, MF], A)
-  
+
   /**
    * Generate an random population
-   * 
+   *
    * @param evaluator the fitness evaluation function
    * @return a random population of evaluated solutions
    */
   def randomPopulation(evaluator: G => F, archive: A)(implicit aprng: Random): (Population[G, F, MF], A) =
-    toPopulation((0 until lambda).map{ _ => genomeFactory.random }.par.map{ g => Individual[G, F](g, evaluator)}.toIndexedSeq,archive)
-  
+    toPopulation((0 until lambda).map { _ => genomeFactory.random }.par.map { g => Individual[G, F](g, evaluator) }.toIndexedSeq, archive)
+
 }

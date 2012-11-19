@@ -20,10 +20,10 @@ package fr.iscpif.mgo
 object Individual {
 
   implicit def individual2Fitness[F](i: Individual[_, F]) = i.fitness
-  
+
   /**
    * Build an individual given a genome and an evaluation function
-   * 
+   *
    * @tparam G the type of the genome
    * @param g the value of the genome
    * @param e the evaluation function
@@ -37,7 +37,7 @@ object Individual {
 
   /**
    * Build an individual from a genome and a fitness
-   * 
+   *
    * @tparam G the type of the genome
    * @param g the genmome
    * @param f the fitness
@@ -48,7 +48,7 @@ object Individual {
       val genome = g
       val fitness = f
     }
-  
+
 }
 
 /**
@@ -57,12 +57,12 @@ object Individual {
 trait Individual[+G, +F] {
   /** the genome of this individual */
   def genome: G
-  
+
   /** the fitness evaluated for the genome */
   def fitness: F
-  
+
   /** transform this individual in a tuple genome, fitness */
   def toTuple = genome -> fitness
-  
+
   override def toString = "( genome = " + genome.toString + ", fitness = " + fitness.toString + ")"
 }

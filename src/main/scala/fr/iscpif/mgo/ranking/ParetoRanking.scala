@@ -22,24 +22,22 @@ import genome.G
 import tools.Lazy
 
 /**
- * Layer to compute the rank according to the number individual that dominate a 
- * given individual. 
+ * Layer to compute the rank according to the number individual that dominate a
+ * given individual.
  */
 trait ParetoRanking extends Ranking with Dominance with G with F {
 
   type F <: MGFitness
 
   def rank(evaluated: IndexedSeq[Individual[G, F]]) = {
-    evaluated.zipWithIndex.map { 
+    evaluated.zipWithIndex.map {
       case (indiv, index) =>
         Lazy(evaluated.zipWithIndex.filter {
-            case (_, index2) => index != index2
-          }.count { 
-            case(indiv2, _) => isDominated(indiv.fitness.values, indiv2.fitness.values)
-          })
+          case (_, index2) => index != index2
+        }.count {
+          case (indiv2, _) => isDominated(indiv.fitness.values, indiv2.fitness.values)
+        })
     }
   }
 }
-
-
 

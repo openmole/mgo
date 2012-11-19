@@ -25,5 +25,5 @@ import java.util.Random
  * Layer of the cake for the mutation operation.
  */
 trait Mutation { this: G =>
-  def mutate(genomes: G) (implicit aprng : Random): G
+  def mutate(genomes: G)(implicit aprng: Random): G
 }

@@ -22,8 +22,8 @@ import fr.iscpif.mgo.tools.Lazy
 import metric._
 
 /**
- * Crowding distance, see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T. 
- * A fast elitist non-dominated sorting genetic algorithm for multi-objective 
+ * Crowding distance, see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
+ * A fast elitist non-dominated sorting genetic algorithm for multi-objective
  * optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
  */
 trait CrowdingDiversity extends DiversityMetric {
@@ -31,6 +31,6 @@ trait CrowdingDiversity extends DiversityMetric {
   type F <: MGFitness
 
   def diversity(evaluated: Seq[Individual[G, F]], ranks: Seq[Lazy[Int]]) =
-    CrowdingDistance(evaluated.map{_.fitness.values}.toIndexedSeq)
-    
+    CrowdingDistance(evaluated.map { _.fitness.values }.toIndexedSeq)
+
 }

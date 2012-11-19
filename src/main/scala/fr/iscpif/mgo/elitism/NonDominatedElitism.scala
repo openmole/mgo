@@ -22,7 +22,7 @@ import fr.iscpif.mgo._
 /**
  * Reduce the size of the population according to a divesity metric and a rank
  */
-trait NonDominatedElitism extends Elitism with Mu { 
+trait NonDominatedElitism extends Elitism with Mu {
   type MF <: Diversity with Rank
 
   def elitism(population: Population[G, F, MF]): Population[G, F, MF] = {
@@ -38,9 +38,9 @@ trait NonDominatedElitism extends Elitism with Mu {
 
       val (lastFront, selected) = addFronts(fronts, List.empty)
 
-      (if (selected.size < mu) 
-        selected ++ lastFront.sortBy(_.metaFitness.diversity()).reverse.slice(0, mu - selected.size) 
-       else selected)
+      (if (selected.size < mu)
+        selected ++ lastFront.sortBy(_.metaFitness.diversity()).reverse.slice(0, mu - selected.size)
+      else selected)
     }
   }
 }

@@ -15,44 +15,42 @@
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package fr.iscpif.mgo.tools
 
-import java.util.{Random => JRandom}
+import java.util.{ Random => JRandom }
 import collection.mutable.ArrayBuffer
 
 object Random {
-  
+
   implicit def indexedSeq2IndexedSeqDecorator[T](elts: IndexedSeq[T]) = new {
-    
+
     def random(implicit prng: JRandom) = elts(prng.nextInt(elts.size))
-    
+
     def shuffle(implicit prng: JRandom) = {
       val buf = new ArrayBuffer[T] ++= elts
-	       
+
       def swap(i1: Int, i2: Int) {
         val tmp = buf(i1)
         buf(i1) = buf(i2)
         buf(i2) = tmp
       }
-	   
+
       for (n <- buf.length to 2 by -1) {
         val k = prng.nextInt(n)
         swap(n - 1, k)
       }
-	   
-      buf.toIndexedSeq      
+
+      buf.toIndexedSeq
     }
-    
+
   }
-  
+
   /*def rndmChoice(set: T*)(implicit rng: Random): T = {
    set(rng.nextInt(set.length))
    }*/
 
   def rndmChoice[T](t1: T, t2: T)(implicit rng: JRandom): T = {
-    if(rng.nextDouble <  0.5) t1 else t2
+    if (rng.nextDouble < 0.5) t1 else t2
   }
-  
-  
+
 }

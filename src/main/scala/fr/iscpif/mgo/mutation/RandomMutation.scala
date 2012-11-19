@@ -33,13 +33,13 @@ trait RandomMutation extends Mutation with GenomeFactory {
 
   override def mutate(genome: G)(implicit aprng: Random): G = {
     val randomGenome = genomeFactory.random
-    val valMutationZipped = genome.content.zip(randomGenome.content)   
-    val newValues = valMutationZipped map { 
-      case(v,vrg) => 
-        if (aprng.nextDouble < mutationRate) vrg else v 
+    val valMutationZipped = genome.content.zip(randomGenome.content)
+    val newValues = valMutationZipped map {
+      case (v, vrg) =>
+        if (aprng.nextDouble < mutationRate) vrg else v
     }
-    
+
     genomeFactory(newValues)
   }
-  
+
 }

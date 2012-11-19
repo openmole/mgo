@@ -17,8 +17,8 @@
 
 package fr.iscpif
 
-import mgo.algorithm.{SigmaGAEvolution, SMSEMOEASigma, NSGAIISigma}
-import mgo.genome.{Sigma, GAGenomeWithSigma, GAGenome, GAEvolution}
+import mgo.algorithm.{ SigmaGAEvolution, SMSEMOEASigma, NSGAIISigma }
+import mgo.genome.{ Sigma, GAGenomeWithSigma, GAGenome, GAEvolution }
 
 package object mgo {
   implicit def traversable2Population[G, F, I](seq: Traversable[PopulationElement[G, F, I]]) =
@@ -26,16 +26,15 @@ package object mgo {
       override val content = seq.toIndexedSeq
     }
 
-
   implicit def population2IndexedSeq[G, F, I](pop: Population[G, F, I]) = pop.content
 
-  private def changeScale(v:Double, min:Double, max:Double, boundaryMin:Double, boundaryMax:Double) = {
-    val factor = (boundaryMax - boundaryMin)  / (max - min)
+  private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
+    val factor = (boundaryMax - boundaryMin) / (max - min)
     (factor * (v - min) + boundaryMin)
   }
 
   implicit def double2Scalable(d: Double) = new {
-    def scale(min:Double, max:Double) = changeScale(d, 0, 1, min, max)
+    def scale(min: Double, max: Double) = changeScale(d, 0, 1, min, max)
     def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
   }
 
@@ -110,5 +109,5 @@ package object mgo {
   type Termination = termination.Termination
   type TerminationManifest = termination.TerminationManifest
   type TimedTermination = termination.TimedTermination
-  
+
 }

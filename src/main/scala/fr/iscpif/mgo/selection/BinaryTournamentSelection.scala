@@ -35,7 +35,7 @@ trait BinaryTournamentSelection extends Selection with MF {
   /**
    * Select the best ranked and if equal the more diverse individual between
    * two population elements.
-   * 
+   *
    * @param e1 the first population element
    * @param e2 the second population element
    * @return the winning population element

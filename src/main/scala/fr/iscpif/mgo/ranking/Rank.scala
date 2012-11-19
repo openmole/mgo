@@ -21,21 +21,21 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 
 object Rank {
-  
+
   /**
    * Compute the lower ranked elements in a population of ranked individuals.
-   * 
+   *
    * @param population the population
    * @return the lower ranked elements
    */
   def firstRanked[G, F, MF <: Rank](population: Population[G, F, MF]): IndexedSeq[PopulationElement[G, F, MF]] = {
-    if(population.isEmpty) population
+    if (population.isEmpty) population
     else {
-      val firstRank =  population.map{_.metaFitness.rank()}.min
+      val firstRank = population.map { _.metaFitness.rank() }.min
       population filter { i => i.metaFitness.rank() == firstRank }
     }
   }
-  
+
 }
 
 /**

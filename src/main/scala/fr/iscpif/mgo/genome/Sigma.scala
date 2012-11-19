@@ -23,12 +23,12 @@ package fr.iscpif.mgo.genome
 trait Sigma { self: GAGenome =>
   /** Sigma values, one for each genome component */
   def sigma: IndexedSeq[Double]
-  
+
   /**
    * Update the sigma part of the genome and retun the new internal structure
-   * 
+   *
    * @param sigma the sigma part of the genome
    * @return the updated internal representation
    */
-  def updatedSigma(sigma: IndexedSeq [Double]): IndexedSeq[Double]
+  def updatedSigma(sigma: IndexedSeq[Double]): IndexedSeq[Double]
 }

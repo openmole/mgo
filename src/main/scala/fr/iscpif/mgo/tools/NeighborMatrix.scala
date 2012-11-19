@@ -19,7 +19,6 @@ package fr.iscpif.mgo.tools
 
 import Function._
 
-
 object NeighborMatrix {
   /*type COORDINATE = (Int, Int)
 
@@ -39,8 +38,8 @@ object NeighborMatrix {
   def apply[S](elements: Map[(Int, Int), S]) =
     if (elements.isEmpty) empty[S]
     else {
-      val mX = elements.keys.toSeq.map{case(x, _) => x}.max
-      val mY = elements.keys.toSeq.map{case(_, y) => y}.max
+      val mX = elements.keys.toSeq.map { case (x, _) => x }.max
+      val mY = elements.keys.toSeq.map { case (_, y) => y }.max
       new NeighborMatrix {
         type T = S
         def maxX = mX
@@ -51,7 +50,6 @@ object NeighborMatrix {
 
 }
 
-
 trait NeighborMatrix {
   type T
 
@@ -60,7 +58,7 @@ trait NeighborMatrix {
   def maxY: Int
 
   def knn(x: Int, y: Int, n: Int) =
-    growUntilEnough(x, y, n).sortBy{ case(x1, y1) => distance(x, y, x1, y1) }.take(n)
+    growUntilEnough(x, y, n).sortBy { case (x1, y1) => distance(x, y, x1, y1) }.take(n)
 
   def distance(x1: Int, y1: Int, x2: Int, y2: Int) = math.hypot(x2 - x1, y2 - y1)
 
@@ -72,8 +70,8 @@ trait NeighborMatrix {
   lazy val maxRange = math.max(maxX / 2.0, maxY / 2.0)
 
   def growUntilEnough(x: Int, y: Int, n: Int, range: Int = 1): List[(Int, Int)] = {
-    val included = (extrema(x, y, range) ::: square(x, y, range).toList).filter{ case (x1, y1) => matrix(x1, y1).isDefined }
-    if(included.size >= n || range > maxRange) included
+    val included = (extrema(x, y, range) ::: square(x, y, range).toList).filter { case (x1, y1) => matrix(x1, y1).isDefined }
+    if (included.size >= n || range > maxRange) included
     else growUntilEnough(x, y, n, range + 1)
   }
 
@@ -82,15 +80,13 @@ trait NeighborMatrix {
       dx <- List(x - range - 1, x + range + 1)
       dy <- List(y - range - 1, y + range + 1)
       if isIn(dx, dy)
-    } yield(dx, dy)
+    } yield (dx, dy)
 
   def square(x: Int, y: Int, range: Int) =
     for {
       dx <- (x - range) to (x + range)
       dy <- (y - range) to (y + range)
-      if isIn (dx, dy)
-    } yield(dx, dy)
-
-
+      if isIn(dx, dy)
+    } yield (dx, dy)
 
 }

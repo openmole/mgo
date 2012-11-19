@@ -23,7 +23,7 @@ import scala.math._
 
 /**
  * Diversity computed from an hypervolume contribution metric
- * 
+ *
  * @see Hypervolume
  */
 trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Dominance {
@@ -32,20 +32,22 @@ trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Domi
 
   def diversity(evaluated: Seq[Individual[G, F]], ranks: Seq[Lazy[Int]]) = {
 
-   lazy val fronts = evaluated.map{ _.fitness.values }
+    lazy val fronts = evaluated.map { _.fitness.values }
 
-   // Lazy method computation of global contribution for all front
+    // Lazy method computation of global contribution for all front
     //Class individual by group of rank
-    val groupOfFront = (evaluated zip ranks).zipWithIndex.map{
-      case ((i, r), index) => (i, r, index)}.groupBy {
-      case (i,r,index) => r()}.values
+    val groupOfFront = (evaluated zip ranks).zipWithIndex.map {
+      case ((i, r), index) => (i, r, index)
+    }.groupBy {
+      case (i, r, index) => r()
+    }.values
 
     //Return contribution
-    val contributionByPoint = groupOfFront.map{ front =>  computeHypervolume(front.toIndexedSeq, referencePoint)}.toIndexedSeq
+    val contributionByPoint = groupOfFront.map { front => computeHypervolume(front.toIndexedSeq, referencePoint) }.toIndexedSeq
     //Merge group of front, and reclass individual by initial index
-    val orderingByInitialIndex = contributionByPoint.flatten.sortBy{case (contribution,index) => index}
+    val orderingByInitialIndex = contributionByPoint.flatten.sortBy { case (contribution, index) => index }
     //return only the contribution
-    orderingByInitialIndex.map{case (contribution,index) => contribution}
+    orderingByInitialIndex.map { case (contribution, index) => contribution }
   }
 
   /**
@@ -53,23 +55,27 @@ trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Domi
    */
   def shadowMap[A, B](xs: IndexedSeq[A])(f: A => B) = {
     val ys = xs map f
-    for (i <- ys.indices; (as, bs) = ys splitAt i) yield (as ++ bs.tail , i)
+    for (i <- ys.indices; (as, bs) = ys splitAt i) yield (as ++ bs.tail, i)
   }
 
   /**
    * Compute the hypervolume contribution for each front
-   */ 
-  def computeHypervolume (front:IndexedSeq[(Individual[G, F],Lazy[Int],Int)],referencePoint:Seq[Double]):IndexedSeq[(Lazy[Double],Int)] = {
+   */
+  def computeHypervolume(front: IndexedSeq[(Individual[G, F], Lazy[Int], Int)], referencePoint: Seq[Double]): IndexedSeq[(Lazy[Double], Int)] = {
 
-   //return an indexedSeq of (IndexedSeq[Double],index)
-   val frontValues = front.map{case(ind,r,i) =>  (ind.fitness.values,i)}
+    //return an indexedSeq of (IndexedSeq[Double],index)
+    val frontValues = front.map { case (ind, r, i) => (ind.fitness.values, i) }
 
-   lazy val globalHypervolume = Hypervolume(frontValues.map {e => e._1}, referencePoint, this)
+    lazy val globalHypervolume = Hypervolume(frontValues.map { e => e._1 }, referencePoint, this)
 
-   //compute a new collection with automatic removed incremental of frontValues item by item
-    shadowMap(frontValues){case(e,indexShadowed) =>
-      (e,indexShadowed)}.map{ case(e,indexShadowed)  =>
-      (Lazy(globalHypervolume - Hypervolume(e.map{_._1},referencePoint, this)),frontValues(indexShadowed)._2) }
+    //compute a new collection with automatic removed incremental of frontValues item by item
+    shadowMap(frontValues) {
+      case (e, indexShadowed) =>
+        (e, indexShadowed)
+    }.map {
+      case (e, indexShadowed) =>
+        (Lazy(globalHypervolume - Hypervolume(e.map { _._1 }, referencePoint, this)), frontValues(indexShadowed)._2)
+    }
   }
 
 }

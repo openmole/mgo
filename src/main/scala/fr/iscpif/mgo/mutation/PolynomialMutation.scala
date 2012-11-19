@@ -23,9 +23,9 @@ import java.util.Random
 import scala.math._
 
 /**
- * Polynomial mutationolynomial mutation by Deb and Goyal. If is the value of 
+ * Polynomial mutationolynomial mutation by Deb and Goyal. If is the value of
  * the ith parameter selected for mutation with a probability pm and the result
- * of the mutation is the new value obtained by a polynomial probability 
+ * of the mutation is the new value obtained by a polynomial probability
  * distribution.
  * Based on the source code of Jmetal library
  * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>

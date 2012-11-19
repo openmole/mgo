@@ -24,7 +24,7 @@ import fr.iscpif.mgo.tools.Math._
 import java.util.Random
 
 /**
- * Mutation of a genome based on gausian distribution arrount the genome with 
+ * Mutation of a genome based on gausian distribution arrount the genome with
  * fixed sigma values.
  */
 trait GaussianMutation extends Mutation with GenomeFactory {
@@ -32,14 +32,14 @@ trait GaussianMutation extends Mutation with GenomeFactory {
   type G <: genome.GAGenome
 
   /** sigma values, one for each element in the rest of the genome */
-  def sigma : Double
+  def sigma: Double
 
-  override def mutate (genome: G) (implicit aprng: Random) : G = {
+  override def mutate(genome: G)(implicit aprng: Random): G = {
     val newValues = genome.values map {
-      v => 
-        clamp (v + (aprng.nextGaussian * sigma), 0, 1)
- 
+      v =>
+        clamp(v + (aprng.nextGaussian * sigma), 0, 1)
+
     }
     genomeFactory(genome.updatedValues(newValues))
-  }  
+  }
 }

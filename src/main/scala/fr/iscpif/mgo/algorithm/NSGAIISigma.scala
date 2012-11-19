@@ -26,9 +26,9 @@ import fr.iscpif.mgo._
 trait NSGAIISigma extends NSGAII with SigmaGAEvolution {
 
   type G = GAGenomeWithSigma
-      
+
   val genomeFactory = new GAGenomeWithSigmaFactory {
     def size = genomeSize
   }
-  
+
 }

@@ -24,10 +24,10 @@ import genome.G
  * Cake layer to eliminated elements of a population
  */
 trait Elitism extends G with F with MF {
-  
+
   /**
    * Reduce the number of elements of the population and return a new one
-   * 
+   *
    * @param population the population to shrink
    * @return the shrinked population
    */

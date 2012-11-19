@@ -21,9 +21,9 @@ import fr.iscpif.mgo._
 import genome.G
 import java.util.Random
 
-/** 
+/**
  * No modification to the genomes
  */
-trait NoneCrossOver extends CrossOver { this: G => 
-  def crossover (g1: G, g2: G) (implicit aprng : Random) = IndexedSeq(g1, g2)
+trait NoneCrossOver extends CrossOver { this: G =>
+  def crossover(g1: G, g2: G)(implicit aprng: Random) = IndexedSeq(g1, g2)
 }

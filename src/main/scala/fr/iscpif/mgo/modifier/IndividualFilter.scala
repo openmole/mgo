@@ -12,10 +12,10 @@ import genome.G
  * Layer of the cake for filtering individuals in the set of evaluted individuals
  */
 trait IndividualFilter extends G with F {
-  
+
   /**
    * Filter the individuals
-   * 
+   *
    * @param individuals the set of evaluated individuals
    * @return the filtrated individuals
    */

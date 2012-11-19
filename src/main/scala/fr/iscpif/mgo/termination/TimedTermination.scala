@@ -23,15 +23,15 @@ import fr.iscpif.mgo._
  * Terminate the algorithm after a given share of time.
  */
 trait TimedTermination extends Termination {
-    
+
   /** Duration of the algorithm in ms */
   def duration: Long
-  
+
   type STATE = Long
-  
+
   def initialState(p: Population[G, F, MF]) = System.currentTimeMillis
-  
+
   def terminated(population: Population[G, F, MF], begin: STATE) =
     (begin + duration <= System.currentTimeMillis, begin)
-  
+
 }

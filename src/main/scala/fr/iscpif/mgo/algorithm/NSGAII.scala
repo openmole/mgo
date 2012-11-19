@@ -22,11 +22,11 @@ import java.util.Random
 import fr.iscpif.mgo._
 
 /**
- * Implementation of the NSGAII algorithm Deb, K., Agrawal, S., Pratap, A. & 
- * Meyarivan, T. A fast elitist non-dominated sorting genetic algorithm for 
- * multi-objective optimization: NSGA-II. Lecture notes in computer science 
+ * Implementation of the NSGAII algorithm Deb, K., Agrawal, S., Pratap, A. &
+ * Meyarivan, T. A fast elitist non-dominated sorting genetic algorithm for
+ * multi-objective optimization: NSGA-II. Lecture notes in computer science
  * 1917, 849–858 (2000).
- * 
+ *
  */
 trait NSGAII extends genome.GAEvolution with Mu with Elitism with Breeding with DiversityMetric with NoArchive {
 

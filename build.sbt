@@ -47,3 +47,6 @@ pomExtra := (
 
 
 credentials += Credentials(Path.userHome / ".sbt" / "iscpif.credentials")
+
+scalariformSettings
+

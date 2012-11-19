@@ -22,5 +22,5 @@ package fr.iscpif.mgo
  */
 trait MF {
   /** the type of the meta-fitness */
-  type MF 
+  type MF
 }

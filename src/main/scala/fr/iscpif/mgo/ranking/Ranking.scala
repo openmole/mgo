@@ -27,7 +27,7 @@ import tools.Lazy
 trait Ranking extends G with F {
   /**
    * Compute the rank of a set of individuals.
-   * 
+   *
    * @param individuals the individuals to rank
    * @return the ranks of the individuals in the same order
    */

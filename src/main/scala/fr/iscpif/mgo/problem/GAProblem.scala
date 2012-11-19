@@ -25,37 +25,37 @@ import fr.iscpif.mgo._
 trait GAProblem extends Problem with Scaling {
   type G = GAGenome
   type F = MGFitness
-  
+
   /**
    * Compute the fitness value from a genome values.
-   * 
+   *
    * @param g the genome to evaluate
    * @return the fitness for this genome
    */
   def apply(g: G) = new MGFitness {
     val values = apply(scale(g.values).toIndexedSeq)
   }
-  
+
   /**
    * Scale the genenome from [0.0, 1.0] to the correct scale for the fitness
    * evaluation
-   * 
+   *
    * @param g the genome to scale
    * @return the scaled genome
    */
   def scale(g: G): Seq[Double] = scale(g.values)
-  
+
   /**
    * Scale a population element genome from [0.0, 1.0] to the correct scale
-   * 
+   *
    * @param i the population element to scale
    * @return the scaled population element
    */
   def scale[MF](i: PopulationElement[G, F, MF]): (Seq[Double], F, MF) = (scale(i.genome), i.fitness, i.metaFitness)
-  
+
   /**
    * Compute the fitness for a point
-   * 
+   *
    * @param x the point to evaluate
    * @return the fitness of this point
    */
