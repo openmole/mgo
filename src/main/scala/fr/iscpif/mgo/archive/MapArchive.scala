@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 import collection.mutable
 
 trait MapArchive extends Archive with Plotter with Aggregation {
-  type A = Map[(Int, Int), Individual[G, F]]
+  type A = Map[(Int, Int), (Double, Int)]
 
   def initialArchive: A = Map.empty
 
@@ -32,8 +32,10 @@ trait MapArchive extends Archive with Plotter with Aggregation {
     } {
       val (x, y) = plot(i.genome)
       tmpArchive.get(x, y) match {
-        case Some(ai) => if (aggregate(i.fitness) > aggregate(ai.fitness)) tmpArchive((x, y)) = i
-        case None => tmpArchive((x, y)) = i
+        case Some((archiveV, hitCount)) =>
+          if (aggregate(i.fitness) < archiveV) tmpArchive((x, y)) = (aggregate(i.fitness), hitCount + 1)
+          else tmpArchive((x, y)) = (archiveV, hitCount + 1)
+        case None => tmpArchive((x, y)) = (aggregate(i.fitness), 1)
       }
     }
     tmpArchive.toMap

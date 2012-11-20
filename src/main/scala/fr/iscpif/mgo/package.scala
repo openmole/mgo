@@ -40,6 +40,7 @@ package object mgo {
 
   type NSGAII = algorithm.NSGAII
   type NSGAIISigma = algorithm.NSGAIISigma
+  type OptimumMap = algorithm.OptimumMap
   type SigmaGAEvolution = algorithm.SigmaGAEvolution
   type SMSEMOEA = algorithm.SMSEMOEA
   type SMSEMOEASigma = algorithm.SMSEMOEASigma
@@ -65,6 +66,7 @@ package object mgo {
   type Aggregation = fitness.Aggregation
   type F = fitness.F
   type Fitness = fitness.Fitness
+  type MaxAggregation = fitness.MaxAggregation
   type MGFitness = fitness.MGFitness
   val MGFitness = fitness.MGFitness
   type G = genome.G
@@ -76,13 +78,13 @@ package object mgo {
   type GAGenomeWithSigmaFactory = genome.GAGenomeWithSigmaFactory
   type GManifest = genome.GManifest
   type Sigma = genome.Sigma
-  type OptimumMap = map.OptimumMap
   type Plotter = map.Plotter
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
   type CloneRemoval = modifier.CloneRemoval
   type DiversityModifier = modifier.DiversityModifier
   type IndividualFilter = modifier.IndividualFilter
+  type MapModifier = modifier.MapModifier
   type Modifier = modifier.Modifier
   type NoneModifier = modifier.NoneModifier
   type RankModifier = modifier.RankModifier

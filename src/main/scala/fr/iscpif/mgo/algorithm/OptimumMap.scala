@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 13/11/12 Romain Reuillon
+ * Copyright (C) 20/11/12 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,28 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.fitness
+package fr.iscpif.mgo.algorithm
 
-object MGFitness {
+import fr.iscpif.mgo._
 
-  implicit def indexedSeqToFit(f: IndexedSeq[Double]) = new {
-    def toGAFitness = new MGFitness {
-      val values = f
-    }
-  }
-
-  def apply(v: Traversable[Double]): MGFitness = new MGFitness {
-    val values = v.toIndexedSeq
-  }
-
-  def apply(v: Double*): MGFitness = MGFitness(v)
-}
-
-/**
- * The fitness is a vector a of Doubles, one Double for each objective.
- */
-trait MGFitness extends Fitness {
-  /** The finess value */
-  def values: Seq[Double]
-  override def toString = values.toString
-}
+trait OptimumMap extends Evolution with MapArchive with MapModifier

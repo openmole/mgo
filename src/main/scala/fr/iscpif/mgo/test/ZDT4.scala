@@ -11,8 +11,8 @@ import math._
 trait ZDT4 extends GAProblem {
   def n: Int
 
-  def min = List.fill(10)(0.0)
-  def max = 1.0 :: List.fill(9)(5.0)
+  def min = List.fill(n)(0.0)
+  def max = 1.0 :: List.fill(n - 1)(5.0)
 
   def apply(x: IndexedSeq[Double]) = Vector(f1(x), f2(x))
 

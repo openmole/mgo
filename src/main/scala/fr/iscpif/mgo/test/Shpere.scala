@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 20/11/12 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.map
+package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 
-trait OptimumMap extends Plotter with Aggregation {
+trait Sphere extends GAProblem {
+  def n: Int
 
-  /*def elitism(population: Population[G, F, MF]): Population[G, F, MF] = {
-    val classified = population.map{_.genome}.map(classifier)
+  def min = List.fill(n)(0.0)
+  def max = List.fill(n)(2.0)
 
-
-  }*/
+  def apply(x: IndexedSeq[Double]) = List(x.map(x => x * x).sum)
 }

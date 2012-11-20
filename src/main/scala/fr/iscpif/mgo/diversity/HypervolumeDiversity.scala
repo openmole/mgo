@@ -28,11 +28,11 @@ import scala.math._
  */
 trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Dominance {
 
-  type F <: MGFitness
+  type DIVERSIFIED <: MGFitness
 
-  def diversity(evaluated: Seq[Individual[G, F]], ranks: Seq[Lazy[Int]]) = {
+  def diversity(evaluated: Seq[DIVERSIFIED], ranks: Seq[Lazy[Int]]) = {
 
-    lazy val fronts = evaluated.map { _.fitness.values }
+    lazy val fronts = evaluated.map { _.values }
 
     // Lazy method computation of global contribution for all front
     //Class individual by group of rank
@@ -61,10 +61,10 @@ trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Domi
   /**
    * Compute the hypervolume contribution for each front
    */
-  def computeHypervolume(front: IndexedSeq[(Individual[G, F], Lazy[Int], Int)], referencePoint: Seq[Double]): IndexedSeq[(Lazy[Double], Int)] = {
+  def computeHypervolume(front: IndexedSeq[(DIVERSIFIED, Lazy[Int], Int)], referencePoint: Seq[Double]): IndexedSeq[(Lazy[Double], Int)] = {
 
     //return an indexedSeq of (IndexedSeq[Double],index)
-    val frontValues = front.map { case (ind, r, i) => (ind.fitness.values, i) }
+    val frontValues = front.map { case (ind, r, i) => (ind.values, i) }
 
     lazy val globalHypervolume = Hypervolume(frontValues.map { e => e._1 }, referencePoint, this)
 

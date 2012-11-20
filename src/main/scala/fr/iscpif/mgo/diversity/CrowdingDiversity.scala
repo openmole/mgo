@@ -28,9 +28,9 @@ import metric._
  */
 trait CrowdingDiversity extends DiversityMetric {
 
-  type F <: MGFitness
+  type DIVERSIFIED <: MGFitness
 
-  def diversity(evaluated: Seq[Individual[G, F]], ranks: Seq[Lazy[Int]]) =
-    CrowdingDistance(evaluated.map { _.fitness.values }.toIndexedSeq)
+  def diversity(evaluated: Seq[DIVERSIFIED], ranks: Seq[Lazy[Int]]) =
+    CrowdingDistance(evaluated.map { _.values }.toIndexedSeq)
 
 }

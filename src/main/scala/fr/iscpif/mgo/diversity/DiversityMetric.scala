@@ -24,7 +24,9 @@ import tools.Lazy
 /**
  * Layer of the cake that compute a diversity metric for a set of individuals
  */
-trait DiversityMetric extends G with F with Ranking {
+trait DiversityMetric {
+
+  type DIVERSIFIED
 
   /**
    * Compute the diversity of the individual
@@ -33,5 +35,5 @@ trait DiversityMetric extends G with F with Ranking {
    * @return a diversity sequence in the diversity of the individual i at the
    * position i
    */
-  def diversity(individuals: Seq[Individual[G, F]], ranks: Seq[Lazy[Int]]): Seq[Lazy[Double]]
+  def diversity(individuals: Seq[DIVERSIFIED], ranks: Seq[Lazy[Int]]): Seq[Lazy[Double]]
 }

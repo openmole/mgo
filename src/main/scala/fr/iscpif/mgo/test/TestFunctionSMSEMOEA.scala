@@ -29,7 +29,7 @@ object TestFunctionSMSEMOEA extends App {
   implicit val rng = new Random
 
   val smsemoea =
-    new algorithm.SMSEMOEASigma with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier {
+    new SMSEMOEASigma with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
       def distributionIndex = 2
 
       def windowSize = 100

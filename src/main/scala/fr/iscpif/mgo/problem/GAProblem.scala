@@ -59,5 +59,5 @@ trait GAProblem extends Problem with Scaling {
    * @param x the point to evaluate
    * @return the fitness of this point
    */
-  def apply(x: IndexedSeq[Double]): IndexedSeq[Double]
+  def apply(x: IndexedSeq[Double]): Seq[Double]
 }

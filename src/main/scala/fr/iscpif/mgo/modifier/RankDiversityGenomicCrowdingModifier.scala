@@ -19,7 +19,7 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.metric._
-
+import RankDiversityModifier._
 /**
  * Decorate the inidividual with a rank and a diversity. The rank is evaluated on
  * the fitness with an additionnal objective of genomic diversity 1 / crowding distance
@@ -27,8 +27,10 @@ import fr.iscpif.mgo.metric._
  */
 trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier with DiversityModifier with Ranking with DiversityMetric {
 
-  type G <: genome.GAGenome
-  type F = MGFitness
+  type G <: GAGenome
+  type RANKED = MGFitness
+  type DIVERSIFIED = MGFitness
+  type F <: MGFitness
 
   override type MF = RankDiversity
 
@@ -40,25 +42,10 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier wi
         case (i, gd) => MGFitness(i.fitness.values.toList ::: 1 / gd() :: Nil)
       }
 
-    val ranks =
-      rank(
-        (evaluated zip diversityFitnesses).map {
-          case (i, fd) => Individual[G, F](i.genome, fd)
-        }
-      )
+    val ranks = rank(diversityFitnesses)
+    val distances = diversity(diversityFitnesses, ranks)
 
-    val distances = diversity(evaluated, ranks)
-
-    (evaluated zip ranks zip distances) map {
-      case ((i, r), d) =>
-        PopulationElement(i,
-          new RankDiversity(
-            diversity = d,
-            rank = r
-          )
-        )
-    }
-
+    toPopulationElements[G, F](evaluated, ranks, distances)
   }
 
 }

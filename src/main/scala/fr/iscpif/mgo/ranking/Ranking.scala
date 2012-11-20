@@ -24,12 +24,15 @@ import tools.Lazy
 /**
  * Layer of the cake for algorithm with a ranking scheme.
  */
-trait Ranking extends G with F {
+trait Ranking {
+
+  type RANKED
+
   /**
    * Compute the rank of a set of individuals.
    *
    * @param individuals the individuals to rank
    * @return the ranks of the individuals in the same order
    */
-  def rank(individuals: Seq[Individual[G, F]]): Seq[Lazy[Int]]
+  def rank(individuals: Seq[RANKED]): Seq[Lazy[Int]]
 }

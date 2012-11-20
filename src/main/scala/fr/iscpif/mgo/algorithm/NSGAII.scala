@@ -28,9 +28,8 @@ import fr.iscpif.mgo._
  * 1917, 849–858 (2000).
  *
  */
-trait NSGAII extends genome.GAEvolution with Mu with Elitism with Breeding with DiversityMetric with NoArchive {
+trait NSGAII extends genome.GAEvolution with Mu with Elitism with Breeding with DiversityMetric {
 
-  type G <: GAGenome
   type F = MGFitness
 
   override def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): (Population[G, F, MF], A) = {

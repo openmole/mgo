@@ -22,15 +22,16 @@ import tools.NeighborMatrix
 
 import RankDiversityModifier._
 
-trait MapModifier extends Modifier with Plotter with Aggregation with RankModifier with DiversityModifier with MapArchive {
+trait MapModifier extends Modifier with Plotter with Aggregation with MapArchive with RankModifier with DiversityModifier {
 
-  type F = MGFitness
   type MF = RankDiversity
+  type RANKED = MGFitness
+  type DIVERSIFIED = MGFitness
 
   def neighbors: Int
 
   def modify(individuals: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
-    val matrix = NeighborMatrix(archive)
+    val matrix = NeighborMatrix(archive.map { case (k, v) => k -> v._1 })
 
     def fitness(i: Individual[G, F]) = {
       val (x, y) = plot(i.genome)
@@ -38,10 +39,20 @@ trait MapModifier extends Modifier with Plotter with Aggregation with RankModifi
         matrix.knn(x, y, neighbors).map {
           case (x1, y1) => matrix.distance(x, y, x1, y1)
         }.sum
-      MGFitness(aggregate(i.fitness), 1.0 / distance)
+
+      val hitCount: Double = archive.get(x, y) match {
+        case Some((_, h)) => h
+        case None => 1
+      }
+
+      MGFitness(aggregate(i.fitness), 1.0 / distance, hitCount)
     }
 
-    val modified = individuals.map(i => Individual(i.genome, fitness(i)))
-    toPopulationElements(modified, rank, diversity)
+    val modified = individuals.map(fitness)
+
+    val ranks = rank(modified)
+    val distances = diversity(modified, ranks)
+
+    toPopulationElements[G, F](individuals, ranks, distances)
   }
 }

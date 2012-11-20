@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 13/11/12 Romain Reuillon
+ * Copyright (C) 20/11/12 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,26 +17,9 @@
 
 package fr.iscpif.mgo.fitness
 
-object MGFitness {
+trait MaxAggregation extends Aggregation {
 
-  implicit def indexedSeqToFit(f: IndexedSeq[Double]) = new {
-    def toGAFitness = new MGFitness {
-      val values = f
-    }
-  }
+  type F <: MGFitness
 
-  def apply(v: Traversable[Double]): MGFitness = new MGFitness {
-    val values = v.toIndexedSeq
-  }
-
-  def apply(v: Double*): MGFitness = MGFitness(v)
-}
-
-/**
- * The fitness is a vector a of Doubles, one Double for each objective.
- */
-trait MGFitness extends Fitness {
-  /** The finess value */
-  def values: Seq[Double]
-  override def toString = values.toString
+  def aggregate(fitness: F): Double = fitness.values.max
 }
