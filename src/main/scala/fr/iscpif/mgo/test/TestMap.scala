@@ -48,7 +48,7 @@ object TestMap extends App {
 
   implicit val rng = new Random
 
-  val res = m.run(pb2).converged(s => println(s.generation)).archive.map { case (k, v) => k -> v.value }
+  val res = m.run(pb2).untilConverged(s => println(s.generation)).archive.map { case (k, v) => k -> v.value }
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {

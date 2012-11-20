@@ -40,7 +40,7 @@ package object mgo {
   }
 
   implicit class StateIteratorDecorator[S <: { def terminated: Boolean }](i: Iterator[S]) {
-    def converged(f: S => Unit) = i.dropWhile { s => f(s); !s.terminated }.next
+    def untilConverged(f: S => Unit) = i.dropWhile { s => f(s); !s.terminated }.next
   }
 
   type NSGAII = algorithm.NSGAII
