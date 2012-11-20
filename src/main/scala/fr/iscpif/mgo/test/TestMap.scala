@@ -25,23 +25,30 @@ import java.io._
 
 object TestMap extends App {
 
-  val m = new OptimumMap with NSGAIISigma with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with NonDominatedElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance {
+  val m = new OptimumMap with NSGAIISigma with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with NonDominatedElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with GenomePlotter {
     def genomeSize: Int = 6
     def lambda: Int = 200
     def neighbors = 8
     def mu: Int = 200
-    def plot(g: G) = ((g.values(0) * 100).toInt, (g.values(1) * 100).toInt)
     def distributionIndex = 2
-    def steps = 10000
+    def steps = 2000
+    def gX: Int = 0
+    def gY: Int = 1
+    def nX: Int = 100
+    def nY: Int = 100
   }
 
   val pb = new Sphere {
     def n = 6
   }
 
+  val pb2 = new Rastrigin {
+    def n = 6
+  }
+
   implicit val rng = new Random
 
-  val res = m.run(pb).converged(s => println(s.generation)).archive.map { case (k, v) => k -> v.value }
+  val res = m.run(pb2).converged(s => println(s.generation)).archive.map { case (k, v) => k -> v.value }
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {

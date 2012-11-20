@@ -19,6 +19,7 @@ package fr.iscpif
 
 import mgo.algorithm.{ SigmaGAEvolution, SMSEMOEASigma, NSGAIISigma }
 import mgo.genome.{ Sigma, GAGenomeWithSigma, GAGenome, GAEvolution }
+import sun.net.www.content.text.plain
 
 package object mgo {
   implicit def traversable2Population[G, F, I](seq: Traversable[PopulationElement[G, F, I]]) =
@@ -83,6 +84,7 @@ package object mgo {
   type GAGenomeWithSigmaFactory = genome.GAGenomeWithSigmaFactory
   type GManifest = genome.GManifest
   type Sigma = genome.Sigma
+  type GenomePlotter = map.GenomePlotter
   type Plotter = map.Plotter
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
