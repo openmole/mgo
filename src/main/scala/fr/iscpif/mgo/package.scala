@@ -38,6 +38,10 @@ package object mgo {
     def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
   }
 
+  implicit class StateIteratorDecorator[S <: { def terminated: Boolean }](i: Iterator[S]) {
+    def converged(f: S => Unit) = i.dropWhile { s => f(s); !s.terminated }.next
+  }
+
   type NSGAII = algorithm.NSGAII
   type NSGAIISigma = algorithm.NSGAIISigma
   type OptimumMap = algorithm.OptimumMap
@@ -46,6 +50,7 @@ package object mgo {
   type SMSEMOEASigma = algorithm.SMSEMOEASigma
   type Archive = archive.Archive
   type MapArchive = archive.MapArchive
+  val MapArchive = archive.MapArchive
   type NoArchive = archive.NoArchive
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover

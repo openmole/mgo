@@ -31,7 +31,7 @@ trait MapModifier extends Modifier with Plotter with Aggregation with MapArchive
   def neighbors: Int
 
   def modify(individuals: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
-    val matrix = NeighborMatrix(archive.map { case (k, v) => k -> v._1 })
+    val matrix = NeighborMatrix(archive.map { case (k, v) => k -> v.value })
 
     def fitness(i: Individual[G, F]) = {
       val (x, y) = plot(i.genome)
@@ -41,7 +41,7 @@ trait MapModifier extends Modifier with Plotter with Aggregation with MapArchive
         }.sum
 
       val hitCount: Double = archive.get(x, y) match {
-        case Some((_, h)) => h
+        case Some(v) => v.hits
         case None => 1
       }
 

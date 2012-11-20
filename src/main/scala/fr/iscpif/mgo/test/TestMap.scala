@@ -19,6 +19,9 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import java.util.Random
+import collection.mutable
+
+import java.io._
 
 object TestMap extends App {
 
@@ -27,9 +30,9 @@ object TestMap extends App {
     def lambda: Int = 200
     def neighbors = 8
     def mu: Int = 200
-    def plot(g: G) = ((g.values(0) * 50).toInt, (g.values(1) * 50).toInt)
+    def plot(g: G) = ((g.values(0) * 100).toInt, (g.values(1) * 100).toInt)
     def distributionIndex = 2
-    def steps = 10
+    def steps = 10000
   }
 
   val pb = new Sphere {
@@ -38,6 +41,12 @@ object TestMap extends App {
 
   implicit val rng = new Random
 
-  val res = m.run(pb).dropWhile { s => println(s.terminationState + " " + s.generation); !s.terminated }.next.archive
-  println(res)
+  val res = m.run(pb).converged(s => println(s.generation)).archive.map { case (k, v) => k -> v.value }
+
+  val writer = new FileWriter(new File("/tmp/matrix.csv"))
+  for {
+    ((x, y), v) <- res
+  } writer.write("" + x + "," + y + "," + v + "\n")
+  writer.close
+
 }

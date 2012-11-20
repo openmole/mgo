@@ -20,8 +20,14 @@ package fr.iscpif.mgo.archive
 import fr.iscpif.mgo._
 import collection.mutable
 
+object MapArchive {
+  case class MapElement(value: Double, hits: Int = 1)
+}
+
+import MapArchive._
+
 trait MapArchive extends Archive with Plotter with Aggregation {
-  type A = Map[(Int, Int), (Double, Int)]
+  type A = Map[(Int, Int), MapElement]
 
   def initialArchive: A = Map.empty
 
@@ -32,10 +38,10 @@ trait MapArchive extends Archive with Plotter with Aggregation {
     } {
       val (x, y) = plot(i.genome)
       tmpArchive.get(x, y) match {
-        case Some((archiveV, hitCount)) =>
-          if (aggregate(i.fitness) < archiveV) tmpArchive((x, y)) = (aggregate(i.fitness), hitCount + 1)
-          else tmpArchive((x, y)) = (archiveV, hitCount + 1)
-        case None => tmpArchive((x, y)) = (aggregate(i.fitness), 1)
+        case Some(e) =>
+          if (aggregate(i.fitness) < e.value) tmpArchive((x, y)) = e.copy(value = aggregate(i.fitness), hits = e.hits + 1)
+          else tmpArchive((x, y)) = e.copy(hits = e.hits + 1)
+        case None => tmpArchive((x, y)) = MapElement(aggregate(i.fitness))
       }
     }
     tmpArchive.toMap
