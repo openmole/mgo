@@ -28,20 +28,6 @@ import fr.iscpif.mgo._
  * 1917, 849–858 (2000).
  *
  */
-trait NSGAII extends GAEvolution with Mu with Elitism with Breeding with DiversityMetric {
-
+trait NSGAII extends Evolution with MuPlusLambda {
   type F = MGFitness
-
-  override def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): (Population[G, F, MF], A) = {
-    val offspring = breed(
-      population
-    ).par.map { g => Individual(g, evaluator) }
-
-    val newIndividuals = population.toIndividuals ++ offspring
-
-    //Elitism strategy
-    val (individuals, newArchive) = toPopulation(newIndividuals, archive)
-    (elitism(individuals), newArchive)
-  }
-
 }
