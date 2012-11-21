@@ -19,18 +19,23 @@ package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
 
+object GAGenomeWithSigma {
+
+  def apply(_values: Seq[Double], _sigma: Seq[Double]) = new GAGenomeWithSigma {
+    val values = _values
+    val sigma = _sigma
+  }
+
+}
+
 /**
  * Genome for genetic algorithm with an autoadaptative sigma component
  */
-case class GAGenomeWithSigma(
-    val values: IndexedSeq[Double],
-    val sigma: IndexedSeq[Double]) extends genome.GAGenome with genome.Sigma {
-
+trait GAGenomeWithSigma extends GAGenome with Sigma {
   def content = values ++ sigma
 
-  override def updatedValues(values: IndexedSeq[Double]) = copy(values = values).content
-
-  override def updatedSigma(sigma: IndexedSeq[Double]) = copy(sigma = sigma).content
+  override def updatedValues(values: Seq[Double]) = GAGenomeWithSigma(values, this.sigma).content
+  override def updatedSigma(sigma: Seq[Double]) = GAGenomeWithSigma(this.values, sigma).content
 
 }
 

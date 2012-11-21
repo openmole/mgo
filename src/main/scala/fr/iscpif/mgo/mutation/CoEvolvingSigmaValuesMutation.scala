@@ -34,7 +34,7 @@ import scala.math._
  * Modern Heuristics
  */
 trait CoEvolvingSigmaValuesMutation extends Mutation with GenomeFactory {
-  self: GenomeFactory { type G <: genome.GAGenome with genome.Sigma } =>
+  self: GenomeFactory { type G <: GAGenomeWithSigma } =>
 
   override def mutate(genome: G)(implicit aprng: Random): G = {
     val indexedSeqSigma = genome.sigma.map { s => clamp(s * exp(aprng.nextGaussian), 0, 1) }
@@ -43,6 +43,7 @@ trait CoEvolvingSigmaValuesMutation extends Mutation with GenomeFactory {
       (genome.values zip indexedSeqSigma) map {
         case (v, s) => clamp(aprng.nextGaussian * s + v, 0, 1)
       }
+
     genomeFactory(genome, _.updatedValues(newValues), _.updatedSigma(indexedSeqSigma))
   }
 

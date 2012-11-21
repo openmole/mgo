@@ -19,18 +19,26 @@ package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
 
+object GAGenome {
+  def apply(v: Seq[Double]) = new GAGenome {
+    val values = v
+    val content = v
+    def updatedValues(values: Seq[Double]) = values
+  }
+}
+
 /**
  * Genome for genetic algorithms
  */
 trait GAGenome extends Genome {
-  type T = IndexedSeq[Double]
+  type T = Seq[Double]
 
   /**
    * The sequence of values representing the candidate solution. Values evolve
    * in the interval [0.0, 1.0]. They are scaled when they are provided to the
    * fitness function
    */
-  def values: IndexedSeq[Double]
+  def values: T
 
   /**
    * Update the value part of the genome
@@ -38,7 +46,7 @@ trait GAGenome extends Genome {
    * @param values the new values
    * @return the new internal representation of the genome
    */
-  def updatedValues(values: IndexedSeq[Double]): T
+  def updatedValues(values: Seq[Double]): T
 
   override def toString = content.toString
 }
