@@ -83,7 +83,6 @@ package object mgo {
   type Genome = genome.Genome
   type GenomeFactory = genome.GenomeFactory
   type GAGenomeWithSigmaFactory = genome.GAGenomeWithSigmaFactory
-  type GManifest = genome.GManifest
   type Sigma = genome.Sigma
   type GenomePlotter = map.GenomePlotter
   type Plotter = map.Plotter
@@ -117,7 +116,8 @@ package object mgo {
   type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination
   type StabilityTermination = termination.StabilityTermination
   type Termination = termination.Termination
-  type TerminationManifest = termination.TerminationManifest
   type TimedTermination = termination.TimedTermination
+  type Lazy[T] = tools.Lazy[T]
+  implicit def lazyOrdering[T](implicit ord: Ordering[T]) = tools.Lazy.lazyOrdering(ord)
 
 }

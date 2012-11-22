@@ -18,10 +18,6 @@
 package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.selection._
-
-import fr.iscpif.mgo.tools._
-import fr.iscpif.mgo.dominance._
 
 trait Diversity {
   /** Lazily computed metric of diversity */

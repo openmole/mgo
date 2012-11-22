@@ -16,7 +16,7 @@ trait GAGenomeWithSigmaFactory extends Factory[GAGenomeWithSigma] {
   /** Size of the value part of the genome */
   def size: Int
 
-  def apply(content: genome.GAGenomeWithSigma#T) = {
+  override def apply(content: GAGenomeWithSigma#T) = {
     assert(content.size / 2 == size)
     GAGenomeWithSigma(
       content.slice(0, content.size / 2),
@@ -24,6 +24,6 @@ trait GAGenomeWithSigmaFactory extends Factory[GAGenomeWithSigma] {
     )
   }
 
-  def random(implicit rng: Random) = apply(Stream.continually(rng.nextDouble).take(size * 2).toIndexedSeq)
+  override def random(implicit rng: Random) = apply(Stream.continually(rng.nextDouble).take(size * 2).toIndexedSeq)
 
 }

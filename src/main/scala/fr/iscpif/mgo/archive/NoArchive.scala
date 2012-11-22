@@ -20,8 +20,9 @@ package fr.iscpif.mgo.archive
 import fr.iscpif.mgo._
 
 trait NoArchive extends Archive {
-  type A = Seq[Individual[G, F]]
+  type A = None.type
 
-  def initialArchive: A = Seq.empty
-  def archive(archive: A, individuals: Seq[Individual[G, F]]): A = individuals
+  def initialArchive: A = None
+  def toArchive(individuals: Seq[Individual[G, F]]): A = None
+  def combine(a1: A, a2: A) = None
 }

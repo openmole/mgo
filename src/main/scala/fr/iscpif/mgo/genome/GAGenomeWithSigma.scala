@@ -21,10 +21,11 @@ import fr.iscpif.mgo._
 
 object GAGenomeWithSigma {
 
-  def apply(_values: Seq[Double], _sigma: Seq[Double]) = new GAGenomeWithSigma {
-    val values = _values
-    val sigma = _sigma
-  }
+  def apply(_values: Seq[Double], _sigma: Seq[Double]) =
+    new GAGenomeWithSigma {
+      val sigma = _sigma
+      val values = _values
+    }
 
 }
 

@@ -42,7 +42,7 @@ import java.util.Random
  */
 trait SBXBoundedCrossover extends CrossOver with GenomeFactory {
 
-  type G <: genome.GAGenome
+  type G <: GAGenome
 
   /** distribution index parameter of the algorithm */
   def distributionIndex: Double

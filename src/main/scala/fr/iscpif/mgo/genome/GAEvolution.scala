@@ -28,4 +28,5 @@ trait GAEvolution extends Evolution {
 
   /** Size of the generated solutions */
   def genomeSize: Int
+
 }

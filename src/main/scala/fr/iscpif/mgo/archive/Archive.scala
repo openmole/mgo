@@ -23,6 +23,11 @@ trait Archive extends G with F with MF {
   type A
 
   def initialArchive: A
-  def archive(archive: A, individuals: Seq[Individual[G, F]]): A
+
+  def archive(a: A, individuals: Seq[Individual[G, F]]) =
+    combine(a, toArchive(individuals))
+
+  def toArchive(individuals: Seq[Individual[G, F]]): A
+  def combine(a1: A, a2: A): A
 
 }

@@ -21,7 +21,11 @@ import fr.iscpif.mgo._
 import collection.mutable
 
 object MapArchive {
-  case class MapElement(value: Double, hits: Int = 1)
+  case class MapElement(value: Double, hits: Int = 1) {
+    def combine(o: MapElement) =
+      if (o.value < value) copy(value = o.value, hits = hits + o.hits)
+      else copy(hits = hits + o.hits)
+  }
 }
 
 import MapArchive._
@@ -31,19 +35,26 @@ trait MapArchive extends Archive with Plotter with Aggregation {
 
   def initialArchive: A = Map.empty
 
-  def archive(archive: A, individuals: Seq[Individual[G, F]]): A = {
-    val tmpArchive = mutable.Map(archive.toSeq: _*)
-    for {
-      i <- individuals
-    } {
+  def toArchive(individuals: Seq[Individual[G, F]]): A = {
+    val tmpArchive = mutable.Map.empty[(Int, Int), MapElement]
+    for (i <- individuals) {
       val (x, y) = plot(i.genome)
+      val value = aggregate(i.fitness)
       tmpArchive.get(x, y) match {
-        case Some(e) =>
-          if (aggregate(i.fitness) < e.value) tmpArchive((x, y)) = e.copy(value = aggregate(i.fitness), hits = e.hits + 1)
-          else tmpArchive((x, y)) = e.copy(hits = e.hits + 1)
-        case None => tmpArchive((x, y)) = MapElement(aggregate(i.fitness))
+        case Some(e) => tmpArchive((x, y)) = e.combine(MapElement(value))
+        case None => tmpArchive((x, y)) = MapElement(value)
       }
     }
+    tmpArchive.toMap
+  }
+
+  def combine(a1: A, a2: A): A = {
+    val tmpArchive = mutable.Map.empty[(Int, Int), MapElement]
+    for (((x, y), me) <- a1.toSeq ++ a2.toSeq)
+      tmpArchive.get(x, y) match {
+        case Some(e) => tmpArchive((x, y)) = e.combine(me)
+        case None => tmpArchive((x, y)) = me
+      }
     tmpArchive.toMap
   }
 
