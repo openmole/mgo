@@ -74,6 +74,7 @@ package object mgo {
   type F = fitness.F
   type Fitness = fitness.Fitness
   type MaxAggregation = fitness.MaxAggregation
+  type MG = fitness.MG
   type MGFitness = fitness.MGFitness
   val MGFitness = fitness.MGFitness
   type G = genome.G

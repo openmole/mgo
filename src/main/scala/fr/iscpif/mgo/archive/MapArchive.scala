@@ -38,7 +38,7 @@ trait MapArchive extends Archive with Plotter with Aggregation {
   def toArchive(individuals: Seq[Individual[G, F]]): A = {
     val tmpArchive = mutable.Map.empty[(Int, Int), MapElement]
     for (i <- individuals) {
-      val (x, y) = plot(i.genome)
+      val (x, y) = plot(i)
       val value = aggregate(i.fitness)
       tmpArchive.get(x, y) match {
         case Some(e) => tmpArchive((x, y)) = e.combine(MapElement(value))

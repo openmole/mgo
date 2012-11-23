@@ -69,7 +69,8 @@ trait Evolution extends Termination
    * @return an iterator over the states of the evolution
    */
   def run(evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] = {
-    val (population, archive) = randomPopulation(evaluator, initialArchive)
+    val archive = initialArchive
+    val population = randomPopulation(evaluator, archive)
     run(population, archive, evaluator)
   }
 
@@ -97,7 +98,7 @@ trait Evolution extends Termination
    * @param evaluator the fitness evaluation function
    * @return a random population of evaluated solutions
    */
-  def randomPopulation(evaluator: G => F, archive: A)(implicit aprng: Random): (Population[G, F, MF], A) =
+  def randomPopulation(evaluator: G => F, archive: A)(implicit aprng: Random): Population[G, F, MF] =
     toPopulation((0 until lambda).map { _ => genomeFactory.random }.par.map { g => Individual[G, F](g, evaluator) }.toIndexedSeq, archive)
 
 }

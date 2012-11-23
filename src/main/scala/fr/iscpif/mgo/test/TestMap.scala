@@ -32,8 +32,8 @@ object TestMap extends App {
     def mu: Int = 200
     def distributionIndex = 2
     def steps = 2000
-    def gX: Int = 0
-    def gY: Int = 1
+    def x: Int = 0
+    def y: Int = 1
     def nX: Int = 100
     def nY: Int = 100
   }

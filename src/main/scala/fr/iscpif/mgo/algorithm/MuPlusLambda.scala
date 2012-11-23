@@ -24,12 +24,12 @@ trait MuPlusLambda extends Evolution with Breeding with Elitism {
   override def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): (Population[G, F, MF], A) = {
     val offspring = breed(
       population
-    ).par.map { g => Individual(g, evaluator) }
+    ).par.map { g => Individual(g, evaluator) }.seq
 
     val newIndividuals = population.toIndividuals ++ offspring
+    val newArchive = combine(archive, toArchive(offspring))
 
     //Elitism strategy
-    val (individuals, newArchive) = toPopulation(newIndividuals, archive)
-    (elitism(individuals), newArchive)
+    (elitism(toPopulation(newIndividuals, newArchive)), newArchive)
   }
 }

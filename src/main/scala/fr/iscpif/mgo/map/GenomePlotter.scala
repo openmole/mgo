@@ -19,15 +19,15 @@ package fr.iscpif.mgo.map
 
 import fr.iscpif.mgo._
 
-trait GenomePlotter extends Plotter with G {
+trait GenomePlotter extends Plotter {
 
   type G <: GAGenome
 
-  def gX: Int
-  def gY: Int
+  def x: Int
+  def y: Int
   def nX: Int
   def nY: Int
 
-  def plot(g: G) = ((g.values(0) * 100).toInt, (g.values(1) * 100).toInt)
+  def plot(i: Individual[G, F]) = ((i.genome.values(x) * nX).toInt, (i.genome.values(y) * nY).toInt)
 
 }

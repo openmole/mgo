@@ -28,6 +28,4 @@ import fr.iscpif.mgo._
  * 1917, 849–858 (2000).
  *
  */
-trait NSGAII extends Evolution with MuPlusLambda {
-  type F = MGFitness
-}
+trait NSGAII extends Evolution with MuPlusLambda with MG

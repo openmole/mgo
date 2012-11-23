@@ -4,7 +4,7 @@ name := "mgo"
 
 version := "1.34-SNAPSHOT"
 
-scalaVersion := "2.10.0-RC2"
+scalaVersion := "2.10.0-RC3"
 
 resolvers ++= Seq(
   "ISC-PIF Release" at "http://maven.iscpif.fr/release",

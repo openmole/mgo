@@ -31,10 +31,7 @@ trait Modifier extends G with F with MF with IndividualFilter with Archive {
    * @param individuals a set of individual
    * @return the filtred population with the meta-fitness for each individual
    */
-  def toPopulation(individuals: Seq[Individual[G, F]], a: A): (Population[G, F, MF], A) = {
-    val newArchive = archive(a, individuals)
-    (modify(filter(individuals), newArchive), newArchive)
-  }
+  def toPopulation(individuals: Seq[Individual[G, F]], a: A): Population[G, F, MF] = modify(filter(individuals), a)
 
   /**
    * Generate a population from a set of indiviuals

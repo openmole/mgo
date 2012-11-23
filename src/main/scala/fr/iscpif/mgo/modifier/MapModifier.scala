@@ -34,7 +34,7 @@ trait MapModifier extends Modifier with Plotter with Aggregation with MapArchive
     val matrix = NeighborMatrix(archive.map { case (k, v) => k -> v.value })
 
     def fitness(i: Individual[G, F]) = {
-      val (x, y) = plot(i.genome)
+      val (x, y) = plot(i)
       val distance =
         matrix.knn(x, y, neighbors).map {
           case (x1, y1) => matrix.distance(x, y, x1, y1)

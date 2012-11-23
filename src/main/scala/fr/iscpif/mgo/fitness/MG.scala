@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 15/11/12 Romain Reuillon
+ * Copyright (C) 23/11/12 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,10 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.map
+package fr.iscpif.mgo.fitness
 
-import fr.iscpif.mgo._
-
-trait Plotter extends G with F {
-  def plot(individual: Individual[G, F]): (Int, Int)
+trait MG extends F {
+  type F = MGFitness
 }
