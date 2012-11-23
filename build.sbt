@@ -19,7 +19,7 @@ publishTo <<= version { (v: String) =>
   if (v.trim.endsWith("SNAPSHOT")) 
     Some("snapshots" at maven + "snapshots") 
   else
-    Some("releases"  at maven + "release")
+    Some("releases"  at maven + "releases")
 }
 
 pomExtra := (
