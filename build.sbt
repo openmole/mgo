@@ -2,8 +2,6 @@ organization := "fr.iscpif"
 
 name := "mgo"
 
-version := "1.34-SNAPSHOT"
-
 scalaVersion := "2.10.0-RC3"
 
 resolvers ++= Seq(
