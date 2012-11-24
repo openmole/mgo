@@ -19,8 +19,7 @@ package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 
-trait Archive extends G with F with MF {
-  type A
+trait Archive extends G with F with MF with A {
 
   def initialArchive: A
 

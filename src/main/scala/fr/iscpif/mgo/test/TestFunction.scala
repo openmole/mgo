@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import genome.GASigmaFactory
 import java.util.Random
 
 object TestFunction extends App {
@@ -29,7 +30,7 @@ object TestFunction extends App {
   implicit val rng = new Random
 
   val nsga2 =
-    new NSGAIISigma with BinaryTournamentSelection with CrowdingStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with CrowdingDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
+    new NSGAII with GASigmaFactory with BinaryTournamentSelection with CrowdingStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with CrowdingDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
       def distributionIndex = 2
       def windowSize = 100
       def deviationEpsilon = 0.01

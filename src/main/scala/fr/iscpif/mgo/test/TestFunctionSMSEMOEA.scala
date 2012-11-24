@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import genome.GASigmaFactory
 import java.util.Random
 
 object TestFunctionSMSEMOEA extends App {
@@ -29,7 +30,7 @@ object TestFunctionSMSEMOEA extends App {
   implicit val rng = new Random
 
   val smsemoea =
-    new SMSEMOEASigma with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
+    new SMSEMOEA with GASigmaFactory with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
       def distributionIndex = 2
 
       def windowSize = 100

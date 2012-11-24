@@ -44,14 +44,13 @@ import RankDiversityModifier._
 /**
  * Compute a meta-fitness with a rank an a diversity
  */
-trait RankDiversityModifier extends RankModifier with DiversityModifier {
+trait RankDiversityModifier extends RankModifier with DiversityModifier with RankDiversityMF {
 
-  override type MF = RankDiversity
   type RANKED = MGFitness
   type DIVERSIFIED = MGFitness
   type F <: MGFitness
 
-  override def modify(evaluated: Seq[Individual[G, F]], archive: A) = {
+  override def modify(evaluated: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
     val fitnesses = evaluated.map(_.fitness)
     val ranks = rank(fitnesses)
     val distances = diversity(fitnesses, ranks)

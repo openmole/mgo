@@ -30,8 +30,10 @@ trait EpsilonDominance extends Dominance {
   /** epsilons values, one for each element in the fitness */
   def epsilons: Seq[Double]
 
+  def infiniteEpsilons: Iterator[Double] = epsilons.iterator ++ Iterator.continually(0.0)
+
   def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
-    (p1 zip p2 zip epsilons).forall {
+    (p1.iterator zip p2.iterator zip infiniteEpsilons).forall {
       case (((g1, g2), e)) => g1 > e + g2
     }
 

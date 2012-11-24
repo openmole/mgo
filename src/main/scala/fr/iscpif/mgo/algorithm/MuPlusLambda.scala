@@ -26,7 +26,7 @@ trait MuPlusLambda extends Evolution with Breeding with Elitism {
       population
     ).par.map { g => Individual(g, evaluator) }.seq
 
-    val newIndividuals = population.toIndividuals ++ offspring
+    val newIndividuals = offspring.toList ::: population.toIndividuals.toList
     val newArchive = combine(archive, toArchive(offspring))
 
     //Elitism strategy

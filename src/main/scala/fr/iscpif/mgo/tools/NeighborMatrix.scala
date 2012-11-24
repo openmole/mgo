@@ -80,6 +80,7 @@ trait NeighborMatrix {
     for {
       dx <- (x - range) to (x + range)
       dy <- (y - range) to (y + range)
+      if !(dx == x && dy == y)
       if isIn(dx, dy)
     } yield (dx, dy)
 

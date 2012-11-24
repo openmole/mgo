@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 reuillon
+ * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,20 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
 
 /**
- * Implementation of the NSGAII algorithm using genome with auto-adaptive sigma
- * values for the mutation
+ * Base of the cake for a genetic algorithm evolutions (algorithms evolving
+ * sequences of doubles).
  */
-trait NSGAIISigma extends NSGAII with SigmaGAEvolution { nsga =>
-
-  type G = GAGenomeWithSigma
-
-  val genomeFactory = new GAGenomeWithSigmaFactory {
-    def size = genomeSize
-  }
-
+trait GA extends G {
+  type G = GAGenome
 }

@@ -24,7 +24,7 @@ import genome.G
  * The modifier layer decorates individuals with a meta-fitness which is function of
  * the population.
  */
-trait Modifier extends G with F with MF with IndividualFilter with Archive {
+trait Modifier extends G with F with MF with IndividualFilter with A {
   /**
    * Generate a population from a set of indiviuals that is filtered in a first time
    *

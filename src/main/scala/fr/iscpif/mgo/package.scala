@@ -17,8 +17,8 @@
 
 package fr.iscpif
 
-import mgo.algorithm.{ SigmaGAEvolution, SMSEMOEASigma, NSGAIISigma }
-import mgo.genome.{ Sigma, GAGenomeWithSigma, GAGenome, GAEvolution }
+import mgo.genome
+import mgo.genome.{ Sigma, GAGenomeWithSigma, GAGenome, GA }
 import sun.net.www.content.text.plain
 
 package object mgo {
@@ -45,11 +45,9 @@ package object mgo {
 
   type MuPlusLambda = algorithm.MuPlusLambda
   type NSGAII = algorithm.NSGAII
-  type NSGAIISigma = algorithm.NSGAIISigma
   type OptimumMap = algorithm.OptimumMap
-  type SigmaGAEvolution = algorithm.SigmaGAEvolution
   type SMSEMOEA = algorithm.SMSEMOEA
-  type SMSEMOEASigma = algorithm.SMSEMOEASigma
+  type A = archive.A
   type Archive = archive.Archive
   type MapArchive = archive.MapArchive
   val MapArchive = archive.MapArchive
@@ -80,10 +78,12 @@ package object mgo {
   type G = genome.G
   type GAGenome = genome.GAGenome
   type GAGenomeWithSigma = genome.GAGenomeWithSigma
-  type GAEvolution = genome.GAEvolution
+  type GA = genome.GA
+  type GAFactory = genome.GAFactory
+  type GASigma = genome.GASigma
   type Genome = genome.Genome
   type GenomeFactory = genome.GenomeFactory
-  type GAGenomeWithSigmaFactory = genome.GAGenomeWithSigmaFactory
+  type GASigmaFactory = genome.GASigmaFactory
   type Sigma = genome.Sigma
   type GenomePlotter = map.GenomePlotter
   type Plotter = map.Plotter
@@ -97,6 +97,7 @@ package object mgo {
   type NoneModifier = modifier.NoneModifier
   type RankModifier = modifier.RankModifier
   type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
+  type RankDiversityMF = modifier.RankDiversityMF
   type RankDiversityModifier = modifier.RankDiversityModifier
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
   type GaussianMutation = mutation.GaussianMutation
