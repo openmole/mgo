@@ -28,11 +28,11 @@ object TestMap extends App {
 
   val m = new OptimumMap with NSGAII with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with NonDominatedElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with GenomePlotter {
     def genomeSize: Int = 6
-    def lambda: Int = 1
+    def lambda: Int = 100
     def neighbors = 8
     def mu: Int = 100
     def distributionIndex = 2
-    def steps = 100000
+    def steps = 1000
     def x: Int = 0
     def y: Int = 1
     def nX: Int = 100

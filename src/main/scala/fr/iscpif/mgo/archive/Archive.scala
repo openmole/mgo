@@ -28,5 +28,6 @@ trait Archive extends G with F with MF with A {
 
   def toArchive(individuals: Seq[Individual[G, F]]): A
   def combine(a1: A, a2: A): A
+  def diff(original: A, modified: A): A
 
 }

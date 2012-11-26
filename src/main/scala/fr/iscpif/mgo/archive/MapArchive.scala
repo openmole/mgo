@@ -22,9 +22,8 @@ import collection.mutable
 
 object MapArchive {
   case class MapElement(value: Double, hits: Int = 1) {
-    def combine(o: MapElement) =
-      if (o.value < value) copy(value = o.value, hits = hits + o.hits)
-      else copy(hits = hits + o.hits)
+    def +(o: MapElement) = copy(math.min(value, o.value), hits = hits + o.hits)
+    def -(o: MapElement) = copy(math.min(value, o.value), hits - o.hits)
   }
 }
 
@@ -41,7 +40,7 @@ trait MapArchive extends Archive with Plotter with Aggregation {
       val (x, y) = plot(i)
       val value = aggregate(i.fitness)
       tmpArchive.get(x, y) match {
-        case Some(e) => tmpArchive((x, y)) = e.combine(MapElement(value))
+        case Some(e) => tmpArchive((x, y)) = e + MapElement(value)
         case None => tmpArchive((x, y)) = MapElement(value)
       }
     }
@@ -52,10 +51,20 @@ trait MapArchive extends Archive with Plotter with Aggregation {
     val tmpArchive = mutable.Map.empty[(Int, Int), MapElement]
     for (((x, y), me) <- a1.toSeq ++ a2.toSeq)
       tmpArchive.get(x, y) match {
-        case Some(e) => tmpArchive((x, y)) = e.combine(me)
+        case Some(e) => tmpArchive((x, y)) = e + me
         case None => tmpArchive((x, y)) = me
       }
     tmpArchive.toMap
+  }
+
+  def diff(original: A, modified: A) = {
+    modified.map {
+      case ((k, e)) =>
+        original.get(k) match {
+          case None => k -> e
+          case Some(oe) => k -> (e - oe)
+        }
+    }
   }
 
 }
