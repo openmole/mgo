@@ -26,7 +26,7 @@ import java.io._
 
 object TestMap extends App {
 
-  val m = new OptimumMap with NSGAII with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with NonDominatedElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with GenomePlotter {
+  val m = new Evolution with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with NonDominatedElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with GenomePlotter {
     def genomeSize: Int = 6
     def lambda: Int = 100
     def neighbors = 8

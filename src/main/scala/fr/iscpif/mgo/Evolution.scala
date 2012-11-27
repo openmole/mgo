@@ -30,7 +30,9 @@ trait Evolution extends Termination
     with F
     with MF
     with GenomeFactory
-    with Archive { self =>
+    with Archive
+    with Breeding
+    with Elitism { self =>
 
   /**
    * Represent a state of the evolution algorithm
@@ -90,7 +92,17 @@ trait Evolution extends Termination
    * @return a new population of evaluated solutions
    *
    */
-  def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): (Population[G, F, MF], A)
+  def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): (Population[G, F, MF], A) = {
+    val offspring = breed(
+      population
+    ).par.map { g => Individual(g, evaluator) }.seq
+
+    val newIndividuals = offspring.toList ::: population.toIndividuals.toList
+    val newArchive = combine(archive, toArchive(offspring))
+
+    //Elitism strategy
+    (elitism(toPopulation(newIndividuals, newArchive)), newArchive)
+  }
 
   /**
    * Generate an random population
@@ -99,6 +111,6 @@ trait Evolution extends Termination
    * @return a random population of evaluated solutions
    */
   def randomPopulation(evaluator: G => F, archive: A)(implicit aprng: Random): Population[G, F, MF] =
-    toPopulation((0 until lambda).map { _ => genomeFactory.random }.par.map { g => Individual[G, F](g, evaluator) }.toIndexedSeq, archive)
+    toPopulation(breed(Population.empty).par.map { g => Individual[G, F](g, evaluator) }.toIndexedSeq, archive)
 
 }

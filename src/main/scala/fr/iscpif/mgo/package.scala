@@ -43,10 +43,6 @@ package object mgo {
     def untilConverged(f: S => Unit) = i.dropWhile { s => f(s); !s.terminated }.next
   }
 
-  type MuPlusLambda = algorithm.MuPlusLambda
-  type NSGAII = algorithm.NSGAII
-  type OptimumMap = algorithm.OptimumMap
-  type SMSEMOEA = algorithm.SMSEMOEA
   type A = archive.A
   type Archive = archive.Archive
   type MapArchive = archive.MapArchive
