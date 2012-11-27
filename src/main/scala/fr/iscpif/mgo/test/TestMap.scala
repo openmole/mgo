@@ -18,11 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import elitism.MapElitism
-import genome.GASigmaFactory
 import java.util.Random
-import collection.mutable
-
 import java.io._
 
 object TestMap extends App {

@@ -63,6 +63,7 @@ package object mgo {
   type NonStrictDominance = dominance.NonStrictDominance
   type StrictDominance = dominance.StrictDominance
   type Elitism = elitism.Elitism
+  type MapElitism = elitism.MapElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
   type Aggregation = fitness.Aggregation
   type F = fitness.F
