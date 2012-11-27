@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import elitism.MapElitism
 import genome.GASigmaFactory
 import java.util.Random
 import collection.mutable
@@ -26,18 +27,19 @@ import java.io._
 
 object TestMap extends App {
 
-  val m = new Evolution with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with NonDominatedElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with GenomePlotter {
-    def genomeSize: Int = 6
-    def lambda: Int = 100
-    def neighbors = 8
-    def mu: Int = 100
-    def distributionIndex = 2
-    def steps = 1000
-    def x: Int = 0
-    def y: Int = 1
-    def nX: Int = 100
-    def nY: Int = 100
-  }
+  val m =
+    new Evolution with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with NonDominatedElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with GenomePlotter {
+      def genomeSize: Int = 6
+      def lambda: Int = 100
+      def neighbors = 8
+      def mu: Int = 100
+      def distributionIndex = 2
+      def steps = 1000
+      def x: Int = 0
+      def y: Int = 1
+      def nX: Int = 100
+      def nY: Int = 100
+    }
 
   val pb = new Sphere {
     def n = 6
