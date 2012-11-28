@@ -33,4 +33,5 @@ trait CounterTermination extends Termination {
 
   def terminated(population: Population[G, F, MF], step: STATE) =
     (step >= steps, step + 1)
+
 }
