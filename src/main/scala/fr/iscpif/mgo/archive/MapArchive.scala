@@ -39,6 +39,8 @@ object MapArchive {
 
     def +(o: ArchiveMap) = ArchiveMap.reduce(this, o)(MapElement.+)
     def -(o: ArchiveMap) = ArchiveMap.reduce(this, o)(MapElement.-)
+
+    override def toString = "[" + content.map("[" + _.mkString(", ") + "]").mkString(", ") + "]"
   }
 
   object ArchiveMap {
