@@ -21,50 +21,70 @@ import fr.iscpif.mgo._
 import collection.mutable
 
 object MapArchive {
-  case class MapElement(value: Double, hits: Int = 1) {
-    def +(o: MapElement) = copy(math.min(value, o.value), hits = hits + o.hits)
-    def -(o: MapElement) = copy(math.min(value, o.value), hits - o.hits)
+  case class MapElement(value: Double, hits: Int) {
+    def isEmpty = hits == 0
+    def +(o: MapElement) = MapElement.+(this, o)
+  }
+
+  object MapElement {
+    val empty = MapElement(Double.PositiveInfinity, 0)
+
+    def +(e1: MapElement, e2: MapElement) = MapElement(math.min(e1.value, e2.value), e1.hits + e2.hits)
+    def -(e1: MapElement, e2: MapElement) = MapElement(math.min(e1.value, e2.value), e1.hits - e2.hits)
+  }
+
+  case class ArchiveMap(content: Array[Array[MapElement]], xSize: Int, ySize: Int) {
+    def get(x: Int, y: Int) =
+      if (x < 0 || y < 0 || x >= xSize || y >= ySize) None else Some(content(x)(y))
+
+    def +(o: ArchiveMap) = ArchiveMap.reduce(this, o)(MapElement.+)
+    def -(o: ArchiveMap) = ArchiveMap.reduce(this, o)(MapElement.-)
+  }
+
+  object ArchiveMap {
+    val empty = new ArchiveMap(Array.empty, 0, 0)
+    def maxSize(a1: ArchiveMap, a2: ArchiveMap) = (math.max(a1.xSize, a2.xSize), math.max(a1.ySize, a2.ySize))
+    def reduce(a1: ArchiveMap, a2: ArchiveMap)(op: (MapElement, MapElement) => MapElement) = {
+      val (xSize, ySize) = ArchiveMap.maxSize(a1, a2)
+      ArchiveMap(
+        Array.tabulate(xSize, ySize) {
+          case (x, y) =>
+            (a1.get(x, y), a2.get(x, y)) match {
+              case (Some(e1), Some(e2)) => op(e1, e2)
+              case (Some(e1), None) => e1
+              case (None, Some(e2)) => e2
+              case (None, None) => MapElement.empty
+            }
+        },
+        xSize,
+        ySize
+      )
+    }
   }
 }
 
 import MapArchive._
 
 trait MapArchive extends Archive with Plotter with Aggregation {
-  type A = Map[(Int, Int), MapElement]
+  type A = ArchiveMap
 
-  def initialArchive: A = Map.empty
+  def initialArchive: A = ArchiveMap.empty
 
   def toArchive(individuals: Seq[Individual[G, F]]): A = {
-    val tmpArchive = mutable.Map.empty[(Int, Int), MapElement]
-    for (i <- individuals) {
-      val (x, y) = plot(i)
-      val value = aggregate(i.fitness)
-      tmpArchive.get(x, y) match {
-        case Some(e) => tmpArchive((x, y)) = e + MapElement(value)
-        case None => tmpArchive((x, y)) = MapElement(value)
-      }
+    val sparse = individuals.groupBy(plot).map {
+      case (k, v) => k -> v.map(i => MapElement(aggregate(i.fitness), 1)).reduce(_ + _)
     }
-    tmpArchive.toMap
+    val maxX = sparse.keys.map(_._1).max + 1
+    val maxY = sparse.keys.map(_._2).max + 1
+    ArchiveMap(
+      Array.tabulate[MapElement](maxX, maxY) { case (x, y) => sparse.getOrElse((x, y), MapElement.empty) },
+      maxX,
+      maxY
+    )
   }
 
-  def combine(a1: A, a2: A): A = {
-    val tmpArchive = mutable.Map.empty[(Int, Int), MapElement]
-    for (((x, y), me) <- a1.toSeq ++ a2.toSeq)
-      tmpArchive.get(x, y) match {
-        case Some(e) => tmpArchive((x, y)) = e + me
-        case None => tmpArchive((x, y)) = me
-      }
-    tmpArchive.toMap
-  }
+  def combine(a1: A, a2: A): A = a1 + a2
 
-  def diff(original: A, modified: A) = {
-    modified.map {
-      case ((k, e)) =>
-        original.get(k) match {
-          case None => k -> e
-          case Some(oe) => k -> (e - oe)
-        }
-    }
-  }
+  def diff(original: A, modified: A) = modified - original
 
 }

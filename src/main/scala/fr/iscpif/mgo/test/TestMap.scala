@@ -24,13 +24,12 @@ import java.io._
 object TestMap extends App {
 
   val m =
-    new Evolution with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with NonDominatedElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with GenomePlotter {
+    new Evolution with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with MapElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with GenomePlotter {
       def genomeSize: Int = 6
-      def lambda: Int = 100
+      def lambda: Int = 200
       def neighbors = 8
-      def mu: Int = 100
       def distributionIndex = 2
-      def steps = 1000
+      def steps = 500
       def x: Int = 0
       def y: Int = 1
       def nX: Int = 100
@@ -47,12 +46,14 @@ object TestMap extends App {
 
   implicit val rng = new Random
 
-  val res = m.run(pb).untilConverged(s => println(s.generation + " " + s.archive.size)).archive.map { case (k, v) => k -> v.value }
+  val res = m.run(pb).untilConverged(s => println(s.generation)).archive
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {
-    ((x, y), v) <- res
-  } writer.write("" + x + "," + y + "," + v + "\n")
+    (l, x) <- res.content.zipWithIndex
+    (e, y) <- l.zipWithIndex
+    if !e.value.isPosInfinity
+  } writer.write("" + x + "," + y + "," + e.value + "\n")
   writer.close
 
 }

@@ -29,17 +29,12 @@ object NeighborMatrix {
       def matrix(x: Int, y: Int) = None
     }
 
-  def apply[S](elements: Map[(Int, Int), S]) =
-    if (elements.isEmpty) empty[S]
-    else {
-      val mX = elements.keys.toSeq.map { case (x, _) => x }.max
-      val mY = elements.keys.toSeq.map { case (_, y) => y }.max
-      new NeighborMatrix {
-        type T = S
-        def maxX = mX
-        def maxY = mY
-        def matrix(x: Int, y: Int) = elements.get(x, y)
-      }
+  def apply[S](elements: (Int, Int) => Option[S], mX: Int, mY: Int) =
+    new NeighborMatrix {
+      type T = S
+      def maxX = mX
+      def maxY = mY
+      def matrix(x: Int, y: Int) = elements(x, y)
     }
 
 }
@@ -57,7 +52,7 @@ trait NeighborMatrix {
   def distance(x1: Int, y1: Int, x2: Int, y2: Int) = math.hypot(x2 - x1, y2 - y1)
 
   def isIn(x: Int, y: Int) = {
-    def isIn(c: Int, maxC: Int) = c >= 0 && c < maxC
+    def isIn(c: Int, maxC: Int) = c >= 0 && c <= maxC
     isIn(x, maxX) && isIn(y, maxY)
   }
 

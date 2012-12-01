@@ -32,7 +32,7 @@ import scala.math._
  */
 trait PolynomialMutation extends Mutation with GenomeFactory {
 
-  type G <: genome.GAGenome
+  type G <: GAGenome
 
   def mutationRate = 0.5
 

@@ -32,7 +32,7 @@ trait ParetoRanking extends Ranking with Dominance with G with F {
   def rank(evaluated: Seq[RANKED]) = {
     evaluated.zipWithIndex.map {
       case (indiv, index) =>
-        Lazy(evaluated.zipWithIndex.filter {
+        Lazy(evaluated.par.zipWithIndex.filter {
           case (_, index2) => index != index2
         }.count {
           case (indiv2, _) => isDominated(indiv.values, indiv2.values)

@@ -29,7 +29,16 @@ trait MapModifier extends Modifier with Plotter with Aggregation with RankDivers
   def neighbors: Int
 
   override def modify(individuals: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
-    val matrix = NeighborMatrix(archive.map { case (k, v) => k -> v.value })
+    val matrix =
+      NeighborMatrix(
+        (x, y) =>
+          archive.get(x, y) match {
+            case Some(e) => if (e.isEmpty) None else Some(e)
+            case None => None
+          },
+        archive.xSize,
+        archive.ySize
+      )
 
     def fitness(i: Individual[G, F]) = {
       val (x, y) = plot(i)
@@ -38,11 +47,11 @@ trait MapModifier extends Modifier with Plotter with Aggregation with RankDivers
           case (x1, y1) => matrix.distance(x, y, x1, y1)
         }.sum
 
-      val hitCount: Double = archive.get(x, y) match {
-        case Some(v) => v.hits
-        case None => 1
-      }
-
+      val hitCount: Double =
+        archive.get(x, y).map(_.hits) match {
+          case Some(v) => v
+          case None => 0
+        }
       MGFitness(aggregate(i.fitness), 1.0 / distance, hitCount)
     }
 
