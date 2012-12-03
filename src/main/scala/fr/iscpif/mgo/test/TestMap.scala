@@ -50,10 +50,10 @@ object TestMap extends App {
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {
-    (l, x) <- res.content.zipWithIndex
+    (l, x) <- res.values.zipWithIndex
     (e, y) <- l.zipWithIndex
-    if !e.value.isPosInfinity
-  } writer.write("" + x + "," + y + "," + e.value + "\n")
+    if !e.isPosInfinity
+  } writer.write("" + x + "," + y + "," + e + "\n")
   writer.close
 
 }

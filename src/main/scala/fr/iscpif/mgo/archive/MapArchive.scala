@@ -33,18 +33,21 @@ object MapArchive {
     def -(e1: MapElement, e2: MapElement) = MapElement(math.min(e1.value, e2.value), e1.hits - e2.hits)
   }
 
-  case class ArchiveMap(content: Array[Array[MapElement]], xSize: Int, ySize: Int) {
+  case class ArchiveMap(values: Array[Array[Double]], hits: Array[Array[Int]], xSize: Int, ySize: Int) {
     def get(x: Int, y: Int) =
-      if (x < 0 || y < 0 || x >= xSize || y >= ySize) None else Some(content(x)(y))
+      if (x < 0 || y < 0 || x >= xSize || y >= ySize) None else Some(MapElement(values(x)(y), hits(x)(y)))
 
     def +(o: ArchiveMap) = ArchiveMap.reduce(this, o)(MapElement.+)
     def -(o: ArchiveMap) = ArchiveMap.reduce(this, o)(MapElement.-)
 
-    override def toString = "[" + content.map("[" + _.mkString(", ") + "]").mkString(", ") + "]"
+    override def toString = "[" + values.map("[" + _.mkString(", ") + "]").mkString(", ") + "]"
   }
 
   object ArchiveMap {
-    val empty = new ArchiveMap(Array.empty, 0, 0)
+    def apply(content: Array[Array[MapElement]], xSize: Int, ySize: Int): ArchiveMap =
+      ArchiveMap(content.map(_.map(_.value)), content.map(_.map(_.hits)), xSize, ySize)
+
+    val empty = ArchiveMap(Array.empty, 0, 0)
     def maxSize(a1: ArchiveMap, a2: ArchiveMap) = (math.max(a1.xSize, a2.xSize), math.max(a1.ySize, a2.ySize))
     def reduce(a1: ArchiveMap, a2: ArchiveMap)(op: (MapElement, MapElement) => MapElement) = {
       val (xSize, ySize) = ArchiveMap.maxSize(a1, a2)
