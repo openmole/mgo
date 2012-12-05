@@ -23,7 +23,7 @@ import genome.G
 /**
  * Cake layer to eliminated elements of a population
  */
-trait Elitism extends G with F with MF {
+trait Elitism extends G with F with MF with Modifier {
 
   /**
    * Reduce the number of elements of the population and return a new one
@@ -31,5 +31,5 @@ trait Elitism extends G with F with MF {
    * @param population the population to shrink
    * @return the shrinked population
    */
-  def elitism(population: Population[G, F, MF]): Population[G, F, MF]
+  def elitism(individuals: Seq[Individual[G, F]], archive: A): Seq[Individual[G, F]]
 }

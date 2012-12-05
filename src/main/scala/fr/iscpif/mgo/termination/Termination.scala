@@ -23,7 +23,7 @@ import genome.G
 /**
  * Layer to compute the stopping condition of the evolutionary algorithm
  */
-trait Termination extends G with F with MF {
+trait Termination extends G with F with MF with A {
 
   /** Type of the state maintained to study the evolution of the algorithm */
   type STATE
@@ -34,7 +34,7 @@ trait Termination extends G with F with MF {
    * @param p the initial population
    * @return the initial state
    */
-  def initialState(p: Population[G, F, MF]): STATE
+  def initialState: STATE
 
   /**
    * Test if the algorithm has converged.
@@ -44,5 +44,5 @@ trait Termination extends G with F with MF {
    * @return a boolean which is equal to true if a terminal state has
    * been detected and the new termination state
    */
-  def terminated(population: Population[G, F, MF], terminationState: STATE): (Boolean, STATE)
+  def terminated(individuals: Seq[Individual[G, F]], a: A, terminationState: STATE): (Boolean, STATE)
 }

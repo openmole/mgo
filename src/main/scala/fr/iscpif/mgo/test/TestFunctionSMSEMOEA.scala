@@ -41,11 +41,4 @@ object TestFunctionSMSEMOEA extends App {
       def referencePoint = IndexedSeq(2.0, 2.0)
     }
 
-  val res = smsemoea.run(zdt).dropWhile {
-    s => println(s.terminationState.std); !s.terminated
-  }.next.population
-  res sortBy (_.metaFitness.rank) foreach {
-    e => println(zdt.scale(e)._2.values.mkString(","))
-  }
-
 }

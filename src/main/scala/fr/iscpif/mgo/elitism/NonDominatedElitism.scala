@@ -25,22 +25,25 @@ import fr.iscpif.mgo._
 trait NonDominatedElitism extends Elitism with Mu {
   type MF <: Diversity with Rank
 
-  def elitism(population: Population[G, F, MF]): Population[G, F, MF] = {
-    if (population.size < mu) population
+  def elitism(individuals: Seq[Individual[G, F]], archive: A): Seq[Individual[G, F]] = {
+    if (individuals.size < mu) individuals
     else {
-      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { _._2: Population[G, F, MF] }
+      val population = toPopulation(individuals, archive)
+      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { case (_, e) => e.map(i => i.toIndividual -> i.metaFitness.diversity) }
+
+      type FE = (Individual[G, F], Lazy[Double])
 
       //FIXME: No idea why but it is not tailrec
-      def addFronts[I](fronts: List[Population[G, F, MF]], acc: List[Population[G, F, MF]], size: Int = 0): (Population[G, F, MF], Population[G, F, MF]) = {
+      def addFronts[I](fronts: List[Seq[FE]], acc: List[Seq[FE]], size: Int = 0): (Seq[FE], Seq[FE]) = {
         if (size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
-        else (fronts.headOption.getOrElse(Population.empty), acc.flatten)
+        else (fronts.headOption.getOrElse(Seq.empty), acc.flatten)
       }
 
       val (lastFront, selected) = addFronts(fronts, List.empty)
 
       (if (selected.size < mu)
-        selected ++ lastFront.sortBy(_.metaFitness.diversity()).reverse.slice(0, mu - selected.size)
-      else selected)
+        selected ++ lastFront.sortBy(_._2()).reverse.slice(0, mu - selected.size)
+      else selected).map(_._1)
     }
   }
 }

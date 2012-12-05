@@ -19,17 +19,13 @@ package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
 
-trait MapElitism extends NonDominatedElitism with Plotter with Aggregation {
+trait MapElitism extends Elitism with Plotter with Aggregation {
 
   val mu = Int.MaxValue
 
-  override def elitism(population: Population[G, F, MF]): Population[G, F, MF] = {
-    val grouped = population.groupBy(i => plot(i.toIndividual))
-    val newPopulation =
-      grouped.map {
-        case (_, is) => is.minBy(i => aggregate(i.fitness))
-      }
-    super.elitism(newPopulation)
-  }
+  def elitism(individuals: Seq[Individual[G, F]], archive: A): Seq[Individual[G, F]] =
+    individuals.groupBy(plot).toSeq.map {
+      case (_, is) => is.minBy(i => aggregate(i.fitness))
+    }
 
 }

@@ -40,6 +40,4 @@ object TestFunction extends App {
       def referencePoint = IndexedSeq(2.0, 2.0)
     }
 
-  val res = nsga2.run(zdt).dropWhile { s => println(s.terminationState + " " + s.generation); !s.terminated }.next.population
-  res sortBy (_.metaFitness.rank) foreach { e => println(zdt.scale(e)._2.values.mkString(",")) }
 }

@@ -111,7 +111,6 @@ package object mgo {
   type Selection = selection.Selection
   type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
   type CounterTermination = termination.CounterTermination
-  type FirstRankedSteadyTermination = termination.FirstRankedSteadyTermination
   type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination
   type StabilityTermination = termination.StabilityTermination
   type Termination = termination.Termination

@@ -24,7 +24,7 @@ import java.util.Random
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait Breeding extends Lambda with G with F with MF with Selection with CrossOver with Mutation with GenomeFactory {
+trait Breeding extends Lambda with G with F with MF with Selection with CrossOver with Mutation with GenomeFactory with Modifier {
 
   /**
    * Breed genomes from a population
@@ -33,10 +33,12 @@ trait Breeding extends Lambda with G with F with MF with Selection with CrossOve
    * @param size the size of the breeded set
    * @return the breeded genomes
    */
-  def breed(population: Population[G, F, MF], size: Int = lambda)(implicit aprng: Random): IndexedSeq[G] =
+  def breed(individuals: Seq[Individual[G, F]], a: A, size: Int = lambda)(implicit aprng: Random): Seq[G] = {
+    val population = toPopulation(individuals, a)
     Iterator.continually {
       if (population.isEmpty) IndexedSeq(genomeFactory.random)
       else crossover(selection(population).genome, selection(population).genome).map { mutate(_) }
     }.flatten.take(size).toIndexedSeq
+  }
 
 }

@@ -39,7 +39,7 @@ trait Evolution extends Termination
    */
   case class EvolutionState(
     /** The current population of solution */
-    val population: Population[G, F, MF],
+    val individuals: Seq[Individual[G, F]],
     /** The current achive */
     val archive: A,
     /** The number of the generation */
@@ -56,11 +56,11 @@ trait Evolution extends Termination
    * @param evaluator the fitness evaluation function
    * @return an iterator over the states of the evolution
    */
-  def run(p: Population[G, F, MF], a: A, evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
-    Iterator.iterate(EvolutionState(p, a, 0, initialState(p), false)) {
+  def run(p: Seq[Individual[G, F]], a: A, evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
+    Iterator.iterate(EvolutionState(p, a, 0, initialState, false)) {
       s =>
-        val (newPop, newArchive) = evolve(s.population, s.archive, evaluator)
-        val (stop, newState) = terminated(newPop, s.terminationState)
+        val (newPop, newArchive) = evolve(s.individuals, s.archive, evaluator)
+        val (stop, newState) = terminated(newPop, newArchive, s.terminationState)
         EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
 
@@ -72,8 +72,8 @@ trait Evolution extends Termination
    */
   def run(evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] = {
     val archive = initialArchive
-    val population = randomPopulation(evaluator, archive)
-    run(population, archive, evaluator)
+    val individuals = random(evaluator, archive)
+    run(individuals, archive, evaluator)
   }
 
   /**
@@ -92,16 +92,16 @@ trait Evolution extends Termination
    * @return a new population of evaluated solutions
    *
    */
-  def evolve(population: Population[G, F, MF], archive: A, evaluator: G => F)(implicit aprng: Random): (Population[G, F, MF], A) = {
+  def evolve(individuals: Seq[Individual[G, F]], archive: A, evaluator: G => F)(implicit aprng: Random): (Seq[Individual[G, F]], A) = {
     val offspring = breed(
-      population
+      individuals, archive
     ).par.map { g => Individual(g, evaluator) }.seq
 
-    val newIndividuals = offspring.toList ::: population.toIndividuals.toList
+    val newIndividuals = offspring.toList ::: individuals.toList
     val newArchive = combine(archive, toArchive(offspring))
 
     //Elitism strategy
-    (elitism(toPopulation(newIndividuals, newArchive)), newArchive)
+    (elitism(newIndividuals, newArchive), newArchive)
   }
 
   /**
@@ -110,7 +110,7 @@ trait Evolution extends Termination
    * @param evaluator the fitness evaluation function
    * @return a random population of evaluated solutions
    */
-  def randomPopulation(evaluator: G => F, archive: A)(implicit aprng: Random): Population[G, F, MF] =
-    toPopulation(breed(Population.empty).par.map { g => Individual[G, F](g, evaluator) }.toIndexedSeq, archive)
+  def random(evaluator: G => F, archive: A)(implicit aprng: Random): Seq[Individual[G, F]] =
+    breed(Seq.empty, archive).par.map { g => Individual[G, F](g, evaluator) }.seq
 
 }
