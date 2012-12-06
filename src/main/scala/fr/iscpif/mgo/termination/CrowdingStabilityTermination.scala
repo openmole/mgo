@@ -29,8 +29,7 @@ import math._
  */
 trait CrowdingStabilityTermination extends Termination with CrowdingDiversity with DiversityModifier with StabilityTermination {
 
-  def terminated(individuals: Seq[Individual[G, F]], a: A, terminationState: STATE): (Boolean, STATE) = {
-    val population = toPopulation(individuals, a)
+  def terminated(population: => Population[G, F, MF], terminationState: STATE): (Boolean, STATE) = {
     val maxCrowding = population.map { _.metaFitness.diversity() }.filter(_ != Double.PositiveInfinity).max
     stability(terminationState, maxCrowding)
   }

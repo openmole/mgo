@@ -31,7 +31,7 @@ trait CounterTermination extends Termination {
 
   def initialState = 0
 
-  def terminated(individuals: Seq[Individual[G, F]], a: A, step: STATE): (Boolean, STATE) =
+  def terminated(population: => Population[G, F, MF], step: STATE): (Boolean, STATE) =
     (step >= steps, step + 1)
 
 }

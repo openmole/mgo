@@ -60,7 +60,7 @@ trait Evolution extends Termination
     Iterator.iterate(EvolutionState(p, a, 0, initialState, false)) {
       s =>
         val (newPop, newArchive) = evolve(s.individuals, s.archive, evaluator)
-        val (stop, newState) = terminated(newPop, newArchive, s.terminationState)
+        val (stop, newState) = terminated(toPopulation(newPop, newArchive), s.terminationState)
         EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
 
