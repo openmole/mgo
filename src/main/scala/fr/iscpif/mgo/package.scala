@@ -59,9 +59,10 @@ package object mgo {
   type DiversityMetric = diversity.DiversityMetric
   type HypervolumeDiversity = diversity.HypervolumeDiversity
   type Dominance = dominance.Dominance
-  type EpsilonDominance = dominance.EpsilonDominance
   type NonStrictDominance = dominance.NonStrictDominance
+  type NonStrictEpsilonDominance = dominance.NonStrictEpsilonDominance
   type StrictDominance = dominance.StrictDominance
+  type StrictEpsilonDominance = dominance.StrictEpsilonDominance
   type Elitism = elitism.Elitism
   type MapElitism = elitism.MapElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
