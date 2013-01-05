@@ -5,7 +5,8 @@ MGO is a library based on the cake pattern for multi-objective evolutionary algo
 * written in scala,
 * enforcing immutability,
 * exposes a modular and exetensible architechture,
-* implements state of the art algorithms.
+* implements state of the art algorithms,
+* take advantage of multi-core architectures.
 
 Documentation
 -------------
