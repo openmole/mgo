@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 20/11/12 Romain Reuillon
+ * Copyright (C) 08/01/13 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,21 +19,18 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import java.util.Random
-import java.io._
+import java.io.FileWriter
+import java.io.File
 
-object TestMap extends App {
-
+object TestProfile extends App {
   val m =
-    new Evolution with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with MapElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with MapGenomePlotter {
+    new Evolution with MG with ProfileArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
       def genomeSize: Int = 6
       def lambda: Int = 200
-      def neighbors = 8
       def distributionIndex = 2
       def steps = 500
       def x: Int = 0
-      def y: Int = 1
-      def nX: Int = 100
-      def nY: Int = 100
+      def nX: Int = 1000
     }
 
   val pb = new Sphere {
@@ -50,10 +47,9 @@ object TestMap extends App {
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {
-    (l, x) <- res.values.zipWithIndex
-    (e, y) <- l.zipWithIndex
+    (e, x) <- res.values.zipWithIndex
     if !e.isPosInfinity
-  } writer.write("" + x + "," + y + "," + e + "\n")
+  } writer.write("" + x + "," + e + "\n")
   writer.close
 
 }

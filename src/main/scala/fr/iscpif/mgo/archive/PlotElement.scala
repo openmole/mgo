@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 15/11/12 Romain Reuillon
+ * Copyright (C) 07/01/13 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,10 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.map
+package fr.iscpif.mgo.archive
 
-import fr.iscpif.mgo._
+object PlotElement {
+  val empty = PlotElement(Double.PositiveInfinity, 0)
 
-trait Plotter extends G with F {
-  def plot(individual: Individual[G, F]): (Int, Int)
+  def +(e1: PlotElement, e2: PlotElement) = PlotElement(math.min(e1.value, e2.value), e1.hits + e2.hits)
+  def -(e1: PlotElement, e2: PlotElement) = PlotElement(math.min(e1.value, e2.value), e1.hits - e2.hits)
+}
+
+case class PlotElement(value: Double, hits: Int) {
+  def isEmpty = hits == 0
+  def +(o: PlotElement) = PlotElement.+(this, o)
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 15/11/12 Romain Reuillon
+ * Copyright (C) 07/01/13 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -18,37 +18,29 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import tools.NeighborMatrix
 
 import RankDiversityModifier._
 
-trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiversityModifier {
+trait ProfileModifier extends Modifier with ProfilePlotter with Aggregation with RankDiversityModifier {
 
-  type A <: MapArchive#A
-
-  def neighbors: Int
+  type A <: ProfileArchive#A
 
   override def modify(individuals: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
-    val matrix =
-      NeighborMatrix(
-        (x, y) =>
-          archive.get(x, y) match {
-            case Some(e) => if (e.isEmpty) None else Some(e)
-            case None => None
-          },
-        archive.xSize,
-        archive.ySize
-      )
+    def findNeighbors(place: Int, range: Int = 1): Int = {
+      val minBound = math.max(place - range, 0)
+      val maxBound = math.min(place + range, archive.size - 1)
+
+      val bounded = (minBound to maxBound).flatMap(archive.get)
+      if (!bounded.isEmpty || (minBound <= 0 && maxBound >= archive.size - 1)) range
+      else findNeighbors(place, range + 1)
+    }
 
     def fitness(i: Individual[G, F]) = {
-      val (x, y) = plot(i)
-      val distance =
-        matrix.knn(x, y, neighbors).map {
-          case (x1, y1) => matrix.distance(x, y, x1, y1)
-        }.sum
+      val x = plot(i)
+      val distance = findNeighbors(x)
 
       val hitCount: Double =
-        archive.get(x, y).map(_.hits) match {
+        archive.get(x).map(_.hits) match {
           case Some(v) => v
           case None => 0
         }
@@ -62,3 +54,4 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
     toPopulationElements[G, F](individuals, ranks, distances)
   }
 }
+

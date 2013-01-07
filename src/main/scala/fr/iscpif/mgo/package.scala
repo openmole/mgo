@@ -47,6 +47,9 @@ package object mgo {
   type Archive = archive.Archive
   type MapArchive = archive.MapArchive
   val MapArchive = archive.MapArchive
+  type PlotElement = archive.PlotElement
+  type ProfileArchive = archive.ProfileArchive
+  val ProfileArchive = archive.ProfileArchive
   type NoArchive = archive.NoArchive
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover
@@ -66,6 +69,7 @@ package object mgo {
   type Elitism = elitism.Elitism
   type MapElitism = elitism.MapElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
+  type ProfileElitism = elitism.ProfileElitism
   type Aggregation = fitness.Aggregation
   type F = fitness.F
   type Fitness = fitness.Fitness
@@ -83,8 +87,10 @@ package object mgo {
   type GenomeFactory = genome.GenomeFactory
   type GASigmaFactory = genome.GASigmaFactory
   type Sigma = genome.Sigma
-  type GenomePlotter = map.GenomePlotter
-  type Plotter = map.Plotter
+  type MapGenomePlotter = map.MapGenomePlotter
+  type MapPlotter = map.MapPlotter
+  type ProfileGenomePlotter = map.ProfileGenomePlotter
+  type ProfilePlotter = map.ProfilePlotter
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
   type CloneRemoval = modifier.CloneRemoval
@@ -93,6 +99,7 @@ package object mgo {
   type MapModifier = modifier.MapModifier
   type Modifier = modifier.Modifier
   type NoneModifier = modifier.NoneModifier
+  type ProfileModifier = modifier.ProfileModifier
   type RankModifier = modifier.RankModifier
   type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
   type RankDiversityMF = modifier.RankDiversityMF

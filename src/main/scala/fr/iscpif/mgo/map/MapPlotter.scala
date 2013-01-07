@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 20/11/12 Romain Reuillon
+ * Copyright (C) 15/11/12 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,15 +19,6 @@ package fr.iscpif.mgo.map
 
 import fr.iscpif.mgo._
 
-trait GenomePlotter extends Plotter {
-
-  type G <: GAGenome
-
-  def x: Int
-  def y: Int
-  def nX: Int
-  def nY: Int
-
-  def plot(i: Individual[G, F]) = ((i.genome.values(x) * nX).toInt, (i.genome.values(y) * nY).toInt)
-
+trait MapPlotter extends G with F {
+  def plot(individual: Individual[G, F]): (Int, Int)
 }

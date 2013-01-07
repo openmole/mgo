@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 27/11/12 Romain Reuillon
+ * Copyright (C) 08/01/13 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,13 +19,9 @@ package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
 
-trait MapElitism extends Elitism with MapPlotter with Aggregation {
-
-  //val mu = Int.MaxValue
-
+trait ProfileElitism extends Elitism with ProfilePlotter with Aggregation {
   def elitism(individuals: Seq[Individual[G, F]], archive: A): Seq[Individual[G, F]] =
     individuals.groupBy(plot).toSeq.map {
       case (_, is) => is.minBy(i => aggregate(i.fitness))
     }
-
 }

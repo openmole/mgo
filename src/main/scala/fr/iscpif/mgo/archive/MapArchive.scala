@@ -21,35 +21,24 @@ import fr.iscpif.mgo._
 import collection.mutable
 
 object MapArchive {
-  case class MapElement(value: Double, hits: Int) {
-    def isEmpty = hits == 0
-    def +(o: MapElement) = MapElement.+(this, o)
-  }
-
-  object MapElement {
-    val empty = MapElement(Double.PositiveInfinity, 0)
-
-    def +(e1: MapElement, e2: MapElement) = MapElement(math.min(e1.value, e2.value), e1.hits + e2.hits)
-    def -(e1: MapElement, e2: MapElement) = MapElement(math.min(e1.value, e2.value), e1.hits - e2.hits)
-  }
 
   case class ArchiveMap(values: Array[Array[Double]], hits: Array[Array[Int]], xSize: Int, ySize: Int) {
     def get(x: Int, y: Int) =
-      if (x < 0 || y < 0 || x >= xSize || y >= ySize) None else Some(MapElement(values(x)(y), hits(x)(y)))
+      if (x < 0 || y < 0 || x >= xSize || y >= ySize) None else Some(PlotElement(values(x)(y), hits(x)(y)))
 
-    def +(o: ArchiveMap) = ArchiveMap.reduce(this, o)(MapElement.+)
-    def -(o: ArchiveMap) = ArchiveMap.reduce(this, o)(MapElement.-)
+    def +(o: ArchiveMap) = ArchiveMap.reduce(this, o)(PlotElement.+)
+    def -(o: ArchiveMap) = ArchiveMap.reduce(this, o)(PlotElement.-)
 
     override def toString = "[" + values.map("[" + _.mkString(", ") + "]").mkString(", ") + "]"
   }
 
   object ArchiveMap {
-    def apply(content: Array[Array[MapElement]], xSize: Int, ySize: Int): ArchiveMap =
+    def apply(content: Array[Array[PlotElement]], xSize: Int, ySize: Int): ArchiveMap =
       ArchiveMap(content.map(_.map(_.value)), content.map(_.map(_.hits)), xSize, ySize)
 
     val empty = ArchiveMap(Array.empty, 0, 0)
     def maxSize(a1: ArchiveMap, a2: ArchiveMap) = (math.max(a1.xSize, a2.xSize), math.max(a1.ySize, a2.ySize))
-    def reduce(a1: ArchiveMap, a2: ArchiveMap)(op: (MapElement, MapElement) => MapElement) = {
+    def reduce(a1: ArchiveMap, a2: ArchiveMap)(op: (PlotElement, PlotElement) => PlotElement) = {
       val (xSize, ySize) = ArchiveMap.maxSize(a1, a2)
       ArchiveMap(
         Array.tabulate(xSize, ySize) {
@@ -58,7 +47,7 @@ object MapArchive {
               case (Some(e1), Some(e2)) => op(e1, e2)
               case (Some(e1), None) => e1
               case (None, Some(e2)) => e2
-              case (None, None) => MapElement.empty
+              case (None, None) => PlotElement.empty
             }
         },
         xSize,
@@ -70,19 +59,19 @@ object MapArchive {
 
 import MapArchive._
 
-trait MapArchive extends Archive with Plotter with Aggregation {
+trait MapArchive extends Archive with MapPlotter with Aggregation {
   type A = ArchiveMap
 
   def initialArchive: A = ArchiveMap.empty
 
   def toArchive(individuals: Seq[Individual[G, F]]): A = {
     val sparse = individuals.groupBy(plot).map {
-      case (k, v) => k -> v.map(i => MapElement(aggregate(i.fitness), 1)).reduce(_ + _)
+      case (k, v) => k -> v.map(i => PlotElement(aggregate(i.fitness), 1)).reduce(_ + _)
     }
     val maxX = sparse.keys.map(_._1).max + 1
     val maxY = sparse.keys.map(_._2).max + 1
     ArchiveMap(
-      Array.tabulate[MapElement](maxX, maxY) { case (x, y) => sparse.getOrElse((x, y), MapElement.empty) },
+      Array.tabulate[PlotElement](maxX, maxY) { case (x, y) => sparse.getOrElse((x, y), PlotElement.empty) },
       maxX,
       maxY
     )
