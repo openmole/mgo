@@ -19,14 +19,14 @@ package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 
-trait Archive extends G with F with MF with A {
+trait Archive extends G with P with F with MF with A {
 
   def initialArchive: A
 
-  def archive(a: A, individuals: Seq[Individual[G, F]]) =
+  def archive(a: A, individuals: Seq[Individual[G, P, F]]) =
     combine(a, toArchive(individuals))
 
-  def toArchive(individuals: Seq[Individual[G, F]]): A
+  def toArchive(individuals: Seq[Individual[G, P, F]]): A
   def combine(a1: A, a2: A): A
   def diff(original: A, modified: A): A
 

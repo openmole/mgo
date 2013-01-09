@@ -25,7 +25,7 @@ trait ProfileModifier extends Modifier with ProfilePlotter with Aggregation with
 
   type A <: ProfileArchive#A
 
-  override def modify(individuals: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
+  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     def findNeighbors(place: Int, range: Int = 1): Int = {
       val minBound = math.max(place - range, 0)
       val maxBound = math.min(place + range, archive.size - 1)
@@ -35,7 +35,7 @@ trait ProfileModifier extends Modifier with ProfilePlotter with Aggregation with
       else findNeighbors(place, range + 1)
     }
 
-    def fitness(i: Individual[G, F]) = {
+    def fitness(i: Individual[G, P, F]) = {
       val x = plot(i)
       val distance = findNeighbors(x)
 
@@ -51,7 +51,7 @@ trait ProfileModifier extends Modifier with ProfilePlotter with Aggregation with
     val ranks = rank(modified)
     val distances = diversity(modified, ranks)
 
-    toPopulationElements[G, F](individuals, ranks, distances)
+    toPopulationElements[G, P, F](individuals, ranks, distances)
   }
 }
 

@@ -62,7 +62,7 @@ trait ProfileArchive extends Archive with ProfilePlotter with Aggregation {
 
   def initialArchive: A = ArchiveProfile.empty
 
-  def toArchive(individuals: Seq[Individual[G, F]]): A = {
+  def toArchive(individuals: Seq[Individual[G, P, F]]): A = {
     val indexed: Map[Int, PlotElement] = individuals.groupBy(plot).map {
       case (k, v) => k -> v.map(i => PlotElement(aggregate(i.fitness), 1)).reduce(_ + _)
     }

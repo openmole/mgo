@@ -22,8 +22,8 @@ import tools.Lazy
 
 object RankDiversityModifier {
 
-  def toPopulationElements[G, F](
-    evaluated: Seq[Individual[G, F]],
+  def toPopulationElements[G, P, F](
+    evaluated: Seq[Individual[G, P, F]],
     ranks: Seq[Lazy[Int]],
     distances: Seq[Lazy[Double]]) =
     (evaluated zip ranks zip distances) map {
@@ -50,11 +50,11 @@ trait RankDiversityModifier extends RankModifier with DiversityModifier with Ran
   type DIVERSIFIED = MGFitness
   type F <: MGFitness
 
-  override def modify(evaluated: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
+  override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val fitnesses = evaluated.map(_.fitness)
     val ranks = rank(fitnesses)
     val distances = diversity(fitnesses, ranks)
 
-    toPopulationElements[G, F](evaluated, ranks, distances)
+    toPopulationElements[G, P, F](evaluated, ranks, distances)
   }
 }

@@ -24,14 +24,14 @@ import genome.G
  * The modifier layer decorates individuals with a meta-fitness which is function of
  * the population.
  */
-trait Modifier extends G with F with MF with IndividualFilter with A {
+trait Modifier extends G with P with F with MF with IndividualFilter with A {
   /**
    * Generate a population from a set of indiviuals that is filtered in a first time
    *
    * @param individuals a set of individual
    * @return the filtred population with the meta-fitness for each individual
    */
-  def toPopulation(individuals: Seq[Individual[G, F]], a: A): Population[G, F, MF] = modify(filter(individuals), a)
+  def toPopulation(individuals: Seq[Individual[G, P, F]], a: A): Population[G, P, F, MF] = modify(filter(individuals), a)
 
   /**
    * Generate a population from a set of indiviuals
@@ -39,6 +39,6 @@ trait Modifier extends G with F with MF with IndividualFilter with A {
    * @param individuals a set of individual
    * @return the population with the meta-fitness for each individual
    */
-  def modify(individuals: Seq[Individual[G, F]], archive: A): Population[G, F, MF]
+  def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF]
 
 }

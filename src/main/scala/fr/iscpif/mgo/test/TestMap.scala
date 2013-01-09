@@ -24,7 +24,7 @@ import java.io._
 object TestMap extends App {
 
   val m =
-    new Evolution with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with MapElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with MapGenomePlotter {
+    new Rastrigin with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with MapElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with MapGenomePlotter {
       def genomeSize: Int = 6
       def lambda: Int = 200
       def neighbors = 8
@@ -36,17 +36,9 @@ object TestMap extends App {
       def nY: Int = 100
     }
 
-  val pb = new Sphere {
-    def n = 6
-  }
-
-  val pb2 = new Rastrigin {
-    def n = 6
-  }
-
   implicit val rng = new Random
 
-  val res = m.run(pb).untilConverged(s => println(s.generation)).archive
+  val res = m.run.untilConverged(s => println(s.generation)).archive
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {

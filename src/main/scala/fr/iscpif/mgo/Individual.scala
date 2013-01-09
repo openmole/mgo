@@ -19,20 +19,22 @@ package fr.iscpif.mgo
 
 object Individual {
 
-  implicit def individual2Fitness[F](i: Individual[_, F]) = i.fitness
+  implicit def individual2Fitness[F](i: Individual[_, _, F]) = i.fitness
 
   /**
    * Build an individual given a genome and an evaluation function
    *
    * @tparam G the type of the genome
    * @param g the value of the genome
-   * @param e the evaluation function
+   * @param expression the expression of the genome
+   * @param evaluation the evaluation of the phenotype
    * @return the individual for the genome g
    */
-  def apply[G, F](g: G, e: G => F) =
-    new Individual[G, F] {
+  def apply[G, P, F](g: G, expression: G => P, evaluation: P => F) =
+    new Individual[G, P, F] {
       val genome = g
-      val fitness = e(g)
+      val phenotype = expression(genome)
+      val fitness = evaluation(phenotype)
     }
 
   /**
@@ -43,9 +45,10 @@ object Individual {
    * @param f the fitness
    * @return the individual
    */
-  def apply[G, F](g: G, f: F) =
-    new Individual[G, F] {
+  def apply[G, P, F](g: G, p: P, f: F) =
+    new Individual[G, P, F] {
       val genome = g
+      val phenotype = p
       val fitness = f
     }
 
@@ -54,15 +57,18 @@ object Individual {
 /**
  * An individual of the evolution
  */
-trait Individual[+G, +F] {
+trait Individual[+G, +P, +F] {
   /** the genome of this individual */
   def genome: G
+
+  /** the phenotype of this individual */
+  def phenotype: P
 
   /** the fitness evaluated for the genome */
   def fitness: F
 
-  /** transform this individual in a tuple genome, fitness */
-  def toTuple = genome -> fitness
+  /** transform this individual in a tuple genome, phenotype, fitness */
+  def toTuple = (genome, phenotype, fitness)
 
-  override def toString = "( genome = " + genome.toString + ", fitness = " + fitness.toString + ")"
+  override def toString = "(genome = " + genome.toString + ", phenotype = " + phenotype + ", fitness = " + fitness.toString + ")"
 }

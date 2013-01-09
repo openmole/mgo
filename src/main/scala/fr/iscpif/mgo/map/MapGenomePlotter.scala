@@ -28,6 +28,6 @@ trait MapGenomePlotter extends MapPlotter {
   def nX: Int
   def nY: Int
 
-  def plot(i: Individual[G, F]) = ((i.genome.values(x) * nX).toInt, (i.genome.values(y) * nY).toInt)
+  def plot(i: Individual[G, P, F]) = ((i.genome.values(x) * nX).toInt, (i.genome.values(y) * nY).toInt)
 
 }

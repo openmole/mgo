@@ -18,5 +18,5 @@
 package fr.iscpif.mgo.fitness
 
 trait MG extends F {
-  type F = MGFitness
+  type F <: MGFitness
 }

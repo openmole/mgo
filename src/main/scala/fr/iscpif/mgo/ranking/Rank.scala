@@ -28,7 +28,7 @@ object Rank {
    * @param population the population
    * @return the lower ranked elements
    */
-  def firstRanked[G, F, MF <: Rank](population: Population[G, F, MF]): Seq[PopulationElement[G, F, MF]] = {
+  def firstRanked[G, P, F, MF <: Rank](population: Population[G, P, F, MF]): Seq[PopulationElement[G, P, F, MF]] = {
     if (population.isEmpty) population
     else {
       val firstRank = population.map { _.metaFitness.rank() }.min

@@ -19,6 +19,6 @@ package fr.iscpif.mgo.map
 
 import fr.iscpif.mgo._
 
-trait ProfilePlotter extends G with F {
-  def plot(individual: Individual[G, F]): Int
+trait ProfilePlotter extends G with P with F {
+  def plot(individual: Individual[G, P, F]): Int
 }

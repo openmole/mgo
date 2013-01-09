@@ -24,7 +24,7 @@ import java.io.File
 
 object TestProfile extends App {
   val m =
-    new Evolution with MG with ProfileArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
+    new Rastrigin with MG with ProfileArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
       def genomeSize: Int = 6
       def lambda: Int = 200
       def distributionIndex = 2
@@ -33,17 +33,9 @@ object TestProfile extends App {
       def nX: Int = 1000
     }
 
-  val pb = new Sphere {
-    def n = 6
-  }
-
-  val pb2 = new Rastrigin {
-    def n = 6
-  }
-
   implicit val rng = new Random
 
-  val res = m.run(pb).untilConverged(s => println(s.generation)).archive
+  val res = m.run.untilConverged(s => println(s.generation)).archive
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 07/01/13 Romain Reuillon
+ * Copyright (C) 08/01/13 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,15 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.map
+package fr.iscpif.mgo.phenotype
 
-import fr.iscpif.mgo._
-
-trait ProfileGenomePlotter extends ProfilePlotter {
-  type G <: GAGenome
-
-  def x: Int
-  def nX: Int
-
-  def plot(i: Individual[G, P, F]) = (i.genome.values(x) * nX).toInt
+trait P {
+  type P
 }

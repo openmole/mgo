@@ -24,7 +24,7 @@ object Population {
    * @tparam MF the meta-fitness type
    * @return an empty population
    */
-  def empty[G, F, MF]: Population[G, F, MF] = IndexedSeq.empty
+  def empty[G, P, F, MF]: Population[G, P, F, MF] = IndexedSeq.empty
 }
 
 object PopulationElement {
@@ -38,8 +38,8 @@ object PopulationElement {
    * @param mf the meta-fitness of the individual in the population
    * @return a population element
    */
-  def apply[G, F, MF](i: Individual[G, F], mf: MF) =
-    new PopulationElement[G, F, MF](i.genome, i.fitness, mf)
+  def apply[G, P, F, MF](i: Individual[G, P, F], mf: MF) =
+    new PopulationElement[G, P, F, MF](i.genome, i.phenotype, i.fitness, mf)
 }
 
 /**
@@ -48,13 +48,13 @@ object PopulationElement {
  * @tparam G the genome type
  * @tparam MF the meta-fitness type
  */
-trait Population[+G, +F, +MF] {
+trait Population[+G, +P, +F, +MF] {
 
   /** the content of the population */
-  def content: Seq[PopulationElement[G, F, MF]]
+  def content: Seq[PopulationElement[G, P, F, MF]]
 
   /** transform this population in a set of individual */
-  def toIndividuals: Seq[Individual[G, F]] = content map { _.toIndividual }
+  def toIndividuals: Seq[Individual[G, P, F]] = content map { _.toIndividual }
 
   override def toString = content.toString
 }
@@ -66,14 +66,14 @@ trait Population[+G, +F, +MF] {
  * @tparam MF the meta-fitness type
  * @param genome the genome of the element
  * @param fitness the fitness evaluated for the genome
- * @param metafitness the meta fitness of the element in the population
+ * @param metaFitness the meta fitness of the element in the population
  */
-class PopulationElement[+G, +F, +MF](val genome: G, val fitness: F, val metaFitness: MF) {
+class PopulationElement[+G, +P, +F, +MF](val genome: G, val phenotype: P, val fitness: F, val metaFitness: MF) {
 
   /** The fitness of the original individual */
   def individualFitness = fitness
 
   /// transform the population element in an individual
-  def toIndividual = Individual(genome, individualFitness)
-  override def toString = "(genome = " + genome + ", fitness = " + fitness + ", metaFitness = " + metaFitness + ")"
+  def toIndividual = Individual(genome, phenotype, individualFitness)
+  override def toString = "(genome = " + genome + ", phenotype = " + phenotype + ", fitness = " + fitness + ", metaFitness = " + metaFitness + ")"
 }

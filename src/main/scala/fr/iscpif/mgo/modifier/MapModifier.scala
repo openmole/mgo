@@ -28,7 +28,7 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
 
   def neighbors: Int
 
-  override def modify(individuals: Seq[Individual[G, F]], archive: A): Population[G, F, MF] = {
+  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val matrix =
       NeighborMatrix(
         (x, y) =>
@@ -40,7 +40,7 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
         archive.ySize
       )
 
-    def fitness(i: Individual[G, F]) = {
+    def fitness(i: Individual[G, P, F]) = {
       val (x, y) = plot(i)
       val distance =
         matrix.knn(x, y, neighbors).map {
@@ -59,6 +59,6 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
     val ranks = rank(modified)
     val distances = diversity(modified, ranks)
 
-    toPopulationElements[G, F](individuals, ranks, distances)
+    toPopulationElements[G, P, F](individuals, ranks, distances)
   }
 }

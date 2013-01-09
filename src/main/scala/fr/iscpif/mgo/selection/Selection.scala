@@ -24,7 +24,7 @@ import java.util.Random
 /**
  * Selection layer for the evolutionary algorithms.
  */
-trait Selection extends G with F with MF {
+trait Selection extends G with P with F with MF {
 
   /**
    * Select an individual among the population.
@@ -32,6 +32,6 @@ trait Selection extends G with F with MF {
    * @param population the population in which selection occurs
    * @return the selected individual
    */
-  def selection(population: Population[G, F, MF])(implicit aprng: Random): Individual[G, F]
+  def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F]
 }
 

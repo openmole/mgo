@@ -22,12 +22,12 @@ import mgo.genome.{ Sigma, GAGenomeWithSigma, GAGenome, GA }
 import sun.net.www.content.text.plain
 
 package object mgo {
-  implicit def traversable2Population[G, F, I](seq: Traversable[PopulationElement[G, F, I]]) =
-    new Population[G, F, I] {
+  implicit def traversable2Population[G, P, F, I](seq: Traversable[PopulationElement[G, P, F, I]]) =
+    new Population[G, P, F, I] {
       override val content = seq.toIndexedSeq
     }
 
-  implicit def population2IndexedSeq[G, F, I](pop: Population[G, F, I]) = pop.content
+  implicit def population2IndexedSeq[G, P, F, I](pop: Population[G, P, F, I]) = pop.content
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
     val factor = (boundaryMax - boundaryMin) / (max - min)
@@ -109,6 +109,8 @@ package object mgo {
   type Mutation = mutation.Mutation
   type NoneMutation = mutation.NoneMutation
   type RandomMutation = mutation.RandomMutation
+  type P = phenotype.P
+  type Evaluation = phenotype.Evaluation
   type Problem = problem.Problem
   type GAProblem = problem.GAProblem
   type Scaling = problem.Scaling

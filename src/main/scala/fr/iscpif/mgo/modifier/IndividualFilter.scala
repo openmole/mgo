@@ -11,7 +11,7 @@ import genome.G
 /**
  * Layer of the cake for filtering individuals in the set of evaluted individuals
  */
-trait IndividualFilter extends G with F {
+trait IndividualFilter extends G with F with P {
 
   /**
    * Filter the individuals
@@ -19,5 +19,5 @@ trait IndividualFilter extends G with F {
    * @param individuals the set of evaluated individuals
    * @return the filtrated individuals
    */
-  def filter(individuals: Seq[Individual[G, F]]) = individuals
+  def filter(individuals: Seq[Individual[G, P, F]]) = individuals
 }

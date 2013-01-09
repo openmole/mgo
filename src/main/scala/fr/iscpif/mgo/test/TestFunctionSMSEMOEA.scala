@@ -23,14 +23,10 @@ import java.util.Random
 
 object TestFunctionSMSEMOEA extends App {
 
-  val zdt = new ZDT4 {
-    def n = 10
-  }
-
   implicit val rng = new Random
 
   val smsemoea =
-    new Evolution with GASigmaFactory with MG with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
+    new ZDT4 with GASigmaFactory with MG with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
       def distributionIndex = 2
 
       def windowSize = 100

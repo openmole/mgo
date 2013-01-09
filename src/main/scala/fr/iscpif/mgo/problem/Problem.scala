@@ -19,19 +19,31 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 import genome.Genome
+import java.util.Random
 
 /**
  * Definition of a problem
  */
-trait Problem {
-  type G <: Genome
-  type F <: Fitness
+trait Problem extends Evolution {
+
+  type P = G
 
   /**
-   * Evaluate the fitness of a genome
+   * Evaluate a phenotype
    *
-   * @param genome the genome to evaluate
-   * @return the fitness of this genome
+   * @param g the genome to evaluate
+   * @return the phenotype
    */
-  def apply(genome: G): F
+  def express(g: G): P = g
+
+  /**
+   * Evaluate a phenotype
+   *
+   * @param phenotype the phenotype to evaluate
+   * @return the phenotype
+   */
+  def apply(phenotype: P): F
+
+  def run(implicit rng: Random): Iterator[EvolutionState] = run(express, apply)
+
 }

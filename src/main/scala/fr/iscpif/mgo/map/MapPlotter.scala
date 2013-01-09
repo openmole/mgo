@@ -19,6 +19,6 @@ package fr.iscpif.mgo.map
 
 import fr.iscpif.mgo._
 
-trait MapPlotter extends G with F {
-  def plot(individual: Individual[G, F]): (Int, Int)
+trait MapPlotter extends G with P with F {
+  def plot(individual: Individual[G, P, F]): (Int, Int)
 }

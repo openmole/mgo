@@ -64,7 +64,7 @@ trait MapArchive extends Archive with MapPlotter with Aggregation {
 
   def initialArchive: A = ArchiveMap.empty
 
-  def toArchive(individuals: Seq[Individual[G, F]]): A = {
+  def toArchive(individuals: Seq[Individual[G, P, F]]): A = {
     val sparse = individuals.groupBy(plot).map {
       case (k, v) => k -> v.map(i => PlotElement(aggregate(i.fitness), 1)).reduce(_ + _)
     }

@@ -28,6 +28,7 @@ trait Evolution extends Termination
     with Lambda
     with G
     with F
+    with P
     with MF
     with GenomeFactory
     with Archive
@@ -39,7 +40,7 @@ trait Evolution extends Termination
    */
   case class EvolutionState(
     /** The current population of solution */
-    val individuals: Seq[Individual[G, F]],
+    val individuals: Seq[Individual[G, P, F]],
     /** The current achive */
     val archive: A,
     /** The number of the generation */
@@ -53,49 +54,44 @@ trait Evolution extends Termination
    * Run the evolutionary algorithm
    *
    * @param population the initial population
-   * @param evaluator the fitness evaluation function
+   * @param expression the genome expression
+   * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def run(p: Seq[Individual[G, F]], a: A, evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] =
-    Iterator.iterate(EvolutionState(p, a, 0, initialState, false)) {
+  def run(population: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: P => F)(implicit aprng: Random): Iterator[EvolutionState] =
+    Iterator.iterate(EvolutionState(population, a, 0, initialState, false)) {
       s =>
-        val (newPop, newArchive) = evolve(s.individuals, s.archive, evaluator)
+        val (newPop, newArchive) = evolve(s.individuals, s.archive, expression, evaluation)
         val (stop, newState) = terminated(toPopulation(newPop, newArchive), s.terminationState)
         EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
 
   /**
    * Run the evolutionary algorithm
-   *
-   * @param evaluator the fitness evaluator
+   * @param expression the genome expression
+   * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def run(evaluator: G => F)(implicit aprng: Random): Iterator[EvolutionState] = {
+  def run(expression: G => P, evaluation: P => F)(implicit prng: Random): Iterator[EvolutionState] = {
     val archive = initialArchive
-    val individuals = random(evaluator, archive)
-    run(individuals, archive, evaluator)
+    val individuals = random(expression, evaluation, archive)
+    run(individuals, archive, expression, evaluation)
   }
-
-  /**
-   * Run the evlutionary algorithm
-   *
-   * @param problem an optimization problem to solve
-   */
-  def run[P <: Problem { type G >: self.G; type F <: self.F }](problem: P)(implicit aprng: Random): Iterator[EvolutionState] =
-    run(s => problem.apply(s))
 
   /**
    * Evolve one step
    *
-   * @param population the current population
-   * @param evaluator the fitness evaluation function
+   * @param individuals the current population
+   * @param archive the current archive
+   * @param expression expression of the genome
+   * @param evaluation the fitness evaluator
    * @return a new population of evaluated solutions
    *
    */
-  def evolve(individuals: Seq[Individual[G, F]], archive: A, evaluator: G => F)(implicit aprng: Random): (Seq[Individual[G, F]], A) = {
+  def evolve(individuals: Seq[Individual[G, P, F]], archive: A, expression: G => P, evaluation: P => F)(implicit aprng: Random): (Seq[Individual[G, P, F]], A) = {
     val offspring = breed(
       individuals, archive
-    ).par.map { g => Individual(g, evaluator) }.seq
+    ).par.map { g => Individual(g, expression, evaluation) }.seq
 
     val newIndividuals = offspring.toList ::: individuals.toList
     val newArchive = combine(archive, toArchive(offspring))
@@ -107,10 +103,12 @@ trait Evolution extends Termination
   /**
    * Generate an random population
    *
-   * @param evaluator the fitness evaluation function
+   * @param archive the current archive
+   * @param expression expression of the genome
+   * @param evaluation the fitness evaluator
    * @return a random population of evaluated solutions
    */
-  def random(evaluator: G => F, archive: A)(implicit aprng: Random): Seq[Individual[G, F]] =
-    breed(Seq.empty, archive).par.map { g => Individual[G, F](g, evaluator) }.seq
+  def random(expression: G => P, evaluation: P => F, archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] =
+    breed(Seq.empty, archive).par.map { g => Individual[G, P, F](g, expression, evaluation) }.seq
 
 }

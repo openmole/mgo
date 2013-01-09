@@ -29,7 +29,7 @@ import fr.iscpif.mgo.tools.Random._
 trait BinaryTournamentSelection extends Selection with MF {
   type MF <: Diversity with Rank
 
-  def selection(population: Population[G, F, MF])(implicit aprng: Random): Individual[G, F] =
+  def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F] =
     binaryTournament(population.content.random(aprng), population.content.random(aprng)).toIndividual
 
   /**
@@ -40,7 +40,7 @@ trait BinaryTournamentSelection extends Selection with MF {
    * @param e2 the second population element
    * @return the winning population element
    */
-  def binaryTournament(e1: PopulationElement[G, F, MF], e2: PopulationElement[G, F, MF])(implicit aprng: Random): PopulationElement[G, F, MF] =
+  def binaryTournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit aprng: Random): PopulationElement[G, P, F, MF] =
     if (e1.metaFitness.rank() < e2.metaFitness.rank()) e1
     else if (e1.metaFitness.rank() > e2.metaFitness.rank()) e2
     else if (e1.metaFitness.diversity() > e2.metaFitness.diversity()) e1
