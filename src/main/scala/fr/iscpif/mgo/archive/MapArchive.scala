@@ -18,67 +18,32 @@
 package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
-import collection.mutable
-
-object MapArchive {
-
-  case class ArchiveMap(values: Array[Array[Double]], hits: Array[Array[Int]], xSize: Int, ySize: Int) {
-    def get(x: Int, y: Int) =
-      if (x < 0 || y < 0 || x >= xSize || y >= ySize) None else Some(PlotElement(values(x)(y), hits(x)(y)))
-
-    def +(o: ArchiveMap) = ArchiveMap.reduce(this, o)(PlotElement.+)
-    def -(o: ArchiveMap) = ArchiveMap.reduce(this, o)(PlotElement.-)
-
-    override def toString = "[" + values.map("[" + _.mkString(", ") + "]").mkString(", ") + "]"
-  }
-
-  object ArchiveMap {
-    def apply(content: Array[Array[PlotElement]], xSize: Int, ySize: Int): ArchiveMap =
-      ArchiveMap(content.map(_.map(_.value)), content.map(_.map(_.hits)), xSize, ySize)
-
-    val empty = ArchiveMap(Array.empty, 0, 0)
-    def maxSize(a1: ArchiveMap, a2: ArchiveMap) = (math.max(a1.xSize, a2.xSize), math.max(a1.ySize, a2.ySize))
-    def reduce(a1: ArchiveMap, a2: ArchiveMap)(op: (PlotElement, PlotElement) => PlotElement) = {
-      val (xSize, ySize) = ArchiveMap.maxSize(a1, a2)
-      ArchiveMap(
-        Array.tabulate(xSize, ySize) {
-          case (x, y) =>
-            (a1.get(x, y), a2.get(x, y)) match {
-              case (Some(e1), Some(e2)) => op(e1, e2)
-              case (Some(e1), None) => e1
-              case (None, Some(e2)) => e2
-              case (None, None) => PlotElement.empty
-            }
-        },
-        xSize,
-        ySize
-      )
-    }
-  }
-}
-
-import MapArchive._
+import tools._
 
 trait MapArchive extends Archive with MapPlotter with Aggregation {
-  type A = ArchiveMap
+  type A = Array[Array[Int]]
 
-  def initialArchive: A = ArchiveMap.empty
+  def initialArchive: A = Array.empty
 
   def toArchive(individuals: Seq[Individual[G, P, F]]): A = {
     val sparse = individuals.groupBy(plot).map {
-      case (k, v) => k -> v.map(i => PlotElement(aggregate(i.fitness), 1)).reduce(_ + _)
+      case (k, v) => k -> v.size
     }
+
     val maxX = sparse.keys.map(_._1).max + 1
     val maxY = sparse.keys.map(_._2).max + 1
-    ArchiveMap(
-      Array.tabulate[PlotElement](maxX, maxY) { case (x, y) => sparse.getOrElse((x, y), PlotElement.empty) },
-      maxX,
-      maxY
-    )
+
+    Array.tabulate[Int](maxX, maxY) { case (x, y) => sparse.getOrElse((x, y), 0) }
   }
 
-  def combine(a1: A, a2: A): A = a1 + a2
+  def combine(a1: A, a2: A): A =
+    (a1.toIterable merge a2)(
+      (l1, l2) => (l1.toIterable merge l2)(_ + _).toArray
+    ).toArray
 
-  def diff(original: A, modified: A) = modified - original
+  def diff(original: A, modified: A) =
+    (modified.toIterable merge original)(
+      (l1, l2) => (l1.toIterable merge l2)(_ - _).toArray
+    ).toArray
 
 }

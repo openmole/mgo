@@ -22,8 +22,7 @@ import fr.iscpif.mgo._
 /**
  * Cake to define a problem for a genetic algorithm
  */
-trait GAProblem extends Problem with Scaling {
-  type F = MGFitness
+trait GAProblem extends Problem with Scaling with MG {
   type G <: GAGenome
 
   def genomeSize: Int

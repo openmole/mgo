@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import tools.NeighborMatrix
+import tools._
 
 import RankDiversityModifier._
 
@@ -29,15 +29,20 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
   def neighbors: Int
 
   override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
+    val map = individuals.groupBy(plot)
+
+    val xSize = map.keysIterator.map(_._1).max + 1
+    val ySize = map.keysIterator.map(_._2).max + 1
+
     val matrix =
       NeighborMatrix(
         (x, y) =>
-          archive.get(x, y) match {
+          map.get(x, y) match {
             case Some(e) => if (e.isEmpty) None else Some(e)
             case None => None
           },
-        archive.xSize,
-        archive.ySize
+        xSize,
+        ySize
       )
 
     def fitness(i: Individual[G, P, F]) = {
@@ -47,11 +52,9 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
           case (x1, y1) => matrix.distance(x, y, x1, y1)
         }.sum
 
-      val hitCount: Double =
-        archive.get(x, y).map(_.hits) match {
-          case Some(v) => v
-          case None => 0
-        }
+      val hitCount: Int =
+        archive.get(x).flatMap(_.get(y)).getOrElse(0)
+
       MGFitness(aggregate(i.fitness), 1.0 / distance, hitCount)
     }
 

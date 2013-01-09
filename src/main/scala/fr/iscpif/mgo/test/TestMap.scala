@@ -38,14 +38,15 @@ object TestMap extends App {
 
   implicit val rng = new Random
 
-  val res = m.evolve.untilConverged(s => println(s.generation)).archive
+  val res = m.evolve.untilConverged(s => println(s.generation)).individuals
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {
-    (l, x) <- res.values.zipWithIndex
-    (e, y) <- l.zipWithIndex
-    if !e.isPosInfinity
-  } writer.write("" + x + "," + y + "," + e + "\n")
+    i <- res
+    (x, y) = m.plot(i)
+    v = m.aggregate(i.fitness)
+    if !v.isPosInfinity
+  } writer.write("" + x + "," + y + "," + v + "\n")
   writer.close
 
 }

@@ -46,10 +46,7 @@ package object mgo {
   type A = archive.A
   type Archive = archive.Archive
   type MapArchive = archive.MapArchive
-  val MapArchive = archive.MapArchive
-  type PlotElement = archive.PlotElement
   type ProfileArchive = archive.ProfileArchive
-  val ProfileArchive = archive.ProfileArchive
   type NoArchive = archive.NoArchive
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover

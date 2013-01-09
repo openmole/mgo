@@ -18,59 +18,22 @@
 package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
-
-object ProfileArchive {
-  case class ArchiveProfile(values: Array[Double], hits: Array[Int], size: Int) {
-    def get(x: Int) =
-      if (x < 0 || x >= size) None else Some(PlotElement(values(x), hits(x)))
-
-    def +(o: ArchiveProfile) = ArchiveProfile.reduce(this, o)(PlotElement.+)
-    def -(o: ArchiveProfile) = ArchiveProfile.reduce(this, o)(PlotElement.-)
-
-    override def toString = "[" + values.mkString(", ") + "]"
-  }
-
-  object ArchiveProfile {
-    def apply(content: Array[PlotElement], size: Int): ArchiveProfile =
-      ArchiveProfile(content.map(_.value), content.map(_.hits), size)
-
-    val empty = ArchiveProfile(Array.empty, 0)
-    def maxSize(a1: ArchiveProfile, a2: ArchiveProfile) = math.max(a1.size, a2.size)
-    def reduce(a1: ArchiveProfile, a2: ArchiveProfile)(op: (PlotElement, PlotElement) => PlotElement) = {
-      val size = ArchiveProfile.maxSize(a1, a2)
-      ArchiveProfile(
-        Array.tabulate(size) {
-          x =>
-            (a1.get(x), a2.get(x)) match {
-              case (Some(e1), Some(e2)) => op(e1, e2)
-              case (Some(e1), None) => e1
-              case (None, Some(e2)) => e2
-              case (None, None) => PlotElement.empty
-            }
-        },
-        size
-      )
-    }
-  }
-
-}
-
-import ProfileArchive._
+import tools._
 
 trait ProfileArchive extends Archive with ProfilePlotter with Aggregation {
-  type A = ArchiveProfile
+  type A = Array[Int]
 
-  def initialArchive: A = ArchiveProfile.empty
+  def initialArchive: A = Array.empty
 
   def toArchive(individuals: Seq[Individual[G, P, F]]): A = {
-    val indexed: Map[Int, PlotElement] = individuals.groupBy(plot).map {
-      case (k, v) => k -> v.map(i => PlotElement(aggregate(i.fitness), 1)).reduce(_ + _)
+    val indexed: Map[Int, Int] = individuals.groupBy(plot).map {
+      case (k, v) => k -> v.size
     }
     val size = indexed.map(_._1).max + 1
-    ArchiveProfile(Array.tabulate(size)(i => indexed.getOrElse(i, PlotElement.empty)), size)
+    Array.tabulate(size)(i => indexed.getOrElse(i, 0))
   }
 
-  def combine(a1: A, a2: A): A = a1 + a2
+  def combine(a1: A, a2: A): A = (a1.toIterable merge a2)(_ + _).toArray
 
-  def diff(original: A, modified: A) = modified - original
+  def diff(original: A, modified: A) = (modified.toIterable merge original)(_ - _).toArray
 }

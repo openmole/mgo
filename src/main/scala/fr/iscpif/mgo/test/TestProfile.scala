@@ -35,13 +35,15 @@ object TestProfile extends App {
 
   implicit val rng = new Random
 
-  val res = m.evolve.untilConverged(s => println(s.generation)).archive
+  val res = m.evolve.untilConverged(s => println(s.generation)).individuals
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {
-    (e, x) <- res.values.zipWithIndex
-    if !e.isPosInfinity
-  } writer.write("" + x + "," + e + "\n")
+    i <- res
+    x = m.plot(i)
+    v = m.aggregate(i.fitness)
+    if !v.isPosInfinity
+  } writer.write("" + x + "," + v + "\n")
   writer.close
 
 }

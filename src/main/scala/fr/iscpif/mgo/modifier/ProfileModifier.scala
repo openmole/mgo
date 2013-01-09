@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
+import tools._
 
 import RankDiversityModifier._
 
@@ -39,11 +40,9 @@ trait ProfileModifier extends Modifier with ProfilePlotter with Aggregation with
       val x = plot(i)
       val distance = findNeighbors(x)
 
-      val hitCount: Double =
-        archive.get(x).map(_.hits) match {
-          case Some(v) => v
-          case None => 0
-        }
+      val hitCount: Int =
+        archive.get(x).getOrElse(0)
+
       MGFitness(aggregate(i.fitness), 1.0 / distance, hitCount)
     }
 
