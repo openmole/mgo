@@ -44,6 +44,6 @@ trait Problem extends Evolution {
    */
   def apply(phenotype: P): F
 
-  def run(implicit rng: Random): Iterator[EvolutionState] = run(express, apply)
+  def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(express, apply)
 
 }

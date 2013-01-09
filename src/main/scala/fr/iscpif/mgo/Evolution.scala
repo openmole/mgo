@@ -58,10 +58,10 @@ trait Evolution extends Termination
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def run(population: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: P => F)(implicit aprng: Random): Iterator[EvolutionState] =
+  def evolve(population: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: P => F)(implicit aprng: Random): Iterator[EvolutionState] =
     Iterator.iterate(EvolutionState(population, a, 0, initialState, false)) {
       s =>
-        val (newPop, newArchive) = evolve(s.individuals, s.archive, expression, evaluation)
+        val (newPop, newArchive) = step(s.individuals, s.archive, expression, evaluation)
         val (stop, newState) = terminated(toPopulation(newPop, newArchive), s.terminationState)
         EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
@@ -72,10 +72,10 @@ trait Evolution extends Termination
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def run(expression: G => P, evaluation: P => F)(implicit prng: Random): Iterator[EvolutionState] = {
+  def evolve(expression: G => P, evaluation: P => F)(implicit prng: Random): Iterator[EvolutionState] = {
     val archive = initialArchive
     val individuals = random(expression, evaluation, archive)
-    run(individuals, archive, expression, evaluation)
+    evolve(individuals, archive, expression, evaluation)
   }
 
   /**
@@ -88,7 +88,7 @@ trait Evolution extends Termination
    * @return a new population of evaluated solutions
    *
    */
-  def evolve(individuals: Seq[Individual[G, P, F]], archive: A, expression: G => P, evaluation: P => F)(implicit aprng: Random): (Seq[Individual[G, P, F]], A) = {
+  def step(individuals: Seq[Individual[G, P, F]], archive: A, expression: G => P, evaluation: P => F)(implicit aprng: Random): (Seq[Individual[G, P, F]], A) = {
     val offspring = breed(
       individuals, archive
     ).par.map { g => Individual(g, expression, evaluation) }.seq
