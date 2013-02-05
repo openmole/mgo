@@ -26,7 +26,7 @@ object MGFitness {
   }
 
   def apply(v: Traversable[Double]): MGFitness = new MGFitness {
-    val values = v.toIndexedSeq
+    val values = v.toIndexedSeq.map(v => if (!v.isNaN) v else Double.PositiveInfinity)
   }
 
   def apply(v: Double*): MGFitness = MGFitness(v)
