@@ -35,6 +35,7 @@ object Individual {
       val genome = g
       val phenotype = expression(genome)
       val fitness = evaluation(phenotype)
+      val age = 0L
     }
 
   /**
@@ -45,11 +46,20 @@ object Individual {
    * @param f the fitness
    * @return the individual
    */
-  def apply[G, P, F](g: G, p: P, f: F) =
+  def apply[G, P, F](g: G, p: P, f: F, _age: Long = 0) =
     new Individual[G, P, F] {
       val genome = g
       val phenotype = p
       val fitness = f
+      val age = _age
+    }
+
+  def age[G, P, F](i: Individual[G, P, F]) =
+    new Individual[G, P, F] {
+      val genome = i.genome
+      val phenotype = i.phenotype
+      val fitness = i.fitness
+      val age = i.age + 1
     }
 
 }
@@ -67,8 +77,11 @@ trait Individual[+G, +P, +F] {
   /** the fitness evaluated for the genome */
   def fitness: F
 
-  /** transform this individual in a tuple genome, phenotype, fitness */
-  def toTuple = (genome, phenotype, fitness)
+  /** the number of generation of an individual */
+  def age: Long
 
-  override def toString = "(genome = " + genome.toString + ", phenotype = " + phenotype + ", fitness = " + fitness.toString + ")"
+  /** transform this individual in a tuple genome, phenotype, fitness */
+  //def toTuple = (genome, phenotype, fitness)
+
+  override def toString = "(genome = " + genome.toString + ", phenotype = " + phenotype + ", fitness = " + fitness.toString + ", age = " + age + ")"
 }

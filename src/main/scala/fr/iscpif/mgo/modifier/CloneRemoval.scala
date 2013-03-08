@@ -13,5 +13,5 @@ import genome.G
  */
 trait CloneRemoval extends IndividualFilter with G with P with F {
   override def filter(individuals: Seq[Individual[G, P, F]]) =
-    individuals.groupBy(_.genome).unzip._2.map { _.head }.toIndexedSeq
+    individuals.groupBy(_.genome).unzip._2.map { _.sortBy(_.age).head }.toIndexedSeq
 }

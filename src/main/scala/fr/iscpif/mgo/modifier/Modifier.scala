@@ -31,7 +31,8 @@ trait Modifier extends G with P with F with MF with IndividualFilter with A {
    * @param individuals a set of individual
    * @return the filtred population with the meta-fitness for each individual
    */
-  def toPopulation(individuals: Seq[Individual[G, P, F]], a: A): Population[G, P, F, MF] = modify(filter(individuals), a)
+  def toPopulation(individuals: Seq[Individual[G, P, F]], a: A): Population[G, P, F, MF] =
+    Population.age(modify(filter(individuals), a))
 
   /**
    * Generate a population from a set of indiviuals

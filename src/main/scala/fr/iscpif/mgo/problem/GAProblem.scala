@@ -53,7 +53,7 @@ trait GAProblem extends Problem with Scaling with MG {
    * @param i the population element to scale
    * @return the scaled population element
    */
-  def scale[MF](i: PopulationElement[G, P, F, MF]): (Seq[Double], F, MF) = (scale(i.genome), i.fitness, i.metaFitness)
+  def scale[MF](i: PopulationElement[G, P, F, MF]): (Seq[Double], F, MF) = (scale(i.individual.genome), i.individual.fitness, i.metaFitness)
 
   /**
    * Compute the fitness for a point

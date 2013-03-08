@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
+import annotation.tailrec
 
 /**
  * Reduce the size of the population according to a divesity metric and a rank
@@ -29,13 +30,12 @@ trait NonDominatedElitism extends Elitism with Mu {
     if (individuals.size < mu) individuals
     else {
       val population = toPopulation(individuals, archive)
-      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { case (_, e) => e.map(i => i.toIndividual -> i.metaFitness.diversity) }
+      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { case (_, e) => e.map(i => i.individual -> i.metaFitness.diversity) }
 
       type FE = (Individual[G, P, F], Lazy[Double])
 
-      //FIXME: No idea why but it is not tailrec
-      def addFronts[I](fronts: List[Seq[FE]], acc: List[Seq[FE]], size: Int = 0): (Seq[FE], Seq[FE]) = {
-        if (size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head :: acc, size + fronts.head.size)
+      @tailrec def addFronts[I](fronts: List[Seq[FE]], acc: List[Seq[FE]], size: Int = 0): (Seq[FE], Seq[FE]) = {
+        if (size + fronts.head.size < mu) addFronts[I](fronts.tail, fronts.head :: acc, size + fronts.head.size)
         else (fronts.headOption.getOrElse(Seq.empty), acc.flatten)
       }
 

@@ -27,6 +27,7 @@ object TestFunctionSMSEMOEA extends App {
 
   val smsemoea =
     new ZDT4 with GASigmaFactory with MG with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
+      override def breedingProbability = 0.5
       def distributionIndex = 2
 
       def windowSize = 100
