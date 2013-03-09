@@ -26,7 +26,7 @@ import java.util.Random
  */
 trait Breeding extends Lambda with G with F with P with Selection with CrossOver with Mutation with GenomeFactory with Modifier {
 
-  def breedingProbability: Double = 1.0
+  def cloneProbability: Double = 0.0
 
   /**
    * Breed genomes from a population
@@ -45,7 +45,7 @@ trait Breeding extends Lambda with G with F with P with Selection with CrossOver
 
     val res =
       Iterator.continually {
-        if(population.isEmpty || aprng.nextDouble < breedingProbability) breeded.next
+        if(population.isEmpty || aprng.nextDouble >= cloneProbability) breeded.next
         else selection(population).genome
       }.take(size)
 
