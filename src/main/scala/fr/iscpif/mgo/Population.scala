@@ -40,9 +40,11 @@ object PopulationElement {
    * @param mf the meta-fitness of the individual in the population
    * @return a population element
    */
-  def apply[G, P, F, MF](i: Individual[G, P, F], mf: MF) = new PopulationElement[G, P, F, MF](i, mf)
+  def apply[G, P, F, MF](i: Individual[G, P, F], mf: MF) =
+    new PopulationElement[G, P, F, MF](i.genome, i.phenotype, i.fitness, i.age, mf)
 
-  def age[G, P, F, MF](pe: PopulationElement[G, P, F, MF]) = new PopulationElement[G, P, F, MF](Individual.age(pe.individual), pe.metaFitness)
+  def age[G, P, F, MF](pe: PopulationElement[G, P, F, MF]) =
+    apply[G, P, F, MF](Individual.age(pe.toIndividual), pe.metaFitness)
 
 }
 
@@ -58,7 +60,7 @@ trait Population[+G, +P, +F, +MF] {
   def content: Seq[PopulationElement[G, P, F, MF]]
 
   /** transform this population in a set of individual */
-  def toIndividuals: Seq[Individual[G, P, F]] = content map { _.individual }
+  def toIndividuals: Seq[Individual[G, P, F]] = content map { _.toIndividual }
 
   override def toString = content.toString
 }
@@ -72,10 +74,14 @@ trait Population[+G, +P, +F, +MF] {
  * @param fitness the fitness evaluated for the genome
  * @param metaFitness the meta fitness of the element in the population
  */
-class PopulationElement[+G, +P, +F, +MF](val individual: Individual[G, P, F], val metaFitness: MF) {
+class PopulationElement[+G, +P, +F, +MF](
+  val genome: G,
+  val phenotype: P,
+  val fitness: F,
+  val age: Long,
+  val metaFitness: MF) {
 
-  /** The fitness of the original individual */
-  def individualFitness = individual.fitness
+  def toIndividual = Individual(genome, phenotype, fitness, age)
 
-  override def toString = "(individual = " + individual + ", metaFitness = " + metaFitness + ")"
+  override def toString = s"genome = $genome, phenotype = $phenotype, fitness = $fitness, ages = $age, metaFitness = $metaFitness)"
 }

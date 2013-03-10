@@ -30,7 +30,7 @@ trait NonDominatedElitism extends Elitism with Mu {
     if (individuals.size < mu) individuals
     else {
       val population = toPopulation(individuals, archive)
-      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { case (_, e) => e.map(i => i.individual -> i.metaFitness.diversity) }
+      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { case (_, e) => e.map(i => i.toIndividual -> i.metaFitness.diversity) }
 
       type FE = (Individual[G, P, F], Lazy[Double])
 

@@ -30,7 +30,7 @@ trait BinaryTournamentSelection extends Selection with MF {
   type MF <: Diversity with Rank
 
   def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F] =
-    binaryTournament(population.content.random(aprng), population.content.random(aprng)).individual
+    binaryTournament(population.content.random(aprng), population.content.random(aprng)).toIndividual
 
   /**
    * Select the best ranked and if equal the more diverse individual between
