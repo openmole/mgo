@@ -22,35 +22,23 @@ import tools._
 
 import RankDiversityModifier._
 
-trait ProfileModifier extends Modifier with ProfilePlotter with Aggregation with RankDiversityModifier {
+trait ProfileModifier extends Modifier with Aggregation with RankDiversityModifier with ProfilePlotter {
 
-  type A <: ProfileArchive#A
+  def worst: Double
 
   override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
-    def findNeighbors(place: Int, range: Int = 1): Int = {
-      val minBound = math.max(place - range, 0)
-      val maxBound = math.min(place + range, archive.size - 1)
-
-      val bounded = (minBound to maxBound).flatMap(archive.get)
-      if (!bounded.isEmpty || (minBound <= 0 && maxBound >= archive.size - 1)) range
-      else findNeighbors(place, range + 1)
+    val points = individuals.map {
+      i => plot(i).toDouble -> math.max(aggregate(i.fitness) - worst, 0.0)
     }
 
-    def fitness(i: Individual[G, P, F]) = {
-      val x = plot(i)
-      val distance = findNeighbors(x)
-
-      val hitCount: Int =
-        archive.get(x).getOrElse(0)
-
-      MGFitness(aggregate(i.fitness), 1.0 / distance, hitCount)
-    }
-
-    val modified = individuals.map(fitness)
+    val integral = Math.integral(points)
+    val contributions = points.shadows.par.map { integral - Math.integral(_) }.seq
+    val modified = contributions.map(MGFitness(_))
     val ranks = rank(modified)
     val distances = diversity(modified, ranks)
 
     toPopulationElements[G, P, F](individuals, ranks, distances)
   }
+
 }
 

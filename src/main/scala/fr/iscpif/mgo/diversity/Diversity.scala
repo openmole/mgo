@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.diversity
 
-import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools._
 
 trait Diversity {
   /** Lazily computed metric of diversity */

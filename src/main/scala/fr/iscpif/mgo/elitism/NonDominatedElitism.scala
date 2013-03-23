@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
+import tools._
 import annotation.tailrec
 
 /**

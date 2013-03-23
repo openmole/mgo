@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Lazy
+import fr.iscpif.mgo.tools._
 import scala.math._
 
 /**
@@ -51,14 +51,6 @@ trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Domi
   }
 
   /**
-   * Shadow each element of a set
-   */
-  def shadowMap[A, B](xs: IndexedSeq[A])(f: A => B) = {
-    val ys = xs map f
-    for (i <- ys.indices; (as, bs) = ys splitAt i) yield (as ++ bs.tail, i)
-  }
-
-  /**
    * Compute the hypervolume contribution for each front
    */
   def computeHypervolume(front: IndexedSeq[(DIVERSIFIED, Lazy[Int], Int)], referencePoint: Seq[Double]): IndexedSeq[(Lazy[Double], Int)] = {
@@ -69,10 +61,7 @@ trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Domi
     lazy val globalHypervolume = Hypervolume(frontValues.map { e => e._1 }, referencePoint, this)
 
     //compute a new collection with automatic removed incremental of frontValues item by item
-    shadowMap(frontValues) {
-      case (e, indexShadowed) =>
-        (e, indexShadowed)
-    }.map {
+    frontValues.shadows.zipWithIndex.map {
       case (e, indexShadowed) =>
         (Lazy(globalHypervolume - Hypervolume(e.map { _._1 }, referencePoint, this)), frontValues(indexShadowed)._2)
     }

@@ -51,6 +51,17 @@ package object tools {
     }
   }
 
+  implicit class SeqDecorator[A](xs: Seq[A]) {
+    /**
+     * Shadow each element of a set
+     */
+    def shadows[B] =
+      for (i <- xs.indices; (as, bs) = xs splitAt i) yield as ++ bs.tail
+
+  }
+
+  implicit def lazyOrdering[T](implicit ord: Ordering[T]) = tools.Lazy.lazyOrdering(ord)
+
   /*implicit class OptionDecorator[A](option: Option[A]) {
     def getOrElse(a: A) =
       option match {

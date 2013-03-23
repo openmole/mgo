@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
+import tools._
 import math._
 
 /**

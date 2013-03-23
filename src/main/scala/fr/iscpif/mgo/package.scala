@@ -46,7 +46,6 @@ package object mgo {
   type A = archive.A
   type Archive = archive.Archive
   type MapArchive = archive.MapArchive
-  type ProfileArchive = archive.ProfileArchive
   type NoArchive = archive.NoArchive
   type Breeding = breed.Breeding
   type AverageCrossOver = crossover.AverageCrossover
@@ -122,7 +121,5 @@ package object mgo {
   type StabilityTermination = termination.StabilityTermination
   type Termination = termination.Termination
   type TimedTermination = termination.TimedTermination
-  type Lazy[T] = tools.Lazy[T]
-  implicit def lazyOrdering[T](implicit ord: Ordering[T]) = tools.Lazy.lazyOrdering(ord)
 
 }

@@ -55,4 +55,12 @@ object Math {
 
   def squareDist(x: Seq[Double], y: Seq[Double]) = x zip y map { case (x, y) => pow(x + y, 2) } sum
 
+  def integral(points: Seq[(Double, Double)]) =
+    points.sortBy(_._1).sliding(2, 1).map {
+      bounds =>
+        val min = bounds(0)
+        val max = bounds(1)
+        ((max._2 + min._2) / 2) * (max._1 - min._1)
+    }.sum
+
 }

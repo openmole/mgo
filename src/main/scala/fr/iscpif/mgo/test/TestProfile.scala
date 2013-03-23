@@ -24,20 +24,21 @@ import java.io.File
 
 object TestProfile extends App {
   val m =
-    new Rastrigin with MG with ProfileArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
+    new Rastrigin with MG with NoArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
       def genomeSize: Int = 6
       def lambda: Int = 200
       def distributionIndex = 2
       def steps = 500
       def x: Int = 0
       def nX: Int = 1000
+      def worst: Double = 100.0
     }
 
   implicit val rng = new Random
 
   val res = m.evolve.untilConverged(s => println(s.generation)).individuals
 
-  val writer = new FileWriter(new File("/tmp/matrix.csv"))
+  val writer = new FileWriter(new File("/tmp/matrix2.csv"))
   for {
     i <- res
     x = m.plot(i)

@@ -45,7 +45,7 @@ trait Breeding extends Lambda with G with F with P with Selection with CrossOver
 
     val res =
       Iterator.continually {
-        if(population.isEmpty || aprng.nextDouble >= cloneProbability) breeded.next
+        if (population.isEmpty || aprng.nextDouble >= cloneProbability) breeded.next
         else selection(population).genome
       }.take(size)
 
