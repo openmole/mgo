@@ -24,11 +24,11 @@ import java.io.File
 
 object TestProfile extends App {
   val m =
-    new Rastrigin with MG with NoArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
+    new Rastrigin with MG with NoArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with NoDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with HierarchicalRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
       def genomeSize: Int = 6
       def lambda: Int = 200
       def distributionIndex = 2
-      def steps = 100
+      def steps = 200
       def x: Int = 0
       def nX: Int = 1000
       def worst: Double = 100.0

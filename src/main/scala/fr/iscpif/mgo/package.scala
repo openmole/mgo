@@ -57,6 +57,7 @@ package object mgo {
   type Diversity = diversity.Diversity
   type DiversityMetric = diversity.DiversityMetric
   type HypervolumeDiversity = diversity.HypervolumeDiversity
+  type NoDiversity = diversity.NoDiversity
   type Dominance = dominance.Dominance
   type NonStrictDominance = dominance.NonStrictDominance
   type NonStrictEpsilonDominance = dominance.NonStrictEpsilonDominance
@@ -110,6 +111,7 @@ package object mgo {
   type Problem = problem.Problem
   type GAProblem = problem.GAProblem
   type Scaling = problem.Scaling
+  type HierarchicalRanking = ranking.HierarchicalRanking
   type ParetoRanking = ranking.ParetoRanking
   type Rank = ranking.Rank
   type Ranking = ranking.Ranking
