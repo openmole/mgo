@@ -28,12 +28,13 @@ trait ProfileModifier extends Modifier with Aggregation with RankDiversityModifi
 
   override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val points = individuals.map {
-      i => plot(i).toDouble -> math.max(aggregate(i.fitness) - worst, 0.0)
+      i => plot(i).toDouble -> math.max(worst - aggregate(i.fitness), 0.0)
     }
 
     val integral = Math.integral(points)
     val contributions = points.shadows.par.map { integral - Math.integral(_) }.seq
-    val modified = contributions.map(c => MGFitness(1 / c))
+    val minContribution = if(!contributions.isEmpty) contributions.min else 0.0
+    val modified = contributions.map(c => 1 / (c - minContribution)).map(MGFitness(_))
     val ranks = rank(modified)
     val distances = diversity(modified, ranks)
 

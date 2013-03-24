@@ -28,7 +28,7 @@ object TestProfile extends App {
       def genomeSize: Int = 6
       def lambda: Int = 200
       def distributionIndex = 2
-      def steps = 500
+      def steps = 100
       def x: Int = 0
       def nX: Int = 1000
       def worst: Double = 100.0
