@@ -33,7 +33,7 @@ trait ProfileModifier extends Modifier with Aggregation with RankDiversityModifi
 
     val integral = Math.integral(points)
     val contributions = points.shadows.par.map { integral - Math.integral(_) }.seq
-    val minContribution = if(!contributions.isEmpty) contributions.min else 0.0
+    val minContribution = if (!contributions.isEmpty) contributions.min else 0.0
     val modified = contributions.map(c => 1 / (c - minContribution)).map(MGFitness(_))
     val ranks = rank(modified)
     val distances = diversity(modified, ranks)

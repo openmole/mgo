@@ -28,10 +28,10 @@ trait HierarchicalRanking extends Ranking {
   def rank(fitnesses: Seq[RANKED]): Seq[Lazy[Int]] =
     fitnesses.
       zipWithIndex.
-      sortBy{ case(fitness, _) => fitness.values }.
-      map{case(_, originalOrder) => originalOrder}.
+      sortBy { case (fitness, _) => fitness.values }.
+      map { case (_, originalOrder) => originalOrder }.
       zipWithIndex.
-      sortBy{ case(originalOrder, _) => originalOrder}.
+      sortBy { case (originalOrder, _) => originalOrder }.
       map(_._2).map(Lazy(_))
 
 }
