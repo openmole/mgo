@@ -10,6 +10,8 @@ resolvers ++= Seq(
   "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 )
 
+libraryDependencies += "com.github.scala-incubator.io" % "scala-io-core_2.10" % "0.4.2"
+
 publishMavenStyle := true
 
 publishArtifact in Test := false
