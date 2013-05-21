@@ -36,8 +36,9 @@ trait NonDominatedElitism extends Elitism with Mu {
       type FE = (Individual[G, P, F], Lazy[Double])
 
       @tailrec def addFronts[I](fronts: List[Seq[FE]], acc: List[Seq[FE]], size: Int = 0): (Seq[FE], Seq[FE]) = {
-        if (size + fronts.head.size < mu) addFronts[I](fronts.tail, fronts.head :: acc, size + fronts.head.size)
-        else (fronts.headOption.getOrElse(Seq.empty), acc.flatten)
+        if(fronts.isEmpty) (Seq.empty, acc.flatten)
+        else if (size + fronts.head.size < mu) addFronts[I](fronts.tail, fronts.head :: acc, size + fronts.head.size)
+        else (fronts.head, acc.flatten)
       }
 
       val (lastFront, selected) = addFronts(fronts, List.empty)
