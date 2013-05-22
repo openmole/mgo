@@ -19,7 +19,7 @@ package fr.iscpif.mgo.dominance
 
 trait NonStrictEpsilonDominance extends EpsilonDominance {
 
-  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
+  override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
     (p1.iterator zip p2.iterator zip infiniteEpsilons).forall {
       case (((g1, g2), e)) => g1 > g2 + e
     }

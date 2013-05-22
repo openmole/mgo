@@ -20,7 +20,7 @@ package fr.iscpif.mgo.elitism
 import fr.iscpif.mgo._
 
 trait ProfileElitism extends Elitism with ProfilePlotter with Aggregation {
-  def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] =
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] =
     individuals.groupBy(plot).toSeq.map {
       case (_, is) => is.minBy(i => aggregate(i.fitness))
     }

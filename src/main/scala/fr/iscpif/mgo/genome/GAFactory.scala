@@ -25,7 +25,7 @@ trait GAFactory extends GenomeFactory with GA {
   /** Size of the value part of the genome */
   def genomeSize: Int
 
-  def genomeFactory: Factory[G] = new Factory[G] {
+  override def genomeFactory: Factory[G] = new Factory[G] {
     def apply(content: GAGenome#T) = {
       assert(content.size == genomeSize)
       GAGenome(content)

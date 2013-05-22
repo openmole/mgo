@@ -50,7 +50,7 @@ trait SBXBoundedCrossover extends CrossOver with GenomeFactory {
   /** crossever rate parameter of the algorithm */
   def crossoverRate: Double = 0.5
 
-  def crossover(
+  override def crossover(
     g1: G,
     g2: G)(implicit aprng: Random) = {
     val numberOfVariables = g1.content.size

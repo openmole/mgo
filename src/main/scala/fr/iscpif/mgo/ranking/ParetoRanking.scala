@@ -29,7 +29,7 @@ trait ParetoRanking extends Ranking with Dominance with G with F {
 
   type RANKED <: MGFitness
 
-  def rank(evaluated: Seq[RANKED]) = {
+  override def rank(evaluated: Seq[RANKED]) = {
     evaluated.zipWithIndex.map {
       case (indiv, index) =>
         Lazy(evaluated.par.zipWithIndex.filter {

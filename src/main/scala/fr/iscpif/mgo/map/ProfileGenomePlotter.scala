@@ -25,5 +25,5 @@ trait ProfileGenomePlotter extends ProfilePlotter {
   def x: Int
   def nX: Int
 
-  def plot(i: Individual[G, P, F]) = (i.genome.values(x) * nX).toInt
+  override def plot(i: Individual[G, P, F]) = (i.genome.values(x) * nX).toInt
 }

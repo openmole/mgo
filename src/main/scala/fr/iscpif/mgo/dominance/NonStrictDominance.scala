@@ -24,7 +24,7 @@ import fr.iscpif.mgo._
  */
 trait NonStrictDominance extends Dominance {
 
-  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
+  override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
     (p1 zip p2).forall { case (g1, g2) => g2 > g1 }
 
 }

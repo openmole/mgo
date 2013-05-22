@@ -28,7 +28,7 @@ trait AverageCrossover extends CrossOver with GenomeFactory {
 
   type G <: genome.GAGenome
 
-  def crossover(g1: G, g2: G)(implicit aprng: Random) = {
+  override def crossover(g1: G, g2: G)(implicit aprng: Random) = {
     val pds = aprng.nextDouble
 
     val newValues = IndexedSeq.tabulate(g1.values.size)(i =>

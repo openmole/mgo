@@ -27,7 +27,7 @@ import annotation.tailrec
 trait NonDominatedElitism extends Elitism with Mu {
   type MF <: Diversity with Rank
 
-  def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] = {
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] = {
     if (individuals.size < mu) individuals
     else {
       val population = toPopulation(individuals, archive)

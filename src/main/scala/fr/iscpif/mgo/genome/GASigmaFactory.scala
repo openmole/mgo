@@ -16,7 +16,7 @@ trait GASigmaFactory extends GenomeFactory with GASigma {
   /** Size of the value part of the genome */
   def genomeSize: Int
 
-  def genomeFactory: Factory[G] = new Factory[G] {
+  override def genomeFactory: Factory[G] = new Factory[G] {
     override def apply(content: GAGenomeWithSigma#T) = {
       assert(content.size / 2 == genomeSize)
       GAGenomeWithSigma(

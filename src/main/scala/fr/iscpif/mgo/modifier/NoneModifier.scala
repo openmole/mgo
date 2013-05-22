@@ -26,9 +26,9 @@ trait NoneModifier extends Modifier {
 
   type MF = None.type
 
-  def modify(e: Seq[Individual[G, P, F]]) =
+  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
     new Population[G, P, F, MF] {
-      lazy val content = e.map { PopulationElement(_, None) }
+      lazy val content = individuals.map { PopulationElement(_, None) }
     }
 
 }

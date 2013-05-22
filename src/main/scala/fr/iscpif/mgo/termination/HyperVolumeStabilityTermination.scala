@@ -28,7 +28,7 @@ trait HyperVolumeStabilityTermination extends Termination with ReferencePoint wi
 
   type F <: MGFitness
 
-  def terminated(population: => Population[G, P, F, MF], terminationState: STATE): (Boolean, STATE) = {
+  override def terminated(population: => Population[G, P, F, MF], terminationState: STATE): (Boolean, STATE) = {
     val p = population
     val rankMax = p.map { _.metaFitness.rank() }.max
     val front = p.filter(_.metaFitness.rank() == rankMax).map { _.toIndividual.fitness.values }

@@ -23,9 +23,9 @@ import tools._
 trait MapArchive extends Archive with MapPlotter with Aggregation {
   type A = Array[Array[Int]]
 
-  def initialArchive: A = Array.empty
+  override def initialArchive: A = Array.empty
 
-  def toArchive(individuals: Seq[Individual[G, P, F]]): A = {
+  override def toArchive(individuals: Seq[Individual[G, P, F]]): A = {
     val sparse = individuals.groupBy(plot).map {
       case (k, v) => k -> v.size
     }
@@ -36,12 +36,12 @@ trait MapArchive extends Archive with MapPlotter with Aggregation {
     Array.tabulate[Int](maxX, maxY) { case (x, y) => sparse.getOrElse((x, y), 0) }
   }
 
-  def combine(a1: A, a2: A): A =
+  override def combine(a1: A, a2: A): A =
     (a1.toIterable merge a2)(
       (l1, l2) => (l1.toIterable merge l2)(_ + _).toArray
     ).toArray
 
-  def diff(original: A, modified: A) =
+  override def diff(original: A, modified: A) =
     (modified.toIterable merge original)(
       (l1, l2) => (l1.toIterable merge l2)(_ - _).toArray
     ).toArray

@@ -21,5 +21,5 @@ trait MaxAggregation extends Aggregation {
 
   type F <: MGFitness
 
-  def aggregate(fitness: F): Double = fitness.values.max
+  override def aggregate(fitness: F): Double = fitness.values.max
 }

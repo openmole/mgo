@@ -25,7 +25,7 @@ trait HierarchicalRanking extends Ranking {
 
   type RANKED <: MGFitness
 
-  def rank(fitnesses: Seq[RANKED]): Seq[Lazy[Int]] =
+  override def rank(fitnesses: Seq[RANKED]): Seq[Lazy[Int]] =
     fitnesses.
       zipWithIndex.
       sortBy { case (fitness, _) => fitness.values }.

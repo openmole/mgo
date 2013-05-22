@@ -29,7 +29,7 @@ import util.Random
 trait BinaryTournamentSelection extends Selection with MF {
   type MF <: Diversity with Rank
 
-  def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F] =
+  override def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F] =
     binaryTournament(population.content.random(aprng), population.content.random(aprng)).toIndividual
 
   /**
