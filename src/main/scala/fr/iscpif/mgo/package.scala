@@ -40,7 +40,7 @@ package object mgo {
   }
 
   implicit class StateIteratorDecorator[S <: { def terminated: Boolean }](i: Iterator[S]) {
-    def untilConverged(f: S => Unit) = i.dropWhile { s => f(s); !s.terminated }.next
+    def untilConverged(f: S => Unit) = i.drop(1).dropWhile { s => f(s); !s.terminated }.next
   }
 
   type A = archive.A
