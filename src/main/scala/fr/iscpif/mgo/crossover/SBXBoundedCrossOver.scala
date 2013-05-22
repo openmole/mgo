@@ -45,7 +45,7 @@ trait SBXBoundedCrossover extends CrossOver with GenomeFactory {
   type G <: GAGenome
 
   /** distribution index parameter of the algorithm */
-  def distributionIndex: Double
+  def distributionIndex: Double = 2
 
   /** crossever rate parameter of the algorithm */
   def crossoverRate: Double = 0.5
