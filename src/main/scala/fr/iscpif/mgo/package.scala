@@ -43,6 +43,7 @@ package object mgo {
     def untilConverged(f: S => Unit) = i.drop(1).dropWhile { s => f(s); !s.terminated }.next
   }
 
+  type NSGAII = algorithm.NSGAII
   type A = archive.A
   type Archive = archive.Archive
   type MapArchive = archive.MapArchive
