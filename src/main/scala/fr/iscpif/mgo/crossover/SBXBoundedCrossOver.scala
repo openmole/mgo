@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Math._
 import fr.iscpif.mgo.genome.GenomeFactory
 import math._
-import java.util.Random
+import util.Random
 
 /**
  * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :

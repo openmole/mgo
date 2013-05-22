@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import scala.util.Random
 
 trait Rastrigin extends GAProblem {
   def n: Int
@@ -26,5 +27,5 @@ trait Rastrigin extends GAProblem {
   def min = List.fill(n)(-5.12)
   def max = List.fill(n)(5.12)
 
-  def apply(x: IndexedSeq[Double]) = List(10 + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum)
+  def apply(x: IndexedSeq[Double], rng: Random) = List(10 + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum)
 }

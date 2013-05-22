@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
-import java.util.Random
+import util.Random
 
 trait GAFactory extends GenomeFactory with GA {
 

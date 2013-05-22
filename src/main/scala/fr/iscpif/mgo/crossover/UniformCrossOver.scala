@@ -19,7 +19,7 @@ package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.genome.GenomeFactory
-import java.util.Random
+import util.Random
 import fr.iscpif.mgo.tools.Random._
 
 /**

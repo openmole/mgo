@@ -19,7 +19,7 @@ package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
 import genome.G
-import java.util.Random
+import util.Random
 
 /**
  * Selection layer for the evolutionary algorithms.

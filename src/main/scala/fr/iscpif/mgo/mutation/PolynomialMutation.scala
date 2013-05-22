@@ -19,7 +19,7 @@ package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.genome.GenomeFactory
-import java.util.Random
+import util.Random
 import scala.math._
 
 /**

@@ -19,7 +19,7 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 import genome.Genome
-import java.util.Random
+import util.Random
 
 /**
  * Definition of a problem
@@ -42,7 +42,7 @@ trait Problem extends Evolution {
    * @param phenotype the phenotype to evaluate
    * @return the phenotype
    */
-  def apply(phenotype: P): F
+  def apply(phenotype: P, rng: Random): F
 
   def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(express, apply)
 

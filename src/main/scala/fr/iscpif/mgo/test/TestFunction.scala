@@ -19,7 +19,7 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import genome.GASigmaFactory
-import java.util.Random
+import util.Random
 
 object TestFunction extends App {
 
@@ -27,7 +27,6 @@ object TestFunction extends App {
 
   val nsga2 =
     new ZDT4 with GASigmaFactory with MG with BinaryTournamentSelection with CrowdingStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with CrowdingDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
-      def distributionIndex = 2
       def windowSize = 100
       def deviationEpsilon = 0.01
       def mu = 200

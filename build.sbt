@@ -12,6 +12,8 @@ resolvers ++= Seq(
 
 libraryDependencies += "com.github.scala-incubator.io" % "scala-io-core_2.10" % "0.4.2"
 
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
+
 publishMavenStyle := true
 
 publishArtifact in Test := false

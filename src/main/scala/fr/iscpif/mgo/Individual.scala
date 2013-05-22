@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo
 
+import scala.util.Random
+
 object Individual {
 
   implicit def individual2Fitness[F](i: Individual[_, _, F]) = i.fitness
@@ -30,11 +32,11 @@ object Individual {
    * @param evaluation the evaluation of the phenotype
    * @return the individual for the genome g
    */
-  def apply[G, P, F](g: G, expression: G => P, evaluation: P => F) =
+  def apply[G, P, F](g: G, expression: G => P, evaluation: (P, Random) => F)(implicit rng: Random) =
     new Individual[G, P, F] {
       val genome = g
       val phenotype = expression(genome)
-      val fitness = evaluation(phenotype)
+      val fitness = evaluation(phenotype, rng)
       val age = 0L
     }
 

@@ -19,7 +19,7 @@ package fr.iscpif.mgo.breed
 
 import fr.iscpif.mgo._
 import genome.{ GenomeFactory, G }
-import java.util.Random
+import util.Random
 
 /**
  * Layer of the cake for the breeding part of the evolution algorithm

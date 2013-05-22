@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import java.util.Random
+import util.Random
 import java.io._
 
 object TestMap extends App {
@@ -28,7 +28,6 @@ object TestMap extends App {
       def genomeSize: Int = 6
       def lambda: Int = 200
       def neighbors = 8
-      def distributionIndex = 2
       def steps = 500
       def x: Int = 0
       def y: Int = 1

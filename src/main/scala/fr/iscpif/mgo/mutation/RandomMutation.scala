@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.mutation
 
-import java.util.Random
+import util.Random
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Random._
 import fr.iscpif.mgo.genome.GenomeFactory

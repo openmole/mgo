@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.genome.GenomeFactory
 import fr.iscpif.mgo.tools.Random._
 import fr.iscpif.mgo.tools.Math._
-import java.util.Random
+import util.Random
 
 /**
  * Mutation of a genome based on gausian distribution arrount the genome with

@@ -19,8 +19,8 @@ package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
 import genome.G
-import java.util.Random
 import fr.iscpif.mgo.tools.Random._
+import util.Random
 
 /**
  * Select the best ranked and if equal the more diverse individual between

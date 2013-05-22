@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo
 
-import java.util.Random
+import util.Random
 
 /**
  * A factory of genome

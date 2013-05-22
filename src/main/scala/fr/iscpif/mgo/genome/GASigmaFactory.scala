@@ -6,7 +6,7 @@
 package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
-import java.util.Random
+import util.Random
 
 /**
  * Factory associated with genomes with sigma

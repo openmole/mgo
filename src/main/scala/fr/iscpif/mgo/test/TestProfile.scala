@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import java.util.Random
+import util.Random
 import java.io.FileWriter
 import java.io.File
 
@@ -27,7 +27,6 @@ object TestProfile extends App {
     new Rastrigin with MG with NoArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with NoDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with HierarchicalRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
       def genomeSize: Int = 6
       def lambda: Int = 200
-      def distributionIndex = 2
       def steps = 200
       def x: Int = 0
       def nX: Int = 1000

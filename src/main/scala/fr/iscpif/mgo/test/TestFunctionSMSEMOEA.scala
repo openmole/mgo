@@ -19,7 +19,7 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import genome.GASigmaFactory
-import java.util.Random
+import util.Random
 
 object TestFunctionSMSEMOEA extends App {
 
@@ -27,8 +27,6 @@ object TestFunctionSMSEMOEA extends App {
 
   val smsemoea =
     new ZDT4 with GASigmaFactory with MG with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
-      def distributionIndex = 2
-
       def windowSize = 100
       def deviationEpsilon = 0.001
       def mu = 200

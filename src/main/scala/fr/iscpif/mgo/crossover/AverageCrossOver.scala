@@ -19,7 +19,7 @@ package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.genome.GenomeFactory
-import java.util.Random
+import util.Random
 
 /**
  * Compute a ponderated average between 2 genomes

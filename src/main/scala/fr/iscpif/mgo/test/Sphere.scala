@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import scala.util.Random
 
 trait Sphere extends GAProblem {
   def n: Int
@@ -25,5 +26,5 @@ trait Sphere extends GAProblem {
   def min = List.fill(n)(0.0)
   def max = List.fill(n)(2.0)
 
-  def apply(x: IndexedSeq[Double]) = List(x.map(x => x * x).sum)
+  def apply(x: IndexedSeq[Double], rng: Random) = List(x.map(x => x * x).sum)
 }

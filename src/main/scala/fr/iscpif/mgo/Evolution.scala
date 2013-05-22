@@ -18,7 +18,8 @@
 package fr.iscpif.mgo
 
 import Individual._
-import java.util.Random
+import util.Random
+import org.apache.commons.math3.random.{ RandomAdaptor, Well44497b }
 
 /**
  * Trait evolution provide the feature to define an evolutionary algorithm
@@ -40,15 +41,17 @@ trait Evolution extends Termination
    */
   case class EvolutionState(
     /** The current population of solution */
-    val individuals: Seq[Individual[G, P, F]],
+    individuals: Seq[Individual[G, P, F]],
     /** The current achive */
-    val archive: A,
+    archive: A,
     /** The number of the generation */
-    val generation: Int,
+    generation: Int,
     /** The state maintained for the termination criterium */
-    val terminationState: STATE,
+    terminationState: STATE,
     /** true if the termination criterium is met false otherwhise */
-    val terminated: Boolean)
+    terminated: Boolean)
+
+  def buildRNG(seed: Long) = new Random(new RandomAdaptor(new Well44497b(seed)))
 
   /**
    * Run the evolutionary algorithm
@@ -58,7 +61,7 @@ trait Evolution extends Termination
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def evolve(population: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: P => F)(implicit aprng: Random): Iterator[EvolutionState] =
+  def evolve(population: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: (P, Random) => F)(implicit aprng: Random): Iterator[EvolutionState] =
     Iterator.iterate(EvolutionState(population, a, 0, initialState, false)) {
       s =>
         val (newPop, newArchive) = step(s.individuals, s.archive, expression, evaluation)
@@ -72,10 +75,9 @@ trait Evolution extends Termination
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def evolve(expression: G => P, evaluation: P => F)(implicit prng: Random): Iterator[EvolutionState] = {
+  def evolve(expression: G => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
     val archive = initialArchive
-    val individuals = random(expression, evaluation, archive)
-    evolve(individuals, archive, expression, evaluation)
+    evolve(Seq.empty, archive, expression, evaluation)
   }
 
   /**
@@ -88,10 +90,11 @@ trait Evolution extends Termination
    * @return a new population of evaluated solutions
    *
    */
-  def step(individuals: Seq[Individual[G, P, F]], archive: A, expression: G => P, evaluation: P => F)(implicit aprng: Random): (Seq[Individual[G, P, F]], A) = {
-    val offspring = breed(
-      individuals, archive
-    ).par.map { g => Individual(g, expression, evaluation) }.seq
+  def step(individuals: Seq[Individual[G, P, F]], archive: A, expression: G => P, evaluation: (P, Random) => F)(implicit rng: Random): (Seq[Individual[G, P, F]], A) = {
+    val offspringGenomes = breed(individuals, archive)
+    val rngs = (0 until offspringGenomes.size).map(_ => buildRNG(rng.nextLong))
+
+    val offspring = (offspringGenomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq
 
     val newIndividuals = offspring.toList ::: individuals.toList
     val newArchive = combine(archive, toArchive(offspring))
@@ -99,16 +102,5 @@ trait Evolution extends Termination
     //Elitism strategy
     (elitism(newIndividuals, newArchive), newArchive)
   }
-
-  /**
-   * Generate an random population
-   *
-   * @param archive the current archive
-   * @param expression expression of the genome
-   * @param evaluation the fitness evaluator
-   * @return a random population of evaluated solutions
-   */
-  def random(expression: G => P, evaluation: P => F, archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] =
-    breed(Seq.empty, archive).par.map { g => Individual[G, P, F](g, expression, evaluation) }.seq
 
 }

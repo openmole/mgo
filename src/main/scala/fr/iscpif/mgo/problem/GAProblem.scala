@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
+import scala.util.Random
 
 /**
  * Cake to define a problem for a genetic algorithm
@@ -34,8 +35,8 @@ trait GAProblem extends Problem with Scaling with MG {
    * @param g the genome to evaluate
    * @return the fitness for this genome
    */
-  def apply(g: G) = new MGFitness {
-    val values = apply(scale(g.values).toIndexedSeq)
+  def apply(g: G, rng: Random) = new MGFitness {
+    val values = apply(scale(g.values).toIndexedSeq, rng)
   }
 
   /**
@@ -61,5 +62,5 @@ trait GAProblem extends Problem with Scaling with MG {
    * @param x the point to evaluate
    * @return the fitness of this point
    */
-  def apply(x: IndexedSeq[Double]): Seq[Double]
+  def apply(x: IndexedSeq[Double], rng: Random): Seq[Double]
 }

@@ -19,7 +19,7 @@ package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
 import genome.G
-import java.util.Random
+import util.Random
 
 /**
  * Implement a crossover operamtion between 2 genomes

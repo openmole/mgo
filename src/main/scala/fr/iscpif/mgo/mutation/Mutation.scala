@@ -19,7 +19,7 @@ package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
 import genome.G
-import java.util.Random
+import util.Random
 
 /**
  * Layer of the cake for the mutation operation.
