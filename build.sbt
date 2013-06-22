@@ -2,7 +2,7 @@ organization := "fr.iscpif"
 
 name := "mgo"
 
-scalaVersion := "2.10.1"
+scalaVersion := "2.10.2"
 
 resolvers ++= Seq(
   "ISC-PIF Release" at "http://maven.iscpif.fr/release",
