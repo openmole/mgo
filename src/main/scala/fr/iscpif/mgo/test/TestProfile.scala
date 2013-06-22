@@ -30,7 +30,6 @@ object TestProfile extends App {
       def steps = 200
       def x: Int = 0
       def nX: Int = 1000
-      def worst: Double = 100.0
     }
 
   implicit val rng = new Random

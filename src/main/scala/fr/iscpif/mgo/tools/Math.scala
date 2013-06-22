@@ -24,6 +24,13 @@ import math._
  */
 object Math {
 
+  type Point2D = (Double, Double)
+
+  implicit class Point2DDecorator(p: Point2D) {
+    def x = p._1
+    def y = p._2
+  }
+
   /// Definintion of epsilon
   val epsilon = 1.0e-30
 
@@ -55,14 +62,31 @@ object Math {
 
   def squareDist(x: Seq[Double], y: Seq[Double]) = x zip y map { case (x, y) => pow(x + y, 2) } sum
 
-  def integral(points: Seq[(Double, Double)]) =
+  def integral(points: Seq[Point2D]) =
     if (points.size < 2) 0.0
     else
       points.sortBy(_._1).sliding(2, 1).map {
         bounds =>
           val min = bounds(0)
           val max = bounds(1)
-          ((max._2 + min._2) / 2) * (max._1 - min._1)
+          ((max.y + min.y) / 2) * (max.x - min.x)
       }.sum
 
+  def surface(a: Double, b: Double, c: Double): Double = {
+    val s = (a + b + c) / 2
+    math.sqrt(s * (s - a) * (s - b) * (s - c))
+  }
+
+  def surface(p1: Point2D, p2: Point2D, p3: Point2D): Double = {
+    val a = euclideanNorm(p1, p2)
+    val b = euclideanNorm(p2, p3)
+    val c = euclideanNorm(p3, p1)
+    surface(a, b, c)
+  }
+
+  def euclideanNorm(p1: Point2D, p2: Point2D) =
+    math.sqrt(math.pow(p2.x - p1.x, 2) + math.pow(p2.y - p1.y, 2))
+
+  def isUpper(line1: Point2D, line2: Point2D, c: Point2D) =
+    (line2.x - line1.x) * (c.y - line1.y) - (line2.y - line1.y) * (c.x - line1.x) > 0
 }
