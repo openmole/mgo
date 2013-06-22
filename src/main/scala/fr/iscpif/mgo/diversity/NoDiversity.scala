@@ -21,6 +21,6 @@ import fr.iscpif.mgo._
 import tools._
 
 trait NoDiversity extends DiversityMetric {
-  def diversity(individuals: Seq[DIVERSIFIED], ranks: Seq[Lazy[Int]]): Seq[Lazy[Double]] =
+  def diversity(individuals: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]): Seq[Lazy[Double]] =
     individuals.map(i => Lazy(0.0))
 }

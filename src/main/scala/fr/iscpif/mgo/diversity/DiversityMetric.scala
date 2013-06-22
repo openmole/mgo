@@ -22,18 +22,15 @@ import genome.G
 import tools.Lazy
 
 /**
- * Layer of the cake that compute a diversity metric for a set of individuals
+ * Layer of the cake that compute a diversity metric for a set of values
  */
 trait DiversityMetric {
-
-  type DIVERSIFIED
-
   /**
-   * Compute the diversity of the individual
+   * Compute the diversity metric of the values
    *
-   * @param individuals a set of individual
+   * @param values a set of values
    * @return a diversity sequence in the diversity of the individual i at the
    * position i
    */
-  def diversity(individuals: Seq[DIVERSIFIED], ranks: Seq[Lazy[Int]]): Seq[Lazy[Double]]
+  def diversity(values: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]): Seq[Lazy[Double]]
 }

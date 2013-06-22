@@ -23,12 +23,10 @@ import Ordering.Implicits._
 
 trait HierarchicalRanking extends Ranking {
 
-  type RANKED <: MGFitness
-
-  override def rank(fitnesses: Seq[RANKED]): Seq[Lazy[Int]] =
-    fitnesses.
+  override def rank(values: Seq[Seq[Double]]): Seq[Lazy[Int]] =
+    values.
       zipWithIndex.
-      sortBy { case (fitness, _) => fitness.values }.
+      sortBy { case (v, _) => v }.
       map { case (_, originalOrder) => originalOrder }.
       zipWithIndex.
       sortBy { case (originalOrder, _) => originalOrder }.

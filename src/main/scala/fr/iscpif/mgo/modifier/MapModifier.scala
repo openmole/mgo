@@ -55,7 +55,7 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
       val hitCount: Int =
         archive.get(x).flatMap(_.get(y)).getOrElse(0)
 
-      MGFitness(aggregate(i.fitness), 1.0 / distance, hitCount)
+      Seq(aggregate(i.fitness), 1.0 / distance, hitCount)
     }
 
     val modified = individuals.map(fitness)

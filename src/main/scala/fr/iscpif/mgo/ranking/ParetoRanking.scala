@@ -27,15 +27,13 @@ import tools.Lazy
  */
 trait ParetoRanking extends Ranking with Dominance with G with F {
 
-  type RANKED <: MGFitness
-
-  override def rank(evaluated: Seq[RANKED]) = {
-    evaluated.zipWithIndex.map {
-      case (indiv, index) =>
-        Lazy(evaluated.par.zipWithIndex.filter {
-          case (_, index2) => index != index2
+  override def rank(values: Seq[Seq[Double]]) = {
+    values.zipWithIndex.map {
+      case (v1, index1) =>
+        Lazy(values.par.zipWithIndex.filter {
+          case (_, index2) => index1 != index2
         }.count {
-          case (indiv2, _) => isDominated(indiv.values, indiv2.values)
+          case (v2, _) => isDominated(v1, v2)
         })
     }
   }

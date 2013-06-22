@@ -46,12 +46,11 @@ import RankDiversityModifier._
  */
 trait RankDiversityModifier extends RankModifier with DiversityModifier with RankDiversityMF {
 
-  type RANKED = MGFitness
   type DIVERSIFIED = MGFitness
   type F <: MGFitness
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
-    val fitnesses = evaluated.map(_.fitness)
+    val fitnesses = evaluated.map(_.fitness.values)
     val ranks = rank(fitnesses)
     val distances = diversity(fitnesses, ranks)
 

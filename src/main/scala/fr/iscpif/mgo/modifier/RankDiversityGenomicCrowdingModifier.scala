@@ -39,7 +39,7 @@ trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier wi
 
     val diversityFitnesses =
       (evaluated zip genomeDiversity).map {
-        case (i, gd) => MGFitness(i.fitness.values.toList ::: 1 / gd() :: Nil)
+        case (i, gd) => i.fitness.values.toList ::: 1 / gd() :: Nil
       }
 
     val ranks = rank(diversityFitnesses)
