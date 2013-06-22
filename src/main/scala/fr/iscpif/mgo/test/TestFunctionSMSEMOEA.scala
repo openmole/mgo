@@ -26,7 +26,7 @@ object TestFunctionSMSEMOEA extends App {
   implicit val rng = new Random
 
   val smsemoea =
-    new ZDT4 with GASigmaFactory with MG with BinaryTournamentSelection with HyperVolumeStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
+    new ZDT4 with SMSEMOEA with HyperVolumeStabilityTermination {
       def windowSize = 100
       def deviationEpsilon = 0.001
       def mu = 200
