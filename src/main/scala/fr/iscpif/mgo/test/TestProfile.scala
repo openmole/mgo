@@ -24,7 +24,7 @@ import java.io.File
 
 object TestProfile extends App {
   val m =
-    new Rastrigin with MG with NoArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with NoDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with HierarchicalRanking with CounterTermination with StrictDominance with ProfileGenomePlotter {
+    new Rastrigin with Profile with CounterTermination with ProfileGenomePlotter {
       def genomeSize: Int = 6
       def lambda: Int = 200
       def steps = 200

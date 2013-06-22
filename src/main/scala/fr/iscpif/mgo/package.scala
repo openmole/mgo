@@ -44,6 +44,7 @@ package object mgo {
   }
 
   type NSGAII = algorithm.NSGAII
+  type Profile = algorithm.Profile
   type A = archive.A
   type Archive = archive.Archive
   type MapArchive = archive.MapArchive
