@@ -23,8 +23,8 @@ publishArtifact in Test := false
 publishTo <<= version { (v: String) =>
   val maven = "http://maven.iscpif.fr/"
   if (v.trim.endsWith("SNAPSHOT")) 
-   Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository"))) 
-   //Some("snapshots" at maven + "snapshots") 
+   //Some(Resolver.file("file",  new File(Path.userHome.absolutePath+"/.m2/repository"))) 
+   Some("snapshots" at maven + "snapshots") 
   else
     Some("releases"  at maven + "releases")
 }
