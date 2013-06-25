@@ -53,7 +53,7 @@ trait ProfileModifier extends Modifier with Aggregation with RankDiversityModifi
 
           val rightSurface = signedSurface(preLast, last, postLast)
 
-          val middlePoints = s.sliding(3).map {
+          val middlePoints = s.sliding(3).filter(_.size == 3).map {
             s => signedSurface(s(0), s(1), s(2))
           }
 
