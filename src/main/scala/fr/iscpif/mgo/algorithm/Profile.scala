@@ -19,4 +19,17 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait Profile extends MG with NoArchive with ProfileModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with NoDiversity with ProfileElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with HierarchicalRanking with StrictDominance
+trait Profile <: Evolution
+  with MG
+  with NoArchive
+  with ProfileModifier
+  with GASigmaFactory
+  with MaxAggregation
+  with SBXBoundedCrossover
+  with NoDiversity
+  with ProfileElitism
+  with CoEvolvingSigmaValuesMutation
+  with BinaryTournamentSelection
+  with HierarchicalRanking
+  with StrictDominance
+  with GeneticBreeding

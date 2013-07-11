@@ -51,6 +51,7 @@ package object mgo {
   type MapArchive = archive.MapArchive
   type NoArchive = archive.NoArchive
   type Breeding = breed.Breeding
+  type GeneticBreeding = breed.GeneticBreeding
   type AverageCrossOver = crossover.AverageCrossover
   type CrossOver = crossover.CrossOver
   type NoneCrossOver = crossover.NoneCrossOver

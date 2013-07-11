@@ -26,13 +26,13 @@ object TestFunction extends App {
   implicit val rng = new Random
 
   val nsga2 =
-    new ZDT4 with GASigmaFactory with MG with BinaryTournamentSelection with CrowdingStabilityTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with CrowdingDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive {
+    new ZDT4 with NSGAII {
       def windowSize = 100
       def deviationEpsilon = 0.01
       def mu = 200
       def lambda = 200
       def genomeSize = 10
-      def referencePoint = IndexedSeq(2.0, 2.0)
+      def steps = 200
     }
 
 }

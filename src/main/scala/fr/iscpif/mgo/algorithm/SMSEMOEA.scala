@@ -19,4 +19,16 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait SMSEMOEA extends GASigmaFactory with MG with BinaryTournamentSelection with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with HypervolumeDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive
+trait SMSEMOEA <: Evolution
+  with GASigmaFactory
+  with MG
+  with BinaryTournamentSelection
+  with NonDominatedElitism
+  with CoEvolvingSigmaValuesMutation
+  with SBXBoundedCrossover
+  with HypervolumeDiversity
+  with ParetoRanking
+  with StrictDominance
+  with RankDiversityModifier
+  with NoArchive
+  with GeneticBreeding

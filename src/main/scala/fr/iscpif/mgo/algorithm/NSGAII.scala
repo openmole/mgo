@@ -19,4 +19,18 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait NSGAII <: GASigmaFactory with MG with BinaryTournamentSelection with CounterTermination with NonDominatedElitism with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with CrowdingDiversity with ParetoRanking with StrictDominance with RankDiversityModifier with NoArchive with CloneRemoval
+trait NSGAII <: Evolution
+  with MG
+  with GASigmaFactory
+  with BinaryTournamentSelection
+  with CounterTermination
+  with NonDominatedElitism
+  with CoEvolvingSigmaValuesMutation
+  with SBXBoundedCrossover
+  with CrowdingDiversity
+  with ParetoRanking
+  with StrictDominance
+  with RankDiversityModifier
+  with NoArchive
+  with CloneRemoval
+  with GeneticBreeding
