@@ -25,11 +25,6 @@ import genome.G
  */
 trait Elitism extends G with P with F with MF with Modifier {
 
-  /**
-   * Reduce the number of elements of the population and return a new one
-   *
-   * @param individuals the population to shrink
-   * @return the shrinked population
-   */
-  def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]]
+  def elitism(oldGeneration: Seq[Individual[G, P, F]], newGeneration: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]]
+
 }

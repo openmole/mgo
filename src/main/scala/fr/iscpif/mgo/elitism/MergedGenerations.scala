@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 27/11/12 Romain Reuillon
+ * Copyright (C) 23/08/13 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,15 +17,18 @@
 
 package fr.iscpif.mgo.elitism
 
-import fr.iscpif.mgo._
+import fr.iscpif.mgo.Individual
 
-trait MapElitism extends Elitism with MapPlotter with Aggregation with MergedGenerations {
+trait MergedGenerations <: Elitism {
+  def elitism(oldGeneration: Seq[Individual[G, P, F]], newGeneration: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] =
+    elitism(newGeneration.toList ::: oldGeneration.toList, archive)
 
-  //val mu = Int.MaxValue
-
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] =
-    individuals.groupBy(plot).toSeq.map {
-      case (_, is) => is.minBy(i => aggregate(i.fitness))
-    }
+  /**
+   * Reduce the number of elements of the population and return a new one
+   *
+   * @param individuals the population to shrink
+   * @return the shrinked population
+   */
+  def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]]
 
 }

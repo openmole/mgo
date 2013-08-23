@@ -100,7 +100,7 @@ trait Evolution extends Termination
     val newArchive = combine(archive, toArchive(offspring))
 
     //Elitism strategy
-    (elitism(newIndividuals, newArchive), newArchive)
+    (elitism(offspring.toList, individuals.toList, newArchive), newArchive)
   }
 
 }

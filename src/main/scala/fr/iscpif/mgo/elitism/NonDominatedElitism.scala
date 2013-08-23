@@ -24,7 +24,7 @@ import annotation.tailrec
 /**
  * Reduce the size of the population according to a divesity metric and a rank
  */
-trait NonDominatedElitism extends Elitism with Mu {
+trait NonDominatedElitism extends Elitism with Mu with MergedGenerations {
   type MF <: Diversity with Rank
 
   override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] = {
