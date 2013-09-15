@@ -21,5 +21,5 @@ import fr.iscpif.mgo._
 import scala.util.Random
 
 trait Breeding <: Lambda with G with F with P with Archive {
-  def breed(individuals: Seq[Individual[G, P, F]], a: A, generation: Int, size: Int = lambda)(implicit aprng: Random): Seq[G]
+  def breed(individuals: Seq[Individual[G, P, F]], a: A, size: Int = lambda)(implicit aprng: Random): Seq[G]
 }

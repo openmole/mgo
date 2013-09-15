@@ -35,7 +35,7 @@ trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selectio
    * @param size the size of the breeded set
    * @return the breeded genomes
    */
-  def breed(individuals: Seq[Individual[G, P, F]], a: A, generation: Int, size: Int = lambda)(implicit aprng: Random): Seq[G] = {
+  def breed(individuals: Seq[Individual[G, P, F]], a: A, size: Int = lambda)(implicit aprng: Random): Seq[G] = {
     val population = toPopulation(individuals, a)
     val breeded =
       Iterator.continually {

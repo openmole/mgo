@@ -64,7 +64,7 @@ trait Evolution extends Termination
   def evolve(population: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: (P, Random) => F)(implicit aprng: Random): Iterator[EvolutionState] =
     Iterator.iterate(EvolutionState(population, a, 0, initialState, false)) {
       s =>
-        val (newPop, newArchive) = step(s.individuals, s.archive, s.generation, expression, evaluation)
+        val (newPop, newArchive) = step(s.individuals, s.archive, expression, evaluation)
         val (stop, newState) = terminated(toPopulation(newPop, newArchive), s.terminationState)
         EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
@@ -90,8 +90,8 @@ trait Evolution extends Termination
    * @return a new population of evaluated solutions
    *
    */
-  def step(individuals: Seq[Individual[G, P, F]], archive: A, generation: Int, expression: G => P, evaluation: (P, Random) => F)(implicit rng: Random): (Seq[Individual[G, P, F]], A) = {
-    val offspringGenomes = breed(individuals, archive, generation)
+  def step(individuals: Seq[Individual[G, P, F]], archive: A, expression: G => P, evaluation: (P, Random) => F)(implicit rng: Random): (Seq[Individual[G, P, F]], A) = {
+    val offspringGenomes = breed(individuals, archive)
     val rngs = (0 until offspringGenomes.size).map(_ => buildRNG(rng.nextLong))
 
     val offspring = (offspringGenomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq
