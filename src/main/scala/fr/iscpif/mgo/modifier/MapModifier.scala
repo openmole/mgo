@@ -26,44 +26,46 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
 
   def neighbours: Int
 
-  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
-    val map = individuals.groupBy(plot)
+  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
+    if (individuals.isEmpty) Population.empty
+    else {
+      val map = individuals.groupBy(plot)
 
-    val xSize = map.keysIterator.map(_._1).max + 1
-    val ySize = map.keysIterator.map(_._2).max + 1
+      val xSize = map.keysIterator.map(_._1).max + 1
+      val ySize = map.keysIterator.map(_._2).max + 1
 
-    val matrix =
-      NeighborMatrix(
-        (x, y) =>
-          map.get(x, y) match {
-            case Some(e) => if (e.isEmpty) None else Some(e)
-            case None => None
-          },
-        xSize,
-        ySize
-      )
+      val matrix =
+        NeighborMatrix(
+          (x, y) =>
+            map.get(x, y) match {
+              case Some(e) => if (e.isEmpty) None else Some(e)
+              case None => None
+            },
+          xSize,
+          ySize
+        )
 
-    def fitness(i: Individual[G, P, F]) = {
-      val (x, y) = plot(i)
+      def fitness(i: Individual[G, P, F]) = {
+        val (x, y) = plot(i)
 
-      val knn = matrix.knn(x, y, neighbours)
-      val distance =
-        knn.map {
-          case (x1, y1) => matrix.distance(x, y, x1, y1)
-        }.sum
+        val knn = matrix.knn(x, y, neighbours)
+        val distance =
+          knn.map {
+            case (x1, y1) => matrix.distance(x, y, x1, y1)
+          }.sum
 
-      val avgFitness =
-        (knn.flatMap {
-          case (x1, y1) => matrix.matrix(x1, y1).get
-        }.map(i => aggregate(i.fitness)).sum) / neighbours
+        val avgFitness =
+          (knn.flatMap {
+            case (x1, y1) => matrix.matrix(x1, y1).get
+          }.map(i => aggregate(i.fitness)).sum) / neighbours
 
-      Seq(aggregate(i.fitness) / avgFitness, 1.0 / distance)
+        Seq(aggregate(i.fitness) / avgFitness, 1.0 / distance)
+      }
+
+      val modified = individuals.map(fitness)
+      val ranks = rank(modified)
+      val distances = diversity(modified, ranks)
+
+      toPopulationElements[G, P, F](individuals, ranks, distances)
     }
-
-    val modified = individuals.map(fitness)
-    val ranks = rank(modified)
-    val distances = diversity(modified, ranks)
-
-    toPopulationElements[G, P, F](individuals, ranks, distances)
-  }
 }
