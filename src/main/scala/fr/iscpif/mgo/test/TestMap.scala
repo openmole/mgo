@@ -27,7 +27,7 @@ object TestMap extends App {
     new Rastrigin with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with MapElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with MapGenomePlotter with GeneticBreeding {
       def genomeSize: Int = 6
       def lambda: Int = 200
-      def neighbors = 8
+      def neighbours = 8
       def steps = 500
       def x: Int = 0
       def y: Int = 1

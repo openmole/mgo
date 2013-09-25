@@ -21,8 +21,6 @@ import fr.iscpif.mgo._
 
 trait MapElitism extends Elitism with MapPlotter with Aggregation with MergedGenerations {
 
-  //val mu = Int.MaxValue
-
   override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] =
     individuals.groupBy(plot).toSeq.map {
       case (_, is) => is.minBy(i => aggregate(i.fitness))

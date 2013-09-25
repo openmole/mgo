@@ -24,9 +24,7 @@ import RankDiversityModifier._
 
 trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiversityModifier {
 
-  type A <: MapArchive#A
-
-  def neighbors: Int
+  def neighbours: Int
 
   override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val map = individuals.groupBy(plot)
@@ -47,15 +45,19 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
 
     def fitness(i: Individual[G, P, F]) = {
       val (x, y) = plot(i)
+
+      val knn = matrix.knn(x, y, neighbours)
       val distance =
-        matrix.knn(x, y, neighbors).map {
+        knn.map {
           case (x1, y1) => matrix.distance(x, y, x1, y1)
         }.sum
 
-      val hitCount: Int =
-        archive.get(x).flatMap(_.get(y)).getOrElse(0)
+      val avgFitness =
+        (knn.flatMap {
+          case (x1, y1) => matrix.matrix(x1, y1).get
+        }.map(i => aggregate(i.fitness)).sum) / neighbours
 
-      Seq(aggregate(i.fitness), 1.0 / distance, hitCount)
+      Seq(aggregate(i.fitness) / avgFitness, 1.0 / distance)
     }
 
     val modified = individuals.map(fitness)
