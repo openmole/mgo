@@ -49,17 +49,13 @@ trait MapModifier extends Modifier with MapPlotter with Aggregation with RankDiv
         val (x, y) = plot(i)
 
         val knn = matrix.knn(x, y, neighbours)
-        val distance =
-          knn.map {
-            case (x1, y1) => matrix.distance(x, y, x1, y1)
-          }.sum
 
         val avgFitness =
           (knn.flatMap {
             case (x1, y1) => matrix.matrix(x1, y1).get
           }.map(i => aggregate(i.fitness)).sum) / neighbours
 
-        Seq(aggregate(i.fitness) / avgFitness, 1.0 / distance)
+        Seq(aggregate(i.fitness) / avgFitness)
       }
 
       val modified = individuals.map(fitness)
