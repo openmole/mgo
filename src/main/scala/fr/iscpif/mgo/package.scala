@@ -43,12 +43,12 @@ package object mgo {
     def untilConverged(f: S => Unit) = i.drop(1).dropWhile { s => f(s); !s.terminated }.next
   }
 
+  type Map = algorithm.Map
   type NSGAII = algorithm.NSGAII
   type Profile = algorithm.Profile
   type SMSEMOEA = algorithm.SMSEMOEA
   type A = archive.A
   type Archive = archive.Archive
-  type MapArchive = archive.MapArchive
   type NoArchive = archive.NoArchive
   type Breeding = breed.Breeding
   type GeneticBreeding = breed.GeneticBreeding

@@ -24,7 +24,7 @@ import java.io._
 object TestMap extends App {
 
   val m =
-    new Rastrigin with MG with MapArchive with MapModifier with GASigmaFactory with MaxAggregation with SBXBoundedCrossover with CrowdingDiversity with MapElitism with CoEvolvingSigmaValuesMutation with BinaryTournamentSelection with ParetoRanking with CounterTermination with StrictDominance with MapGenomePlotter with GeneticBreeding {
+    new Rastrigin with Map with MapGenomePlotter with CounterTermination {
       def genomeSize: Int = 6
       def lambda: Int = 200
       def neighbours = 8
