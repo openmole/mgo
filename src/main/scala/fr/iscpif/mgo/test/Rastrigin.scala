@@ -24,8 +24,9 @@ trait Rastrigin extends GAProblem {
   def n: Int
   def a = 10.0
 
-  def min = List.fill(n)(-5.12)
-  def max = List.fill(n)(5.12)
+  def min = Seq.fill(n)(-5.12)
+  def max = Seq.fill(n)(5.12)
 
-  def apply(x: IndexedSeq[Double], rng: Random) = List(10 + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum)
+  def apply(x: Seq[Double], rng: Random) =
+    Seq(10 + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum)
 }

@@ -23,7 +23,12 @@ import Math._
 
 import RankDiversityModifier._
 
-trait ProfileModifier extends Modifier with Aggregation with RankDiversityModifier with ProfilePlotter {
+trait ProfileModifier <: Modifier
+    with Aggregation
+    with ProfilePlotter
+    with RankDiversityModifier
+    with HierarchicalRanking
+    with NoDiversity {
 
   override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val (points, indexes) =

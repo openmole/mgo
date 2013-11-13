@@ -26,5 +26,5 @@ trait Sphere extends GAProblem {
   def min = List.fill(n)(0.0)
   def max = List.fill(n)(2.0)
 
-  def apply(x: IndexedSeq[Double], rng: Random) = List(x.map(x => x * x).sum)
+  def apply(x: Seq[Double], rng: Random) = List(x.map(x => x * x).sum)
 }

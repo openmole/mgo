@@ -19,8 +19,7 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import util.Random
-import java.io.FileWriter
-import java.io.File
+import scalax.io._
 
 object TestProfile extends App {
   val m =
@@ -36,13 +35,12 @@ object TestProfile extends App {
 
   val res = m.evolve.untilConverged(s => println(s.generation)).individuals
 
-  val writer = new FileWriter(new File("/tmp/matrix2.csv"))
+  val output = Resource.fromFile("/tmp/matrix2.csv")
   for {
     i <- res
     x = m.plot(i)
     v = m.aggregate(i.fitness)
     if !v.isPosInfinity
-  } writer.write("" + x + "," + v + "\n")
-  writer.close
+  } output.append(s"$x,$v\n")
 
 }

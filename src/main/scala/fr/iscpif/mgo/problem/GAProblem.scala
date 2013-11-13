@@ -62,5 +62,5 @@ trait GAProblem extends Problem with Scaling with MG {
    * @param x the point to evaluate
    * @return the fitness of this point
    */
-  def apply(x: IndexedSeq[Double], rng: Random): Seq[Double]
+  def apply(x: Seq[Double], rng: Random): Seq[Double]
 }
