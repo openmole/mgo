@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 13/11/13 Romain Reuillon
+ * Copyright (C) 16/11/13 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,21 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.ranking
 
-import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
 
-trait Map <: Evolution
-  with MG
-  with NoArchive
-  with MapSelection
-  with GASigmaFactory
-  with MaxAggregation
-  with SBXBoundedCrossover
-  with NoDiversity
-  with MapElitism
-  with CoEvolvingSigmaValuesMutation
-  with HierarchicalRanking
-  with StrictDominance
-  with GeneticBreeding
-  with NoneModifier
+trait NoRanking <: Ranking {
+  def rank(values: Seq[Seq[Double]]): Seq[Lazy[Int]] =
+    values.map(i => Lazy(0))
+}

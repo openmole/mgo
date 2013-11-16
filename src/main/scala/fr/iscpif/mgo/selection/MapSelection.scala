@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 15/11/12 Romain Reuillon
+ * Copyright (C) 16/11/13 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,27 +15,33 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
-import tools._
+import scala.util.Random
+import fr.iscpif.mgo.tools.NeighborMatrix
 
-import RankDiversityModifier._
-
-trait MapModifier <: Modifier
+trait MapSelection <: Selection
     with MapPlotter
-    with Aggregation
-    with RankDiversityModifier
-    with HierarchicalRanking
-    with NoDiversity {
+    with Aggregation {
 
-  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
-    if (individuals.isEmpty) Population.empty
-    else {
-      val modified = individuals.map(i => Seq(aggregate(i.fitness)))
-      val ranks = rank(modified)
-      val distances = diversity(modified, ranks)
+  def neighbourPressure: Int = 8
 
-      toPopulationElements[G, P, F](individuals, ranks, distances)
+  def selection(population: Population[G, P, F, MF])(implicit rng: Random) = {
+    val matrix = NeighborMatrix(population.toIndividuals, plot _)
+
+    Iterator.continually {
+      val x = rng.nextInt(matrix.maxX)
+      val y = rng.nextInt(matrix.maxY)
+
+      def fitnesses =
+        for {
+          (ix, iy) <- matrix.knn(x, y, neighbourPressure) ++ Seq(x -> y)
+          i <- matrix.matrix(ix, iy)
+        } yield i -> aggregate(i.fitness)
+
+      fitnesses.minBy(_._2)._1
     }
+  }
+
 }

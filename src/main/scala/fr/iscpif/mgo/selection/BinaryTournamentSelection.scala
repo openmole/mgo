@@ -26,10 +26,10 @@ import util.Random
  * Select the best ranked and if equal the more diverse individual between
  * two individual randomly drawn in the population.
  */
-trait BinaryTournamentSelection extends Selection with MF {
+trait BinaryTournamentSelection extends Selection with OneByOne with MF {
   type MF <: Diversity with Rank
 
-  override def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F] =
+  override def selectOne(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F] =
     binaryTournament(population.content.random(aprng), population.content.random(aprng)).toIndividual
 
   /**

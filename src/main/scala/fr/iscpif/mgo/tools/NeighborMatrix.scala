@@ -22,25 +22,29 @@ import Function._
 object NeighborMatrix {
 
   def empty[S] =
-    new NeighborMatrix {
-      type T = S
+    new NeighborMatrix[S] {
       def maxX = 0
       def maxY = 0
       def matrix(x: Int, y: Int) = None
     }
 
-  def apply[S](elements: (Int, Int) => Option[S], mX: Int, mY: Int) =
-    new NeighborMatrix {
-      type T = S
+  def apply[S](elements: (Int, Int) => Option[S], mX: Int, mY: Int): NeighborMatrix[S] =
+    new NeighborMatrix[S] {
       def maxX = mX
       def maxY = mY
       def matrix(x: Int, y: Int) = elements(x, y)
     }
 
+  def apply[S](elements: Iterable[S], index: S => (Int, Int)): NeighborMatrix[S] = {
+    val matrix = elements.map(e => index(e) -> e).toMap
+    val maxX = matrix.keys.map(_._1).max
+    val maxY = matrix.keys.map(_._2).max
+    apply[S](untupled(matrix.get _), maxX, maxY)
+  }
+
 }
 
-trait NeighborMatrix {
-  type T
+trait NeighborMatrix[T] {
 
   def matrix(x: Int, y: Int): Option[T]
   def maxX: Int

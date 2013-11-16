@@ -37,16 +37,18 @@ trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selectio
    */
   def breed(individuals: Seq[Individual[G, P, F]], a: A, size: Int = lambda)(implicit aprng: Random): Seq[G] = {
     val population = toPopulation(individuals, a)
+
     val breeded =
-      Iterator.continually {
-        if (population.isEmpty) IndexedSeq(genomeFactory.random)
-        else crossover(selection(population).genome, selection(population).genome).map { mutate(_) }
-      }.flatten
+      if (population.isEmpty) Iterator.continually(genomeFactory.random)
+      else
+        (for {
+          Seq(i1, i2) <- selection(population).grouped(2)
+        } yield crossover(i1.genome, i2.genome).map { mutate }).flatten
 
     val res =
       Iterator.continually {
-        if (population.isEmpty || aprng.nextDouble >= cloneProbability) breeded.next
-        else selection(population).genome
+        if (population.isEmpty || aprng.nextDouble >= cloneProbability) breeded.next()
+        else selection(population).next().genome
       }.take(size)
 
     res.toIndexedSeq

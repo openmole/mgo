@@ -98,7 +98,6 @@ package object mgo {
   type CloneRemoval = modifier.CloneRemoval
   type DiversityModifier = modifier.DiversityModifier
   type IndividualFilter = modifier.IndividualFilter
-  type MapModifier = modifier.MapModifier
   type Modifier = modifier.Modifier
   type NoneModifier = modifier.NoneModifier
   type ProfileModifier = modifier.ProfileModifier
@@ -117,10 +116,12 @@ package object mgo {
   type GAProblem = problem.GAProblem
   type Scaling = problem.Scaling
   type HierarchicalRanking = ranking.HierarchicalRanking
+  type NoRanking = ranking.NoRanking
   type ParetoRanking = ranking.ParetoRanking
   type Rank = ranking.Rank
   type Ranking = ranking.Ranking
   type BinaryTournamentSelection = selection.BinaryTournamentSelection
+  type MapSelection = selection.MapSelection
   type Selection = selection.Selection
   type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
   type CounterTermination = termination.CounterTermination
