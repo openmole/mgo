@@ -20,13 +20,9 @@ package fr.iscpif.mgo.tools.clustering
 import math._
 import scala.util.Random
 import scala.collection.mutable.ListBuffer
+import fr.iscpif.mgo.tools.distance.Distance
 
-trait KMeans {
-
-  def distance(p1: Seq[Double], p2: Seq[Double]): Double =
-    sqrt((p1 zip p2).map {
-      case (x, y) => pow(x - y, 2)
-    }.sum)
+trait KMeans <: Distance {
 
   def updateClusters(p: Seq[Cluster])(implicit rng: Random): Seq[Cluster] = {
     val ps = p.flatMap(_.points)

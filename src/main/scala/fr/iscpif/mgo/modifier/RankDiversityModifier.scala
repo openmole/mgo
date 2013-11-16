@@ -50,10 +50,12 @@ trait RankDiversityModifier extends RankModifier with DiversityModifier with Ran
   type F <: MGFitness
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
-    val fitnesses = evaluated.map(_.fitness.values)
-    val ranks = rank(fitnesses)
-    val distances = diversity(fitnesses, ranks)
+    val f = fitnesses(evaluated, archive)
+    val ranks = rank(f)
+    val distances = diversity(f, ranks)
 
     toPopulationElements[G, P, F](evaluated, ranks, distances)
   }
+
+  def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = evaluated.map(_.fitness.values)
 }

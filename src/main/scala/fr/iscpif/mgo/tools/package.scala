@@ -60,7 +60,7 @@ package object tools {
 
   }
 
-  implicit def lazyOrdering[T](implicit ord: Ordering[T]) = tools.Lazy.lazyOrdering(ord)
+  //implicit def lazyOrdering[T](implicit ord: Ordering[T]) = tools.Lazy.lazyOrdering(ord)
 
   /*implicit class OptionDecorator[A](option: Option[A]) {
     def getOrElse(a: A) =

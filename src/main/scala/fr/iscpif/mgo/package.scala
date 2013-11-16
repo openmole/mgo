@@ -50,6 +50,7 @@ package object mgo {
   type A = archive.A
   type Archive = archive.Archive
   type NoArchive = archive.NoArchive
+  type NoveltyArchive = archive.NoveltyArchive
   type Breeding = breed.Breeding
   type GeneticBreeding = breed.GeneticBreeding
   type AverageCrossOver = crossover.AverageCrossover
