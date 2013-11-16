@@ -27,7 +27,6 @@ object TestMap extends App {
     new Rastrigin with Map with MapGenomePlotter with CounterTermination {
       def genomeSize: Int = 6
       def lambda: Int = 200
-      def neighbours = 8
       def steps = 500
       def x: Int = 0
       def y: Int = 1
