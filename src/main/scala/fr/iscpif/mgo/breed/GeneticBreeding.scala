@@ -41,17 +41,15 @@ trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selectio
     val breeded =
       if (population.isEmpty) Iterator.continually(genomeFactory.random)
       else
-        (for {
+        for {
           Seq(i1, i2) <- selection(population).grouped(2)
-        } yield crossover(i1.genome, i2.genome).map { mutate }).flatten
+          breed <- crossover(i1.genome, i2.genome).map { mutate }
+        } yield breed
 
-    val res =
-      Iterator.continually {
-        if (population.isEmpty || aprng.nextDouble >= cloneProbability) breeded.next()
-        else selection(population).next().genome
-      }.take(size)
-
-    res.toIndexedSeq
+    Iterator.continually {
+      if (population.isEmpty || aprng.nextDouble >= cloneProbability) breeded.next()
+      else selection(population).next().genome
+    }.take(size).toIndexedSeq
   }
 
 }

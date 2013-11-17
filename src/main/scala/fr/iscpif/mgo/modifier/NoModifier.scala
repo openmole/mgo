@@ -15,15 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
+package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import genome.G
-import util.Random
 
 /**
- * Mutation that doesn't modify the genome.
+ * Store raw individuals in the population
  */
-trait NoneMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
+trait NoModifier extends Modifier {
+
+  type MF = None.type
+
+  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
+    new Population[G, P, F, MF] {
+      lazy val content = individuals.map { PopulationElement(_, None) }
+    }
+
 }

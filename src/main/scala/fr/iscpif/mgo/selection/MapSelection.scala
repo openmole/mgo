@@ -28,6 +28,7 @@ trait MapSelection <: Selection
   def neighbourPressure: Int = 8
 
   def selection(population: Population[G, P, F, MF])(implicit rng: Random) = {
+    assert(!population.isEmpty)
     val matrix = NeighborMatrix(population.toIndividuals, plot _)
 
     Iterator.continually {

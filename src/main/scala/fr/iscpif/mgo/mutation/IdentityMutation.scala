@@ -15,15 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.crossover
+package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
 import genome.G
 import util.Random
 
 /**
- * No modification to the genomes
+ * Mutation that doesn't modify the genome.
  */
-trait NoneCrossOver extends CrossOver { this: G =>
-  override def crossover(g1: G, g2: G)(implicit aprng: Random) = IndexedSeq(g1, g2)
+trait IdentityMutation extends Mutation { self: G =>
+  override def mutate(genome: G)(implicit aprng: Random): G = genome
 }

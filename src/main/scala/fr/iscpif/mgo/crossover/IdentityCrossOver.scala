@@ -15,20 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
+import genome.G
+import util.Random
 
 /**
- * Store raw individuals in the population
+ * No modification to the genomes
  */
-trait NoneModifier extends Modifier {
-
-  type MF = None.type
-
-  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
-    new Population[G, P, F, MF] {
-      lazy val content = individuals.map { PopulationElement(_, None) }
-    }
-
+trait IdentityCrossOver extends CrossOver { this: G =>
+  override def crossover(g1: G, g2: G)(implicit aprng: Random) = IndexedSeq(g1, g2)
 }

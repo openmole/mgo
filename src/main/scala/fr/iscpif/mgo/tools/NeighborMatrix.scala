@@ -37,8 +37,8 @@ object NeighborMatrix {
 
   def apply[S](elements: Iterable[S], index: S => (Int, Int)): NeighborMatrix[S] = {
     val matrix = elements.map(e => index(e) -> e).toMap
-    val maxX = matrix.keys.map(_._1).max
-    val maxY = matrix.keys.map(_._2).max
+    val maxX = matrix.keys.map(_._1).max + 1
+    val maxY = matrix.keys.map(_._2).max + 1
     apply[S](untupled(matrix.get _), maxX, maxY)
   }
 
@@ -60,8 +60,9 @@ trait NeighborMatrix[T] {
     isIn(x, maxX) && isIn(y, maxY)
   }
 
-  lazy val maxRange = math.max(maxX / 2.0, maxY / 2.0)
+  lazy val maxRange = math.max(maxX, maxY)
 
+  //TODO reuse previously found neighbours
   def growUntilEnough(x: Int, y: Int, n: Int, range: Int = 1): List[(Int, Int)] = {
     val included = (extrema(x, y, range) ::: square(x, y, range).toList).filter { case (x1, y1) => matrix(x1, y1).isDefined }
     if (included.size >= n || range > maxRange) included

@@ -32,4 +32,4 @@ trait Map <: Evolution
   with HierarchicalRanking
   with StrictDominance
   with GeneticBreeding
-  with NoneModifier
+  with NoModifier

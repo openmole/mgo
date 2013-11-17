@@ -55,7 +55,7 @@ package object mgo {
   type GeneticBreeding = breed.GeneticBreeding
   type AverageCrossOver = crossover.AverageCrossover
   type CrossOver = crossover.CrossOver
-  type NoneCrossOver = crossover.NoneCrossOver
+  type IdentityCrossOver = crossover.IdentityCrossOver
   type SBXBoundedCrossover = crossover.SBXBoundedCrossover
   type UniformCrossOver = crossover.UniformCrossOver
   type CrowdingDiversity = diversity.CrowdingDiversity
@@ -99,7 +99,7 @@ package object mgo {
   type DiversityModifier = modifier.DiversityModifier
   type IndividualFilter = modifier.IndividualFilter
   type Modifier = modifier.Modifier
-  type NoneModifier = modifier.NoneModifier
+  type NoModifier = modifier.NoModifier
   type ProfileModifier = modifier.ProfileModifier
   type RankModifier = modifier.RankModifier
   type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
@@ -108,7 +108,7 @@ package object mgo {
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
   type GaussianMutation = mutation.GaussianMutation
   type Mutation = mutation.Mutation
-  type NoneMutation = mutation.NoneMutation
+  type IdentityMutation = mutation.IdentityMutation
   type RandomMutation = mutation.RandomMutation
   type P = phenotype.P
   type Evaluation = phenotype.Evaluation
