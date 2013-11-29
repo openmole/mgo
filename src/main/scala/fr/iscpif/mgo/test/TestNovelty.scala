@@ -33,7 +33,7 @@ object TestNovelty extends App {
     def steps = 2000
 
     def isGood(individual: Individual[G, P, F]) =
-      individual.fitness.values.reverse.max < 8.05
+      individual.fitness.values.max < 8.05
   }
 
   implicit val rng = new Random
@@ -42,7 +42,7 @@ object TestNovelty extends App {
     s =>
       val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
       s.archive.foreach {
-        i => output.append(i.genome.values.mkString(",") + "," + i.fitness.values.head + "\n")
+        i => output.append(i.genome.values.mkString(",") + "," + i.fitness.values.mkString(",") + "\n")
       }
       println(s.individuals.map(_.fitness.values.max).min)
     //println(s.generation + " " + s.archive.size)
