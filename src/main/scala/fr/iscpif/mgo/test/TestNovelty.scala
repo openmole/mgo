@@ -17,14 +17,13 @@
 
 package fr.iscpif.mgo.test
 
-import fr.iscpif.mgo.modifier.NoveltyModifier
 import fr.iscpif.mgo._
 import scala.util.Random
 import scalax.io.Resource
 
 object TestNovelty extends App {
 
-  val m = new Rastrigin with NoveltyModifier with NoveltyArchive with NonDominatedElitism with MG with GASigmaFactory with CounterTermination with CrowdingDiversity with GeneticBreeding with BinaryTournamentSelection with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with StrictDominance {
+  val m = new Rastrigin with Novelty with CounterTermination {
     def genomeSize: Int = 2
     def lambda: Int = 200
     def mu = 200
