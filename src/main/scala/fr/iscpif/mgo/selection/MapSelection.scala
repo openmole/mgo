@@ -26,17 +26,19 @@ trait MapSelection <: Selection
     with Aggregation {
 
   def neighbourPressure: Int = 8
+  def tournamentSize: Int = 1
 
   def selection(population: Population[G, P, F, MF])(implicit rng: Random) = {
     assert(!population.isEmpty)
     val matrix = NeighborMatrix(population.toIndividuals, plot _)
 
-    Iterator.continually {
-      val x = rng.nextInt(matrix.maxX)
-      val y = rng.nextInt(matrix.maxY)
+    val coodinates =
+      Iterator.continually { (rng.nextInt(matrix.maxX), rng.nextInt(matrix.maxY)) }
 
+    Iterator.continually {
       def fitnesses =
         for {
+          (x, y) <- coodinates.take(tournamentSize)
           (ix, iy) <- matrix.knn(x, y, neighbourPressure) ++ Seq(x -> y)
           i <- matrix.matrix(ix, iy)
         } yield i -> aggregate(i.fitness)

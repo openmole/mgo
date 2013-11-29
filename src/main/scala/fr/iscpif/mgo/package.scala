@@ -100,6 +100,7 @@ package object mgo {
   type IndividualFilter = modifier.IndividualFilter
   type Modifier = modifier.Modifier
   type NoModifier = modifier.NoModifier
+  type NoveltyModifier = modifier.NoveltyModifier
   type ProfileModifier = modifier.ProfileModifier
   type RankModifier = modifier.RankModifier
   type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
