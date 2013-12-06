@@ -31,8 +31,7 @@ trait NoveltyModifier <: RankDiversityModifier
   //def neighbours: Int
 
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    //def indivDistance(i1: Individual[G, P, F], i2: Individual[G, P, F]) = distance(i1.genome.values, i2.genome.values)
-    val diversities = CrowdingDistance(evaluated.map(_.genome.values)).map(1.0 / _())
+    val diversities = CrowdingDistance((archive ++ evaluated).map(_.genome.values)).map(1.0 / _())
     (evaluated zip diversities).map { case (i, d) => i.fitness.values ++ Seq(d) }
   }
 

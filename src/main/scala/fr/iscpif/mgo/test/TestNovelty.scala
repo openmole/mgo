@@ -34,6 +34,7 @@ object TestNovelty extends App {
 
     def isGood(individual: Individual[G, P, F]) =
       individual.fitness.values.max < 8.05
+
   }
 
   implicit val rng = new Random
