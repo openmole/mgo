@@ -5,8 +5,6 @@ name := "mgo"
 scalaVersion := "2.10.3"
 
 resolvers ++= Seq(
-  "ISC-PIF Release" at "http://maven.iscpif.fr/release",
-  "ISC-PIF Snapshots" at "http://maven.iscpif.fr/snapshots",
   "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 )
 

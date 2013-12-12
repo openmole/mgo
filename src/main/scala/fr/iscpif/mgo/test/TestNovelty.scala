@@ -27,10 +27,10 @@ object TestNovelty extends App {
     def genomeSize: Int = 2
     def lambda: Int = 200
     def mu = 200
-    def archiveSize = 1000
+    def archiveSize = 200
 
     def neighbours = 8
-    def steps = 2000
+    def steps = 400
 
     def isGood(individual: Individual[G, P, F]) =
       individual.fitness.values.max < 8.05
