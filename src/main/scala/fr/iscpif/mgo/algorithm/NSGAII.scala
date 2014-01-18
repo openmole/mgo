@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 
 trait NSGAII <: Evolution
   with MG
-  with GASigmaFactory
+  with GAGenomeWithSigma
   with BinaryTournamentSelection
   with CounterTermination
   with NonDominatedElitism

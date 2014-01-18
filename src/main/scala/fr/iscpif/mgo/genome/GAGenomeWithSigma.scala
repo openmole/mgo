@@ -17,26 +17,35 @@
 
 package fr.iscpif.mgo.genome
 
-import fr.iscpif.mgo._
+import scalaz.Lens
+import scala.util.Random
 
 object GAGenomeWithSigma {
-
-  def apply(_values: Seq[Double], _sigma: Seq[Double]) =
-    new GAGenomeWithSigma {
-      val sigma = _sigma
-      val values = _values
-    }
-
+  case class Genome(values: Seq[Double], sigma: Seq[Double])
 }
 
 /**
  * Genome for genetic algorithm with an autoadaptative sigma component
  */
-trait GAGenomeWithSigma extends GAGenome with Sigma {
-  def content = values ++ sigma
+trait GAGenomeWithSigma extends GA with Sigma {
+  type G = GAGenomeWithSigma.Genome
 
-  override def updatedValues(values: Seq[Double]) = GAGenomeWithSigma(values, this.sigma).content
-  override def updatedSigma(sigma: Seq[Double]) = GAGenomeWithSigma(this.values, sigma).content
+  def values = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(values = v), _.values)
+  def genome = Lens.lensu[G, Seq[Double]](
+    (c, v) =>
+      GAGenomeWithSigma.Genome(
+        v.slice(0, v.size / 2),
+        v.slice(v.size / 2, v.size)
+      ),
+    v => v.values ++ v.sigma
+  )
+
+  def sigma = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(sigma = v), _.sigma)
+
+  def randomGenome(implicit rng: Random) = {
+    def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq
+    GAGenomeWithSigma.Genome(rnd, rnd)
+  }
 
 }
 

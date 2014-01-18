@@ -23,8 +23,7 @@ import scala.util.Random
 /**
  * Cake to define a problem for a genetic algorithm
  */
-trait GAProblem extends Problem with Scaling with MG {
-  type G <: GAGenome
+trait GAProblem extends Problem with Scaling with MG with GA { pb =>
 
   def genomeSize: Int
   def n = genomeSize
@@ -36,7 +35,7 @@ trait GAProblem extends Problem with Scaling with MG {
    * @return the fitness for this genome
    */
   def apply(g: G, rng: Random) = new MGFitness {
-    val values = apply(scale(g.values).toIndexedSeq, rng)
+    val values = apply(pb.values.get(scale(g)).toIndexedSeq, rng)
   }
 
   /**
@@ -46,7 +45,7 @@ trait GAProblem extends Problem with Scaling with MG {
    * @param g the genome to scale
    * @return the scaled genome
    */
-  def scale(g: G): Seq[Double] = scale(g.values)
+  def scale(g: G): G = values.mod(v => scale(v), g)
 
   /**
    * Scale a population element genome from [0.0, 1.0] to the correct scale
@@ -54,7 +53,8 @@ trait GAProblem extends Problem with Scaling with MG {
    * @param i the population element to scale
    * @return the scaled population element
    */
-  def scale[MF](i: PopulationElement[G, P, F, MF]): (Seq[Double], F, MF) = (scale(i.toIndividual.genome), i.toIndividual.fitness, i.metaFitness)
+  def scale[MF](i: PopulationElement[G, P, F, MF]): PopulationElement[G, P, F, MF] =
+    i.copy(genome = scale(i.genome))
 
   /**
    * Compute the fitness for a point

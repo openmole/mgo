@@ -54,10 +54,10 @@ package object mgo {
   type NoveltyArchive = archive.NoveltyArchive
   type Breeding = breed.Breeding
   type GeneticBreeding = breed.GeneticBreeding
-  type AverageCrossOver = crossover.AverageCrossover
+  type AverageCrossOver = crossover.AverageCrossOver
   type CrossOver = crossover.CrossOver
   type IdentityCrossOver = crossover.IdentityCrossOver
-  type SBXBoundedCrossover = crossover.SBXBoundedCrossover
+  type SBXBoundedCrossover = crossover.SBXBoundedCrossOver
   type UniformCrossOver = crossover.UniformCrossOver
   type CrowdingDiversity = diversity.CrowdingDiversity
   type Diversity = diversity.Diversity
@@ -84,11 +84,6 @@ package object mgo {
   type GAGenome = genome.GAGenome
   type GAGenomeWithSigma = genome.GAGenomeWithSigma
   type GA = genome.GA
-  type GAFactory = genome.GAFactory
-  type GASigma = genome.GASigma
-  type Genome = genome.Genome
-  type GenomeFactory = genome.GenomeFactory
-  type GASigmaFactory = genome.GASigmaFactory
   type Sigma = genome.Sigma
   type MapGenomePlotter = map.MapGenomePlotter
   type MapPlotter = map.MapPlotter

@@ -18,13 +18,12 @@
 package fr.iscpif.mgo.breed
 
 import fr.iscpif.mgo._
-import genome.{ GenomeFactory, G }
 import util.Random
 
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selection with CrossOver with Mutation with GenomeFactory with Modifier {
+trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selection with CrossOver with Mutation with GA with Modifier {
 
   def cloneProbability: Double = 0.0
 
@@ -39,7 +38,7 @@ trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selectio
     val population = toPopulation(individuals, a)
 
     val breeded =
-      if (population.isEmpty) Iterator.continually(genomeFactory.random)
+      if (population.isEmpty) Iterator.continually(randomGenome)
       else
         for {
           Seq(i1, i2) <- selection(population).grouped(2)

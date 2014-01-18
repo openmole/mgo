@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
-import genome.Genome
 import util.Random
 
 /**

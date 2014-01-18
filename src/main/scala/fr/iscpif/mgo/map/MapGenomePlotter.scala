@@ -19,15 +19,14 @@ package fr.iscpif.mgo.map
 
 import fr.iscpif.mgo._
 
-trait MapGenomePlotter extends MapPlotter {
-
-  type G <: GAGenome
+trait MapGenomePlotter extends MapPlotter with GA {
 
   def x: Int
   def y: Int
   def nX: Int
   def nY: Int
 
-  override def plot(i: Individual[G, P, F]) = ((i.genome.values(x) * nX).toInt, (i.genome.values(y) * nY).toInt)
+  override def plot(i: Individual[G, P, F]) =
+    ((values.get(i.genome)(x) * nX).toInt, (values.get(i.genome)(y) * nY).toInt)
 
 }

@@ -23,7 +23,7 @@ trait Novelty <: NoveltyModifier
   with NoveltyArchive
   with NonDominatedElitism
   with MG
-  with GASigmaFactory
+  with GAGenomeWithSigma
   with CrowdingDiversity
   with GeneticBreeding
   with BinaryTournamentSelection

@@ -17,12 +17,16 @@
 
 package fr.iscpif.mgo.genome
 
-import fr.iscpif.mgo._
+import scalaz.Lens
 
 /**
  * Base of the cake for a genetic algorithm evolutions (algorithms evolving
  * sequences of doubles).
  */
 trait GA extends G {
-  type G = GAGenome
+  def values: Lens[G, Seq[Double]]
+  def genome: Lens[G, Seq[Double]]
+
+  /** Size of the value part of the genome */
+  def genomeSize: Int
 }

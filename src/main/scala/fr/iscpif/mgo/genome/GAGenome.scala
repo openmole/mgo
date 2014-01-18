@@ -18,35 +18,21 @@
 package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
+import scala.util.Random
+import scalaz.Lens
 
 object GAGenome {
-  def apply(v: Seq[Double]) = new GAGenome {
-    val values = v
-    val content = v
-    def updatedValues(values: Seq[Double]) = values
-  }
+  case class Genome(values: Seq[Double])
 }
 
 /**
  * Genome for genetic algorithms
  */
-trait GAGenome extends Genome {
-  type T = Seq[Double]
+trait GAGenome extends GA {
+  type G = GAGenome.Genome
 
-  /**
-   * The sequence of values representing the candidate solution. Values evolve
-   * in the interval [0.0, 1.0]. They are scaled when they are provided to the
-   * fitness function
-   */
-  def values: T
+  def values = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(v), _.values)
+  def genome = values
 
-  /**
-   * Update the value part of the genome
-   *
-   * @param values the new values
-   * @return the new internal representation of the genome
-   */
-  def updatedValues(values: Seq[Double]): T
-
-  override def toString = content.toString
+  def randomGenome(implicit rng: Random) = GAGenome.Genome(Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq)
 }

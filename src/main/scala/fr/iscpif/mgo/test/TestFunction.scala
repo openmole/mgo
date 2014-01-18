@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import genome.GASigmaFactory
 import util.Random
 
 object TestFunction extends App {

@@ -23,7 +23,7 @@ trait Map <: Evolution
   with MG
   with NoArchive
   with MapSelection
-  with GASigmaFactory
+  with GAGenomeWithSigma
   with MaxAggregation
   with SBXBoundedCrossover
   with NoDiversity

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2012 reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,18 +17,12 @@
 
 package fr.iscpif.mgo.genome
 
-/**
- * Auto-adaptative sigma values for the mutation of genetic algorithms
- */
-trait Sigma { self: GAGenome =>
-  /** Sigma values, one for each genome component */
-  def sigma: Seq[Double]
+import scalaz.Lens
 
-  /**
-   * Update the sigma part of the genome and retun the new internal structure
-   *
-   * @param sigma the sigma part of the genome
-   * @return the updated internal representation
-   */
-  def updatedSigma(sigma: Seq[Double]): Seq[Double]
+/**
+ * Implementation of the NSGAII algorithm using genome with auto-adaptive sigma
+ * values for the mutation
+ */
+trait Sigma extends G {
+  def sigma: Lens[G, Seq[Double]]
 }

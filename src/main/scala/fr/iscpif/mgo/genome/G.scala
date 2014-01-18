@@ -17,9 +17,12 @@
 
 package fr.iscpif.mgo.genome
 
+import scala.util.Random
+
 /**
  * Cake layer for the genome
  */
 trait G {
-  type G <: Genome
+  type G
+  def randomGenome(implicit rng: Random): G
 }

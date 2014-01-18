@@ -20,9 +20,8 @@ package fr.iscpif.mgo.archive
 import fr.iscpif.mgo.metric.CrowdingDistance
 import fr.iscpif.mgo._
 
-trait NoveltyArchive <: Archive {
+trait NoveltyArchive <: Archive with GA {
   type A = Seq[Individual[G, P, F]]
-  type G <: GAGenome
   def archiveSize: Int
   def isGood(individual: Individual[G, P, F]): Boolean
 
@@ -37,7 +36,7 @@ trait NoveltyArchive <: Archive {
   def diff(original: A, modified: A): A = modified
 
   private def shrink(a: A): A = {
-    val crowding = CrowdingDistance(a.map(_.genome.values))
+    val crowding = CrowdingDistance(a.map(i => values.get(i.genome)))
     (a zip crowding).sortBy { case (_, c) => c }.reverse.take(archiveSize).map { case (i, _) => i }
   }
 

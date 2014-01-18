@@ -20,7 +20,7 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 
 trait SMSEMOEA <: Evolution
-  with GASigmaFactory
+  with GAGenomeWithSigma
   with MG
   with BinaryTournamentSelection
   with NonDominatedElitism

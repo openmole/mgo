@@ -23,7 +23,7 @@ trait Profile <: Evolution
   with MG
   with NoArchive
   with ProfileModifier
-  with GASigmaFactory
+  with GAGenomeWithSigma
   with MaxAggregation
   with SBXBoundedCrossover
   with NoDiversity

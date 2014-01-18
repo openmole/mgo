@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.genome.GenomeFactory
 import fr.iscpif.mgo.tools.Math._
 import fr.iscpif.mgo.tools.Random._
 import util.Random
@@ -33,18 +32,18 @@ import scala.math._
  * Hinterding, and Zbigniew Michalewicz, Senior Member, IEEE) + How to Solve It,
  * Modern Heuristics
  */
-trait CoEvolvingSigmaValuesMutation extends Mutation with GenomeFactory {
-  self: GenomeFactory { type G <: GAGenomeWithSigma } =>
+trait CoEvolvingSigmaValuesMutation extends Mutation with Sigma with GA {
 
   override def mutate(genome: G)(implicit aprng: Random): G = {
-    val indexedSeqSigma = genome.sigma.map { s => clamp(s * exp(aprng.nextGaussian), 0, 1) }
+    val indexedSeqSigma = sigma.get(genome).map { s => clamp(s * exp(aprng.nextGaussian), 0, 1) }
 
     val newValues =
-      (genome.values zip indexedSeqSigma) map {
+      (values.get(genome) zip indexedSeqSigma) map {
         case (v, s) => clamp(aprng.nextGaussian * s + v, 0, 1)
       }
 
-    genomeFactory(genome, _.updatedValues(newValues), _.updatedSigma(indexedSeqSigma))
+    val updatedValues = values.set(genome, newValues)
+    sigma.set(updatedValues, indexedSeqSigma)
   }
 
 }

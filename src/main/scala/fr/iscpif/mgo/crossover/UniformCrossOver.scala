@@ -18,28 +18,25 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.genome.GenomeFactory
 import util.Random
 import fr.iscpif.mgo.tools.Random._
 
 /**
  * Swap part of each genome
  */
-trait UniformCrossOver extends CrossOver with GenomeFactory {
-
-  type G <: genome.GAGenome
+trait UniformCrossOver extends CrossOver with GA {
 
   /** Average rate of exchange between the 2 genomes */
   def crossoverRate: Double = 0.5
 
   override def crossover(g1: G, g2: G)(implicit aprng: Random) = {
-    val rngValue = (0 until g1.content.size).map { x => !(aprng.nextDouble < crossoverRate) }
-    val offspringValues = (rngValue zip (g1.content zip g2.content)) map {
+    val rngValue = (0 until genome.get(g1).size).map { x => !(aprng.nextDouble < crossoverRate) }
+    val offspringValues = (rngValue zip (genome.get(g1) zip genome.get(g2))) map {
       case (b, (g1e, g2e)) =>
         if (b) (g1e, g2e) else (g2e, g1e)
     }
 
-    IndexedSeq(genomeFactory(offspringValues.map { _._1 }), genomeFactory(offspringValues.map { _._2 }))
+    IndexedSeq(genome.set(g1, offspringValues.map { _._1 }), genome.set(g2, offspringValues.map { _._2 }))
   }
 
 }

@@ -25,13 +25,18 @@ import RankDiversityModifier._
  * the fitness with an additionnal objective of genomic diversity 1 / crowding distance
  * of the genome.
  */
-trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier with DiversityModifier with Ranking with DiversityMetric with RankDiversity {
+trait RankDiversityGenomicCrowdingModifier <: Modifier
+    with RankModifier
+    with DiversityModifier
+    with Ranking
+    with DiversityMetric
+    with RankDiversity
+    with GA {
 
-  type G <: GAGenome
   type F <: MGFitness
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    val genomeDiversity = CrowdingDistance(evaluated.map { _.genome.values })
+    val genomeDiversity = CrowdingDistance(evaluated.map { i => values.get(i.genome) })
 
     val diversityFitnesses =
       (evaluated zip genomeDiversity).map {

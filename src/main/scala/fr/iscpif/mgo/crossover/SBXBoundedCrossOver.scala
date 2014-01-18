@@ -19,7 +19,6 @@ package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Math._
-import fr.iscpif.mgo.genome.GenomeFactory
 import math._
 import util.Random
 
@@ -40,9 +39,7 @@ import util.Random
  * http://www.iitk.ac.in/kangal/codes.shtml
  *
  */
-trait SBXBoundedCrossover extends CrossOver with GenomeFactory {
-
-  type G <: GAGenome
+trait SBXBoundedCrossOver extends CrossOver with GA {
 
   /** distribution index parameter of the algorithm */
   def distributionIndex: Double = 2
@@ -53,12 +50,11 @@ trait SBXBoundedCrossover extends CrossOver with GenomeFactory {
   override def crossover(
     g1: G,
     g2: G)(implicit aprng: Random) = {
-    val numberOfVariables = g1.content.size
 
     /** crossover probability */
     val offspring = {
       if (aprng.nextDouble <= crossoverRate) {
-        (g1.content zip g2.content).map {
+        (genome.get(g1) zip genome.get(g2)).map {
           case (g1e, g2e) =>
             if (aprng.nextBoolean) {
               if (abs(g1e - g2e) > epsilon) {
@@ -98,9 +94,9 @@ trait SBXBoundedCrossover extends CrossOver with GenomeFactory {
               } else (g1e, g2e)
             } else (g2e, g1e)
         }
-      } else (g1.content zip g2.content)
+      } else (genome.get(g1) zip genome.get(g2))
     }
-    IndexedSeq(genomeFactory(offspring.map { _._1 }), genomeFactory(offspring.map { _._2 }))
+    IndexedSeq(genome.set(g1, offspring.map { _._1 }), genome.set(g2, offspring.map { _._2 }))
   }
 
 }

@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.genome.GenomeFactory
 import util.Random
 import scala.math._
 
@@ -30,16 +29,14 @@ import scala.math._
  * Based on the source code of Jmetal library
  * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
  */
-trait PolynomialMutation extends Mutation with GenomeFactory {
-
-  type G <: GAGenome
+trait PolynomialMutation extends Mutation with GA {
 
   def mutationRate = 0.5
 
   def distributionIndex: Double
 
-  override def mutate(genome: G)(implicit aprng: Random): G = {
-    val newValues = genome.values map {
+  override def mutate(g: G)(implicit aprng: Random): G = {
+    val newValues = genome.get(g) map {
       v =>
         if (aprng.nextDouble <= mutationRate) {
           val yl = 0.0 // lower bound
@@ -67,6 +64,6 @@ trait PolynomialMutation extends Mutation with GenomeFactory {
         }
         v
     }
-    genomeFactory(genome.updatedValues(newValues))
+    genome.set(g, newValues)
   }
 }

@@ -26,12 +26,13 @@ trait NoveltyModifier <: RankDiversityModifier
     with NoveltyArchive
     with EuclideanDistance
     with Neighbours
-    with ParetoRanking {
+    with ParetoRanking
+    with GA {
 
   //def neighbours: Int
 
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    val diversities = CrowdingDistance((archive ++ evaluated).map(_.genome.values)).map(1.0 / _())
+    val diversities = CrowdingDistance((archive ++ evaluated).map(i => values.get(i.genome))).map(1.0 / _())
     (evaluated zip diversities).map { case (i, d) => i.fitness.values ++ Seq(d) }
   }
 

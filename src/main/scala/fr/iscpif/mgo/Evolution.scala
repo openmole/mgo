@@ -17,7 +17,6 @@
 
 package fr.iscpif.mgo
 
-import Individual._
 import util.Random
 import org.apache.commons.math3.random.{ RandomAdaptor, Well44497b }
 
@@ -31,7 +30,6 @@ trait Evolution extends Termination
     with F
     with P
     with MF
-    with GenomeFactory
     with Archive
     with Breeding
     with Elitism { self =>

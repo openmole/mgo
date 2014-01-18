@@ -74,12 +74,12 @@ trait Population[+G, +P, +F, +MF] {
  * @param fitness the fitness evaluated for the genome
  * @param metaFitness the meta fitness of the element in the population
  */
-class PopulationElement[+G, +P, +F, +MF](
-    val genome: G,
-    val phenotype: P,
-    val fitness: F,
-    val age: Long,
-    val metaFitness: MF) {
+case class PopulationElement[+G, +P, +F, +MF](
+    genome: G,
+    phenotype: P,
+    fitness: F,
+    age: Long,
+    metaFitness: MF) {
 
   def toIndividual = Individual(genome, phenotype, fitness, age)
 
