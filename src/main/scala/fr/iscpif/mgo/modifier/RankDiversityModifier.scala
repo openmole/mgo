@@ -46,7 +46,6 @@ import RankDiversityModifier._
  */
 trait RankDiversityModifier extends RankModifier with DiversityModifier with RankDiversity {
 
-  type DIVERSIFIED = MGFitness
   type F <: MGFitness
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {

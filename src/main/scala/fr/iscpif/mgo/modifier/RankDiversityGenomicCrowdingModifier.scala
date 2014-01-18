@@ -28,8 +28,6 @@ import RankDiversityModifier._
 trait RankDiversityGenomicCrowdingModifier extends Modifier with RankModifier with DiversityModifier with Ranking with DiversityMetric with RankDiversity {
 
   type G <: GAGenome
-  type RANKED = MGFitness
-  type DIVERSIFIED = MGFitness
   type F <: MGFitness
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A) = {
