@@ -19,6 +19,7 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import util.Random
+import scalax.io.Resource
 
 object TestFunction extends App {
 
@@ -31,5 +32,19 @@ object TestFunction extends App {
       def genomeSize = 10
       def steps = 200
     }
+
+  val res =
+    nsga2.evolve.untilConverged {
+      s => println(s.generation)
+    }.individuals
+
+  val output = Resource.fromFile("/tmp/res.csv")
+  for {
+    r <- res
+  } {
+    val scaled = nsga2.scale(r)
+    def line = nsga2.values.get(scaled.genome) ++ scaled.fitness.values
+    output.append(line.mkString(",") + "\n")
+  }
 
 }

@@ -56,6 +56,8 @@ trait GAProblem extends Problem with Scaling with MG with GA { pb =>
   def scale[MF](i: PopulationElement[G, P, F, MF]): PopulationElement[G, P, F, MF] =
     i.copy(genome = scale(i.genome))
 
+  def scale(i: Individual[G, P, F]): Individual[G, P, F] = i.copy(genome = scale(i.genome))
+
   /**
    * Compute the fitness for a point
    *

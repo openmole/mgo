@@ -32,58 +32,25 @@ object Individual {
    * @param evaluation the evaluation of the phenotype
    * @return the individual for the genome g
    */
-  def apply[G, P, F](g: G, expression: G => P, evaluation: (P, Random) => F)(implicit rng: Random) =
-    new Individual[G, P, F] {
-      val genome = g
-      val phenotype = expression(genome)
-      val fitness = evaluation(phenotype, rng)
-      val age = 0L
-    }
+  def apply[G, P, F](
+    g: G,
+    expression: G => P,
+    evaluation: (P, Random) => F)(implicit rng: Random): Individual[G, P, F] = {
 
-  /**
-   * Build an individual from a genome and a fitness
-   *
-   * @tparam G the type of the genome
-   * @param g the genmome
-   * @param f the fitness
-   * @return the individual
-   */
-  def apply[G, P, F](g: G, p: P, f: F, _age: Long = 0) =
-    new Individual[G, P, F] {
-      val genome = g
-      val phenotype = p
-      val fitness = f
-      val age = _age
-    }
+    val _phenotype = expression(g)
+    val _fitness = evaluation(_phenotype, rng)
 
-  def age[G, P, F](i: Individual[G, P, F]) =
-    new Individual[G, P, F] {
-      val genome = i.genome
-      val phenotype = i.phenotype
-      val fitness = i.fitness
-      val age = i.age + 1
-    }
+    Individual[G, P, F](
+      genome = g,
+      phenotype = _phenotype,
+      fitness = _fitness
+    )
+  }
 
+  def age[G, P, F](i: Individual[G, P, F]): Individual[G, P, F] = i.copy(age = i.age + 1)
 }
 
 /**
  * An individual of the evolution
  */
-trait Individual[+G, +P, +F] {
-  /** the genome of this individual */
-  def genome: G
-
-  /** the phenotype of this individual */
-  def phenotype: P
-
-  /** the fitness evaluated for the genome */
-  def fitness: F
-
-  /** the number of generation of an individual */
-  def age: Long
-
-  /** transform this individual in a tuple genome, phenotype, fitness */
-  //def toTuple = (genome, phenotype, fitness)
-
-  override def toString = "(genome = " + genome.toString + ", phenotype = " + phenotype + ", fitness = " + fitness.toString + ", age = " + age + ")"
-}
+case class Individual[+G, +P, +F](genome: G, phenotype: P, fitness: F, age: Long = 0)
