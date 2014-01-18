@@ -12,6 +12,8 @@ libraryDependencies += "com.github.scala-incubator.io" % "scala-io-core_2.10" % 
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.3"
+
 publishMavenStyle := true
 
 publishArtifact in Test := false

@@ -24,14 +24,15 @@ import annotation.tailrec
 /**
  * Reduce the size of the population according to a divesity metric and a rank
  */
-trait NonDominatedElitism extends Elitism with Mu with MergedGenerations {
-  type MF <: Diversity with Rank
+trait NonDominatedElitism extends Elitism with Mu with MergedGenerations with DiversityModifier with RankModifier {
 
   override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] = {
     if (individuals.size < mu) individuals
     else {
       val population = toPopulation(individuals, archive)
-      val fronts = population.groupBy(_.metaFitness.rank()).toList.sortBy(_._1).map { case (_, e) => e.map(i => i.toIndividual -> i.metaFitness.diversity) }
+      val fronts =
+        population.groupBy(i => rank.get(i.metaFitness)).toList.
+          sortBy(_._1).map { case (_, e) => e.map(i => i.toIndividual -> diversity.get(i.metaFitness)) }
 
       type FE = (Individual[G, P, F], Lazy[Double])
 

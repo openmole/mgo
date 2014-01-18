@@ -105,7 +105,6 @@ package object mgo {
   type ProfileModifier = modifier.ProfileModifier
   type RankModifier = modifier.RankModifier
   type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
-  type RankDiversityMF = modifier.RankDiversityMF
   type RankDiversityModifier = modifier.RankDiversityModifier
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
   type GaussianMutation = mutation.GaussianMutation

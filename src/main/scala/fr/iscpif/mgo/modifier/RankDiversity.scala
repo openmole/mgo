@@ -19,7 +19,17 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
+import scalaz._
 
-class RankDiversity(val rank: Lazy[Int], val diversity: Lazy[Double]) extends Rank with Diversity {
-  override def toString = rank + " " + diversity
+object RankDiversity {
+  case class RankDiversity(rank: Lazy[Int], diversity: Lazy[Double]) {
+    override def toString = rank + " " + diversity
+  }
 }
+
+trait RankDiversity <: MF with DiversityModifier with RankModifier {
+  type MF = RankDiversity.RankDiversity
+  def diversity = Lens.lensu[MF, Lazy[Double]]((c, v) => c.copy(diversity = v), _.diversity)
+  def rank = Lens.lensu[MF, Lazy[Int]]((c, v) => c.copy(rank = v), _.rank)
+}
+

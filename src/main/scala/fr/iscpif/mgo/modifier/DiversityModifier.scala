@@ -18,10 +18,12 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
+import scalaz.Lens
+import fr.iscpif.mgo.tools.Lazy
 
 /**
  * Layer of the cake that add diversity to the meta-fitness
  */
 trait DiversityModifier extends Modifier with DiversityMetric {
-  type MF <: Diversity
+  def diversity: Lens[MF, Lazy[Double]]
 }

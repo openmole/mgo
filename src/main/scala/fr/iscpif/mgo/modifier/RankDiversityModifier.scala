@@ -30,7 +30,7 @@ object RankDiversityModifier {
       case ((i, r), d) =>
         PopulationElement(
           i,
-          new RankDiversity(
+          RankDiversity.RankDiversity(
             diversity = d,
             rank = r
           )
@@ -44,7 +44,7 @@ import RankDiversityModifier._
 /**
  * Compute a meta-fitness with a rank an a diversity
  */
-trait RankDiversityModifier extends RankModifier with DiversityModifier with RankDiversityMF {
+trait RankDiversityModifier extends RankModifier with DiversityModifier with RankDiversity {
 
   type DIVERSIFIED = MGFitness
   type F <: MGFitness

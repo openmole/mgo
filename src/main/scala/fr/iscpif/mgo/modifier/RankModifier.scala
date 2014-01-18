@@ -18,10 +18,12 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
+import scalaz.Lens
+import fr.iscpif.mgo.tools.Lazy
 
 /**
  * Layer for modifier that adds a rank to the meta-fitness
  */
 trait RankModifier extends Modifier with Ranking {
-  type MF <: Rank
+  def rank: Lens[MF, Lazy[Int]]
 }
