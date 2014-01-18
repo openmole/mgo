@@ -20,12 +20,14 @@ package fr.iscpif.mgo.modifier
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.metric._
 import RankDiversityModifier._
+import fr.iscpif.mgo.tools.Lazy
+
 /**
  * Decorate the inidividual with a rank and a diversity. The rank is evaluated on
  * the fitness with an additionnal objective of genomic diversity 1 / crowding distance
  * of the genome.
  */
-trait RankDiversityGenomicCrowdingModifier <: Modifier
+trait RankDiversityGenomicDiversityModifier <: Modifier
     with RankModifier
     with DiversityModifier
     with Ranking
@@ -35,11 +37,11 @@ trait RankDiversityGenomicCrowdingModifier <: Modifier
 
   type F <: MGFitness
 
-  override def modify(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    val genomeDiversity = CrowdingDistance(evaluated.map { i => values.get(i.genome) })
+  def genomeDiversity(g: Seq[G]): Seq[Lazy[Double]]
 
+  override def modify(evaluated: Seq[Individual[G, P, F]], archive: A) = {
     val diversityFitnesses =
-      (evaluated zip genomeDiversity).map {
+      (evaluated zip genomeDiversity(evaluated.map(_.genome))).map {
         case (i, gd) => i.fitness.values.toList ::: 1 / gd() :: Nil
       }
 

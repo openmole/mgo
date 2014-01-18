@@ -92,14 +92,16 @@ package object mgo {
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
   type CloneRemoval = modifier.CloneRemoval
+  type CrowdingGenomicDiversity = modifier.CrowdingGenomicDiversity
   type DiversityModifier = modifier.DiversityModifier
+  type EuclideanGenomicDiversity = modifier.EuclideanGenomicDiversity
   type IndividualFilter = modifier.IndividualFilter
   type Modifier = modifier.Modifier
   type NoModifier = modifier.NoModifier
   type NoveltyModifier = modifier.NoveltyModifier
   type ProfileModifier = modifier.ProfileModifier
   type RankModifier = modifier.RankModifier
-  type RankDiversityGenomicCrowdingModifier = modifier.RankDiversityGenomicCrowdingModifier
+  type RankDiversityGenomicModifier = modifier.RankDiversityGenomicDiversityModifier
   type RankDiversityModifier = modifier.RankDiversityModifier
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
   type GaussianMutation = mutation.GaussianMutation
