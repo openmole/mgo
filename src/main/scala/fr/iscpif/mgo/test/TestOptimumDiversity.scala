@@ -21,9 +21,9 @@ import fr.iscpif.mgo._
 import scala.util.Random
 import scalax.io.Resource
 
-object TestNovelty extends App {
+object TestOptimumDiversity extends App {
 
-  val m = new Rastrigin with Novelty with CounterTermination {
+  val m = new Rastrigin with OptimumDiversity with CounterTermination {
     def genomeSize: Int = 2
     def lambda: Int = 200
     def mu = 200

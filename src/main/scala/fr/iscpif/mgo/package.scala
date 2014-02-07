@@ -44,7 +44,7 @@ package object mgo {
   }
 
   type Map = algorithm.Map
-  type Novelty = algorithm.Novelty
+  type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
   type Profile = algorithm.Profile
   type SMSEMOEA = algorithm.SMSEMOEA

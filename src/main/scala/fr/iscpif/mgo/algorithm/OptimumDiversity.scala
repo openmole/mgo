@@ -19,7 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait Novelty <: NoveltyModifier
+trait OptimumDiversity <: NoveltyModifier
   with NoveltyArchive
   with NonDominatedElitism
   with MG
