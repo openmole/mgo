@@ -19,6 +19,7 @@ package fr.iscpif.mgo.problem
 
 import scala.util.Random
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
 
 trait GAGenomePhenotype <: GenomePhenotype with GAProblem { pb =>
   /**
@@ -35,6 +36,8 @@ trait GAGenomePhenotype <: GenomePhenotype with GAProblem { pb =>
    * @param p the genome to evaluate
    * @return the fitness for this genome
    */
-  def apply(p: P, rng: Random) = MGFitness(apply(pb.values.get(p).toIndexedSeq, rng))
+  def apply(p: P, rng: Random) = MGFitness(apply(values.get(p).toIndexedSeq, rng))
+
+  def individualPosition(individual: Individual[G, P, F]): Seq[Double] = values.get(individual.genome)
 
 }

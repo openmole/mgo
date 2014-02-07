@@ -19,19 +19,19 @@ package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.distance.EuclideanDistance
-import fr.iscpif.mgo.tools.Neighbours
+import fr.iscpif.mgo.tools.{ Lazy, Neighbours }
 import fr.iscpif.mgo.metric.CrowdingDistance
+import scalaz.Lens
 
 trait NoveltyModifier <: RankDiversityModifier
     with NoveltyArchive
     with Neighbours
     with ParetoRanking
-    with GA {
-
-  //def neighbours: Int
+    with GA
+    with CrowdingIndividualDistance {
 
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    val diversities = CrowdingDistance((archive ++ evaluated).map(i => values.get(i.genome))).map(1.0 / _())
+    val diversities = individualDistance(archive ++ evaluated).map(d => 1.0 / d())
     (evaluated zip diversities).map { case (i, d) => i.fitness.values ++ Seq(d) }
   }
 

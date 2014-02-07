@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 29/11/13 Romain Reuillon
+ * Copyright (C) 07/02/14 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,19 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
+import fr.iscpif.mgo.metric.CrowdingDistance
 
-trait Novelty <: NoveltyModifier
-  with NoveltyArchive
-  with NonDominatedElitism
-  with MG
-  with GAGenomeWithSigma
-  with CrowdingDiversity
-  with GeneticBreeding
-  with BinaryTournamentSelection
-  with CoEvolvingSigmaValuesMutation
-  with SBXBoundedCrossover
-  with StrictDominance
-  with GAGenomePhenotype
+trait CrowdingIndividualDistance <: IndividualDistance {
+
+  def individualPosition(individuals: Individual[G, P, F]): Seq[Double]
+
+  def individualDistance(individuals: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
+    CrowdingDistance(individuals.map(individualPosition))
+
+}
