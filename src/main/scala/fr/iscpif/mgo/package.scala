@@ -101,7 +101,7 @@ package object mgo {
   type NoveltyModifier = modifier.NoveltyModifier
   type ProfileModifier = modifier.ProfileModifier
   type RankModifier = modifier.RankModifier
-  type RankDiversityGenomicModifier = modifier.RankDiversityGenomicDiversityModifier
+  type IndividualDiversityModifier = modifier.IndividualDiversityModifier
   type RankDiversityModifier = modifier.RankDiversityModifier
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
   type GaussianMutation = mutation.GaussianMutation
@@ -112,6 +112,7 @@ package object mgo {
   type Evaluation = phenotype.Evaluation
   type Problem = problem.Problem
   type GAProblem = problem.GAProblem
+  type GAGenomePhenotype = problem.GAGenomePhenotype
   type Scaling = problem.Scaling
   type HierarchicalRanking = ranking.HierarchicalRanking
   type NoRanking = ranking.NoRanking

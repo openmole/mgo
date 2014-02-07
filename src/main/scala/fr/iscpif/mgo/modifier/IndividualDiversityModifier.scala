@@ -27,28 +27,15 @@ import fr.iscpif.mgo.tools.Lazy
  * the fitness with an additionnal objective of genomic diversity 1 / crowding distance
  * of the genome.
  */
-trait RankDiversityGenomicDiversityModifier <: Modifier
-    with RankModifier
-    with DiversityModifier
-    with Ranking
-    with DiversityMetric
-    with RankDiversity
-    with GA {
+trait IndividualDiversityModifier <: RankDiversityModifier with GA {
 
   type F <: MGFitness
 
-  def genomeDiversity(g: Seq[G]): Seq[Lazy[Double]]
+  def individualDiversity(g: Seq[Individual[G, P, F]]): Seq[Lazy[Double]]
 
-  override def modify(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    val diversityFitnesses =
-      (evaluated zip genomeDiversity(evaluated.map(_.genome))).map {
-        case (i, gd) => i.fitness.values.toList ::: 1 / gd() :: Nil
-      }
-
-    val ranks = rank(diversityFitnesses)
-    val distances = diversity(diversityFitnesses, ranks)
-
-    toPopulationElements[G, P, F](evaluated, ranks, distances)
-  }
+  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) =
+    (evaluated zip individualDiversity(evaluated)).map {
+      case (i, gd) => i.fitness.values.toList ::: 1 / gd() :: Nil
+    }
 
 }

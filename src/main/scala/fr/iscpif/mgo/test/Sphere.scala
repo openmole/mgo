@@ -20,7 +20,7 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import scala.util.Random
 
-trait Sphere extends GAProblem {
+trait Sphere extends GAProblem with GAGenomePhenotype {
   def n: Int
 
   def min = List.fill(n)(0.0)

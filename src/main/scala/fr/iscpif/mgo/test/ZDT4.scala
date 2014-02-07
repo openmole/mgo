@@ -9,7 +9,7 @@ import fr.iscpif.mgo._
 import math._
 import util.Random
 
-trait ZDT4 extends GAProblem {
+trait ZDT4 extends GAProblem with GAGenomePhenotype {
   def min = Seq.fill(n)(0.0)
   def max = 1.0 :: List.fill(n - 1)(5.0)
 

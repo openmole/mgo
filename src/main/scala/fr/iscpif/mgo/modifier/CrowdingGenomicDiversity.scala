@@ -21,5 +21,5 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.metric.CrowdingDistance
 
 trait CrowdingGenomicDiversity <: GA {
-  def genomeDiversity(g: Seq[G]) = CrowdingDistance(g.map { i => values.get(i) })
+  def genomeDiversity(g: Seq[Individual[G, P, F]]) = CrowdingDistance(g.map { i => values.get(i.genome) })
 }

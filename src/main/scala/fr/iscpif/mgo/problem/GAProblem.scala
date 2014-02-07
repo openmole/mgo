@@ -28,15 +28,7 @@ trait GAProblem extends Problem with Scaling with MG with GA { pb =>
   def genomeSize: Int
   def n = genomeSize
 
-  /**
-   * Compute the fitness value from a genome values.
-   *
-   * @param g the genome to evaluate
-   * @return the fitness for this genome
-   */
-  def apply(g: G, rng: Random) = new MGFitness {
-    val values = apply(pb.values.get(scale(g)).toIndexedSeq, rng)
-  }
+  override def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(g => express(scale(g)), apply)
 
   /**
    * Scale the genenome from [0.0, 1.0] to the correct scale for the fitness
@@ -58,11 +50,4 @@ trait GAProblem extends Problem with Scaling with MG with GA { pb =>
 
   def scale(i: Individual[G, P, F]): Individual[G, P, F] = i.copy(genome = scale(i.genome))
 
-  /**
-   * Compute the fitness for a point
-   *
-   * @param x the point to evaluate
-   * @return the fitness of this point
-   */
-  def apply(x: Seq[Double], rng: Random): Seq[Double]
 }

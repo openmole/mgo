@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 13/11/13 Romain Reuillon
+ * Copyright (C) 04/02/14 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,24 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.problem
 
+import scala.util.Random
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.distance.EuclideanDistance
-import fr.iscpif.mgo.tools.Neighbours
-import fr.iscpif.mgo.metric.CrowdingDistance
 
-trait NoveltyModifier <: RankDiversityModifier
-    with NoveltyArchive
-    with Neighbours
-    with ParetoRanking
-    with GA {
+trait GAGenomePhenotype <: GenomePhenotype with GAProblem { pb =>
+  /**
+   * Compute the fitness for a point
+   *
+   * @param x the point to evaluate
+   * @return the fitness of this point
+   */
+  def apply(x: Seq[Double], rng: Random): Seq[Double]
 
-  //def neighbours: Int
-
-  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    val diversities = CrowdingDistance((archive ++ evaluated).map(i => values.get(i.genome))).map(1.0 / _())
-    (evaluated zip diversities).map { case (i, d) => i.fitness.values ++ Seq(d) }
-  }
+  /**
+   * Compute the fitness value from a genome values.
+   *
+   * @param p the genome to evaluate
+   * @return the fitness for this genome
+   */
+  def apply(p: P, rng: Random) = MGFitness(apply(pb.values.get(p).toIndexedSeq, rng))
 
 }

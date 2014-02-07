@@ -19,8 +19,9 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import scala.util.Random
+import fr.iscpif.mgo.problem.GAGenomePhenotype
 
-trait Rastrigin extends GAProblem {
+trait Rastrigin extends GAProblem with GAGenomePhenotype {
   def n: Int
   def a = 10.0
 
