@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 13/11/13 Romain Reuillon
+ * Copyright (C) 07/02/14 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,27 +17,22 @@
 
 package fr.iscpif.mgo.archive
 
-import fr.iscpif.mgo.metric.CrowdingDistance
 import fr.iscpif.mgo._
 
-trait NoveltyArchive <: Archive with GA {
-  type A = Seq[Individual[G, P, F]]
-  def archiveSize: Int
-  def isGood(individual: Individual[G, P, F]): Boolean
+trait NoveltyArchive <: Archive with IndividualDistance with ArchiveIndividuals {
+
+  def archiveEpsilon: Double
 
   def initialArchive = Seq.empty
 
-  def toArchive(individuals: Seq[Individual[G, P, F]]): A =
-    shrink(individuals.filter(isGood))
+  def toArchive(individuals: Seq[Individual[G, P, F]]): A = shrink(individuals)
 
-  def combine(a1: A, a2: A): A =
-    shrink(a1 ++ a2)
+  def combine(a1: A, a2: A): A = shrink(a1 ++ a2)
 
   def diff(original: A, modified: A): A = modified
 
   private def shrink(a: A): A = {
-    val crowding = CrowdingDistance(a.map(i => values.get(i.genome)))
-    (a zip crowding).sortBy { case (_, c) => c }.reverse.take(archiveSize).map { case (i, _) => i }
+    val crowding = individualDistance(a).map(_())
+    (a zip crowding).filter { case (_, d) => d > archiveEpsilon }.unzip._1
   }
-
 }

@@ -15,17 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.distance
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.metric.CrowdingDistance
 
-trait CrowdingIndividualDistance <: IndividualDistance {
-
+trait IndividualPosition <: G with P with F {
   def individualPosition(individuals: Individual[G, P, F]): Seq[Double]
-
-  def individualDistance(individuals: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
-    CrowdingDistance(individuals.map(individualPosition))
-
 }

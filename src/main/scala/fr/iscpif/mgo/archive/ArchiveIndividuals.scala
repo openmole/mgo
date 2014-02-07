@@ -15,11 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.archive
 
-import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo._
 
-trait IndividualDistance <: G with P with F {
-  def individualDistance(g: Seq[Individual[G, P, F]]): Seq[Lazy[Double]]
+trait ArchiveIndividuals <: Archive {
+  type A = Seq[Individual[G, P, F]]
+  def individualsOfArchive(a: A): Seq[Individual[G, P, F]] = a
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 18/01/14 Romain Reuillon
+ * Copyright (C) 07/02/14 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,21 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.distance
 
-import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.tools.distance.EuclideanDistance
+import fr.iscpif.mgo._
 
-trait EuclideanGenomicDiversity <: GA with EuclideanDistance {
-  def genomeDiversity(g: Seq[G]) = {
-    g.map {
-      i1 =>
-        Lazy(
-          g.map {
-            i2 => distance(values.get(i1), values.get(i2))
-          }.sum
-        )
-    }
-  }
+trait IndividualDistance <: G with P with F {
+  def individualDistance(g: Seq[Individual[G, P, F]]): Seq[Lazy[Double]]
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 13/11/13 Romain Reuillon
+ * Copyright (C) 07/02/14 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,26 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.distance
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.distance.EuclideanDistance
-import fr.iscpif.mgo.tools.{ Lazy, Neighbours }
+import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.metric.CrowdingDistance
-import scalaz.Lens
 
-trait NoveltyModifier <: RankDiversityModifier
-    with Archive
-    with Neighbours
-    with ParetoRanking
-    with GA
-    with IndividualDistance {
+trait CrowdingIndividualDistance <: IndividualDistance with IndividualPosition {
 
-  def individualsOfArchive(a: A): Seq[Individual[G, P, F]]
-
-  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    val diversities = individualDistance(individualsOfArchive(archive) ++ evaluated).map(d => 1.0 / d())
-    (evaluated zip diversities).map { case (i, d) => i.fitness.values ++ Seq(d) }
-  }
+  def individualDistance(individuals: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
+    CrowdingDistance(individuals.map(individualPosition))
 
 }

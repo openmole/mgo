@@ -52,6 +52,7 @@ package object mgo {
   type Archive = archive.Archive
   type NoArchive = archive.NoArchive
   type NoveltyArchive = archive.NoveltyArchive
+  type OptimumDiversityArchive = archive.OptimumDiversityArchive
   type Breeding = breed.Breeding
   type GeneticBreeding = breed.GeneticBreeding
   type AverageCrossOver = crossover.AverageCrossOver
@@ -59,6 +60,10 @@ package object mgo {
   type IdentityCrossOver = crossover.IdentityCrossOver
   type SBXBoundedCrossover = crossover.SBXBoundedCrossOver
   type UniformCrossOver = crossover.UniformCrossOver
+  type CrowdingIndividualDistance = distance.CrowdingIndividualDistance
+  type EuclideanIndividualDiversity = distance.EuclideanIndividualDiversity
+  type IndividualPosition = distance.IndividualPosition
+  type IndividualDistance = distance.IndividualDistance
   type CrowdingDiversity = diversity.CrowdingDiversity
   type Diversity = diversity.Diversity
   type DiversityMetric = diversity.DiversityMetric
@@ -92,9 +97,7 @@ package object mgo {
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
   type CloneRemoval = modifier.CloneRemoval
-  type CrowdingGenomicDiversity = modifier.CrowdingGenomicDiversity
   type DiversityModifier = modifier.DiversityModifier
-  type EuclideanGenomicDiversity = modifier.EuclideanGenomicDiversity
   type IndividualFilter = modifier.IndividualFilter
   type Modifier = modifier.Modifier
   type NoModifier = modifier.NoModifier
