@@ -31,7 +31,7 @@ trait GAProblem extends Problem with Scaling with MG with GA { pb =>
   override def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(g => express(scale(g)), apply)
 
   /**
-   * Scale the genenome from [0.0, 1.0] to the correct scale for the fitness
+   * Scale the genome from [0.0, 1.0] to the correct scale for the fitness
    * evaluation
    *
    * @param g the genome to scale

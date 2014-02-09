@@ -31,6 +31,7 @@ trait GAGenomeWithSigma extends GA with Sigma {
   type G = GAGenomeWithSigma.Genome
 
   def values = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(values = v), _.values)
+
   def genome = Lens.lensu[G, Seq[Double]](
     (c, v) =>
       GAGenomeWithSigma.Genome(
