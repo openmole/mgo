@@ -27,6 +27,7 @@ trait OptimumDiversity <: NoveltyModifier
   with CrowdingDiversity
   with GeneticBreeding
   with BinaryTournamentSelection
+  with TournamentOnRankAndDiversity
   with CoEvolvingSigmaValuesMutation
   with SBXBoundedCrossover
   with StrictDominance

@@ -18,9 +18,6 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.metric._
-import RankDiversityModifier._
-import fr.iscpif.mgo.tools.Lazy
 
 /**
  * Decorate the inidividual with a rank and a diversity. The rank is evaluated on

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 22/06/13 Romain Reuillon
+ * Copyright (C) 09/02/14 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,21 +15,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import scala.util.Random
 
-trait SMSEMOEA <: Evolution
-  with GAGenomeWithSigma
-  with MG
-  with BinaryTournamentSelection
-  with TournamentOnRankAndDiversity
-  with NonDominatedElitism
-  with CoEvolvingSigmaValuesMutation
-  with SBXBoundedCrossover
-  with HypervolumeDiversity
-  with ParetoRanking
-  with StrictDominance
-  with RankDiversityModifier
-  with NoArchive
-  with GeneticBreeding
+object TestRastrigin extends App {
+  val m =
+    new Rastrigin with NSGAII with HierarchicalRanking {
+      def genomeSize: Int = 6
+
+      /** the size of the population */
+      override def mu = 100
+
+      /** Number of steps before the algorithm stops */
+      override def steps = 200
+
+      /** the size of the offspring */
+      override def lambda = 100
+    }
+
+  implicit val rng = new Random
+
+  val res =
+    m.evolve.untilConverged {
+      s =>
+        println(s.generation + " " + s.individuals.map(_.fitness.values.head).min)
+    }.individuals
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 22/06/13 Romain Reuillon
+ * Copyright (C) 09/02/14 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,21 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.selection
 
+import scala.util.Random
 import fr.iscpif.mgo._
 
-trait SMSEMOEA <: Evolution
-  with GAGenomeWithSigma
-  with MG
-  with BinaryTournamentSelection
-  with TournamentOnRankAndDiversity
-  with NonDominatedElitism
-  with CoEvolvingSigmaValuesMutation
-  with SBXBoundedCrossover
-  with HypervolumeDiversity
-  with ParetoRanking
-  with StrictDominance
-  with RankDiversityModifier
-  with NoArchive
-  with GeneticBreeding
+trait TournamentOnRank <: Tournament with RankModifier {
+  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit aprng: Random): PopulationElement[G, P, F, MF] =
+    if (rank.get(e1.metaFitness)() < rank.get(e2.metaFitness)()) e1
+    else if (rank.get(e1.metaFitness)() > rank.get(e2.metaFitness)()) e2
+    else if (aprng.nextDouble < 0.5) e1 else e2
+
+}

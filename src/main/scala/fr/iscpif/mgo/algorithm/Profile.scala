@@ -26,10 +26,10 @@ trait Profile <: Evolution
   with GAGenomeWithSigma
   with MaxAggregation
   with SBXBoundedCrossover
-  with NoDiversity
   with ProfileElitism
   with CoEvolvingSigmaValuesMutation
   with BinaryTournamentSelection
+  with TournamentOnRank
   with HierarchicalRanking
   with StrictDominance
   with GeneticBreeding

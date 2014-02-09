@@ -103,6 +103,8 @@ package object mgo {
   type NoModifier = modifier.NoModifier
   type NoveltyModifier = modifier.NoveltyModifier
   type ProfileModifier = modifier.ProfileModifier
+  type RankDiversityMF = modifier.RankDiversityMF
+  type RankMF = modifier.RankMF
   type RankModifier = modifier.RankModifier
   type IndividualDiversityModifier = modifier.IndividualDiversityModifier
   type RankDiversityModifier = modifier.RankDiversityModifier
@@ -123,6 +125,8 @@ package object mgo {
   type Rank = ranking.Rank
   type Ranking = ranking.Ranking
   type BinaryTournamentSelection = selection.BinaryTournamentSelection
+  type TournamentOnRank = selection.TournamentOnRank
+  type TournamentOnRankAndDiversity = selection.TournamentOnRankAndDiversity
   type MapSelection = selection.MapSelection
   type Selection = selection.Selection
   type CrowdingStabilityTermination = termination.CrowdingStabilityTermination

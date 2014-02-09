@@ -21,14 +21,11 @@ import fr.iscpif.mgo._
 import tools._
 import Math._
 
-import RankDiversityModifier._
-
 trait ProfileModifier <: Modifier
     with Aggregation
     with ProfilePlotter
-    with RankDiversityModifier
-    with HierarchicalRanking
-    with NoDiversity {
+    with RankMF
+    with HierarchicalRanking {
 
   override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val (points, indexes) =
@@ -69,9 +66,8 @@ trait ProfileModifier <: Modifier
 
     val modified = contributions.map(c => Seq(1 / c))
     val ranks = rank(modified)
-    val distances = diversity(modified, ranks)
 
-    toPopulationElements[G, P, F](individuals, ranks, distances)
+    RankMF.toPopulationElements[G, P, F](individuals, ranks)
   }
 
 }

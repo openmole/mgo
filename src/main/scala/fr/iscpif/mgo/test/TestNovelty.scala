@@ -24,7 +24,7 @@ import scalax.io.Resource
 
 object TestNovelty extends App {
   val m =
-    new ZDT4 with IndividualDiversityModifier with CrowdingIndividualDistance with NoveltyArchive with NonDominatedElitism with MG with GAGenomeWithSigma with CrowdingDiversity with GeneticBreeding with BinaryTournamentSelection with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with StrictDominance with GAGenomePhenotype with CounterTermination with HierarchicalRanking {
+    new ZDT4 with IndividualDiversityModifier with CrowdingIndividualDistance with NoveltyArchive with NonDominatedElitism with MG with GAGenomeWithSigma with CrowdingDiversity with GeneticBreeding with BinaryTournamentSelection with TournamentOnRankAndDiversity with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with StrictDominance with GAGenomePhenotype with CounterTermination with ParetoRanking {
       override def genomeSize = 10
 
       override def archiveEpsilon = 0.001

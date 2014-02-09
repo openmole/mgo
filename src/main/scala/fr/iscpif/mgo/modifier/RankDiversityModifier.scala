@@ -18,33 +18,11 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import tools.Lazy
-
-object RankDiversityModifier {
-
-  def toPopulationElements[G, P, F](
-    evaluated: Seq[Individual[G, P, F]],
-    ranks: Seq[Lazy[Int]],
-    distances: Seq[Lazy[Double]]) =
-    (evaluated zip ranks zip distances) map {
-      case ((i, r), d) =>
-        PopulationElement(
-          i,
-          RankDiversity.RankDiversity(
-            diversity = d,
-            rank = r
-          )
-        )
-    }
-
-}
-
-import RankDiversityModifier._
 
 /**
  * Compute a meta-fitness with a rank an a diversity
  */
-trait RankDiversityModifier extends RankModifier with DiversityModifier with RankDiversity {
+trait RankDiversityModifier extends RankModifier with DiversityModifier with RankDiversityMF {
 
   type F <: MGFitness
 
@@ -52,8 +30,7 @@ trait RankDiversityModifier extends RankModifier with DiversityModifier with Ran
     val f = fitnesses(evaluated, archive)
     val ranks = rank(f)
     val distances = diversity(f, ranks)
-
-    toPopulationElements[G, P, F](evaluated, ranks, distances)
+    RankDiversityMF.toPopulationElements[G, P, F](evaluated, ranks, distances)
   }
 
   def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = evaluated.map(_.fitness.values)
