@@ -38,32 +38,36 @@ trait Evolution extends Termination
    * Represent a state of the evolution algorithm
    */
   case class EvolutionState(
+      /** The current population of solution */
+      population: Population[G, P, F, MF],
+      /** The current achive */
+      archive: A,
+      /** The number of the generation */
+      generation: Int,
+      /** The state maintained for the termination criterium */
+      terminationState: STATE,
+      /** true if the termination criterium is met false otherwhise */
+      terminated: Boolean) {
     /** The current population of solution */
-    individuals: Seq[Individual[G, P, F]],
-    /** The current achive */
-    archive: A,
-    /** The number of the generation */
-    generation: Int,
-    /** The state maintained for the termination criterium */
-    terminationState: STATE,
-    /** true if the termination criterium is met false otherwhise */
-    terminated: Boolean)
+    def individuals: Seq[Individual[G, P, F]] = population.toIndividuals
+  }
 
   def buildRNG(seed: Long) = new Random(new RandomAdaptor(new Well44497b(seed)))
 
   /**
    * Run the evolutionary algorithm
    *
-   * @param population the initial population
+   * @param individuals the initial individuals
    * @param expression the genome expression
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def evolve(population: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: (P, Random) => F)(implicit aprng: Random): Iterator[EvolutionState] =
-    Iterator.iterate(EvolutionState(population, a, 0, initialState, false)) {
+  def evolve(individuals: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: (P, Random) => F)(implicit aprng: Random): Iterator[EvolutionState] =
+    Iterator.iterate(EvolutionState(toPopulation(individuals, a), a, 0, initialState, false)) {
       s =>
-        val (newPop, newArchive) = step(s.individuals, s.archive, expression, evaluation)
-        val (stop, newState) = terminated(toPopulation(newPop, newArchive), s.terminationState)
+        val (newIndividuals, newArchive) = step(s.individuals, s.archive, expression, evaluation)
+        val newPop = toPopulation(newIndividuals, newArchive)
+        val (stop, newState) = terminated(newPop, s.terminationState)
         EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
 
