@@ -98,7 +98,6 @@ trait Evolution extends Termination
 
     val offspring = (offspringGenomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq
 
-    val newIndividuals = offspring.toList ::: individuals.toList
     val newArchive = combine(archive, toArchive(offspring))
 
     //Elitism strategy
