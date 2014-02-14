@@ -118,6 +118,7 @@ package object mgo {
   type Problem = problem.Problem
   type GAProblem = problem.GAProblem
   type GAGenomePhenotype = problem.GAGenomePhenotype
+  type NoFitness = problem.NoFitness
   type Scaling = problem.Scaling
   type HierarchicalRanking = ranking.HierarchicalRanking
   type NoRanking = ranking.NoRanking
