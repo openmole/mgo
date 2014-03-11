@@ -5,3 +5,5 @@ build.xml
 nbactions.xml
 /nbproject/
 pom.xml
+*.iml
+*.sublime*

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 07/02/14 Romain Reuillon
+ * Copyright (C) 19/12/2013 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,24 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.archive
+package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import scala.util.Random
 
-trait NoveltyArchive <: Archive with IndividualDistanceFromArchive with ArchiveIndividuals {
+trait Flocking extends GAProblem {
 
-  def archiveEpsilon: Double
-
-  def initialArchive = Seq.empty
-
-  def toArchive(individuals: Seq[Individual[G, P, F]]): A = individuals
-
-  def combine(a1: A, a2: A): A = a2.foldLeft(a1)((a, i) => addMaybe(a, i))
-
-  def diff(original: A, modified: A): A = modified
-
-  def addMaybe(a: A, i: Individual[G, P, F]): A = {
-    if (distanceOfIndividualFromArchive(i, a)() > archiveEpsilon) a :+ i
-    else a
-  }
 }
