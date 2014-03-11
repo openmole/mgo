@@ -23,7 +23,7 @@ import fr.iscpif.mgo.problem.GAGenomePhenotype
 
 trait Rastrigin extends GAProblem with GAGenomePhenotype {
   def n: Int
-  def a = 10.0
+  //def a = 10.0
 
   def min = Seq.fill(n)(-5.12)
   def max = Seq.fill(n)(5.12)
