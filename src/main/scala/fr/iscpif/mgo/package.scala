@@ -42,11 +42,11 @@ package object mgo {
   }
 
   object rng {
-    implicit def rng = newRng
+    implicit def rng = newRNG
   }
 
-  def newRng(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
-  def newRng = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
+  def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
+  def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
   type Map = algorithm.Map
   type OptimumDiversity = algorithm.OptimumDiversity

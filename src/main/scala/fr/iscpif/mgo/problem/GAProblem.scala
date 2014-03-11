@@ -26,7 +26,6 @@ import scala.util.Random
 trait GAProblem extends Problem with Scaling with MG with GA { pb =>
 
   def genomeSize: Int
-  def n = genomeSize
 
   override def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(g => express(scale(g)), apply)
 

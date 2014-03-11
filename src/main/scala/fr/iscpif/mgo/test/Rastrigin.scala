@@ -19,15 +19,11 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import scala.util.Random
-import fr.iscpif.mgo.problem.GAGenomePhenotype
 
-trait Rastrigin extends GAProblem with GAGenomePhenotype {
-  def n: Int
-  //def a = 10.0
-
-  def min = Seq.fill(n)(-5.12)
-  def max = Seq.fill(n)(5.12)
+trait Rastrigin <: Problem with GAGenomePhenotype {
+  def min = Seq.fill(genomeSize)(-5.12)
+  def max = Seq.fill(genomeSize)(5.12)
 
   def apply(x: Seq[Double], rng: Random) =
-    Seq(10 + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum)
+    Seq(10 * genomeSize + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum)
 }
