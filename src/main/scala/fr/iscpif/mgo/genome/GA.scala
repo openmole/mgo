@@ -18,15 +18,18 @@
 package fr.iscpif.mgo.genome
 
 import scalaz.Lens
+import scala.util.Random
 
 /**
  * Base of the cake for a genetic algorithm evolutions (algorithms evolving
  * sequences of doubles).
  */
-trait GA extends G {
+trait GA extends G with RandomGenome {
   def values: Lens[G, Seq[Double]]
   def genome: Lens[G, Seq[Double]]
 
   /** Size of the value part of the genome */
   def genomeSize: Int
+
+  def randomGenome(implicit rng: Random): G
 }
