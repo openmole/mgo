@@ -2,7 +2,7 @@ organization := "fr.iscpif"
 
 name := "mgo"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.10.4"
 
 resolvers ++= Seq(
   "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
