@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 07/02/14 Romain Reuillon
+ * Copyright (C) Guillaume Chérel 18/04/14
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,17 +9,22 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.archive
+
+package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
 
-trait ArchiveIndividuals <: Archive with ArchiveSeq {
-  type ArchiveElement = Individual[G, P, F]
-  def individualsOfArchive(a: A): Seq[ArchiveElement] = elementsOfArchive(a)
+
+trait RandomNicheElitism <: NicheElitism {
+
+  def keepIndividuals(individuals: Seq[Individual[G,P,F]]): Seq[Individual[G,P,F]] = {
+
+  }
+
 }

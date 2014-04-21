@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 07/02/14 Romain Reuillon
+ * Copyright (C) 03/04/2014 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,9 +17,11 @@
 
 package fr.iscpif.mgo.archive
 
-import fr.iscpif.mgo._
+import scala.collection.immutable.HashMap
 
-trait ArchiveIndividuals <: Archive with ArchiveSeq {
-  type ArchiveElement = Individual[G, P, F]
-  def individualsOfArchive(a: A): Seq[ArchiveElement] = elementsOfArchive(a)
+trait ArchiveMap {
+  type A = HashMap[ArchiveKey, ArchiveElement]
+  type ArchiveKey
+  type ArchiveElement
 }
+
