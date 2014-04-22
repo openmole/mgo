@@ -15,16 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
+import util.Random
 
+trait PickNNicheElitism <: NicheElitism {
 
-trait RandomNicheElitism <: NicheElitism {
+  def keepN: Int
 
-  def keepIndividuals(individuals: Seq[Individual[G,P,F]]): Seq[Individual[G,P,F]] = {
-
-  }
+  def keepIndividuals(individuals: Seq[Individual[G, P, F]])(implicit aprng: Random): Seq[Individual[G, P, F]] =
+    aprng.shuffle(individuals).take(keepN)
 
 }

@@ -43,6 +43,9 @@ package object mgo {
     def untilConverged(f: S => Unit) = i.drop(1).dropWhile { s => f(s); !s.terminated }.next
   }
 
+  type SortedTournamentSelection = selection.SortedTournamentSelection
+  type NicheElitism = elitism.NicheElitism
+  type PickNNicheElitism = elitism.PickNNicheElitism
   type Map = algorithm.Map
   type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
