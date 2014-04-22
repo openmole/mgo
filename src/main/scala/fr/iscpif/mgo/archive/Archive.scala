@@ -20,6 +20,8 @@ package fr.iscpif.mgo.archive
 import fr.iscpif.mgo._
 
 trait Archive extends G with P with F with MF with A {
+  type A = Seq[ArchiveElement]
+  type ArchiveElement
 
   def initialArchive: A
 

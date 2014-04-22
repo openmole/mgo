@@ -24,24 +24,10 @@ import scalax.io.Resource
 
 object TestBehaviourSearch {
 
+  implicit val rng = new Random
+
   val m =
-    new ZDT4
-      with NoFitness
-      with NoArchive
-      with NoveltyModifier
-      with GeneticBreeding
-      with TournamentOnRankAndDiversity
-      with IdentityCrossOver
-      with PickNNicheElitism
-      with SortedTournamentSelection
-      with ClosedCrowdingDiversity
-      with ClosedCrowdingIndividualDistance
-      with ClosedCrowdingIndividualDistanceFromArchive
-      with StrictDominance
-      with CounterTermination
-      with GaussianMutation
-      with GAGenome
-      {
+    new ZDT4 with NoFitness with NoArchive with NoveltyModifier with GeneticBreeding with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with SortedTournamentSelection with ClosedCrowdingDiversity with ClosedCrowdingIndividualDistance with ClosedCrowdingIndividualDistanceFromArchive with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
 
       override def genomeSize = 10
 
@@ -68,8 +54,6 @@ object TestBehaviourSearch {
         scale(individual.phenotype).map((x: Double) => (x * divsPerDim).toInt).toSeq
 
     }
-
-  implicit val rng = new Random
 
   m.evolve.untilConverged {
     s =>

@@ -27,7 +27,7 @@ trait NicheElitism extends Elitism with MergedGenerations {
   def individualToNiche(individual: Individual[G, P, F]): Niche
   def keepIndividuals(individuals: Seq[Individual[G, P, F]])(implicit aprng: Random): Seq[Individual[G, P, F]]
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] = {
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] = {
     individuals.groupBy(individualToNiche).toSeq.map((x: (Niche, Seq[Individual[G, P, F]])) => keepIndividuals(x._2)).flatten
   }
 

@@ -19,7 +19,7 @@ package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 
-trait ArchiveIndividuals <: Archive with ArchiveSeq {
+trait ArchiveIndividuals <: Archive {
   type ArchiveElement = Individual[G, P, F]
-  def individualsOfArchive(a: A): Seq[ArchiveElement] = elementsOfArchive(a)
+  def individualsOfArchive(a: A): Seq[ArchiveElement] = a
 }
