@@ -20,6 +20,6 @@ package fr.iscpif.mgo.archive
 import fr.iscpif.mgo._
 
 trait ArchiveIndividuals <: Archive {
-  type ArchiveElement = Individual[G, P, F]
-  def individualsOfArchive(a: A): Seq[ArchiveElement] = a
+  type A = Seq[Individual[G, P, F]]
+  def individualsOfArchive(a: A): Seq[Individual[G, P, F]] = a
 }

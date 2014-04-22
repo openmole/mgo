@@ -20,13 +20,14 @@ package fr.iscpif.mgo.elitism
 import fr.iscpif.mgo._
 import tools._
 import annotation.tailrec
+import util.Random
 
 /**
  * Reduce the size of the population according to a divesity metric and a rank
  */
 trait NonDominatedElitism extends Elitism with Mu with MergedGenerations with DiversityModifier with RankModifier {
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] = {
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] = {
     if (individuals.size < mu) individuals
     else {
       val population = toPopulation(individuals, archive)

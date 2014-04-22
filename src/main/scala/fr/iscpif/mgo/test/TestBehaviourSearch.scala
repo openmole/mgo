@@ -21,13 +21,22 @@ import fr.iscpif.mgo._
 
 import util.Random
 import scalax.io.Resource
+import scala.math._
 
-object TestBehaviourSearch {
+object TestBehaviourSearch extends App {
 
   implicit val rng = new Random
 
   val m =
-    new ZDT4 with NoFitness with NoArchive with NoveltyModifier with GeneticBreeding with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with SortedTournamentSelection with ClosedCrowdingDiversity with ClosedCrowdingIndividualDistance with ClosedCrowdingIndividualDistanceFromArchive with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
+    new GAProblem with NoFitness with NoArchive with NoveltyModifier with GeneticBreeding with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with SortedTournamentSelection with ClosedCrowdingDiversity with ClosedCrowdingIndividualDistance with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
+
+      def min = Seq.fill(n)(0.0)
+      def max = 1.0 :: List.fill(n - 1)(5.0)
+
+      def f1(x: Seq[Double]) = x(0)
+      def f2(x: Seq[Double]) = g(x) * (1 - sqrt(x(0) / g(x)))
+      def g(x: Seq[Double]) =
+        1 + 10 * (n - 1) + (1 until n).map { i => pow(x(i), 2) - 10 * cos(4 * Pi * x(i)) }.sum
 
       override def genomeSize = 10
 
@@ -58,10 +67,9 @@ object TestBehaviourSearch {
   m.evolve.untilConverged {
     s =>
       val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
-      s.archive.foreach {
-        i => output.append(i.genome.values.mkString(",") + "," + i.fitness.values.mkString(",") + "\n")
+      s.population.content.foreach {
+        i => output.append(i.genome.values.mkString(",") + ";" + m.diversity.get(i.metaFitness)().toString + "\n")
       }
-      println(s.individuals.map(_.fitness.values.max).min)
     //println(s.generation + " " + s.archive.size)
   }
 

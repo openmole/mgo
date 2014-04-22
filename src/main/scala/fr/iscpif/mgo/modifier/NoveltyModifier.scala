@@ -30,10 +30,8 @@ trait NoveltyModifier <: RankDiversityModifier
     with GA
     with IndividualDistance {
 
-  def individualsOfArchive(a: A): Seq[Individual[G, P, F]]
-
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
-    val diversities = individualDistance(individualsOfArchive(archive) ++ evaluated).map(d => 1.0 / d())
+    val diversities = individualDistance(evaluated).map(d => 1.0 / d())
     (evaluated zip diversities).map { case (i, d) => i.fitness.values ++ Seq(d) }
   }
 
