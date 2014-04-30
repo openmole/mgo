@@ -16,6 +16,14 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.6"
 
+resolvers ++= Seq(
+  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
+)
+
+libraryDependencies ++= Seq(
+  "org.scalacheck" %% "scalacheck" % "1.11.3" % "test"
+)
+
 publishMavenStyle := true
 
 publishArtifact in Test := false
