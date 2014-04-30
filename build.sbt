@@ -2,7 +2,7 @@ organization := "fr.iscpif"
 
 name := "mgo"
 
-scalaVersion := "2.10.4"
+scalaVersion := "2.11.0"
 
 crossScalaVersions := Seq("2.10.4", "2.11.0")
 
@@ -10,11 +10,11 @@ resolvers ++= Seq(
   "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 )
 
-libraryDependencies += "com.github.scala-incubator.io" % "scala-io-core_2.10" % "0.4.2"
+libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-core" % "0.4.3"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 
-libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.3"
+libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.6"
 
 publishMavenStyle := true
 
