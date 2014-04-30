@@ -31,7 +31,7 @@ object TestProfile extends App {
       def nX: Int = 1000
     }
 
-  implicit val rng = new Random
+  implicit val rng = newRNG(42)
 
   val res = m.evolve.untilConverged(s => println(s.generation)).individuals
 

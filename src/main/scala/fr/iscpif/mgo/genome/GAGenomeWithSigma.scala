@@ -24,11 +24,14 @@ object GAGenomeWithSigma {
   case class Genome(values: Seq[Double], sigma: Seq[Double])
 }
 
+trait GAGenomeWithSigmaType <: G {
+  type G = GAGenomeWithSigma.Genome
+}
+
 /**
  * Genome for genetic algorithm with an autoadaptative sigma component
  */
-trait GAGenomeWithSigma extends GA with Sigma {
-  type G = GAGenomeWithSigma.Genome
+trait GAGenomeWithSigma extends GA with Sigma with GAGenomeWithSigmaType {
 
   def values = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(values = v), _.values)
 

@@ -17,9 +17,7 @@
 
 package fr.iscpif
 
-import mgo.genome
-import mgo.genome.{ Sigma, GAGenomeWithSigma, GAGenome, GA }
-import sun.net.www.content.text.plain
+import org.apache.commons.math3.random._
 
 package object mgo {
   implicit def traversable2Population[G, P, F, I](seq: Traversable[PopulationElement[G, P, F, I]]) =
@@ -42,6 +40,13 @@ package object mgo {
   implicit class StateIteratorDecorator[S <: { def terminated: Boolean }](i: Iterator[S]) {
     def untilConverged(f: S => Unit) = i.drop(1).dropWhile { s => f(s); !s.terminated }.next
   }
+
+  object rng {
+    implicit def rng = newRNG
+  }
+
+  def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
+  def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
   type SortedTournamentSelection = selection.SortedTournamentSelection
   type NicheElitism = elitism.NicheElitism
