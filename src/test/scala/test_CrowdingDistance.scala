@@ -22,6 +22,6 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 
-object PointSpecification extends Properties("CrowdingDiversity") { {
-
+object CrowdingDiversitySpecification extends Properties("CrowdingDiversity") { {
+  property("")
 }

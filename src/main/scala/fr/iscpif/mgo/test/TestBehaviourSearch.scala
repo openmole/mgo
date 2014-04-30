@@ -34,15 +34,15 @@ object TestBehaviourSearch extends App {
   val m =
     new GAProblem with NoFitness with NoArchive with NoveltyModifier with GeneticBreeding with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with SortedTournamentSelection with ClosedCrowdingDiversity with ClosedCrowdingIndividualDistance with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
 
-      override def genomeSize = 2
+      override def genomeSize: Int = 2
 
-      def min = Seq.fill(n)(0.0)
-      def max = 1.0 :: List.fill(n)(5.0)
+      def min = Seq.fill(genomeSize)(0.0)
+      def max = 1.0 :: List.fill(genomeSize)(5.0)
 
       def f1(x: Seq[Double]) = x(0)
       def f2(x: Seq[Double]) = g(x) * (1 - sqrt(x(0) / g(x)))
       def g(x: Seq[Double]) =
-        1 + 10 * (n - 1) + (1 until n).map { i => pow(x(i), 2) - 10 * cos(4 * Pi * x(i)) }.sum
+        1 + 10 * (genomeSize - 1) + (1 until genomeSize).map { i => pow(x(i), 2) - 10 * cos(4 * Pi * x(i)) }.sum
 
       /** Number of steps before the algorithm stops */
       override def steps = 100
