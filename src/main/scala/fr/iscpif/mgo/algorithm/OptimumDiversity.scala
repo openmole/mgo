@@ -31,5 +31,4 @@ trait OptimumDiversity <: NoveltyModifier
   with CoEvolvingSigmaValuesMutation
   with SBXBoundedCrossover
   with StrictDominance
-  with GAGenomePhenotype
   with CrowdingIndividualDistance

@@ -44,7 +44,7 @@ trait SBXBoundedCrossOver extends CrossOver with GA {
   /** distribution index parameter of the algorithm */
   def distributionIndex: Double = 2
 
-  /** crossever rate parameter of the algorithm */
+  /** crossover rate parameter of the algorithm */
   def crossoverRate: Double = 0.5
 
   override def crossover(

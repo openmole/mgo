@@ -35,6 +35,8 @@ object TestOptimumDiversity extends App {
     def isGood(individual: Individual[G, P, F]) =
       individual.fitness.values.max < 8.05
 
+    def individualPosition(individual: Individual[G, P, F]): Seq[Double] = Seq(individual.phenotype)
+
   }
 
   implicit val rng = new Random

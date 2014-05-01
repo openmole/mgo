@@ -24,6 +24,6 @@ import util.Random
 /**
  * Layer of the cake for the mutation operation.
  */
-trait Mutation { this: G =>
+trait Mutation <: G {
   def mutate(genome: G)(implicit aprng: Random): G
 }

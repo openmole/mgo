@@ -28,7 +28,6 @@ import metric._
  */
 trait CrowdingDiversity extends DiversityMetric {
 
-  override def diversity(values: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]) =
-    CrowdingDistance(values.toIndexedSeq)
+  override def diversity(values: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]) = CrowdingDistance(values.toIndexedSeq)
 
 }

@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -15,26 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.problem
+package fr.iscpif.mgo.distance
 
-import fr.iscpif.mgo._
-import util.Random
+import fr.iscpif.mgo.Individual
 
-/**
- * Definition of a problem
- */
-trait Problem extends Evolution {
+trait PhenotypeIsPosition <: IndividualPosition {
+  type P <: Seq[Double]
 
-  def express(g: G, rng: Random): P
-
-  /**
-   * Evaluate a phenotype
-   *
-   * @param phenotype the phenotype to evaluate
-   * @return the phenotype
-   */
-  def evaluate(phenotype: P, rng: Random): F
-
-  def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(express, evaluate)
-
+  override def individualPosition(individual: Individual[G, P, F]): Seq[Double] = individual.phenotype
 }

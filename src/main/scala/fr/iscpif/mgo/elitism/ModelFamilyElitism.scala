@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -15,26 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.problem
+package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
-import util.Random
 
-/**
- * Definition of a problem
- */
-trait Problem extends Evolution {
+trait ModelFamilyElitism <: Elitism with Aggregation with MergedGenerations with GAGenome {
 
-  def express(g: G, rng: Random): P
+  def nicheSize: Int
 
-  /**
-   * Evaluate a phenotype
-   *
-   * @param phenotype the phenotype to evaluate
-   * @return the phenotype
-   */
-  def evaluate(phenotype: P, rng: Random): F
-
-  def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(express, evaluate)
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] =
+    individuals.groupBy(i => genome.get(i.genome).head.toInt).toSeq.map {
+      case (_, is) => is.sortBy(i => aggregate(i.fitness)).take(nicheSize)
+    }.flatten
 
 }

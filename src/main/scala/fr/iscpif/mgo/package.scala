@@ -69,6 +69,7 @@ package object mgo {
   type EuclideanIndividualDiversity = distance.EuclideanIndividualDiversity
   type IndividualPosition = distance.IndividualPosition
   type IndividualDistance = distance.IndividualDistance
+  type PhenotypeIsPosition = distance.PhenotypeIsPosition
   type CrowdingDiversity = diversity.CrowdingDiversity
   type Diversity = diversity.Diversity
   type DiversityMetric = diversity.DiversityMetric
@@ -122,7 +123,6 @@ package object mgo {
   type Evaluation = phenotype.Evaluation
   type Problem = problem.Problem
   type GAProblem = problem.GAProblem
-  type GAGenomePhenotype = problem.GAGenomePhenotype
   type NoFitness = problem.NoFitness
   type Scaling = problem.Scaling
   type HierarchicalRanking = ranking.HierarchicalRanking

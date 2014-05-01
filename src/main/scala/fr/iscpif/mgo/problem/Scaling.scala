@@ -18,11 +18,12 @@
 package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
+import scala.util.Random
 
 /**
  * Layer to scale a sequence of Double in [0.0, 1.0]
  */
-trait Scaling {
+trait Scaling <: Problem with GA {
 
   /** minimum scaled value in the correct order */
   def min: Seq[Double]
@@ -38,5 +39,27 @@ trait Scaling {
    */
   def scale(x: Seq[Double]) =
     (x zip (min zip max)) map { case (x, (min, max)) => x scale (min, max) }
+
+  override def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve((g, rng) => express(scale(g), rng), evaluate)
+
+  /**
+   * Scale the genome from [0.0, 1.0] to the correct scale for the fitness
+   * evaluation
+   *
+   * @param g the genome to scale
+   * @return the scaled genome
+   */
+  def scale(g: G): G = values.mod(v => scale(v), g)
+
+  /**
+   * Scale a population element genome from [0.0, 1.0] to the correct scale
+   *
+   * @param i the population element to scale
+   * @return the scaled population element
+   */
+  def scale[MF](i: PopulationElement[G, P, F, MF]): PopulationElement[G, P, F, MF] =
+    i.copy(genome = scale(i.genome))
+
+  def scale(i: Individual[G, P, F]): Individual[G, P, F] = i.copy(genome = scale(i.genome))
 
 }
