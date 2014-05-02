@@ -34,7 +34,7 @@ object TestBehaviourSearch extends App {
   val m =
     new GAProblem with NoFitness with NoArchive with NoveltyModifier with GeneticBreeding with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with SortedTournamentSelection with ClosedCrowdingDiversity with ClosedCrowdingIndividualDistance with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
 
-      override def genomeSize = 2
+      override def genomeSize: Int = 2
 
       def min = Seq.fill(genomeSize)(0.0)
       def max = 1.0 :: List.fill(genomeSize)(5.0)
