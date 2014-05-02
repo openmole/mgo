@@ -19,20 +19,20 @@ package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 
-trait NoveltyArchive <: Archive with IndividualDistance with ArchiveIndividuals {
+trait NoveltyArchive <: Archive with IndividualDistanceFromArchive with ArchiveIndividuals {
 
   def archiveEpsilon: Double
 
   def initialArchive = Seq.empty
 
-  def toArchive(individuals: Seq[Individual[G, P, F]]): A = shrink(individuals)
+  def toArchive(individuals: Seq[Individual[G, P, F]]): A = individuals
 
-  def combine(a1: A, a2: A): A = shrink(a1 ++ a2)
+  def combine(a1: A, a2: A): A = a2.foldLeft(a1)((a, i) => addMaybe(a, i))
 
   def diff(original: A, modified: A): A = modified
 
-  private def shrink(a: A): A = {
-    val crowding = individualDistance(a).map(_())
-    (a zip crowding).filter { case (_, d) => d > archiveEpsilon }.unzip._1
+  def addMaybe(a: A, i: Individual[G, P, F]): A = {
+    if (distanceOfIndividualFromArchive(i, a)() > archiveEpsilon) a :+ i
+    else a
   }
 }

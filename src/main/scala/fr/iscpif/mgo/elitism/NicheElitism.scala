@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 08/01/13 Romain Reuillon
+ * Copyright (C) Guillaume Chérel 18/04/14
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,7 +9,7 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -20,9 +20,15 @@ package fr.iscpif.mgo.elitism
 import fr.iscpif.mgo._
 import util.Random
 
-trait ProfileElitism <: Elitism with ProfilePlotter with Aggregation with MergedGenerations {
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] =
-    individuals.groupBy(plot).toSeq.map {
-      case (_, is) => is.minBy(i => aggregate(i.fitness))
-    }
+trait NicheElitism extends Elitism with MergedGenerations {
+
+  type Niche
+
+  def individualToNiche(individual: Individual[G, P, F]): Niche
+  def keepIndividuals(individuals: Seq[Individual[G, P, F]])(implicit aprng: Random): Seq[Individual[G, P, F]]
+
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] = {
+    individuals.groupBy(individualToNiche).toSeq.map((x: (Niche, Seq[Individual[G, P, F]])) => keepIndividuals(x._2)).flatten
+  }
+
 }

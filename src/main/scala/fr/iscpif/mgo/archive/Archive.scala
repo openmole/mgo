@@ -20,6 +20,7 @@ package fr.iscpif.mgo.archive
 import fr.iscpif.mgo._
 
 trait Archive extends G with P with F with MF with A {
+  type A
 
   def initialArchive: A
 
@@ -29,5 +30,4 @@ trait Archive extends G with P with F with MF with A {
   def toArchive(individuals: Seq[Individual[G, P, F]]): A
   def combine(a1: A, a2: A): A
   def diff(original: A, modified: A): A
-
 }

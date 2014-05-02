@@ -18,13 +18,15 @@
 package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
+import scala.util.Random
+import fr.iscpif.mgo.modelfamily.ModelFamilyGenome
 
-trait ModelFamilyElitism <: Elitism with Aggregation with MergedGenerations with GAGenome {
+trait ModelFamilyElitism <: Elitism with Aggregation with MergedGenerations with ModelFamilyGenome {
 
   def nicheSize: Int
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A): Seq[Individual[G, P, F]] =
-    individuals.groupBy(i => genome.get(i.genome).head.toInt).toSeq.map {
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit prng: Random): Seq[Individual[G, P, F]] =
+    individuals.groupBy(i => modelId.get(i.genome)).toSeq.map {
       case (_, is) => is.sortBy(i => aggregate(i.fitness)).take(nicheSize)
     }.flatten
 

@@ -48,6 +48,9 @@ package object mgo {
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
   def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
+  type SortedTournamentSelection = selection.SortedTournamentSelection
+  type NicheElitism = elitism.NicheElitism
+  type PickNNicheElitism = elitism.PickNNicheElitism
   type Map = algorithm.Map
   type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
@@ -55,6 +58,7 @@ package object mgo {
   type SMSEMOEA = algorithm.SMSEMOEA
   type A = archive.A
   type Archive = archive.Archive
+  type ArchiveIndividuals = archive.ArchiveIndividuals
   type NoArchive = archive.NoArchive
   type NoveltyArchive = archive.NoveltyArchive
   type OptimumDiversityArchive = archive.OptimumDiversityArchive
@@ -66,11 +70,15 @@ package object mgo {
   type SBXBoundedCrossover = crossover.SBXBoundedCrossOver
   type UniformCrossOver = crossover.UniformCrossOver
   type CrowdingIndividualDistance = distance.CrowdingIndividualDistance
+  type ClosedCrowdingIndividualDistance = distance.ClosedCrowdingIndividualDistance
+  type ClosedCrowdingIndividualDistanceFromArchive = distance.ClosedCrowdingIndividualDistanceFromArchive
   type EuclideanIndividualDiversity = distance.EuclideanIndividualDiversity
   type IndividualPosition = distance.IndividualPosition
   type IndividualDistance = distance.IndividualDistance
   type PhenotypeIsPosition = distance.PhenotypeIsPosition
+  type IndividualDistanceFromArchive = distance.IndividualDistanceFromArchive
   type CrowdingDiversity = diversity.CrowdingDiversity
+  type ClosedCrowdingDiversity = diversity.ClosedCrowdingDiversity
   type Diversity = diversity.Diversity
   type DiversityMetric = diversity.DiversityMetric
   type HypervolumeDiversity = diversity.HypervolumeDiversity

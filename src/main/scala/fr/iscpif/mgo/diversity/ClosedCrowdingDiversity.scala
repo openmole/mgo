@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2012 reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,23 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.selection
+package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
-import genome.G
-import util.Random
+import fr.iscpif.mgo.tools.Lazy
+import metric._
 
 /**
- * Selection layer for the evolutionary algorithms.
+ * Crowding distance, see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
+ * A fast elitist non-dominated sorting genetic algorithm for multi-objective
+ * optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
  */
-trait Selection extends G with P with F with MF {
+trait ClosedCrowdingDiversity extends DiversityMetric {
 
-  /**
-   * Select an individual among the population.
-   *
-   * @param population the population in which selection occurs
-   * @return the selected individual
-   */
-  def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Iterator[Individual[G, P, F]]
+  override def diversity(values: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]) =
+    ClosedCrowdingDistance(values.toIndexedSeq)
 
 }
