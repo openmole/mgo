@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.tools
 import scala.math.{ max, min }
 import math._
-import scala.util.Random
 
 /**
  * Mathematical tools for the library
@@ -98,7 +97,7 @@ object Math {
     average(sequence.map { v ⇒ math.pow(v - avg, 2) })
   }
 
-  def multinomialDraw[T](s: Seq[(Double, T)])(implicit rng: Random) = {
+  def multinomialDraw[T](s: Seq[(Double, T)])(implicit rng: scala.util.Random) = {
     assert(!s.isEmpty, "Input sequence should not be empty")
     def select(remaining: List[(Double, T)], value: Double, begin: List[(Double, T)] = List.empty): (T, List[(Double, T)]) =
       remaining match {

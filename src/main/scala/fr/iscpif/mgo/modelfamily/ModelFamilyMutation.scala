@@ -19,12 +19,20 @@ package fr.iscpif.mgo.modelfamily
 
 import fr.iscpif.mgo.mutation.CoEvolvingSigmaValuesMutation
 import scala.util.Random
+import fr.iscpif.mgo._
+import tools.Math._
 
-trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome {
+trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation {
 
-  /*override def mutate(genome: G)(implicit rng: Random): G = {
-    val res1 = super.mutate(genome)
-
-  }*/
+  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
+    val res = super.mutate(genome, population, archive)
+    val weights =
+      population.groupBy(i => modelId.get(i.genome)).toSeq map {
+        case (i, niche) =>
+          mse(niche.map(_.fitness).map(aggregate)) -> i
+      }
+    val newIndex = multinomialDraw(weights)._1
+    modelId.set(res, newIndex)
+  }
 
 }
