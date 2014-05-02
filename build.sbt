@@ -20,29 +20,37 @@ publishMavenStyle := true
 
 publishArtifact in Test := false
 
+//publishTo <<= version { (v: String) =>
+//  val maven = "http://maven.iscpif.fr/"
+//  if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at maven + "snapshots") 
+//  else Some("releases"  at maven + "releases")
+//}
+
 publishTo <<= version { (v: String) =>
-  val maven = "http://maven.iscpif.fr/"
-  if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at maven + "snapshots") 
-  else Some("releases"  at maven + "releases")
+  val nexus = "https://oss.sonatype.org/"
+  if (v.trim.endsWith("SNAPSHOT"))
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
+pomIncludeRepository := { _ => false }
+
+licenses := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
+
+homepage := Some(url("https://github.com/romainreuillon/mgo"))
+
+ scmInfo := Some(ScmInfo(url("https://github.com/romainreuillon/mgo.git"), "scm:git:git@github.com:romainreuillon/mgo.git"))
+
 pomExtra := (
-  <url>https://github.com/romainreuillon/mgo</url>
-  <licenses>
-    <license>
-      <name>Affero GPLv3</name>
-      <url>http://www.gnu.org/licenses/</url>
-      <distribution>repo</distribution>
-    </license>
-  </licenses>
-  <scm>
-    <url>git@github.com:romainreuillon/mgo.git</url>
-    <connection>scm:git:git@github.com:romainreuillon/mgo.git</connection>
-  </scm>
   <developers>
     <developer>
       <id>romainreuillon</id>
       <name>Romain Reuillon</name>
+    </developer>
+    <developer>
+      <id>guillaumecherel</id>
+      <name>Guillaume Cherel</name>
     </developer>
   </developers>
 )
