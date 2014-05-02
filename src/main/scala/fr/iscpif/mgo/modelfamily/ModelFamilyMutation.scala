@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -15,15 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
+package fr.iscpif.mgo.modelfamily
 
-import fr.iscpif.mgo._
-import genome.G
-import util.Random
+import fr.iscpif.mgo.mutation.CoEvolvingSigmaValuesMutation
+import scala.util.Random
 
-/**
- * Mutation that doesn't modify the genome.
- */
-trait IdentityMutation <: Mutation with G {
-  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = genome
+trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome {
+
+  /*override def mutate(genome: G)(implicit rng: Random): G = {
+    val res1 = super.mutate(genome)
+
+  }*/
+
 }

@@ -28,7 +28,7 @@ trait RandomMutation extends Mutation with GA {
 
   def mutationRate = 0.5
 
-  override def mutate(g: G)(implicit aprng: Random): G = {
+  override def mutate(g: G, population: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): G = {
     val valMutationZipped = genome.get(g) zip genome.get(randomGenome)
     val newValues = valMutationZipped map {
       case (v, vrg) =>

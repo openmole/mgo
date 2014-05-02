@@ -15,19 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.elitism
+package fr.iscpif.mgo.modelfamily
 
 import fr.iscpif.mgo._
 import scala.util.Random
-import fr.iscpif.mgo.modelfamily.ModelFamilyGenome
 
-trait ModelFamilyElitism <: Elitism with Aggregation with MergedGenerations with ModelFamilyGenome {
+trait ModelFamilyCrossover <: SBXBoundedCrossover with ModelFamilyGenome {
 
-  def nicheSize: Int
-
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit prng: Random): Seq[Individual[G, P, F]] =
-    individuals.groupBy(i => modelId.get(i.genome)).toSeq.map {
-      case (_, is) => is.sortBy(i => aggregate(i.fitness)).take(nicheSize)
-    }.flatten
+  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = {
+    val (res1, res2) = super.sbxCrossover(g1, g2)
+    rng.nextDouble match {
+      case x if x < 0.5 => Seq(res1, res2)
+      case _ =>
+        val m1 = modelId.get(res1)
+        val m2 = modelId.get(res2)
+        Seq(modelId.set(res1, m2), modelId.set(res2, m1))
+    }
+  }
 
 }

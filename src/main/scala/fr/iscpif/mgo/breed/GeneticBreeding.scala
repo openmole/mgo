@@ -42,7 +42,7 @@ trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selectio
       else
         for {
           Seq(i1, i2) <- selection(population).grouped(2)
-          breed <- crossover(i1.genome, i2.genome).map { mutate }
+          breed <- crossover(i1.genome, i2.genome, individuals, a).map { mutate(_, individuals, a) }
         } yield breed
 
     Iterator.continually {

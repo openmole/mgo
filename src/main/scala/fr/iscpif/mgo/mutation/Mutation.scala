@@ -24,6 +24,16 @@ import util.Random
 /**
  * Layer of the cake for the mutation operation.
  */
-trait Mutation <: G {
-  def mutate(genome: G)(implicit aprng: Random): G
+trait Mutation <: G with P with F with A {
+
+  /**
+   * Mutate a genome
+   *
+   * @param genome genome to mutate
+   * @param population the last computed population
+   * @param archive the last archive
+   * @param rng a random number geneartor
+   * @return the mutated genome
+   */
+  def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G
 }
