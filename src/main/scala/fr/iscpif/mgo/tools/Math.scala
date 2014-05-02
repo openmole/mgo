@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.tools
 import scala.math.{ max, min }
 import math._
+import scala.util.Random
 
 /**
  * Mathematical tools for the library
@@ -89,4 +90,24 @@ object Math {
 
   def isUpper(line1: Point2D, line2: Point2D, c: Point2D) =
     (line2.x - line1.x) * (c.y - line1.y) - (line2.y - line1.y) * (c.x - line1.x) > 0
+
+  def average(sequence: Seq[Double]) = sequence.sum / sequence.size
+
+  def mse(sequence: Seq[Double]) = {
+    val avg = average(sequence)
+    average(sequence.map { v ⇒ math.pow(v - avg, 2) })
+  }
+
+  def multinomialDraw[T](s: Seq[(Double, T)])(implicit rng: Random) = {
+    assert(!s.isEmpty, "Input sequence should not be empty")
+    def select(remaining: List[(Double, T)], value: Double, begin: List[(Double, T)] = List.empty): (T, List[(Double, T)]) =
+      remaining match {
+        case (weight, e) :: tail =>
+          if (value <= weight) (e, begin.reverse ::: tail)
+          else select(tail, value - weight, (weight, e) :: begin)
+        case _ => sys.error(s"Bug $remaining $value $begin")
+      }
+    val totalWeight = s.unzip._1.sum
+    select(s.toList, rng.nextDouble * totalWeight)
+  }
 }
