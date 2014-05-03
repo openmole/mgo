@@ -24,7 +24,8 @@ import scalax.io.Resource
 
 object TestNovelty extends App {
   val m =
-    new ZDT4 with IndividualDiversityModifier with ClosedCrowdingIndividualDistance with ClosedCrowdingIndividualDistanceFromArchive with NoveltyArchive with NonDominatedElitism with MG with GAGenomeWithSigma with ClosedCrowdingDiversity with GeneticBreeding with BinaryTournamentSelection with TournamentOnRankAndDiversity with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with StrictDominance with GAGenomePhenotype with CounterTermination with ParetoRanking {
+    new ZDT4 with IndividualDiversityModifier with PhenotypeIsPosition with ClosedCrowdingIndividualDistance with ClosedCrowdingIndividualDistanceFromArchive with NoveltyArchive with NonDominatedElitism with MG with GAGenomeWithSigma with ClosedCrowdingDiversity with GeneticBreeding with BinaryTournamentSelection with TournamentOnRankAndDiversity with CoEvolvingSigmaValuesMutation with SBXBoundedCrossover with StrictDominance with CounterTermination with ParetoRanking {
+
       override def genomeSize = 10
 
       override def archiveEpsilon = 0.001
@@ -37,6 +38,7 @@ object TestNovelty extends App {
 
       /** the size of the offspring */
       override def lambda = 100
+
     }
 
   implicit val rng = new Random

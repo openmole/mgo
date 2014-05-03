@@ -19,12 +19,13 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 import math._
+import fr.iscpif.mgo.modifier.RankMF
 
 /**
  * Terminates when the hypervolume contribution of the last ranked individuals
  * in the population has been stabilized.
  */
-trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with Dominance with RankModifier with StabilityTermination {
+trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with Dominance with RankMF with StabilityTermination {
 
   type F <: MGFitness
 

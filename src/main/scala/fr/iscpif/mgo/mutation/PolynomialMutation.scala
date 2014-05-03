@@ -35,16 +35,16 @@ trait PolynomialMutation extends Mutation with GA {
 
   def distributionIndex: Double
 
-  override def mutate(g: G)(implicit aprng: Random): G = {
+  override def mutate(g: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
     val newValues = genome.get(g) map {
       v =>
-        if (aprng.nextDouble <= mutationRate) {
+        if (rng.nextDouble <= mutationRate) {
           val yl = 0.0 // lower bound
           val yu = 1.0 // upper bound
           val delta1 = (v - yl) / (yu - yl)
           val delta2 = (yu - v) / (yu - yl)
           val mut_pow = 1.0 / (distributionIndex + 1.0)
-          val rnd = aprng.nextDouble
+          val rnd = rng.nextDouble
 
           val deltaq: Double = (if (rnd <= 0.5) {
             val xy = 1.0 - delta1

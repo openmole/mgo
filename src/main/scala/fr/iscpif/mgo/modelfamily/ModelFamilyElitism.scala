@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 08/01/13 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,20 +9,25 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.elitism
+package fr.iscpif.mgo.modelfamily
 
 import fr.iscpif.mgo._
-import util.Random
+import scala.util.Random
+import fr.iscpif.mgo.elitism.{ MergedGenerations, Elitism }
 
-trait ProfileElitism <: Elitism with ProfilePlotter with Aggregation with MergedGenerations {
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] =
-    individuals.groupBy(plot).toSeq.map {
-      case (_, is) => is.minBy(i => aggregate(i.fitness))
-    }
+trait ModelFamilyElitism <: Elitism with Aggregation with MergedGenerations with ModelFamilyGenome {
+
+  def nicheSize: Int
+
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit prng: Random): Seq[Individual[G, P, F]] =
+    individuals.groupBy(i => modelId.get(i.genome)).toSeq.map {
+      case (_, is) => is.sortBy(i => aggregate(i.fitness)).take(nicheSize)
+    }.flatten
+
 }

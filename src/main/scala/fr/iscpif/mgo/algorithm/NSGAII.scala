@@ -31,7 +31,6 @@ trait NSGAII <: Evolution
   with CrowdingDiversity
   with ParetoRanking
   with StrictDominance
-  with RankDiversityModifier
   with NoArchive
   with CloneRemoval
   with GeneticBreeding

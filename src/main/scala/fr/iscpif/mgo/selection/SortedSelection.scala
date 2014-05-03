@@ -26,7 +26,7 @@ import scala.collection.Iterator
  * Select the first individuals of the population sorted by fitness. If all individuals have been used, start back with the first
  */
 trait SortedTournamentSelection extends Selection with Tournament {
-  override def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Iterator[Individual[G, P, F]] = {
+  override def selection(population: Population[G, P, F, MF])(implicit rng: Random): Iterator[Individual[G, P, F]] = {
     val sortedIndividuals = population.content.sortWith((a, b) => tournament(a, b) == a).map(_.toIndividual)
 
     var itIndivs = sortedIndividuals.iterator

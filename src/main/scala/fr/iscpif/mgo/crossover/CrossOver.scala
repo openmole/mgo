@@ -22,16 +22,18 @@ import genome.G
 import util.Random
 
 /**
- * Implement a crossover operamtion between 2 genomes
+ * Implement a crossover operation between 2 genomes
  */
-trait CrossOver { self: G =>
+trait CrossOver <: G with P with F with A {
 
   /**
    * Crossover g1 and g2
    *
    *  @param g1 a genome
-   *  @param g2 anothe genome
+   *  @param g2 another genome
+   *  @param population last computed population
+   *  @param archive last archive
    *  @return the result of the crossover
    */
-  def crossover(g1: G, g2: G)(implicit aprng: Random): IndexedSeq[G]
+  def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[G]
 }

@@ -24,6 +24,6 @@ import util.Random
 /**
  * Mutation that doesn't modify the genome.
  */
-trait IdentityMutation extends Mutation { self: G =>
-  override def mutate(genome: G)(implicit aprng: Random): G = genome
+trait IdentityMutation <: Mutation with G {
+  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = genome
 }

@@ -25,7 +25,7 @@ import util.Random
  */
 trait AverageCrossOver extends CrossOver with GA {
 
-  override def crossover(g1: G, g2: G)(implicit aprng: Random) = {
+  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random) = {
     val pds = aprng.nextDouble
 
     val newValues = IndexedSeq.tabulate(genome.get(g1).size)(i =>

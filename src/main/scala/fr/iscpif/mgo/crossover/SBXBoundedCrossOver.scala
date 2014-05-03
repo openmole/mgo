@@ -44,19 +44,22 @@ trait SBXBoundedCrossOver extends CrossOver with GA {
   /** distribution index parameter of the algorithm */
   def distributionIndex: Double = 2
 
-  /** crossever rate parameter of the algorithm */
+  /** crossover rate parameter of the algorithm */
   def crossoverRate: Double = 0.5
 
-  override def crossover(
-    g1: G,
-    g2: G)(implicit aprng: Random) = {
+  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = {
+    val (res1, res2) = sbxCrossover(g2, g2)
+    Seq(res1, res2)
+  }
+
+  def sbxCrossover(g1: G, g2: G)(implicit rng: Random) = {
 
     /** crossover probability */
     val offspring = {
-      if (aprng.nextDouble <= crossoverRate) {
+      if (rng.nextDouble <= crossoverRate) {
         (genome.get(g1) zip genome.get(g2)).map {
           case (g1e, g2e) =>
-            if (aprng.nextBoolean) {
+            if (rng.nextBoolean) {
               if (abs(g1e - g2e) > epsilon) {
                 val y1 = min(g1e, g2e)
                 val y2 = max(g2e, g1e)
@@ -66,7 +69,7 @@ trait SBXBoundedCrossOver extends CrossOver with GA {
 
                 def inBound(v: Double) = if (v < yL) yL else if (v > yU) yU else v
 
-                val rand = aprng.nextDouble // ui
+                val rand = rng.nextDouble // ui
 
                 val beta1 = 1.0 + (2.0 * (y1 - yL) / (y2 - y1))
                 val alpha1 = 2.0 - pow(beta1, -(distributionIndex + 1.0))
@@ -90,13 +93,13 @@ trait SBXBoundedCrossOver extends CrossOver with GA {
 
                 val c2 = inBound(0.5 * ((y1 + y2) + betaq2 * (y2 - y1)))
 
-                if (aprng.nextBoolean) (c2, c1) else (c1, c2)
+                if (rng.nextBoolean) (c2, c1) else (c1, c2)
               } else (g1e, g2e)
             } else (g2e, g1e)
         }
       } else (genome.get(g1) zip genome.get(g2))
     }
-    IndexedSeq(genome.set(g1, offspring.map { _._1 }), genome.set(g2, offspring.map { _._2 }))
+    (genome.set(g1, offspring.map { _._1 }), genome.set(g2, offspring.map { _._2 }))
   }
 
 }

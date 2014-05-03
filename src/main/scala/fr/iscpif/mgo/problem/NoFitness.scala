@@ -21,5 +21,5 @@ import fr.iscpif.mgo._
 import scala.util.Random
 
 trait NoFitness <: Problem with MG {
-  def apply(phenotype: P, rng: Random): F = MGFitness(Seq.empty)
+  def evaluate(phenotype: P, rng: Random): F = MGFitness(Seq.empty)
 }

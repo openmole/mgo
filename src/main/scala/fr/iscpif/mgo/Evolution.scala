@@ -62,7 +62,7 @@ trait Evolution extends Termination
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def evolve(individuals: Seq[Individual[G, P, F]], a: A, expression: G => P, evaluation: (P, Random) => F)(implicit aprng: Random): Iterator[EvolutionState] =
+  def evolve(individuals: Seq[Individual[G, P, F]], a: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit aprng: Random): Iterator[EvolutionState] =
     Iterator.iterate(EvolutionState(toPopulation(individuals, a), a, 0, initialState, false)) {
       s =>
         val (newIndividuals, newArchive) = step(s.individuals, s.archive, expression, evaluation)
@@ -77,7 +77,7 @@ trait Evolution extends Termination
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def evolve(expression: G => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
+  def evolve(expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
     val archive = initialArchive
     evolve(Seq.empty, archive, expression, evaluation)
   }
@@ -92,7 +92,7 @@ trait Evolution extends Termination
    * @return a new population of evaluated solutions
    *
    */
-  def step(individuals: Seq[Individual[G, P, F]], archive: A, expression: G => P, evaluation: (P, Random) => F)(implicit rng: Random): (Seq[Individual[G, P, F]], A) = {
+  def step(individuals: Seq[Individual[G, P, F]], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): (Seq[Individual[G, P, F]], A) = {
     val offspringGenomes = breed(individuals, archive)
     val rngs = (0 until offspringGenomes.size).map(_ => buildRNG(rng.nextLong))
 

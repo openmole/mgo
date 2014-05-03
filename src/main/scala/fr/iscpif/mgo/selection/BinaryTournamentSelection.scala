@@ -27,7 +27,7 @@ import util.Random
  */
 trait BinaryTournamentSelection extends Selection with OneByOne with Tournament {
 
-  override def selectOne(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F] =
-    tournament(population.content.random(aprng), population.content.random(aprng)).toIndividual
+  override def selectOne(population: Population[G, P, F, MF])(implicit rng: Random): Individual[G, P, F] =
+    tournament(population.content.random(rng), population.content.random(rng)).toIndividual
 
 }

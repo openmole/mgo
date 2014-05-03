@@ -21,9 +21,9 @@ import scala.util.Random
 import fr.iscpif.mgo._
 
 trait TournamentOnRank <: Tournament with RankModifier {
-  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit aprng: Random): PopulationElement[G, P, F, MF] =
+  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF] =
     if (rank.get(e1.metaFitness)() < rank.get(e2.metaFitness)()) e1
     else if (rank.get(e1.metaFitness)() > rank.get(e2.metaFitness)()) e2
-    else if (aprng.nextDouble < 0.5) e1 else e2
+    else if (rng.nextDouble < 0.5) e1 else e2
 
 }

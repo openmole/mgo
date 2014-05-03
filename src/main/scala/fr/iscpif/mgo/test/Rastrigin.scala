@@ -20,10 +20,18 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import scala.util.Random
 
-trait Rastrigin <: Problem with GAGenomePhenotype {
+object Rastrigin {
+
+  def value(x: Seq[Double]) = 10 * x.size + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum
+
+}
+
+trait Rastrigin <: GAProblem {
   def min = Seq.fill(genomeSize)(-5.12)
   def max = Seq.fill(genomeSize)(5.12)
 
-  def apply(x: Seq[Double], rng: Random) =
-    Seq(10 * genomeSize + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum)
+  type P = Double
+
+  override def express(g: G, rng: Random) = Rastrigin.value(values.get(g))
+  override def evaluate(phenotype: P, rng: Random) = MGFitness(phenotype)
 }

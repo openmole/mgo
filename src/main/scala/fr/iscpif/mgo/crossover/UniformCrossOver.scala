@@ -29,7 +29,7 @@ trait UniformCrossOver extends CrossOver with GA {
   /** Average rate of exchange between the 2 genomes */
   def crossoverRate: Double = 0.5
 
-  override def crossover(g1: G, g2: G)(implicit aprng: Random) = {
+  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random) = {
     val rngValue = (0 until genome.get(g1).size).map { x => !(aprng.nextDouble < crossoverRate) }
     val offspringValues = (rngValue zip (genome.get(g1) zip genome.get(g2))) map {
       case (b, (g1e, g2e)) =>

@@ -30,6 +30,6 @@ trait MergedGenerations <: Elitism {
    * @param individuals the population to shrink
    * @return the shrinked population
    */
-  def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]]
+  def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit prng: Random): Seq[Individual[G, P, F]]
 
 }

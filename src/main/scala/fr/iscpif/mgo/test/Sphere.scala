@@ -20,11 +20,15 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import scala.util.Random
 
-trait Sphere extends GAProblem with GAGenomePhenotype {
+trait Sphere extends GAProblem {
   def n: Int
 
   def min = List.fill(n)(0.0)
   def max = List.fill(n)(2.0)
 
-  def apply(x: Seq[Double], rng: Random) = List(x.map(x => x * x).sum)
+  type P = Seq[Double]
+
+  override def express(g: G, rng: Random) = List(values.get(g).map(x => x * x).sum)
+
+  def apply(x: Seq[Double], rng: Random) = MGFitness(x)
 }

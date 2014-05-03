@@ -24,6 +24,28 @@ import fr.iscpif.mgo.tools.Lazy
 /**
  * Layer for modifier that adds a rank to the meta-fitness
  */
-trait RankModifier extends Modifier with Ranking {
-  def rank: Lens[MF, Lazy[Int]]
+object RankModifier {
+  case class Rank(rank: Lazy[Int]) {
+    override def toString = rank.toString()
+  }
+
+  def toPopulationElements[G, P, F](
+    evaluated: Seq[Individual[G, P, F]],
+    ranks: Seq[Lazy[Int]]) =
+    (evaluated zip ranks) map {
+      case (i, r) => PopulationElement(i, Rank(rank = r))
+    }
 }
+
+trait RankModifier extends Modifier with Ranking with RankMF {
+  type F <: MGFitness
+  type MF = RankModifier.Rank
+
+  def rank: Lens[MF, Lazy[Int]] = Lens.lensu[MF, Lazy[Int]]((c, v) => c.copy(rank = v), _.rank)
+
+  override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
+    val ranks = rank(evaluated.map(_.fitness.values))
+    RankModifier.toPopulationElements[G, P, F](evaluated, ranks)
+  }
+}
+

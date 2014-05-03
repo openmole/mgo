@@ -15,12 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.modelfamily
 
-import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.MF
-import scalaz.Lens
+import fr.iscpif.mgo.mutation.CoEvolvingSigmaValuesMutation
+import scala.util.Random
+import fr.iscpif.mgo._
+import tools.Math._
 
-trait RankMF <: MF {
-  def rank: Lens[MF, Lazy[Int]]
+trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation {
+
+  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
+    val res = super.mutate(genome, population, archive)
+    val weights =
+      population.groupBy(i => modelId.get(i.genome)).toSeq map {
+        case (i, niche) =>
+          mse(niche.map(_.fitness).map(aggregate)) -> i
+      }
+    val newIndex = multinomialDraw(weights)._1
+    modelId.set(res, newIndex)
+  }
+
 }

@@ -34,10 +34,10 @@ object Individual {
    */
   def apply[G, P, F](
     g: G,
-    expression: G => P,
+    expression: (G, Random) => P,
     evaluation: (P, Random) => F)(implicit rng: Random): Individual[G, P, F] = {
 
-    val _phenotype = expression(g)
+    val _phenotype = expression(g, rng)
     val _fitness = evaluation(_phenotype, rng)
 
     Individual[G, P, F](

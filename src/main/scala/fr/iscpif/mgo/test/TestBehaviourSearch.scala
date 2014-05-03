@@ -54,7 +54,7 @@ object TestBehaviourSearch extends App {
       override def sigma = 0.1
 
       override type P = Seq[Double]
-      override def express(g: G): P = Vector(f1(g.values), f2(g.values))
+      override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
 
       //def individualDistance(g: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
       override def individualPosition(individual: Individual[G, P, F]): Seq[Double] =

@@ -34,12 +34,12 @@ import scala.math._
  */
 trait CoEvolvingSigmaValuesMutation extends Mutation with Sigma with GA {
 
-  override def mutate(genome: G)(implicit aprng: Random): G = {
-    val indexedSeqSigma = sigma.get(genome).map { s => clamp(s * exp(aprng.nextGaussian), 0, 1) }
+  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
+    val indexedSeqSigma = sigma.get(genome).map { s => clamp(s * exp(rng.nextGaussian), 0, 1) }
 
     val newValues =
       (values.get(genome) zip indexedSeqSigma) map {
-        case (v, s) => clamp(aprng.nextGaussian * s + v, 0, 1)
+        case (v, s) => clamp(rng.nextGaussian * s + v, 0, 1)
       }
 
     val updatedValues = values.set(genome, newValues)

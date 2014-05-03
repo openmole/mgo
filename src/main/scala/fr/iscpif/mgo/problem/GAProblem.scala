@@ -24,29 +24,5 @@ import scala.util.Random
  * Cake to define a problem for a genetic algorithm
  */
 trait GAProblem extends Problem with Scaling with MG with GA { pb =>
-
   def genomeSize: Int
-
-  override def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(g => express(scale(g)), apply)
-
-  /**
-   * Scale the genome from [0.0, 1.0] to the correct scale for the fitness
-   * evaluation
-   *
-   * @param g the genome to scale
-   * @return the scaled genome
-   */
-  def scale(g: G): G = values.mod(v => scale(v), g)
-
-  /**
-   * Scale a population element genome from [0.0, 1.0] to the correct scale
-   *
-   * @param i the population element to scale
-   * @return the scaled population element
-   */
-  def scale[MF](i: PopulationElement[G, P, F, MF]): PopulationElement[G, P, F, MF] =
-    i.copy(genome = scale(i.genome))
-
-  def scale(i: Individual[G, P, F]): Individual[G, P, F] = i.copy(genome = scale(i.genome))
-
 }
