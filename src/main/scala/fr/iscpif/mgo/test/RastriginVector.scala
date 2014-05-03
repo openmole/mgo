@@ -38,7 +38,7 @@ object RastriginVector {
 
 trait RastriginVector <: GAProblem with ModelFamilyGenome {
 
-  lazy val masks: Seq[Seq[Boolean]] = (0 until models).map(_ => RastriginVector.toBitSet(genomeSize))
+  lazy val masks: Seq[Seq[Boolean]] = (0 until models).map(RastriginVector.toBitSet)
   lazy val min = Seq(0.0) ++ Seq.fill(genomeSize)(-5.12)
   lazy val max = Seq(masks.size.toDouble) ++ Seq.fill(genomeSize)(5.12)
 

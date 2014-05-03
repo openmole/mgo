@@ -28,22 +28,26 @@ object TestModelFamily extends App {
   implicit val rng = new Random(42)
 
   val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with ModelFamilyCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination {
-    override def genomeSize: Int = 10
+    override def genomeSize: Int = 5
 
     /** Number of steps before the algorithm stops */
-    override def steps: Int = 100
+    override def steps: Int = 1000
 
     /** the size of the offspring */
     override def lambda: Int = 100
 
     override def nicheSize: Int = 10
 
-    override def models: Int = 100
+    override def models: Int = 50
   }
+
+  println(m.masks)
 
   val res =
     m.evolve.untilConverged {
-      s => println(s.generation)
+      s =>
+        println(s.generation)
+        println(m.niches(s.individuals).map { case (i, idv) => i -> idv.map(i => m.aggregate(i.fitness)).sorted.headOption })
     }.individuals
 
 }

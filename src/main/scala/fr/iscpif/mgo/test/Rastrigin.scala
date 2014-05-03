@@ -21,9 +21,7 @@ import fr.iscpif.mgo._
 import scala.util.Random
 
 object Rastrigin {
-
-  def value(x: Seq[Double]) = 10 * x.size + x.map(x => (x * x) - math.cos(2 * math.Pi * x)).sum
-
+  def value(x: Seq[Double]) = 10 * x.size + x.map(x => (x * x) - 10 * math.cos(2 * math.Pi * x)).sum
 }
 
 trait Rastrigin <: GAProblem {

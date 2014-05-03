@@ -25,8 +25,10 @@ trait ModelFamilyElitism <: Elitism with Aggregation with MergedGenerations with
 
   def nicheSize: Int
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit prng: Random): Seq[Individual[G, P, F]] =
-    individuals.groupBy(i => modelId.get(i.genome)).toSeq.map {
+  def niches(individuals: Seq[Individual[G, P, F]]) = individuals.groupBy(i => modelId.get(i.genome)).toSeq
+
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
+    niches(individuals).map {
       case (_, is) => is.sortBy(i => aggregate(i.fitness)).take(nicheSize)
     }.flatten
 
