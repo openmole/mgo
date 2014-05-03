@@ -30,6 +30,5 @@ trait SMSEMOEA <: Evolution
   with HypervolumeDiversity
   with ParetoRanking
   with StrictDominance
-  with RankDiversityModifier
   with NoArchive
   with GeneticBreeding

@@ -79,7 +79,6 @@ package object mgo {
   type IndividualDistanceFromArchive = distance.IndividualDistanceFromArchive
   type CrowdingDiversity = diversity.CrowdingDiversity
   type ClosedCrowdingDiversity = diversity.ClosedCrowdingDiversity
-  type Diversity = diversity.Diversity
   type DiversityMetric = diversity.DiversityMetric
   type HypervolumeDiversity = diversity.HypervolumeDiversity
   type NoDiversity = diversity.NoDiversity
@@ -117,8 +116,6 @@ package object mgo {
   type NoModifier = modifier.NoModifier
   type NoveltyModifier = modifier.NoveltyModifier
   type ProfileModifier = modifier.ProfileModifier
-  type RankDiversityMF = modifier.RankDiversityMF
-  type RankMF = modifier.RankMF
   type RankModifier = modifier.RankModifier
   type IndividualDiversityModifier = modifier.IndividualDiversityModifier
   type RankDiversityModifier = modifier.RankDiversityModifier
@@ -136,7 +133,6 @@ package object mgo {
   type HierarchicalRanking = ranking.HierarchicalRanking
   type NoRanking = ranking.NoRanking
   type ParetoRanking = ranking.ParetoRanking
-  type Rank = ranking.Rank
   type Ranking = ranking.Ranking
   type BinaryTournamentSelection = selection.BinaryTournamentSelection
   type TournamentOnRank = selection.TournamentOnRank

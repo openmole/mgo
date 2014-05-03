@@ -21,21 +21,29 @@ import fr.iscpif.mgo.{ Population, Individual }
 import fr.iscpif.mgo._
 import scalaz.Lens
 import scala.util.Random
-import fr.iscpif.mgo.modelfamily.ModelFamilyElitism
+import fr.iscpif.mgo.modelfamily.{ ModelFamilyGenome, ModelFamilyCrossover, ModelFamilyMutation, ModelFamilyElitism }
 
 object TestModelFamily extends App {
 
-  /*val m = new RastriginVector with NSGAII with ModelFamilyElitism with MaxAggregation {
+  implicit val rng = new Random(42)
 
-    override val masks: Seq[Seq[Boolean]] = (0 until 10).map(_ => RastriginVector.bitSet(10))
+  val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with ModelFamilyCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination {
+    override def genomeSize: Int = 10
 
-    override def genomeSize: Int = 11
     /** Number of steps before the algorithm stops */
-    override def steps: Int = ???
+    override def steps: Int = 100
 
     /** the size of the offspring */
-    override def lambda: Int = ???
+    override def lambda: Int = 100
 
-    override def nicheSize: Int = ???
-  }*/
+    override def nicheSize: Int = 10
+
+    override def models: Int = 100
+  }
+
+  val res =
+    m.evolve.untilConverged {
+      s => println(s.generation)
+    }.individuals
+
 }

@@ -29,6 +29,6 @@ trait Tournament <: Selection with MF {
    * @param e2 the second population element
    * @return the winning population element
    */
-  def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit aprng: Random): PopulationElement[G, P, F, MF]
+  def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF]
 
 }

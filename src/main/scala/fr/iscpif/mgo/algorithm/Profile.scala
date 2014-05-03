@@ -22,7 +22,6 @@ import fr.iscpif.mgo._
 trait Profile <: Evolution
   with MG
   with NoArchive
-  with ProfileModifier
   with GAGenomeWithSigma
   with MaxAggregation
   with SBXBoundedCrossover
@@ -33,3 +32,4 @@ trait Profile <: Evolution
   with HierarchicalRanking
   with StrictDominance
   with GeneticBreeding
+  with ProfileModifier

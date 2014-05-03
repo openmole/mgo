@@ -20,11 +20,11 @@ package fr.iscpif.mgo.selection
 import fr.iscpif.mgo._
 import scala.util.Random
 
-trait TournamentOnRankAndDiversity <: Tournament with RankModifier with DiversityModifier {
-  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit aprng: Random): PopulationElement[G, P, F, MF] =
+trait TournamentOnRankAndDiversity <: Tournament with RankDiversityModifier {
+  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF] =
     if (rank.get(e1.metaFitness)() < rank.get(e2.metaFitness)()) e1
     else if (rank.get(e1.metaFitness)() > rank.get(e2.metaFitness)()) e2
     else if (diversity.get(e1.metaFitness)() > diversity.get(e2.metaFitness)()) e1
     else if (diversity.get(e2.metaFitness)() > diversity.get(e1.metaFitness)()) e2
-    else if (aprng.nextDouble < 0.5) e1 else e2
+    else if (rng.nextDouble < 0.5) e1 else e2
 }

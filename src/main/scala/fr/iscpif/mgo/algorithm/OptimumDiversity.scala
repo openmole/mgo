@@ -19,8 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait OptimumDiversity <: NoveltyModifier
-  with OptimumDiversityArchive
+trait OptimumDiversity <: OptimumDiversityArchive
   with NonDominatedElitism
   with MG
   with GAGenomeWithSigma
@@ -32,3 +31,4 @@ trait OptimumDiversity <: NoveltyModifier
   with SBXBoundedCrossover
   with StrictDominance
   with CrowdingIndividualDistance
+  with NoveltyModifier

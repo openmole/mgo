@@ -24,7 +24,7 @@ import Math._
 trait ProfileModifier <: Modifier
     with Aggregation
     with ProfilePlotter
-    with RankMF
+    with RankModifier
     with HierarchicalRanking {
 
   override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
@@ -67,7 +67,7 @@ trait ProfileModifier <: Modifier
     val modified = contributions.map(c => Seq(1 / c))
     val ranks = rank(modified)
 
-    RankMF.toPopulationElements[G, P, F](individuals, ranks)
+    RankModifier.toPopulationElements[G, P, F](individuals, ranks)
   }
 
 }
