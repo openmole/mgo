@@ -19,11 +19,13 @@ package fr.iscpif.mgo.modelfamily
 
 import fr.iscpif.mgo._
 import scala.util.Random
+import fr.iscpif.mgo.crossover.SBXBoundedCrossOver
 
-trait ModelFamilyCrossover <: SBXBoundedCrossover with ModelFamilyGenome {
+trait ModelFamilyCrossover <: CrossOver with ModelFamilyGenome with SBXBoundedCrossover {
 
   override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = {
     val (res1, res2) = super.sbxCrossover(g1, g2)
+
     rng.nextDouble match {
       case x if x < 0.5 => Seq(res1, res2)
       case _ =>

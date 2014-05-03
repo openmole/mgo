@@ -19,7 +19,7 @@ package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 
-trait OptimumDiversityArchive <: Archive with GA with IndividualDistance with ArchiveIndividuals {
+trait OptimumDiversityArchive <: Archive with IndividualDistance with ArchiveIndividuals {
   def archiveSize: Int
   def isGood(individual: Individual[G, P, F]): Boolean
 

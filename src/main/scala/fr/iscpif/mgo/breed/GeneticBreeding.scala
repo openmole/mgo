@@ -19,11 +19,12 @@ package fr.iscpif.mgo.breed
 
 import fr.iscpif.mgo._
 import util.Random
+import fr.iscpif.mgo.genome.RandomGenome
 
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selection with CrossOver with Mutation with GA with Modifier {
+trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selection with CrossOver with Mutation with RandomGenome with Modifier {
 
   def cloneProbability: Double = 0.0
 
@@ -34,7 +35,7 @@ trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selectio
    * @param size the size of the breeded set
    * @return the breeded genomes
    */
-  def breed(individuals: Seq[Individual[G, P, F]], a: A, size: Int = lambda)(implicit aprng: Random): Seq[G] = {
+  def breed(individuals: Seq[Individual[G, P, F]], a: A, size: Int = lambda)(implicit rng: Random): Seq[G] = {
     val population = toPopulation(individuals, a)
 
     val breeded =
@@ -46,7 +47,7 @@ trait GeneticBreeding <: Breeding with Lambda with G with F with P with Selectio
         } yield breed
 
     Iterator.continually {
-      if (population.isEmpty || aprng.nextDouble >= cloneProbability) breeded.next()
+      if (population.isEmpty || rng.nextDouble >= cloneProbability) breeded.next()
       else selection(population).next().genome
     }.take(size).toIndexedSeq
   }

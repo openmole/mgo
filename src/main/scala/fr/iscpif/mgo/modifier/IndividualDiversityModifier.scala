@@ -24,9 +24,7 @@ import fr.iscpif.mgo._
  * the fitness with an additionnal objective of genomic diversity 1 / crowding distance
  * of the genome.
  */
-trait IndividualDiversityModifier <: RankDiversityModifier
-    with GA
-    with IndividualDistance {
+trait IndividualDiversityModifier <: RankDiversityModifier with IndividualDistance {
 
   type F <: MGFitness
 

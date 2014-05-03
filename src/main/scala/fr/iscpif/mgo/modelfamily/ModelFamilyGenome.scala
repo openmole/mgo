@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.modelfamily
 
-import fr.iscpif.mgo.genome.{ GA, GAGenomeWithSigma, Sigma }
+import fr.iscpif.mgo.genome._
 import scalaz.Lens
 import scala.util.Random
 
@@ -25,9 +25,12 @@ object ModelFamilyGenome {
   case class Genome(modelId: Int, values: Seq[Double], sigma: Seq[Double])
 }
 
-trait ModelFamilyGenome <: ModelId with Sigma with GA {
+trait ModelFamilyGenome <: ModelId with Sigma with GA with RandomGenome {
 
   type G = ModelFamilyGenome.Genome
+
+  def models: Int
+  def genomeSize: Int
 
   def modelId = Lens.lensu[G, Int](
     (c, v) => c.copy(modelId = v),
@@ -39,9 +42,9 @@ trait ModelFamilyGenome <: ModelId with Sigma with GA {
   def genome = Lens.lensu[G, Seq[Double]](
     (c, v) =>
       ModelFamilyGenome.Genome(
-        v.head.toInt,
-        v.tail.slice(0, v.size / 2),
-        v.tail.slice(v.size / 2, v.size)
+        c.modelId,
+        v.slice(0, v.size / 2),
+        v.slice(v.size / 2, v.size)
       ),
     v => v.values ++ v.sigma
   )
@@ -50,6 +53,6 @@ trait ModelFamilyGenome <: ModelId with Sigma with GA {
 
   def randomGenome(implicit rng: Random) = {
     def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq
-    ModelFamilyGenome.Genome(rng.nextInt, rnd, rnd)
+    ModelFamilyGenome.Genome(rng.nextInt(models), rnd, rnd)
   }
 }

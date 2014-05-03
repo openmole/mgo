@@ -32,16 +32,25 @@ import scala.math._
  * Hinterding, and Zbigniew Michalewicz, Senior Member, IEEE) + How to Solve It,
  * Modern Heuristics
  */
-trait CoEvolvingSigmaValuesMutation extends Mutation with Sigma with GA {
+object CoEvolvingSigmaValuesMutation {
 
-  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
-    val indexedSeqSigma = sigma.get(genome).map { s => clamp(s * exp(rng.nextGaussian), 0, 1) }
+  def mutate(genome: Seq[Double], sigma: Seq[Double])(implicit rng: Random) = {
+    val indexedSeqSigma = sigma.map { s => clamp(s * exp(rng.nextGaussian), 0, 1) }
 
     val newValues =
-      (values.get(genome) zip indexedSeqSigma) map {
+      (genome zip indexedSeqSigma) map {
         case (v, s) => clamp(rng.nextGaussian * s + v, 0, 1)
       }
 
+    (newValues, indexedSeqSigma)
+  }
+
+}
+
+trait CoEvolvingSigmaValuesMutation extends Mutation with Sigma with GA {
+
+  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
+    val (newValues, indexedSeqSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome))
     val updatedValues = values.set(genome, newValues)
     sigma.set(updatedValues, indexedSeqSigma)
   }

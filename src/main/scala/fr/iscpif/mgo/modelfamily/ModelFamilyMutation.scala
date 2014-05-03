@@ -25,7 +25,9 @@ import tools.Math._
 trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation {
 
   override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
-    val res = super.mutate(genome, population, archive)
+    val (newValues, newSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome))
+    val res = sigma.set(values.set(genome, newValues), newSigma)
+
     val weights =
       population.groupBy(i => modelId.get(i.genome)).toSeq map {
         case (i, niche) =>

@@ -39,25 +39,14 @@ import util.Random
  * http://www.iitk.ac.in/kangal/codes.shtml
  *
  */
-trait SBXBoundedCrossOver extends CrossOver with GA {
+object SBXBoundedCrossOver {
 
-  /** distribution index parameter of the algorithm */
-  def distributionIndex: Double = 2
-
-  /** crossover rate parameter of the algorithm */
-  def crossoverRate: Double = 0.5
-
-  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = {
-    val (res1, res2) = sbxCrossover(g2, g2)
-    Seq(res1, res2)
-  }
-
-  def sbxCrossover(g1: G, g2: G)(implicit rng: Random) = {
+  def crossOver(g1: Seq[Double], g2: Seq[Double], crossoverRate: Double, distributionIndex: Double)(implicit rng: Random) = {
 
     /** crossover probability */
     val offspring = {
       if (rng.nextDouble <= crossoverRate) {
-        (genome.get(g1) zip genome.get(g2)).map {
+        (g1 zip g2).map {
           case (g1e, g2e) =>
             if (rng.nextBoolean) {
               if (abs(g1e - g2e) > epsilon) {
@@ -65,7 +54,7 @@ trait SBXBoundedCrossOver extends CrossOver with GA {
                 val y2 = max(g2e, g1e)
 
                 val yL = 0.0 //g1e.getLowerBound
-                val yU = 1.0 //g1e.getUpperBound  
+                val yU = 1.0 //g1e.getUpperBound
 
                 def inBound(v: Double) = if (v < yL) yL else if (v > yU) yU else v
 
@@ -97,10 +86,29 @@ trait SBXBoundedCrossOver extends CrossOver with GA {
               } else (g1e, g2e)
             } else (g2e, g1e)
         }
-      } else (genome.get(g1) zip genome.get(g2))
+      } else (g1 zip g2)
     }
-    (genome.set(g1, offspring.map { _._1 }), genome.set(g2, offspring.map { _._2 }))
+    (offspring.unzip._1, offspring.unzip._2)
   }
 
 }
 
+trait SBXBoundedCrossOver extends CrossOver with GA {
+
+  /** distribution index parameter of the algorithm */
+  def distributionIndex: Double = 2
+
+  /** crossover rate parameter of the algorithm */
+  def crossoverRate: Double = 0.5
+
+  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = {
+    val (o1, o2) = sbxCrossover(g1, g2)
+    Seq(o1, o2)
+  }
+
+  def sbxCrossover(g1: G, g2: G)(implicit rng: Random) = {
+    val (o1, o2) = SBXBoundedCrossOver.crossOver(genome.get(g1), genome.get(g2), crossoverRate, distributionIndex)
+    (genome.set(g1, o1), genome.set(g2, o2))
+  }
+
+}

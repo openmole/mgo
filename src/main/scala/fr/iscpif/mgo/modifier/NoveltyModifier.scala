@@ -27,7 +27,6 @@ trait NoveltyModifier <: RankDiversityModifier
     with Archive
     with Neighbours
     with ParetoRanking
-    with GA
     with IndividualDistance {
 
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
