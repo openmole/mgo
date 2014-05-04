@@ -28,10 +28,10 @@ object TestModelFamily extends App {
   implicit val rng = new Random(42)
 
   val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with ModelFamilyCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination {
-    override def genomeSize: Int = 5
+    override def genomeSize: Int = 10
 
     /** Number of steps before the algorithm stops */
-    override def steps: Int = 1000
+    override def steps: Int = 5000
 
     /** the size of the offspring */
     override def lambda: Int = 100

@@ -22,16 +22,29 @@ import scala.util.Random
 import fr.iscpif.mgo._
 import tools.Math._
 
-trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation {
+trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation with ModelFamilyNiches {
 
   override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
     val (newValues, newSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome))
     val res = sigma.set(values.set(genome, newValues), newSigma)
 
-    val weights =
-      population.groupBy(i => modelId.get(i.genome)).toSeq map {
-        case (i, niche) =>
-          mse(niche.map(_.fitness).map(aggregate)) -> i
+    val nichesValues = niches(population)
+
+    val weights: Seq[(Double, Int)] =
+      if (nichesValues.exists { case (_, niche) => niche.size < nicheSize })
+        nichesValues map {
+          case (i, niche) => 1.0 + (nicheSize - niche.size) -> i
+        }
+      else {
+        val mses = nichesValues map { case (_, niche) => mse(niche.map(_.fitness).map(aggregate)) }
+
+        if (mses.forall(_ <= 0)) nichesValues map { case (i, _) => 1.0 -> i }
+        else {
+          val mseAvg = average(mses)
+          (nichesValues zip mses) map {
+            case ((i, niche), mse) => mseAvg + mse -> i
+          }
+        }
       }
     val newIndex = multinomialDraw(weights)._1
     modelId.set(res, newIndex)

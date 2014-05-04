@@ -17,15 +17,14 @@
 
 package fr.iscpif.mgo.modelfamily
 
+import fr.iscpif.mgo.Individual
 import fr.iscpif.mgo._
-import scala.util.Random
-import fr.iscpif.mgo.elitism.{ MergedGenerations, Elitism }
 
-trait ModelFamilyElitism <: Elitism with Aggregation with MergedGenerations with ModelFamilyGenome with ModelFamilyNiches {
+trait ModelFamilyNiches <: ModelFamilyGenome with P with F {
+  def nicheSize: Int
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
-    niches(individuals).map {
-      case (_, is) => is.sortBy(i => aggregate(i.fitness)).take(nicheSize)
-    }.flatten
-
+  def niches(individuals: Seq[Individual[G, P, F]]) = {
+    val n = individuals.groupBy(i => modelId.get(i.genome)).withDefault(_ => Seq.empty)
+    (0 until models).map(i => i -> n(i))
+  }
 }
