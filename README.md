@@ -18,18 +18,11 @@ Example
 
 Have a look at the test directory in the repository.
   
-Maven dependency
+SBT dependency
 ----------------
 
-    <dependency>
-      <groupId>fr.iscpif</groupId>
-      <artifactId>mgo</artifactId>
-      <version>1.XX</version>
-    </dependency>
-    
-    <repository>
-      <id>maven.iscpif.fr</id>
-      <name>ISC-PIF Repository</name>
-      <url>http://maven.iscpif.fr/public/</url>
-    </repository>
+    resolvers +=
+      "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+
+    libraryDependencies += "fr.iscpif" %% "mgo" % "1.72-SNAPSHOT"
 
