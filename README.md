@@ -21,8 +21,7 @@ Have a look at the test directory in the repository.
 SBT dependency
 ----------------
 
-    resolvers +=
-      "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots"
+    resolvers += Resolver.sonatypeRepo("snapshots")
 
     libraryDependencies += "fr.iscpif" %% "mgo" % "1.72-SNAPSHOT"
 
