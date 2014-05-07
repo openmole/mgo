@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.modifier.MF
 
 trait Archive extends G with P with F with MF with A {
   type A

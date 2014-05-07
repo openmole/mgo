@@ -20,6 +20,7 @@ package fr.iscpif.mgo.selection
 import fr.iscpif.mgo._
 import genome.G
 import util.Random
+import fr.iscpif.mgo.modifier.MF
 
 /**
  * Selection layer for the evolutionary algorithms.

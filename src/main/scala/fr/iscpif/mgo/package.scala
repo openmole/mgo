@@ -110,6 +110,7 @@ package object mgo {
   type CloneRemoval = modifier.CloneRemoval
   type DiversityModifier = modifier.DiversityModifier
   type IndividualFilter = modifier.IndividualFilter
+  type MF = modifier.MF
   type Modifier = modifier.Modifier
   type NoModifier = modifier.NoModifier
   type NoveltyModifier = modifier.NoveltyModifier

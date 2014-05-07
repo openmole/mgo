@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo
+package fr.iscpif.mgo.modifier
 
 /**
  * Type of the meta-fitness (decorated fitness)

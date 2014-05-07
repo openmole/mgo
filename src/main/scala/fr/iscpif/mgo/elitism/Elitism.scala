@@ -20,6 +20,7 @@ package fr.iscpif.mgo.elitism
 import fr.iscpif.mgo._
 import genome.G
 import scala.util.Random
+import fr.iscpif.mgo.modifier.MF
 
 /**
  * Cake layer to eliminated elements of a population

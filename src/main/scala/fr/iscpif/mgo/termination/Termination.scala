@@ -19,6 +19,7 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 import genome.G
+import fr.iscpif.mgo.modifier.MF
 
 /**
  * Layer to compute the stopping condition of the evolutionary algorithm

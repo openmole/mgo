@@ -19,6 +19,7 @@ package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
 import scala.util.Random
+import fr.iscpif.mgo.modifier.MF
 
 trait Tournament <: Selection with MF {
   /**

@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.MF
 import scalaz.Lens
 
 trait RankMF <: MF {
