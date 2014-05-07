@@ -19,7 +19,14 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 import scala.util.Random
+import scalaz.Lens
 
 trait NoFitness <: Problem with MG {
-  def evaluate(phenotype: P, rng: Random): F = MGFitness(Seq.empty)
+
+  type F = None.type
+
+  override def fitness: Lens[F, Seq[Double]] =
+    Lens.lensu((v, f) => None, v => Seq.empty)
+
+  def evaluate(phenotype: P, rng: Random): F = None
 }

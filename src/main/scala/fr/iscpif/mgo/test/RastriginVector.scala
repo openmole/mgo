@@ -24,7 +24,7 @@ import fr.iscpif.mgo.fitness.MGFitness
 
 object RastriginVector {
 
-  def gray(n: Int) = n ^ (n >>> 1)
+  //def gray(n: Int) = n ^ (n >>> 1)
 
   def toBitSet(n: Int) =
     Iterator.iterate(n)(n => n >> 1).map {
@@ -32,13 +32,15 @@ object RastriginVector {
     }.take(32).toVector
 
   def bitSet(size: Int) =
-    (0 until size).map { gray }.map { toBitSet }
+    (0 until size).map { toBitSet }
 
 }
 
-trait RastriginVector <: GAProblem with ModelFamilyGenome {
+trait RastriginVector <: GAProblem with ModelFamilyGenome with MGFitness {
 
   lazy val masks: Seq[Seq[Boolean]] = (0 until models).map(RastriginVector.toBitSet)
+  lazy val nbTrue = masks.map(_.count(_ == true))
+  lazy val genomeSize = nbTrue.max
   lazy val min = Seq(0.0) ++ Seq.fill(genomeSize)(-5.12)
   lazy val max = Seq(masks.size.toDouble) ++ Seq.fill(genomeSize)(5.12)
 
@@ -52,9 +54,9 @@ trait RastriginVector <: GAProblem with ModelFamilyGenome {
         case (true, v) => Some(v)
         case _ => None
       }
-    Rastrigin.value(vector)
+    (genomeSize - nbTrue(id)) + Rastrigin.value(vector)
   }
 
-  override def evaluate(phenotype: P, rng: Random): F = MGFitness(phenotype)
+  override def evaluate(phenotype: P, rng: Random): F = Seq(phenotype)
 
 }

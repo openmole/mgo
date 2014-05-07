@@ -20,7 +20,6 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 
 trait NSGAII <: Evolution
-  with MG
   with GAGenomeWithSigma
   with BinaryTournamentSelection
   with TournamentOnRankAndDiversity
@@ -34,3 +33,4 @@ trait NSGAII <: Evolution
   with NoArchive
   with CloneRemoval
   with GeneticBreeding
+  with MGFitness

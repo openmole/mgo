@@ -93,11 +93,9 @@ package object mgo {
   type ProfileElitism = elitism.ProfileElitism
   type Aggregation = fitness.Aggregation
   type F = fitness.F
-  type Fitness = fitness.Fitness
   type MaxAggregation = fitness.MaxAggregation
   type MG = fitness.MG
   type MGFitness = fitness.MGFitness
-  val MGFitness = fitness.MGFitness
   type G = genome.G
   type GAGenome = genome.GAGenome
   type GAGenomeWithSigma = genome.GAGenomeWithSigma

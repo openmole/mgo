@@ -18,5 +18,5 @@
 package fr.iscpif.mgo.fitness
 
 trait F {
-  type F <: Fitness
+  type F
 }

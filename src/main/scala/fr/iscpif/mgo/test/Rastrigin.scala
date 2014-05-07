@@ -24,12 +24,12 @@ object Rastrigin {
   def value(x: Seq[Double]) = 10 * x.size + x.map(x => (x * x) - 10 * math.cos(2 * math.Pi * x)).sum
 }
 
-trait Rastrigin <: GAProblem {
+trait Rastrigin <: GAProblem with MGFitness {
   def min = Seq.fill(genomeSize)(-5.12)
   def max = Seq.fill(genomeSize)(5.12)
 
   type P = Double
 
   override def express(g: G, rng: Random) = Rastrigin.value(values.get(g))
-  override def evaluate(phenotype: P, rng: Random) = MGFitness(phenotype)
+  override def evaluate(phenotype: P, rng: Random) = Seq(phenotype)
 }

@@ -21,15 +21,13 @@ import fr.iscpif.mgo.{ Population, Individual }
 import fr.iscpif.mgo._
 import scalaz.Lens
 import scala.util.Random
-import fr.iscpif.mgo.modelfamily.{ ModelFamilyGenome, ModelFamilyCrossover, ModelFamilyMutation, ModelFamilyElitism }
+import fr.iscpif.mgo.modelfamily.{ ModelFamilyGenome, ModelFamilyMutation, ModelFamilyElitism }
 
 object TestModelFamily extends App {
 
   implicit val rng = new Random(42)
 
-  val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with ModelFamilyCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination {
-    override def genomeSize: Int = 10
-
+  val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with SBXBoundedCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination {
     /** Number of steps before the algorithm stops */
     override def steps: Int = 5000
 
@@ -38,16 +36,16 @@ object TestModelFamily extends App {
 
     override def nicheSize: Int = 10
 
-    override def models: Int = 50
+    override def models: Int = 256
   }
 
-  println(m.masks)
+  println(m.masks.map(_.count(_ == true)))
 
   val res =
     m.evolve.untilConverged {
       s =>
         println(s.generation)
-        println(m.niches(s.individuals).map { case (i, idv) => i -> idv.map(i => m.aggregate(i.fitness)).sorted.headOption })
+        println(m.niches(s.individuals).map { case (i, idv) => i -> idv.map(i => m.aggregate(i.fitness)).sorted.headOption.getOrElse(Double.PositiveInfinity) })
     }.individuals
 
 }

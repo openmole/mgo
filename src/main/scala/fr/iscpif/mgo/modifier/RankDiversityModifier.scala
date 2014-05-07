@@ -46,9 +46,7 @@ object RankDiversityModifier {
     }
 }
 
-trait RankDiversityModifier <: Modifier with Ranking with DiversityMetric {
-
-  type F <: MGFitness
+trait RankDiversityModifier <: Modifier with Ranking with DiversityMetric with MG {
 
   type MF = RankDiversityModifier.RankDiversity
 
@@ -62,5 +60,5 @@ trait RankDiversityModifier <: Modifier with Ranking with DiversityMetric {
     RankDiversityModifier.toPopulationElements[G, P, F](evaluated, ranks, distances)
   }
 
-  def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = evaluated.map(_.fitness.values)
+  def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = evaluated.map(i => fitness.get(i.fitness))
 }

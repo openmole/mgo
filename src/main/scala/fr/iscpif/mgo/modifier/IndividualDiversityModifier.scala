@@ -24,13 +24,12 @@ import fr.iscpif.mgo._
  * the fitness with an additionnal objective of genomic diversity 1 / crowding distance
  * of the genome.
  */
-trait IndividualDiversityModifier <: RankDiversityModifier with IndividualDistance {
-
-  type F <: MGFitness
+trait IndividualDiversityModifier <: RankDiversityModifier with IndividualDistance with MG {
 
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) =
     (evaluated zip individualDistance(evaluated)).map {
-      case (i, gd) => i.fitness.values.toList ::: 1 / gd() :: Nil
+      case (i, gd) =>
+        fitness.get(i.fitness).toList ::: 1 / gd() :: Nil
     }
 
 }

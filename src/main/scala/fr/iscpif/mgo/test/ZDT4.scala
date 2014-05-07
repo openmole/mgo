@@ -9,7 +9,7 @@ import fr.iscpif.mgo._
 import math._
 import util.Random
 
-trait ZDT4 extends GAProblem {
+trait ZDT4 extends GAProblem with MGFitness {
   def n = genomeSize
 
   def min = Seq.fill(n)(0.0)
@@ -22,7 +22,7 @@ trait ZDT4 extends GAProblem {
     Seq(f1(x), f2(x))
   }
 
-  override def evaluate(p: P, rng: Random) = MGFitness(p)
+  override def evaluate(p: P, rng: Random) = p
 
   def f1(x: Seq[Double]) = x(0)
   def f2(x: Seq[Double]) = g(x) * (1 - sqrt(x(0) / g(x)))

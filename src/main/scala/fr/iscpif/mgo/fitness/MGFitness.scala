@@ -17,26 +17,17 @@
 
 package fr.iscpif.mgo.fitness
 
-object MGFitness {
-
-  implicit def indexedSeqToFit(f: IndexedSeq[Double]) = new {
-    def toGAFitness = new MGFitness {
-      val values = f
-    }
-  }
-
-  def apply(v: Traversable[Double]): MGFitness = new MGFitness {
-    val values = v.toIndexedSeq.map(v => if (!v.isNaN) v else Double.PositiveInfinity)
-  }
-
-  def apply(v: Double*): MGFitness = MGFitness(v)
-}
+import scalaz.Lens
 
 /**
  * The fitness is a vector a of Doubles, one Double for each objective.
  */
-trait MGFitness extends Fitness {
-  /** The finess value */
-  def values: Seq[Double]
-  override def toString = values.toString
+trait MGFitness extends MG {
+  type F = Seq[Double]
+
+  def fitness = Lens.lensu(
+    (v, f) => f,
+    v => v
+  )
+
 }

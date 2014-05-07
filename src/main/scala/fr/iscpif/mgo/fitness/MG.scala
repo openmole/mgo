@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo.fitness
 
+import scalaz.Lens
+
 trait MG extends F {
-  type F = MGFitness
+  def fitness: Lens[F, Seq[Double]]
 }

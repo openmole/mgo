@@ -17,9 +17,6 @@
 
 package fr.iscpif.mgo.fitness
 
-trait MaxAggregation extends Aggregation {
-
-  type F <: MGFitness
-
-  override def aggregate(fitness: F): Double = fitness.values.max
+trait MaxAggregation extends Aggregation with MG {
+  override def aggregate(f: F): Double = fitness.get(f).max
 }

@@ -33,7 +33,7 @@ object TestOptimumDiversity extends App {
     def steps = 400
 
     def isGood(individual: Individual[G, P, F]) =
-      individual.fitness.values.max < 8.05
+      fitness.get(individual.fitness).max < 8.05
 
     def individualPosition(individual: Individual[G, P, F]): Seq[Double] = Seq(individual.phenotype)
 
@@ -45,9 +45,9 @@ object TestOptimumDiversity extends App {
     s =>
       val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
       s.archive.foreach {
-        i => output.append(i.genome.values.mkString(",") + "," + i.fitness.values.mkString(",") + "\n")
+        i => output.append(i.genome.values.mkString(",") + "," + m.fitness.get(i.fitness).mkString(",") + "\n")
       }
-      println(s.individuals.map(_.fitness.values.max).min)
+      println(s.individuals.map(i => m.fitness.get(i.fitness).max).min)
     //println(s.generation + " " + s.archive.size)
   }
 

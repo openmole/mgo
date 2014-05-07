@@ -26,16 +26,18 @@ object TestFunction extends App {
   implicit val rng = new Random
 
   val nsga2 =
-    new ZDT4 with NSGAII {
-      def mu = 200
-      def lambda = 200
-      def genomeSize = 10
-      def steps = 200
+    new Rastrigin with NSGAII with HierarchicalRanking {
+      def mu = 100
+      def lambda = 100
+      def genomeSize = 6
+      def steps = 1000
     }
 
   val res =
     nsga2.evolve.untilConverged {
-      s => println(s.generation)
+      s =>
+        println(s.individuals.map(_.fitness))
+        println(s.generation)
     }.individuals
 
   val output = Resource.fromFile("/tmp/res.csv")
@@ -43,7 +45,7 @@ object TestFunction extends App {
     r <- res
   } {
     val scaled = nsga2.scale(r)
-    def line = nsga2.values.get(scaled.genome) ++ scaled.fitness.values
+    def line = nsga2.values.get(scaled.genome) ++ nsga2.fitness.get(scaled.fitness)
     output.append(line.mkString(",") + "\n")
   }
 

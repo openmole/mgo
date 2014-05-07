@@ -31,7 +31,7 @@ trait NoveltyModifier <: RankDiversityModifier
 
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
     val diversities = individualDistance(evaluated).map(d => 1.0 / d())
-    (evaluated zip diversities).map { case (i, d) => i.fitness.values ++ Seq(d) }
+    (evaluated zip diversities).map { case (i, d) => fitness.get(i.fitness) ++ Seq(d) }
   }
 
 }

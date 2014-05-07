@@ -27,7 +27,7 @@ import util.Random
  */
 trait NonDominatedElitism extends Elitism with Mu with MergedGenerations with RankDiversityModifier {
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] = {
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] = {
     if (individuals.size < mu) individuals
     else {
       val population = toPopulation(individuals, archive)

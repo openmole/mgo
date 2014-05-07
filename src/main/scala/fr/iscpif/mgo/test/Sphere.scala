@@ -30,5 +30,5 @@ trait Sphere extends GAProblem {
 
   override def express(g: G, rng: Random) = List(values.get(g).map(x => x * x).sum)
 
-  def apply(x: Seq[Double], rng: Random) = MGFitness(x)
+  def apply(x: Seq[Double], rng: Random) = x
 }
