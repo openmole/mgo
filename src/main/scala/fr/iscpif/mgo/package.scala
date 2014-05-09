@@ -77,8 +77,10 @@ package object mgo {
   type IndividualDistance = distance.IndividualDistance
   type PhenotypeIsPosition = distance.PhenotypeIsPosition
   type IndividualDistanceFromArchive = distance.IndividualDistanceFromArchive
+  type KNearestNeighboursIndividualDistance = distance.KNearestNeighboursIndividualDistance
   type CrowdingDiversity = diversity.CrowdingDiversity
   type ClosedCrowdingDiversity = diversity.ClosedCrowdingDiversity
+  type KNearestNeighboursDiversity = diversity.KNearestNeighboursDiversity
   type DiversityMetric = diversity.DiversityMetric
   type HypervolumeDiversity = diversity.HypervolumeDiversity
   type NoDiversity = diversity.NoDiversity
