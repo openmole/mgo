@@ -32,13 +32,18 @@ object TestBehaviourSearch extends App {
   implicit val rng = new Random
 
   val m =
-    new GAProblem with NoFitness with NoArchive with NoveltyModifier with GeneticBreeding with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with SortedTournamentSelection with ClosedCrowdingDiversity with ClosedCrowdingIndividualDistance with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
+    new GAProblem with NoFitness with NoArchive with NoveltyModifier with GeneticBreeding with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with SortedTournamentSelection with KNearestNeighboursDiversity with KNearestNeighboursIndividualDistance // with ClosedCrowdingDiversity
+    // with ClosedCrowdingIndividualDistance
+    with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
+
+      def k = 5
 
       override def genomeSize: Int = 2
 
       def min = Seq.fill(genomeSize)(0.0)
       def max = 1.0 :: List.fill(genomeSize)(5.0)
 
+      /** ZDT4 functions **/
       def f1(x: Seq[Double]) = x(0)
       def f2(x: Seq[Double]) = g(x) * (1 - sqrt(x(0) / g(x)))
       def g(x: Seq[Double]) =

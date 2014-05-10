@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.tools
 
-import scala.collection.immutable._
+import scala.collection._
 import fr.iscpif.mgo.tools.distance._
 
 /**
@@ -98,15 +98,26 @@ class KDTree(node: Seq[Double], left: Option[KDTree], right: Option[KDTree]) ext
   override def toString: String = s"Node($node, $left, $right)"
 }
 
+class EmptyTree extends KDTree(Vector[Double](), None, None) {
+  override def nearest(query: Seq[Double], depth: Int = 0): Seq[Double] = Vector[Double]()
+  override def knearest(k: Int, query: Seq[Double], depth: Int = 0): Seq[Seq[Double]] = Vector[Vector[Double]]()
+  override def toString: String = "EmptyTree"
+  override def toSeq: Seq[Seq[Double]] = Vector(Vector[Double]())
+}
+
 object KDTree {
   /**
    * @param pointList A size N sequence of size K sequences, representing N points in K dimensions
    * @return
    */
   def apply(pointList: Seq[Seq[Double]]) = {
-    val tPointList = transpose(pointList)
-    val sortedDims = tPointList map (argSort)
-    build(tPointList, sortedDims, 0)
+    if (pointList.size == 0) new EmptyTree
+    else if (pointList(0).size == 0) new EmptyTree
+    else {
+      val tPointList = transpose(pointList)
+      val sortedDims = tPointList map (argSort)
+      build(tPointList, sortedDims, 0)
+    }
   }
 
   def transpose(pointList: Seq[Seq[Double]]): Seq[Seq[Double]] = {

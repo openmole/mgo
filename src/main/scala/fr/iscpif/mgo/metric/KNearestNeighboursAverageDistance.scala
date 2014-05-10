@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 03/03/14 Guillaume Chérel
+ * Copyright (C) 09/05/2014 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,20 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.diversity
+package fr.iscpif.mgo.metric
 
-import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
-import metric._
+import fr.iscpif.mgo.tools.KDTree
 
 /**
- * Crowding distance, see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
- * A fast elitist non-dominated sorting genetic algorithm for multi-objective
- * optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
+ * Distance to the K Nearest Neighbours using the KD-Tree algorithm
+ *
  */
-trait ClosedCrowdingDiversity extends DiversityMetric {
 
-  override def diversity(values: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]) =
-    ClosedCrowdingDistance(values.toIndexedSeq)
+object KNearestNeighboursAverageDistance {
+  def apply(values: Seq[Seq[Double]], k: Int) = {
+    val tree = KDTree(values)
+    val knearest: Seq[Seq[Seq[Double]]] = values.map(tree.knearest(k, _))
 
+    (values zip knearest).map {
+      case (v, neighbours) => Lazy(
+        neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur, v) } / neighbours.size
+      )
+    }
+  }
 }
