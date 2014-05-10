@@ -21,6 +21,7 @@ import scala.util.Random
 import fr.iscpif.mgo.problem.{ GAProblem, Problem }
 import fr.iscpif.mgo.modelfamily.ModelFamilyGenome
 import fr.iscpif.mgo.fitness.MGFitness
+import scala.collection.immutable.NumericRange
 
 object RastriginVector {
 
@@ -38,11 +39,16 @@ object RastriginVector {
 
 trait RastriginVector <: GAProblem with ModelFamilyGenome with MGFitness {
 
-  lazy val masks: Seq[Seq[Boolean]] = (0 until models).map(RastriginVector.toBitSet)
+  def modelMasks: Range
+  def models = modelMasks.size
+
+  lazy val masks: Seq[Seq[Boolean]] = modelMasks.map(RastriginVector.toBitSet)
   lazy val nbTrue = masks.map(_.count(_ == true))
   lazy val genomeSize = nbTrue.max
   lazy val min = Seq(0.0) ++ Seq.fill(genomeSize)(-5.12)
   lazy val max = Seq(masks.size.toDouble) ++ Seq.fill(genomeSize)(5.12)
+
+  lazy val bestFitness = (0 until modelMasks.size).map(genomeSize - nbTrue(_))
 
   type P = Double
 
@@ -54,7 +60,7 @@ trait RastriginVector <: GAProblem with ModelFamilyGenome with MGFitness {
         case (true, v) => Some(v)
         case _ => None
       }
-    (genomeSize - nbTrue(id)) + Rastrigin.value(vector)
+    bestFitness(id) + Rastrigin.value(vector)
   }
 
   override def evaluate(phenotype: P, rng: Random): F = Seq(phenotype)

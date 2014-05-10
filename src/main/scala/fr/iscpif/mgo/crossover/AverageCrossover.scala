@@ -18,22 +18,20 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
-import genome.G
 import util.Random
 
 /**
- * Implement a crossover operation between 2 genomes
+ * Compute a ponderated average between 2 genomes
  */
-trait CrossOver <: G with P with F with A {
+trait AverageCrossover extends Crossover with GA {
 
-  /**
-   * Crossover g1 and g2
-   *
-   *  @param g1 a genome
-   *  @param g2 another genome
-   *  @param population last computed population
-   *  @param archive last archive
-   *  @return the result of the crossover
-   */
-  def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[G]
+  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random) = {
+    val pds = aprng.nextDouble
+
+    val newValues = IndexedSeq.tabulate(genome.get(g1).size)(i =>
+      (pds * genome.get(g1)(i) + (1 - pds) * genome.get(g2)(i)) / 2)
+
+    IndexedSeq(genome.set(g1, newValues))
+  }
 }
+

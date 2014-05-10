@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2012 reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -17,21 +17,7 @@
 
 package fr.iscpif.mgo.crossover
 
-import fr.iscpif.mgo._
-import util.Random
-
-/**
- * Compute a ponderated average between 2 genomes
- */
-trait AverageCrossOver extends CrossOver with GA {
-
-  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random) = {
-    val pds = aprng.nextDouble
-
-    val newValues = IndexedSeq.tabulate(genome.get(g1).size)(i =>
-      (pds * genome.get(g1)(i) + (1 - pds) * genome.get(g2)(i)) / 2)
-
-    IndexedSeq(genome.set(g1, newValues))
-  }
+trait CrossoverRate {
+  /** crossover rate parameter of the algorithm */
+  def crossoverRate: Double = 0.5
 }
-

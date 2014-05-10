@@ -25,12 +25,12 @@ import tools.Math._
 trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation with ModelFamilyNiches {
 
   override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
-    val (newValues, newSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome))
+    val (newValues, newSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma, mutationRate)
     val res = sigma.set(values.set(genome, newValues), newSigma)
 
-    val nichesValues = niches(population)
+    //val nichesValues = niches(population)
 
-    val weights: Seq[(Double, Int)] =
+    /*val weights: Seq[(Double, Int)] =
       if (nichesValues.exists { case (_, niche) => niche.size < nicheSize })
         nichesValues map {
           case (i, niche) => 1.0 + (nicheSize - niche.size) -> i
@@ -40,14 +40,15 @@ trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenom
 
         if (mses.forall(_ <= 0)) nichesValues map { case (i, _) => 1.0 -> i }
         else {
-          val mseAvg = average(mses)
-          (nichesValues zip mses) map {
-            case ((i, niche), mse) => mseAvg + mse -> i
+          val maxMses = mses.max
+          val normalised = mses.map(m => math.max(m / maxMses, minimumWeight))
+          (nichesValues zip normalised) map {
+            case ((i, niche), mse) => mse -> i
           }
         }
       }
-    val newIndex = multinomialDraw(weights)._1
-    modelId.set(res, newIndex)
+    val newIndex = multinomialDraw(weights)._1*/
+    if (rng.nextDouble < mutationRate) modelId.set(res, rng.nextInt(models)) else res
   }
 
 }

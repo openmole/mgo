@@ -64,11 +64,11 @@ package object mgo {
   type OptimumDiversityArchive = archive.OptimumDiversityArchive
   type Breeding = breed.Breeding
   type GeneticBreeding = breed.GeneticBreeding
-  type AverageCrossOver = crossover.AverageCrossOver
-  type CrossOver = crossover.CrossOver
-  type IdentityCrossOver = crossover.IdentityCrossOver
-  type SBXBoundedCrossover = crossover.SBXBoundedCrossOver
-  type UniformCrossOver = crossover.UniformCrossOver
+  type AverageCrossOver = crossover.AverageCrossover
+  type CrossOver = crossover.Crossover
+  type IdentityCrossOver = crossover.IdentityCrossover
+  type SBXBoundedCrossover = crossover.SBXBoundedCrossover
+  type UniformCrossOver = crossover.UniformCrossover
   type CrowdingIndividualDistance = distance.CrowdingIndividualDistance
   type ClosedCrowdingIndividualDistance = distance.ClosedCrowdingIndividualDistance
   type ClosedCrowdingIndividualDistanceFromArchive = distance.ClosedCrowdingIndividualDistanceFromArchive

@@ -24,7 +24,7 @@ import fr.iscpif.mgo.tools.Random._
 /**
  * Swap part of each genome
  */
-trait UniformCrossOver extends CrossOver with GA {
+trait UniformCrossover extends Crossover with GA {
 
   /** Average rate of exchange between the 2 genomes */
   def crossoverRate: Double = 0.5

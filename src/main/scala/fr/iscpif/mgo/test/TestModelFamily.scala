@@ -29,14 +29,14 @@ object TestModelFamily extends App {
 
   val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with SBXBoundedCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination {
     /** Number of steps before the algorithm stops */
-    override def steps: Int = 5000
+    override def steps: Int = 1000
 
     /** the size of the offspring */
-    override def lambda: Int = 100
+    override def lambda: Int = 1000
 
     override def nicheSize: Int = 10
 
-    override def models: Int = 256
+    override def modelMasks = ((1024 - 128) until 1024)
   }
 
   println(m.masks.map(_.count(_ == true)))
@@ -44,8 +44,10 @@ object TestModelFamily extends App {
   val res =
     m.evolve.untilConverged {
       s =>
-        println(s.generation)
-        println(m.niches(s.individuals).map { case (i, idv) => i -> idv.map(i => m.aggregate(i.fitness)).sorted.headOption.getOrElse(Double.PositiveInfinity) })
+        val curFit = m.niches(s.individuals).map {
+          case (i, idv) => idv.map(i => m.aggregate(i.fitness)).sorted.headOption.getOrElse(Double.PositiveInfinity)
+        }.sum
+        println(s.generation + " " + m.bestFitness.sum + " " + curFit)
     }.individuals
 
 }

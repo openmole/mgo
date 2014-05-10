@@ -34,12 +34,13 @@ import scala.math._
  */
 object CoEvolvingSigmaValuesMutation {
 
-  def mutate(genome: Seq[Double], sigma: Seq[Double])(implicit rng: Random) = {
-    val indexedSeqSigma = sigma.map { s => clamp(s * exp(rng.nextGaussian), 0, 1) }
+  def mutate(genome: Seq[Double], sigma: Seq[Double], minimumSigma: Double, rate: Double)(implicit rng: Random) = {
+    val indexedSeqSigma = sigma.map { s => clamp(s * exp(rng.nextGaussian), minimumSigma, 1) }
 
     val newValues =
       (genome zip indexedSeqSigma) map {
-        case (v, s) => clamp(rng.nextGaussian * s + v, 0, 1)
+        case (v, s) =>
+          if (rng.nextDouble < rate) clamp(rng.nextGaussian * s + v, 0, 1) else v
       }
 
     (newValues, indexedSeqSigma)
@@ -47,10 +48,12 @@ object CoEvolvingSigmaValuesMutation {
 
 }
 
-trait CoEvolvingSigmaValuesMutation extends Mutation with Sigma with GA {
+trait CoEvolvingSigmaValuesMutation <: Mutation with Sigma with GA with MutationRate {
+
+  def minimumSigma = 1e-6
 
   override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
-    val (newValues, indexedSeqSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome))
+    val (newValues, indexedSeqSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma, mutationRate)
     val updatedValues = values.set(genome, newValues)
     sigma.set(updatedValues, indexedSeqSigma)
   }
