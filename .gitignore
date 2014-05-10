@@ -7,3 +7,4 @@ nbactions.xml
 pom.xml
 *.iml
 *.sublime*
+*.DS_Store
