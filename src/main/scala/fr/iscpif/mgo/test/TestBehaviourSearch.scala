@@ -23,18 +23,12 @@ import util.Random
 import scalax.io.Resource
 import scala.math._
 
-/* TODO: on dirait que l'élitisme par niche n'est pas pris en compte
- * TODO: calcul de diversité n'est pas bon
- */
-
 object TestBehaviourSearch extends App {
 
   implicit val rng = new Random
 
   val m =
-    new GAProblem with NoFitness with NoArchive with NoveltyModifier with GeneticBreeding with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with SortedTournamentSelection with KNearestNeighboursDiversity with KNearestNeighboursIndividualDistance // with ClosedCrowdingDiversity
-    // with ClosedCrowdingIndividualDistance
-    with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
+    new GAProblem with NoFitness with NoArchive with PhenotypeDiversityModifier with KNearestNeighboursDiversity with GeneticBreeding with SortedTournamentSelection with TournamentOnRankAndDiversity with IdentityCrossOver with PickNNicheElitism with StrictDominance with CounterTermination with GaussianMutation with GAGenome {
 
       def k = 5
 
@@ -61,9 +55,10 @@ object TestBehaviourSearch extends App {
       override type P = Seq[Double]
       override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
 
-      //def individualDistance(g: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
+      /*//def individualDistance(g: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
       override def individualPosition(individual: Individual[G, P, F]): Seq[Double] =
         individual.phenotype
+      */
 
       override type Niche = Seq[Int]
       override val keepN = 1
@@ -76,7 +71,7 @@ object TestBehaviourSearch extends App {
   m.evolve.untilConverged {
     s =>
       val output = Resource.fromFile(s"/tmp/behaviourSearch/behaviourSearch${s.generation}.csv")
-      output.append((0 until m.genomeSize).map("par" + _).mkString(",") + "," + (0 until 2).map("bhv" + _).mkString(",") + ",diversity,niche0,niche1" + "\n")
+      output.append((0 until m.genomeSize).map("par" + _).mkString(",") + "," + (0 until 2).map("bhv" + _).mkString(",") + ",knn,niche0,niche1" + "\n")
       s.population.content.foreach {
         i => output.append(i.genome.values.mkString(",") + "," + i.phenotype.mkString(",") + "," + m.diversity.get(i.metaFitness)().toString + "," + m.individualToNiche(i.toIndividual).mkString(",") + "\n")
       }

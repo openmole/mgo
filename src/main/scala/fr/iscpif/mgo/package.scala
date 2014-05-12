@@ -116,6 +116,7 @@ package object mgo {
   type Modifier = modifier.Modifier
   type NoModifier = modifier.NoModifier
   type NoveltyModifier = modifier.NoveltyModifier
+  type PhenotypeDiversityModifier = modifier.PhenotypeDiversityModifier
   type ProfileModifier = modifier.ProfileModifier
   type RankModifier = modifier.RankModifier
   type IndividualDiversityModifier = modifier.IndividualDiversityModifier

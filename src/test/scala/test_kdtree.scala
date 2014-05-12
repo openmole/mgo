@@ -26,7 +26,7 @@ import org.scalacheck.Arbitrary.arbitrary
 
 import fr.iscpif.mgo.tools.KDTree
 import fr.iscpif.mgo.tools.distance._
-import collection.immutable._
+import collection._
 
 object KDTreeSpecification extends Properties("KDTree") {
 

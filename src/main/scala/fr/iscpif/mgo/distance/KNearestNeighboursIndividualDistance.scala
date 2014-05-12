@@ -21,7 +21,9 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.metric._
 
-trait KNearestNeighboursIndividualDistance <: IndividualDistance with IndividualPosition with KNearestNeighboursDiversity {
+trait KNearestNeighboursIndividualDistance <: IndividualDistance with IndividualPosition {
+
+  def k: Int
 
   def individualDistance(individuals: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
     KNearestNeighboursAverageDistance(individuals.map(individualPosition), k)
