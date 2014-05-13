@@ -31,5 +31,5 @@ trait BehaviourSearch <: GAProblem
   with IdentityCrossOver
   with PickNNicheElitism
   with CounterTermination
-  with GaussianMutation
-  with GAGenome
+  with CoEvolvingSigmaValuesMutation
+  with GAGenomeWithSigma

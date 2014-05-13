@@ -48,9 +48,6 @@ object TestBehaviourSearch extends App {
     /** the size of the offspring */
     override def lambda = 3
 
-    /** std of the gaussian mutation */
-    override def sigma = 0.1
-
     override type P = Seq[Double]
     override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
 
