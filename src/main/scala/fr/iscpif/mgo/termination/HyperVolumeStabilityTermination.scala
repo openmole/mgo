@@ -25,13 +25,11 @@ import fr.iscpif.mgo.modifier.RankMF
  * Terminates when the hypervolume contribution of the last ranked individuals
  * in the population has been stabilized.
  */
-trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with Dominance with RankMF with StabilityTermination with MG {
+trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with RankMF with StabilityTermination with MG {
 
   override def terminated(population: => Population[G, P, F, MF], terminationState: STATE): (Boolean, STATE) = {
-    val p = population
-    val rankMax = p.map { e => rank.get(e.metaFitness)() }.max
-    val front = p.filter(e => rank.get(e.metaFitness)() == rankMax).map { i => fitness.get(i.toIndividual.fitness) }
-    val hv = Hypervolume(front, referencePoint, this)
+    val front = population.map { i => fitness.get(i.toIndividual.fitness) }
+    val hv = Hypervolume(front, referencePoint)
     stability(terminationState, hv)
   }
 }

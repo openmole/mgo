@@ -22,14 +22,14 @@ import fr.iscpif.mgo._
 trait BehaviourSearch <: GAProblem
   with NoFitness
   with NoArchive
-  with PhenotypeDiversityModifier
+  with RankModifier
+  with RankOnPhenotypeDiversity
   with KNearestNeighboursDiversity
   with GeneticBreeding
   with SortedTournamentSelection
-  with TournamentOnRankAndDiversity
+  with TournamentOnRank
   with IdentityCrossOver
   with PickNNicheElitism
-  with StrictDominance
   with CounterTermination
   with GaussianMutation
   with GAGenome

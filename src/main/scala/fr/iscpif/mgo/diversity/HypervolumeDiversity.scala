@@ -26,39 +26,24 @@ import scala.math._
  *
  * @see Hypervolume
  */
-trait HypervolumeDiversity extends DiversityMetric with ReferencePoint with Dominance {
+trait HypervolumeDiversity extends DiversityMetric with ReferencePoint {
 
-  override def diversity(values: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]) = {
-    // Lazy method computation of global contribution for all front
-    //Class individual by group of rank
-    val groupOfFront = (values zip ranks).zipWithIndex.map {
-      case ((i, r), index) => (i, r, index)
-    }.groupBy {
-      case (i, r, index) => r()
-    }.values
-
-    //Return contribution
-    val contributionByPoint = groupOfFront.map { front => computeHypervolume(front.toIndexedSeq, referencePoint) }.toIndexedSeq
-    //Merge group of front, and reclass individual by initial index
-    val orderingByInitialIndex = contributionByPoint.flatten.sortBy { case (contribution, index) => index }
-    //return only the contribution
-    orderingByInitialIndex.map { case (contribution, index) => contribution }
+  override def diversity(values: Seq[Seq[Double]]) = {
+    val diversities = computeHypervolume(values.zipWithIndex.toIndexedSeq, referencePoint).sortBy { case (_, index) => index }
+    diversities.map { case (contribution, _) => contribution }
   }
 
   /**
    * Compute the hypervolume contribution for each front
    */
-  def computeHypervolume(front: IndexedSeq[(Seq[Double], Lazy[Int], Int)], referencePoint: Seq[Double]): IndexedSeq[(Lazy[Double], Int)] = {
+  def computeHypervolume(front: IndexedSeq[(Seq[Double], Int)], referencePoint: Seq[Double]): IndexedSeq[(Lazy[Double], Int)] = {
 
-    //return an indexedSeq of (IndexedSeq[Double],index)
-    val frontValues = front.map { case (v, r, i) => (v, i) }
-
-    lazy val globalHypervolume = Hypervolume(frontValues.map { e => e._1 }, referencePoint, this)
+    lazy val globalHypervolume = Hypervolume(front.map { e => e._1 }, referencePoint)
 
     //compute a new collection with automatic removed incremental of frontValues item by item
-    frontValues.shadows.zipWithIndex.map {
+    front.shadows.zipWithIndex.map {
       case (e, indexShadowed) =>
-        (Lazy(globalHypervolume - Hypervolume(e.map { _._1 }, referencePoint, this)), frontValues(indexShadowed)._2)
+        (Lazy(globalHypervolume - Hypervolume(e.map { _._1 }, referencePoint)), front(indexShadowed)._2)
     }
   }
 

@@ -62,7 +62,7 @@ object TestBehaviourSearch extends App {
 
   }
 
-  m.evolve.untilConverged {
+  /*m.evolve.untilConverged {
     s =>
       val output = Resource.fromFile(s"/tmp/behaviourSearch/behaviourSearch${s.generation}.csv")
       output.append((0 until m.genomeSize).map("par" + _).mkString(",") + "," + (0 until 2).map("bhv" + _).mkString(",") + ",knn,niche0,niche1" + "\n")
@@ -70,6 +70,6 @@ object TestBehaviourSearch extends App {
         i => output.append(i.genome.values.mkString(",") + "," + i.phenotype.mkString(",") + "," + m.diversity.get(i.metaFitness)().toString + "," + m.individualToNiche(i.toIndividual).mkString(",") + "\n")
       }
       println("step " + s.generation + " popsize " + s.population.content.size + " volume discovered " + s.population.toIndividuals.groupBy(m.individualToNiche).size)
-  }
+  }*/
 
 }

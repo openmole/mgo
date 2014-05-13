@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 24/03/13 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,17 +9,20 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.diversity
+package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
-import tools._
+import util.Random
 
-trait NoDiversity extends DiversityMetric {
-  def diversity(individuals: Seq[Seq[Double]]): Seq[Lazy[Double]] = individuals.map(i => Lazy(0.0))
+trait TournamentOnDiversity <: Tournament with DiversityModifier {
+  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF] =
+    if (diversity.get(e1.metaFitness)() < diversity.get(e2.metaFitness)()) e1
+    else if (diversity.get(e1.metaFitness)() > diversity.get(e2.metaFitness)()) e2
+    else if (rng.nextDouble < 0.5) e1 else e2
 }

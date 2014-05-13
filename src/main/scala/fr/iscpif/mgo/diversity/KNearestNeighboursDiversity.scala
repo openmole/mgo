@@ -30,8 +30,6 @@ trait KNearestNeighboursDiversity extends DiversityMetric {
 
   def k: Int
 
-  override def diversity(values: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]) = {
-    KNearestNeighboursAverageDistance(values, k)
-  }
+  override def diversity(values: Seq[Seq[Double]]) = KNearestNeighboursAverageDistance(values, k)
 
 }

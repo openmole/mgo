@@ -90,9 +90,10 @@ package object mgo {
   type Elitism = elitism.Elitism
   type MapElitism = elitism.MapElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
-  type ProfileElitism = elitism.ProfileElitism
   type NicheElitism = elitism.NicheElitism
   type PickNNicheElitism = elitism.PickNNicheElitism
+  type ProfileElitism = elitism.ProfileElitism
+  type RankElitism = elitism.RankElitism
   type Aggregation = fitness.Aggregation
   type F = fitness.F
   type MaxAggregation = fitness.MaxAggregation
@@ -110,13 +111,16 @@ package object mgo {
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
   type CloneRemoval = modifier.CloneRemoval
+  type DiversityMF = modifier.DiversityMF
   type DiversityModifier = modifier.DiversityModifier
   type IndividualFilter = modifier.IndividualFilter
+  type RankMF = modifier.RankMF
+  type RankOnDiversity = modifier.RankOnDiversity
   type MF = modifier.MF
   type Modifier = modifier.Modifier
   type NoModifier = modifier.NoModifier
   type NoveltyModifier = modifier.NoveltyModifier
-  type PhenotypeDiversityModifier = modifier.PhenotypeDiversityModifier
+  type RankOnPhenotypeDiversity = modifier.RankOnPhenotypeDiversity
   type ProfileModifier = modifier.ProfileModifier
   type RankModifier = modifier.RankModifier
   type IndividualDiversityModifier = modifier.IndividualDiversityModifier
@@ -128,6 +132,7 @@ package object mgo {
   type RandomMutation = mutation.RandomMutation
   type P = phenotype.P
   type Evaluation = phenotype.Evaluation
+  type DoubleSeqPhenotype = phenotype.DoubleSeqPhenotype
   type Problem = problem.Problem
   type GAProblem = problem.GAProblem
   type NoFitness = problem.NoFitness
@@ -137,6 +142,7 @@ package object mgo {
   type ParetoRanking = ranking.ParetoRanking
   type Ranking = ranking.Ranking
   type BinaryTournamentSelection = selection.BinaryTournamentSelection
+  type TournamentOnDiversity = selection.TournamentOnDiversity
   type TournamentOnRank = selection.TournamentOnRank
   type TournamentOnRankAndDiversity = selection.TournamentOnRankAndDiversity
   type MapSelection = selection.MapSelection

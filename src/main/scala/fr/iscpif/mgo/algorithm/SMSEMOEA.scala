@@ -23,12 +23,12 @@ trait SMSEMOEA <: Evolution
   with GAGenomeWithSigma
   with MG
   with BinaryTournamentSelection
-  with TournamentOnRankAndDiversity
-  with NonDominatedElitism
+  with TournamentOnRank
+  with RankModifier
+  with RankOnDiversity
+  with RankElitism
   with CoEvolvingSigmaValuesMutation
   with SBXBoundedCrossover
   with HypervolumeDiversity
-  with ParetoRanking
-  with StrictDominance
   with NoArchive
   with GeneticBreeding

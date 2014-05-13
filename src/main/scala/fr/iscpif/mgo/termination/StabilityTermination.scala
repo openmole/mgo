@@ -29,11 +29,11 @@ trait StabilityTermination extends Termination {
 
   def stability(state: StabilityState, newValue: Double) = {
     val newState = (newValue :: state.history).slice(0, windowSize)
-    if (newState.size < windowSize) (false, new StabilityState(history = newState))
+    if (newState.size < windowSize) (false, StabilityState(history = newState))
     else {
       val avg = newState.sum / newState.size
       val std = sqrt(newState.map { v => pow(v - avg, 2) }.sum)
-      (std < deviationEpsilon, new StabilityState(std, newState))
+      (std < deviationEpsilon, StabilityState(std, newState))
     }
   }
 }

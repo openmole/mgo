@@ -19,6 +19,7 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import util.Random
+import scalax.io.Resource
 
 object TestFunctionSMSEMOEA extends App {
 
@@ -31,7 +32,22 @@ object TestFunctionSMSEMOEA extends App {
       def mu = 200
       def lambda = 200
       def genomeSize = 10
-      def referencePoint = IndexedSeq(2.0, 2.0)
+      def referencePoint = IndexedSeq(1000.0, 1000.0)
     }
+
+  val res =
+    smsemoea.evolve.untilConverged {
+      s =>
+        println(s.generation + " " + s.terminationState)
+    }.individuals
+
+  val output = Resource.fromFile("/tmp/res.csv")
+  for {
+    r <- res
+  } {
+    val scaled = smsemoea.scale(r)
+    def line = smsemoea.values.get(scaled.genome) ++ smsemoea.fitness.get(scaled.fitness)
+    output.append(line.mkString(",") + "\n")
+  }
 
 }

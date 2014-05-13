@@ -21,9 +21,25 @@ import fr.iscpif.mgo._
 import scalaz.Lens
 import fr.iscpif.mgo.tools.Lazy
 
-/**
- * Layer of the cake that add diversity to the meta-fitness
- */
-trait DiversityModifier extends Modifier with DiversityMetric {
-  def diversity: Lens[MF, Lazy[Double]]
+object DiversityModifier {
+  case class Diversity(diversity: Lazy[Double]) {
+    override def toString = diversity.toString()
+  }
+
+  def toPopulationElements[G, P, F](
+    evaluated: Seq[Individual[G, P, F]],
+    diversities: Seq[Lazy[Double]]) =
+    (evaluated zip diversities) map {
+      case (i, d) => PopulationElement(i, Diversity(d))
+    }
+}
+
+trait DiversityModifier extends Modifier with DiversityMetric with DiversityMF with MG {
+  type MF = DiversityModifier.Diversity
+
+  override def diversity: Lens[MF, Lazy[Double]] = Lens.lensu[MF, Lazy[Double]]((c, v) => c.copy(diversity = v), _.diversity)
+
+  override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
+    DiversityModifier.toPopulationElements[G, P, F](evaluated, diversity(evaluated.map(e => fitness.get(e.fitness))))
+
 }

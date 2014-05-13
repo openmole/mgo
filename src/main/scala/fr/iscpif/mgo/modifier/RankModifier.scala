@@ -37,13 +37,13 @@ object RankModifier {
     }
 }
 
-trait RankModifier extends Modifier with Ranking with RankMF with MG {
+trait RankModifier extends Modifier with Ranking with RankMF with MG with ModifiedFitness {
   type MF = RankModifier.Rank
 
   def rank: Lens[MF, Lazy[Int]] = Lens.lensu[MF, Lazy[Int]]((c, v) => c.copy(rank = v), _.rank)
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
-    val ranks = rank(evaluated.map(e => fitness.get(e.fitness)))
+    val ranks = rank(fitnesses(evaluated, archive))
     RankModifier.toPopulationElements[G, P, F](evaluated, ranks)
   }
 }

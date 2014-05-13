@@ -32,5 +32,5 @@ trait DiversityMetric {
    * @return a diversity sequence in the diversity of the individual i at the
    * position i
    */
-  def diversity(values: Seq[Seq[Double]], ranks: Seq[Lazy[Int]]): Seq[Lazy[Double]]
+  def diversity(values: Seq[Seq[Double]]): Seq[Lazy[Double]]
 }

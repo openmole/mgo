@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 24/03/13 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,17 +9,25 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.diversity
+package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
+import util.Random
 import tools._
 
-trait NoDiversity extends DiversityMetric {
-  def diversity(individuals: Seq[Seq[Double]]): Seq[Lazy[Double]] = individuals.map(i => Lazy(0.0))
+trait RankElitism <: Elitism with G with P with F with RankMF with Mu with MergedGenerations {
+
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
+    if (individuals.size < mu) individuals
+    else {
+      val population = toPopulation(rng.shuffle(individuals), archive)
+      population.sortBy(i => rank.get(i.metaFitness)).toIndividuals.take(mu)
+    }
+
 }

@@ -26,17 +26,9 @@ import fr.iscpif.mgo.tools.{ Lazy, Neighbours }
 import fr.iscpif.mgo.metric.CrowdingDistance
 import scalaz.Lens
 
-trait PhenotypeDiversityModifier <: RankDiversityModifier
-    with Archive
-    with Neighbours
-    with ParetoRanking {
+trait RankOnPhenotypeDiversity <: ModifiedFitness with DiversityMetric with DoubleSeqPhenotype with HierarchicalRanking {
 
-  override type P <: Seq[Double]
+  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) =
+    diversity(evaluated.map(i => doubleSeq.get(i.phenotype))).map(d => Seq(1 / d()))
 
-  override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
-    val f = fitnesses(evaluated, archive)
-    val ranks = rank(f)
-    val distances = diversity(evaluated.map(_.phenotype), ranks)
-    RankDiversityModifier.toPopulationElements[G, P, F](evaluated, ranks, distances)
-  }
 }

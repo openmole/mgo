@@ -46,7 +46,7 @@ object RankDiversityModifier {
     }
 }
 
-trait RankDiversityModifier <: Modifier with Ranking with DiversityMetric with MG {
+trait RankDiversityModifier <: Modifier with Ranking with DiversityMetric with ModifiedFitness {
 
   type MF = RankDiversityModifier.RankDiversity
 
@@ -55,10 +55,7 @@ trait RankDiversityModifier <: Modifier with Ranking with DiversityMetric with M
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val f = fitnesses(evaluated, archive)
-    val ranks = rank(f)
-    val distances = diversity(f, ranks)
-    RankDiversityModifier.toPopulationElements[G, P, F](evaluated, ranks, distances)
+    RankDiversityModifier.toPopulationElements[G, P, F](evaluated, rank(f), diversity(f))
   }
 
-  def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = evaluated.map(i => fitness.get(i.fitness))
 }
