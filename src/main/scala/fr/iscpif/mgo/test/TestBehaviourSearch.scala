@@ -57,19 +57,20 @@ object TestBehaviourSearch extends App {
     override type Niche = Seq[Int]
     override val keepN = 1
     val divsSize = 0.1
-    override def individualToNiche(individual: Individual[G, P, F]): Niche =
+    override def niche(individual: Individual[G, P, F]): Niche =
       scale(individual.phenotype).map((x: Double) => (x / divsSize).toInt).toSeq
 
   }
 
-  /*m.evolve.untilConverged {
+  m.evolve.untilConverged {
     s =>
       val output = Resource.fromFile(s"/tmp/behaviourSearch/behaviourSearch${s.generation}.csv")
       output.append((0 until m.genomeSize).map("par" + _).mkString(",") + "," + (0 until 2).map("bhv" + _).mkString(",") + ",knn,niche0,niche1" + "\n")
-      s.population.content.foreach {
-        i => output.append(i.genome.values.mkString(",") + "," + i.phenotype.mkString(",") + "," + m.diversity.get(i.metaFitness)().toString + "," + m.individualToNiche(i.toIndividual).mkString(",") + "\n")
+      val diversities = m.diversity(s.population.map(i => m.doubleSeq.get(i.phenotype)))
+      (s.population.content zip diversities).foreach {
+        case (i, div) => output.append(i.genome.values.mkString(",") + "," + i.phenotype.mkString(",") + "," + div + "," + m.niche(i.toIndividual).mkString(",") + "\n")
       }
-      println("step " + s.generation + " popsize " + s.population.content.size + " volume discovered " + s.population.toIndividuals.groupBy(m.individualToNiche).size)
-  }*/
+      println("step " + s.generation + " popsize " + s.population.content.size + " volume discovered " + s.population.toIndividuals.groupBy(m.niche).size)
+  }
 
 }

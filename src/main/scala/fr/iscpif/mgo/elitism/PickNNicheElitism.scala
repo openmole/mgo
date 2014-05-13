@@ -24,7 +24,7 @@ trait PickNNicheElitism <: NicheElitism {
 
   def keepN: Int
 
-  def keepIndividuals(individuals: Seq[Individual[G, P, F]])(implicit aprng: Random): Seq[Individual[G, P, F]] =
+  def keep(individuals: Seq[Individual[G, P, F]])(implicit aprng: Random): Seq[Individual[G, P, F]] =
     aprng.shuffle(individuals).take(keepN)
 
 }

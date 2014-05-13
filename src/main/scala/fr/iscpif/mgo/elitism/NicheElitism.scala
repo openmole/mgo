@@ -20,15 +20,14 @@ package fr.iscpif.mgo.elitism
 import fr.iscpif.mgo._
 import util.Random
 
-trait NicheElitism extends Elitism with MergedGenerations {
+trait NicheElitism <: Elitism with MergedGenerations {
 
   type Niche
 
-  def individualToNiche(individual: Individual[G, P, F]): Niche
-  def keepIndividuals(individuals: Seq[Individual[G, P, F]])(implicit aprng: Random): Seq[Individual[G, P, F]]
+  def niche(individual: Individual[G, P, F]): Niche
+  def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]]
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] = {
-    individuals.groupBy(individualToNiche).toSeq.map((x: (Niche, Seq[Individual[G, P, F]])) => keepIndividuals(x._2)).flatten
-  }
+  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
+    individuals.groupBy(niche).toSeq.map { x => keep(x._2) }.flatten
 
 }

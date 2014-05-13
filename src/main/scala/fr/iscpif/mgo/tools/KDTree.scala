@@ -96,9 +96,9 @@ trait KDTree extends EuclideanDistance {
 }
 
 object EmptyTree extends KDTree {
-  val node = Vector[Double]()
-  lazy val left = this
-  lazy val right = this
+  def node = Vector.empty
+  def left = this
+  def right = this
 
   override def nearest(query: Seq[Double], depth: Int = 0): Seq[Double] = Vector[Double]()
   override def knearest(k: Int, query: Seq[Double], depth: Int = 0): Seq[Seq[Double]] = Vector[Vector[Double]]()
