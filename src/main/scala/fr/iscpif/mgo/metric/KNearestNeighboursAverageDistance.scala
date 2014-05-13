@@ -26,6 +26,7 @@ import fr.iscpif.mgo.tools.KDTree
  */
 
 object KNearestNeighboursAverageDistance {
+
   def apply(values: Seq[Seq[Double]], k: Int) = {
     val tree = KDTree(values)
     val knearest: Seq[Seq[Seq[Double]]] = values.map(tree.knearest(k, _))

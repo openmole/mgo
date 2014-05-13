@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 09/05/14 Guillaume Chérel
+ * Copyright (C) 13/05/2014 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,17 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.distance
+package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.metric._
 
-trait KNearestNeighboursIndividualDistance <: IndividualDistance with IndividualPosition {
-
-  def k: Int
-
-  def individualDistance(individuals: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
-    KNearestNeighboursAverageDistance(individuals.map(individualPosition), k)
-
-}
+trait BehaviourSearch <: GAProblem
+  with NoFitness
+  with NoArchive
+  with PhenotypeDiversityModifier
+  with KNearestNeighboursDiversity
+  with GeneticBreeding
+  with SortedTournamentSelection
+  with TournamentOnRankAndDiversity
+  with IdentityCrossOver
+  with PickNNicheElitism
+  with StrictDominance
+  with CounterTermination
+  with GaussianMutation
+  with GAGenome
