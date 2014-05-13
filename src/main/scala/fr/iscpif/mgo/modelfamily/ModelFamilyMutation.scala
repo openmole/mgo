@@ -24,6 +24,8 @@ import tools.Math._
 
 trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation with ModelFamilyNiches {
 
+  def changeNiche = 0.1
+
   override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
     val (newValues, newSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma, mutationRate)
     val res = sigma.set(values.set(genome, newValues), newSigma)
@@ -48,7 +50,7 @@ trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenom
         }
       }
     val newIndex = multinomialDraw(weights)._1*/
-    if (rng.nextDouble < mutationRate) modelId.set(res, rng.nextInt(models)) else res
+    if (rng.nextDouble < changeNiche) modelId.set(res, rng.nextInt(models)) else res
   }
 
 }

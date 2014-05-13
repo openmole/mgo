@@ -22,32 +22,45 @@ import fr.iscpif.mgo._
 import scalaz.Lens
 import scala.util.Random
 import fr.iscpif.mgo.modelfamily.{ ModelFamilyGenome, ModelFamilyMutation, ModelFamilyElitism }
+import tools.Math._
 
 object TestModelFamily extends App {
 
   implicit val rng = new Random(42)
 
+  val testModels = 1
+
   val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with SBXBoundedCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination {
     /** Number of steps before the algorithm stops */
-    override def steps: Int = 1000
+    override def steps: Int = 10000
 
     /** the size of the offspring */
     override def lambda: Int = 1000
 
-    override def nicheSize: Int = 10
+    override def nicheSize: Int = 100
 
-    override def modelMasks = ((1024 - 128) until 1024)
+    override def modelMasks = ((1024 - testModels) until 1024)
+
+    override def terminated(population: => Population[G, P, F, MF], step: STATE): (Boolean, STATE) = {
+      val avgError =
+        (niches(population.toIndividuals).map {
+          case (i, idv) => idv.map(i => aggregate(i.fitness)).sorted.headOption.getOrElse(Double.PositiveInfinity)
+        }.sum - bestFitness.sum) / testModels
+      val (term, s) = super.terminated(population, step)
+      (term || avgError < 0.01, s)
+    }
   }
 
   println(m.masks.map(_.count(_ == true)))
 
-  val res =
-    m.evolve.untilConverged {
-      s =>
-        val curFit = m.niches(s.individuals).map {
-          case (i, idv) => idv.map(i => m.aggregate(i.fitness)).sorted.headOption.getOrElse(Double.PositiveInfinity)
-        }.sum
-        println(s.generation + " " + m.bestFitness.sum + " " + curFit)
-    }.individuals
+  val replications = 30
+
+  val serie = (for {
+    r <- (0 until replications)
+  } yield m.evolve.untilConverged {
+    s => println(s"$r  ${s.generation}")
+  }.generation.toDouble)
+
+  println(average(serie) + " " + mse(serie))
 
 }
