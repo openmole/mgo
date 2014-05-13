@@ -48,9 +48,7 @@ package object mgo {
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
   def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
-  type SortedTournamentSelection = selection.SortedTournamentSelection
-  type NicheElitism = elitism.NicheElitism
-  type PickNNicheElitism = elitism.PickNNicheElitism
+  type BehaviourSearch = algorithm.BehaviourSearch
   type Map = algorithm.Map
   type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
@@ -93,6 +91,8 @@ package object mgo {
   type MapElitism = elitism.MapElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
   type ProfileElitism = elitism.ProfileElitism
+  type NicheElitism = elitism.NicheElitism
+  type PickNNicheElitism = elitism.PickNNicheElitism
   type Aggregation = fitness.Aggregation
   type F = fitness.F
   type MaxAggregation = fitness.MaxAggregation
@@ -141,6 +141,7 @@ package object mgo {
   type TournamentOnRankAndDiversity = selection.TournamentOnRankAndDiversity
   type MapSelection = selection.MapSelection
   type Selection = selection.Selection
+  type SortedTournamentSelection = selection.SortedTournamentSelection
   type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
   type CounterTermination = termination.CounterTermination
   type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination
