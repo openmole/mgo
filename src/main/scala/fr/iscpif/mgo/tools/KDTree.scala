@@ -25,15 +25,19 @@ import fr.iscpif.mgo.tools.distance._
  *
  */
 
-class KDTree(node: Seq[Double], left: Option[KDTree], right: Option[KDTree]) extends EuclideanDistance {
+trait KDTree extends EuclideanDistance {
+  def node: Seq[Double]
+  def left: KDTree
+  def right: KDTree
+
   def nearest(query: Seq[Double], depth: Int = 0): Seq[Double] = {
     val axis = depth % node.size
     val (naturalDirection, unnaturalDirection) = if (query(axis) < node(axis)) (left, right) else (right, left)
 
     val curBest =
       naturalDirection match {
-        case None => node
-        case Some(child) => {
+        case EmptyTree => node
+        case child => {
           val childBest = child.nearest(query, depth + 1)
           if (distance(query, node) < distance(query, childBest)) node else childBest
         }
@@ -42,8 +46,8 @@ class KDTree(node: Seq[Double], left: Option[KDTree], right: Option[KDTree]) ext
     val best =
       if (distCurBest <= (query(axis) - node(axis)).abs) curBest
       else unnaturalDirection match {
-        case None => curBest
-        case Some(child) => {
+        case EmptyTree => curBest
+        case child => {
           val childBest = child.nearest(query, depth + 1)
           if (distance(query, curBest) <= distance(query, childBest)) curBest else childBest
         }
@@ -57,8 +61,8 @@ class KDTree(node: Seq[Double], left: Option[KDTree], right: Option[KDTree]) ext
 
     val curBest =
       naturalDirection match {
-        case None => Vector(node)
-        case Some(child) => {
+        case EmptyTree => Vector(node)
+        case child => {
           val childBest = child.knearest(k, query, depth + 1)
           insertInKNearest(childBest, node, query, k)
         }
@@ -67,8 +71,8 @@ class KDTree(node: Seq[Double], left: Option[KDTree], right: Option[KDTree]) ext
     val best =
       if (!couldBeNearer && curBest.size >= k) curBest
       else unnaturalDirection match {
-        case None => curBest
-        case Some(child) => {
+        case EmptyTree => curBest
+        case child => {
           val childBest = child.knearest(k, query, depth + 1)
 
           childBest.foldLeft(curBest)((kn, n) => insertInKNearest(kn, n, query, k))
@@ -86,23 +90,20 @@ class KDTree(node: Seq[Double], left: Option[KDTree], right: Option[KDTree]) ext
   //   else l(0) +: insertSortedWith(l.drop(1), e, lt)
   // }
 
-  def toSeq: Seq[Seq[Double]] =
-    ((left match {
-      case None => Vector[Seq[Double]]()
-      case Some(child) => child.toSeq
-    }) :+ node) ++ (right match {
-      case None => Vector[Seq[Double]]()
-      case Some(child) => child.toSeq
-    })
+  def toSeq: Seq[Seq[Double]] = (left.toSeq :+ node) ++ right.toSeq
 
   override def toString: String = s"Node($node, $left, $right)"
 }
 
-class EmptyTree extends KDTree(Vector[Double](), None, None) {
+object EmptyTree extends KDTree {
+  val node = Vector[Double]()
+  lazy val left = this
+  lazy val right = this
+
   override def nearest(query: Seq[Double], depth: Int = 0): Seq[Double] = Vector[Double]()
   override def knearest(k: Int, query: Seq[Double], depth: Int = 0): Seq[Seq[Double]] = Vector[Vector[Double]]()
   override def toString: String = "EmptyTree"
-  override def toSeq: Seq[Seq[Double]] = Vector(Vector[Double]())
+  override def toSeq: Seq[Seq[Double]] = Vector(node)
 }
 
 object KDTree {
@@ -111,8 +112,8 @@ object KDTree {
    * @return
    */
   def apply(pointList: Seq[Seq[Double]]) = {
-    if (pointList.size == 0) new EmptyTree
-    else if (pointList(0).size == 0) new EmptyTree
+    if (pointList.size == 0) EmptyTree
+    else if (pointList(0).size == 0) EmptyTree
     else {
       val tPointList = transpose(pointList)
       val sortedDims = tPointList map (argSort)
@@ -134,9 +135,11 @@ object KDTree {
     //println("pointList:"+pointList)
     //println("sortedDims:"+sortedDims)
     //println("split:"+split)
-    new KDTree(pointList.map(_(medInt)),
-      if (split(0)._1.size > 0) Some(build(pointList, split.map(_._1), depth + 1)) else None,
-      if (split(0)._2.size > 0) Some(build(pointList, split.map(_._2), depth + 1)) else None)
+    new KDTree {
+      val node: Seq[Double] = pointList.map(_(medInt))
+      val left: KDTree = if (split(0)._1.size > 0) build(pointList, split.map(_._1), depth + 1) else EmptyTree
+      val right: KDTree = if (split(0)._2.size > 0) build(pointList, split.map(_._2), depth + 1) else EmptyTree
+    }
   }
 
   /**
