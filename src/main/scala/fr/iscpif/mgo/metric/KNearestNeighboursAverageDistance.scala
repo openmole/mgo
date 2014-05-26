@@ -29,12 +29,14 @@ object KNearestNeighboursAverageDistance {
 
   def apply(values: Seq[Seq[Double]], k: Int) = {
     val tree = KDTree(values)
-    val knearest: Seq[Seq[Seq[Double]]] = values.map(tree.knearest(k, _))
 
-    (values zip knearest).map {
-      case (v, neighbours) => Lazy(
-        neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur, v) } / neighbours.size
-      )
+    values.map {
+      v =>
+        Lazy({
+          val neighbours: Seq[Seq[Double]] = tree.knearest(k, v)
+          neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur, v) } / neighbours.size
+        }
+        )
     }
   }
 }
