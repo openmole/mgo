@@ -21,7 +21,5 @@ Have a look at the test directory in the repository.
 SBT dependency
 ----------------
 
-    resolvers += Resolver.sonatypeRepo("snapshots")
-
-    libraryDependencies += "fr.iscpif" %% "mgo" % "1.72-SNAPSHOT"
+    libraryDependencies += "fr.iscpif" %% "mgo" % "1.72"
 
