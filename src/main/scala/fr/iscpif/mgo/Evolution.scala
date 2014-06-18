@@ -93,7 +93,7 @@ trait Evolution extends Termination
    *
    */
   def step(individuals: Seq[Individual[G, P, F]], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): (Seq[Individual[G, P, F]], A) = {
-    val offspringGenomes = breed(individuals, archive)
+    val offspringGenomes = breed(individuals, archive, lambda)
     val rngs = (0 until offspringGenomes.size).map(_ => buildRNG(rng.nextLong))
 
     val offspring = (offspringGenomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq
