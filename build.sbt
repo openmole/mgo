@@ -28,12 +28,6 @@ publishMavenStyle := true
 
 publishArtifact in Test := false
 
-//publishTo <<= version { (v: String) =>
-//  val maven = "http://maven.iscpif.fr/"
-//  if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at maven + "snapshots") 
-//  else Some("releases"  at maven + "releases")
-//}
-
 publishTo := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value)
@@ -48,7 +42,7 @@ licenses := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
 
 homepage := Some(url("https://github.com/romainreuillon/mgo"))
 
- scmInfo := Some(ScmInfo(url("https://github.com/romainreuillon/mgo.git"), "scm:git:git@github.com:romainreuillon/mgo.git"))
+scmInfo := Some(ScmInfo(url("https://github.com/romainreuillon/mgo.git"), "scm:git:git@github.com:romainreuillon/mgo.git"))
 
 pomExtra := (
   <developers>
@@ -62,9 +56,6 @@ pomExtra := (
     </developer>
   </developers>
 )
-
-
-credentials += Credentials(Path.userHome / ".sbt" / "iscpif.credentials")
 
 scalariformSettings
 
