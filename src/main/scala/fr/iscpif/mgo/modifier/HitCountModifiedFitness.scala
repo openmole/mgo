@@ -15,21 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
-
+package fr.iscpif.mgo.modifier
 import fr.iscpif.mgo._
 
-trait BehaviourSearch <: GAProblem
-  with NoFitness
-  with NoArchive
-  with GeneticBreeding
-  with SortedTournamentSelection
-  with IdentityCrossOver
-  with TournamentOnRank
-  with RankModifier
-  with RankOnPhenotypeDiversity
-  with KNearestNeighboursDiversity
-  with PickNNicheElitism
-  with CounterTermination
-  with CoEvolvingSigmaValuesMutation
-  with GAGenomeWithSigma
+trait HitCountModifiedFitness extends ModifiedFitness with HitMapArchive {
+  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
+    val hitcounts: Seq[Int] = evaluated.map(i => hits(archive, hitCell(i)))
+    (evaluated zip hitcounts).map { case (i, h) => fitness.get(i.fitness) ++ Seq(h.toDouble) }
+  }
+
+}

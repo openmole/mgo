@@ -49,6 +49,7 @@ package object mgo {
   def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
   type BehaviourSearch = algorithm.BehaviourSearch
+  type BehaviourSearchHitMap = algorithm.BehaviourSearchHitMap
   type Map = algorithm.Map
   type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
@@ -57,6 +58,7 @@ package object mgo {
   type A = archive.A
   type Archive = archive.Archive
   type ArchiveIndividuals = archive.ArchiveIndividuals
+  type HitMapArchive = archive.HitMapArchive
   type NoArchive = archive.NoArchive
   type NoveltyArchive = archive.NoveltyArchive
   type OptimumDiversityArchive = archive.OptimumDiversityArchive
@@ -114,6 +116,7 @@ package object mgo {
   type DiversityMF = modifier.DiversityMF
   type DiversityModifier = modifier.DiversityModifier
   type IndividualFilter = modifier.IndividualFilter
+  type HitCountModifiedFitness = modifier.HitCountModifiedFitness
   type RankMF = modifier.RankMF
   type RankOnDiversity = modifier.RankOnDiversity
   type MF = modifier.MF
