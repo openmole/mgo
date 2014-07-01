@@ -22,9 +22,9 @@ import util.Random
 
 trait RandomNichingElitism <: NicheElitism {
 
-  def kept: Int
+  def nicheSize: Int
 
   def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] =
-    rng.shuffle(individuals).take(kept)
+    rng.shuffle(individuals).take(nicheSize)
 
 }

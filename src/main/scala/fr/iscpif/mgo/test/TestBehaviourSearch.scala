@@ -50,7 +50,7 @@ object TestBehaviourSearch extends App {
     override type P = Seq[Double]
     override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
 
-    val kept = 1
+    val nicheSize = 1
     val divsSize = 0.1
 
     def niche(individual: Individual[G, P, F]) = scale(individual.phenotype).map((x: Double) => (x / divsSize).toInt).toSeq

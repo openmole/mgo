@@ -22,34 +22,13 @@ import scala.util.Random
 import fr.iscpif.mgo._
 import tools.Math._
 
-trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation with ModelFamilyNiches {
+trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation {
 
   def changeNiche = 0.1
 
   override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
     val (newValues, newSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma, mutationRate)
     val res = sigma.set(values.set(genome, newValues), newSigma)
-
-    //val nichesValues = niches(population)
-
-    /*val weights: Seq[(Double, Int)] =
-      if (nichesValues.exists { case (_, niche) => niche.size < nicheSize })
-        nichesValues map {
-          case (i, niche) => 1.0 + (nicheSize - niche.size) -> i
-        }
-      else {
-        val mses = nichesValues map { case (_, niche) => mse(niche.map(_.fitness).map(aggregate)) }
-
-        if (mses.forall(_ <= 0)) nichesValues map { case (i, _) => 1.0 -> i }
-        else {
-          val maxMses = mses.max
-          val normalised = mses.map(m => math.max(m / maxMses, minimumWeight))
-          (nichesValues zip normalised) map {
-            case ((i, niche), mse) => mse -> i
-          }
-        }
-      }
-    val newIndex = multinomialDraw(weights)._1*/
     if (rng.nextDouble < changeNiche) modelId.set(res, rng.nextInt(models)) else res
   }
 

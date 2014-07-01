@@ -21,11 +21,11 @@ import fr.iscpif.mgo._
 import scala.util.Random
 import fr.iscpif.mgo.elitism.{ MergedGenerations, Elitism }
 
-trait ModelFamilyElitism <: Elitism with Aggregation with MergedGenerations with ModelFamilyGenome with ModelFamilyNiches {
+trait ModelFamilyElitism <: Elitism with Aggregation with NicheElitism with ModelFamilyGenome {
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
-    niches(individuals).map {
-      case (_, is) => is.sortBy(i => aggregate(i.fitness)).take(nicheSize)
-    }.flatten
+  def nicheSize: Int
+
+  override def niche(individual: Individual[G, P, F]): Any = modelId.get(individual.genome)
+  override def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] = individuals.sortBy(i => aggregate(i.fitness)).take(nicheSize)
 
 }

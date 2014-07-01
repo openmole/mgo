@@ -43,8 +43,10 @@ object TestModelFamily extends App {
 
     override def terminated(population: => Population[G, P, F, MF], step: STATE): (Boolean, STATE) = {
       val avgError =
-        (niches(population.toIndividuals).map {
-          case (i, idv) => idv.map(i => aggregate(i.fitness)).sorted.headOption.getOrElse(Double.PositiveInfinity)
+        (population.toIndividuals.map {
+          idv =>
+            val i = niche(idv)
+            idv.map(i => aggregate(idv.fitness)).sorted.headOption.getOrElse(Double.PositiveInfinity)
         }.sum - bestFitness.sum) / testModels
       val (term, s) = super.terminated(population, step)
       (term || avgError < 0.01, s)
