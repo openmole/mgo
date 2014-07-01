@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 02/06/2014 Guillaume Chérel
+ * Copyright (C) 13/05/2014 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -21,15 +21,15 @@ import fr.iscpif.mgo._
 
 trait BehaviourSearch <: GAProblem
   with NoFitness
-  with NoArchive
+  with HitMapArchive
   with GeneticBreeding
   with SortedTournamentSelection
   with IdentityCrossOver
   with TournamentOnRank
   with RankModifier
-  with RankOnPhenotypeDiversity
-  with KNearestNeighboursDiversity
-  with PickNNicheElitism
+  with HierarchicalRanking
+  with HitCountModifiedFitness
+  with RandomNichingElitism
   with CounterTermination
   with CoEvolvingSigmaValuesMutation
   with GAGenomeWithSigma

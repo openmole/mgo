@@ -20,11 +20,11 @@ package fr.iscpif.mgo.elitism
 import fr.iscpif.mgo._
 import util.Random
 
-trait PickNNicheElitism <: NicheElitism {
+trait RandomNichingElitism <: NicheElitism {
 
-  def keepN: Int
+  def kept: Int
 
-  def keep(individuals: Seq[Individual[G, P, F]])(implicit aprng: Random): Seq[Individual[G, P, F]] =
-    aprng.shuffle(individuals).take(keepN)
+  def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] =
+    rng.shuffle(individuals).take(kept)
 
 }

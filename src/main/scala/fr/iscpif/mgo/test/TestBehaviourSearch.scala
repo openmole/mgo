@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Guillaume Chérel 21/04/14
+ * Copyright (C) Guillaume Chérel 06/05/14
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -19,6 +19,7 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 
+import fr.iscpif.mgo._
 import util.Random
 import scalax.io.Resource
 import scala.math._
@@ -28,8 +29,6 @@ object TestBehaviourSearch extends App {
   implicit val rng = new Random
 
   val m = new BehaviourSearch {
-
-    def k = 5
 
     override def genomeSize: Int = 2
 
@@ -51,23 +50,24 @@ object TestBehaviourSearch extends App {
     override type P = Seq[Double]
     override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
 
-    override type Niche = Seq[Int]
-    override val keepN = 1
+    val kept = 1
     val divsSize = 0.1
-    override def niche(individual: Individual[G, P, F]): Niche =
-      scale(individual.phenotype).map((x: Double) => (x / divsSize).toInt).toSeq
+
+    def niche(individual: Individual[G, P, F]) = scale(individual.phenotype).map((x: Double) => (x / divsSize).toInt).toSeq
+
+    def hitCell(i: Individual[G, P, F]) = niche(i)
 
   }
 
   m.evolve.untilConverged {
     s =>
       val output = Resource.fromFile(s"/tmp/behaviourSearch/behaviourSearch${s.generation}.csv")
-      output.append((0 until m.genomeSize).map("par" + _).mkString(",") + "," + (0 until 2).map("bhv" + _).mkString(",") + ",knn,niche0,niche1" + "\n")
-      val diversities = m.diversity(s.population.map(i => m.doubleSeq.get(i.phenotype)))
-      (s.population.content zip diversities).foreach {
-        case (i, div) => output.append(i.genome.values.mkString(",") + "," + i.phenotype.mkString(",") + "," + div + "," + m.niche(i.toIndividual).mkString(",") + "\n")
+      output.append((0 until m.genomeSize).map("par" + _).mkString(",") + "," + (0 until 2).map("bhv" + _).mkString(",") + ",hitcounts,niche0,niche1" + "\n")
+      val hitcounts = s.population.map(i => m.hits(s.archive, m.hitCell(i.toIndividual)))
+      (s.population.content zip hitcounts).foreach {
+        case (i, hc) => output.append(i.genome.values.mkString(",") + "," + i.phenotype.mkString(",") + "," + hc + "," + m.niche(i.toIndividual).mkString(",") + "\n")
       }
-      println("step " + s.generation + " popsize " + s.population.content.size + " volume discovered " + s.population.toIndividuals.groupBy(m.niche).size)
+      println("step " + s.generation + " popsize " + s.population.content.size + " volume discovered " + s.archive.count { case (k, v) => s.archive.contains(k) && (s.archive(k) > 0) })
   }
 
 }

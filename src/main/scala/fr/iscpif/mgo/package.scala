@@ -49,7 +49,6 @@ package object mgo {
   def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
   type BehaviourSearch = algorithm.BehaviourSearch
-  type BehaviourSearchHitMap = algorithm.BehaviourSearchHitMap
   type Map = algorithm.Map
   type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
@@ -93,7 +92,7 @@ package object mgo {
   type MapElitism = elitism.MapElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
   type NicheElitism = elitism.NicheElitism
-  type PickNNicheElitism = elitism.PickNNicheElitism
+  type RandomNichingElitism = elitism.RandomNichingElitism
   type ProfileElitism = elitism.ProfileElitism
   type RankElitism = elitism.RankElitism
   type Aggregation = fitness.Aggregation
