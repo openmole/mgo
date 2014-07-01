@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 27/11/12 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,7 +9,7 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -18,9 +18,10 @@
 package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
-import util.Random
 
-trait MapElitism extends Elitism with MapPlotter with Aggregation with NicheElitism with BestAggregated {
-  def nicheSize = 1
-  override def niche(individual: Individual[G, P, F]): Any = plot(individual)
+import scala.util.Random
+
+trait BestAggregated <: NicheElitism with Aggregation {
+  def nicheSize: Int
+  override def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] = individuals.sortBy(i => aggregate(i.fitness)).take(nicheSize)
 }

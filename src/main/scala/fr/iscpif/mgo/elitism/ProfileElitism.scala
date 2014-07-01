@@ -20,7 +20,7 @@ package fr.iscpif.mgo.elitism
 import fr.iscpif.mgo._
 import util.Random
 
-trait ProfileElitism <: Elitism with ProfilePlotter with Aggregation with NicheElitism {
+trait ProfileElitism <: Elitism with ProfilePlotter with Aggregation with NicheElitism with BestAggregated {
+  def nicheSize = 1
   override def niche(individual: Individual[G, P, F]) = plot(individual)
-  override def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random) = Seq(individuals.minBy(i => aggregate(i.fitness)))
 }
