@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2010 Romain Reuillon
+ * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -20,11 +20,11 @@ package fr.iscpif.mgo.dominance
 import fr.iscpif.mgo._
 
 /**
- * A point dominates another if it is not better on any objective
+ * A point dominates another if all its objective are better
  */
 trait StrictDominance extends Dominance {
 
   override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
-    !(p1 zip p2).exists { case (g1, g2) => g1 < g2 }
+    (p1 zip p2).forall { case (g1, g2) => g2 > g1 }
 
 }

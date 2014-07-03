@@ -21,7 +21,7 @@ import collection.mutable.{ IndexedSeq => MIndexedSeq }
 import scala.collection.mutable.ArrayBuffer
 import fr.iscpif.mgo.Dominance
 import math._
-import fr.iscpif.mgo.dominance.StrictDominance
+import fr.iscpif.mgo.dominance.NonStrictDominance
 
 // A translation/adaptation based on the python source code by Simon Wessing :
 // http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
@@ -63,7 +63,7 @@ object Hypervolume {
    * @return the hypervolume
    */
   def apply(front: Seq[Seq[Double]], referencePoint: Seq[Double]): Double = {
-    val d = new StrictDominance {}
+    val d = new NonStrictDominance {}
 
     def dominates(point: Seq[Double], other: Seq[Double]): Boolean =
       d.isDominated(other, point)
