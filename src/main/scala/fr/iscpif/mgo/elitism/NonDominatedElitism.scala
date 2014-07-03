@@ -37,9 +37,9 @@ trait NonDominatedElitism extends Elitism with Mu with MergedGenerations with Ra
 
       type FE = (Individual[G, P, F], Lazy[Double])
 
-      @tailrec def addFronts[I](fronts: List[Seq[FE]], acc: List[Seq[FE]], size: Int = 0): (Seq[FE], Seq[FE]) = {
+      @tailrec def addFronts[I](fronts: List[Seq[FE]], acc: List[Seq[FE]]): (Seq[FE], Seq[FE]) = {
         if (fronts.isEmpty) (Seq.empty, acc.flatten)
-        else if (size + fronts.head.size < mu) addFronts[I](fronts.tail, fronts.head :: acc, size + fronts.head.size)
+        else if (acc.size + fronts.head.size < mu) addFronts[I](fronts.tail, fronts.head :: acc)
         else (fronts.head, acc.flatten)
       }
 

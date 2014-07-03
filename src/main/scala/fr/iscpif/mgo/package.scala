@@ -92,8 +92,8 @@ package object mgo {
   type MapElitism = elitism.MapElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
   type NicheElitism = elitism.NicheElitism
-  type RandomNichingElitism = elitism.RandomNichingElitism
   type ProfileElitism = elitism.ProfileElitism
+  type RandomNichingElitism = elitism.RandomNichingElitism
   type RankElitism = elitism.RankElitism
   type Aggregation = fitness.Aggregation
   type F = fitness.F
