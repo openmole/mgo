@@ -19,7 +19,7 @@ package fr.iscpif.mgo.genome
 
 import fr.iscpif.mgo._
 import scala.util.Random
-import scalaz.Lens
+import monocle.Macro._
 
 object GAGenome {
   case class Genome(values: Seq[Double])
@@ -31,7 +31,7 @@ object GAGenome {
 trait GAGenome extends GA {
   type G = GAGenome.Genome
 
-  def values = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(v), _.values)
+  def values = mkLens[G, Seq[Double]]("values")
   def genome = values
 
   def randomGenome(implicit rng: Random) = GAGenome.Genome(Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq)

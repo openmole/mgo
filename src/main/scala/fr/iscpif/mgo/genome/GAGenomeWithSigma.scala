@@ -17,7 +17,8 @@
 
 package fr.iscpif.mgo.genome
 
-import scalaz.Lens
+import monocle._
+import monocle.Macro._
 import scala.util.Random
 
 object GAGenomeWithSigma {
@@ -33,18 +34,18 @@ trait GAGenomeWithSigmaType <: G {
  */
 trait GAGenomeWithSigma extends GA with Sigma with GAGenomeWithSigmaType {
 
-  def values = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(values = v), _.values)
+  def values = mkLens[G, Seq[Double]]("values")
 
-  def genome = Lens.lensu[G, Seq[Double]](
+  def genome = SimpleLens[G, Seq[Double]](
+    v => v.values ++ v.sigma,
     (c, v) =>
       GAGenomeWithSigma.Genome(
         v.slice(0, v.size / 2),
         v.slice(v.size / 2, v.size)
-      ),
-    v => v.values ++ v.sigma
+      )
   )
 
-  def sigma = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(sigma = v), _.sigma)
+  def sigma = mkLens[G, Seq[Double]]("sigma")
 
   def randomGenome(implicit rng: Random) = {
     def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq

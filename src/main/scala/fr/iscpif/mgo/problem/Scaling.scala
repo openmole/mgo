@@ -19,6 +19,7 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 import scala.util.Random
+import monocle.syntax._
 
 /**
  * Layer to scale a sequence of Double in [0.0, 1.0]
@@ -49,7 +50,7 @@ trait Scaling <: Problem with GA {
    * @param g the genome to scale
    * @return the scaled genome
    */
-  def scale(g: G): G = values.mod(v => scale(v), g)
+  def scale(g: G): G = (g |-> values modify)(scale)
 
   /**
    * Scale a population element genome from [0.0, 1.0] to the correct scale

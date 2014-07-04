@@ -17,12 +17,12 @@
 
 package fr.iscpif.mgo.genome
 
-import scalaz.Lens
+import monocle._
 
 /**
  * Implementation of the NSGAII algorithm using genome with auto-adaptive sigma
  * values for the mutation
  */
 trait Sigma extends G {
-  def sigma: Lens[G, Seq[Double]]
+  def sigma: SimpleLens[G, Seq[Double]]
 }

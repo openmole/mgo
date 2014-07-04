@@ -16,6 +16,14 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
 
 libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.6"
 
+val monocleVersion = "0.4.0"
+
+libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
+
+libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
+
+libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
+
 resolvers ++= Seq(
   "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
 )

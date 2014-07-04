@@ -18,7 +18,8 @@
 package fr.iscpif.mgo.modelfamily
 
 import fr.iscpif.mgo.genome._
-import scalaz.Lens
+import monocle.Macro._
+import monocle._
 import scala.util.Random
 
 object ModelFamilyGenome {
@@ -32,24 +33,21 @@ trait ModelFamilyGenome <: ModelId with Sigma with GA with RandomGenome {
   def models: Int
   def genomeSize: Int
 
-  def modelId = Lens.lensu[G, Int](
-    (c, v) => c.copy(modelId = v),
-    _.modelId
-  )
+  def modelId = mkLens[G, Int]("modelId")
 
-  def values = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(values = v), _.values)
+  def values = mkLens[G, Seq[Double]]("values")
 
-  def genome = Lens.lensu[G, Seq[Double]](
+  def genome = SimpleLens[G, Seq[Double]](
+    v => v.values ++ v.sigma,
     (c, v) =>
       ModelFamilyGenome.Genome(
         c.modelId,
         v.slice(0, v.size / 2),
         v.slice(v.size / 2, v.size)
-      ),
-    v => v.values ++ v.sigma
+      )
   )
 
-  def sigma = Lens.lensu[G, Seq[Double]]((c, v) => c.copy(sigma = v), _.sigma)
+  def sigma = mkLens[G, Seq[Double]]("sigma")
 
   def randomGenome(implicit rng: Random) = {
     def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq

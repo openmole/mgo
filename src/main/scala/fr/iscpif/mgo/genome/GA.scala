@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.genome
 
-import scalaz.Lens
+import monocle._
 import scala.util.Random
 
 /**
@@ -25,8 +25,8 @@ import scala.util.Random
  * sequences of doubles).
  */
 trait GA extends G with RandomGenome {
-  def values: Lens[G, Seq[Double]]
-  def genome: Lens[G, Seq[Double]]
+  def values: SimpleLens[G, Seq[Double]]
+  def genome: SimpleLens[G, Seq[Double]]
 
   /** Size of the value part of the genome */
   def genomeSize: Int

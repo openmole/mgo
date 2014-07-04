@@ -18,8 +18,8 @@
 package fr.iscpif.mgo.modelfamily
 
 import fr.iscpif.mgo.genome.G
-import scalaz.Lens
+import monocle._
 
 trait ModelId <: G {
-  def modelId: Lens[G, Int]
+  def modelId: SimpleLens[G, Int]
 }
