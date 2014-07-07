@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Guillaume Chérel 18/04/14
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,16 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.elitism
+package fr.iscpif.mgo.niche
 
 import fr.iscpif.mgo._
-import util.Random
 
-trait RandomNichingElitism <: NicheElitism {
-
-  def nicheSize: Int
-
-  def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] =
-    rng.shuffle(individuals).take(nicheSize)
-
+trait Niche <: G with P with F {
+  def niche(individual: Individual[G, P, F]): Any
 }

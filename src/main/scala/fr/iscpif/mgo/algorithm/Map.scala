@@ -26,7 +26,8 @@ trait Map <: Evolution
   with GAGenomeWithSigma
   with MaxAggregation
   with SBXBoundedCrossover
-  with MapElitism
+  with BestAggregatedNicheElitism
+  with MapNiche
   with CoEvolvingSigmaValuesMutation
   with HierarchicalRanking
   with StrictDominance

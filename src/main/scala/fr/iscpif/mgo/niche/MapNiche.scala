@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 22/06/13 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,28 +9,17 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.niche
 
 import fr.iscpif.mgo._
 
-trait Profile <: Evolution
-  with MG
-  with NoArchive
-  with GAGenomeWithSigma
-  with MaxAggregation
-  with SBXBoundedCrossover
-  with BestAggregatedNicheElitism
-  with ProfileNiche
-  with CoEvolvingSigmaValuesMutation
-  with BinaryTournamentSelection
-  with TournamentOnRank
-  with HierarchicalRanking
-  with StrictDominance
-  with GeneticBreeding
-  with ProfileModifier
+trait MapNiche <: Niche with MapPlotter {
+  def nicheSize = 1
+  override def niche(individual: Individual[G, P, F]): Any = plot(individual)
+}

@@ -29,7 +29,7 @@ trait BehaviourSearch <: GAProblem
   with RankModifier
   with HierarchicalRanking
   with HitCountModifiedFitness
-  with RandomNichingElitism
+  with RandomNicheElitism
   with CounterTermination
   with CoEvolvingSigmaValuesMutation
   with GAGenomeWithSigma

@@ -17,6 +17,7 @@
 
 package fr.iscpif
 
+import fr.iscpif.mgo.elitism.RandomNicheElitism
 import org.apache.commons.math3.random._
 
 package object mgo {
@@ -88,12 +89,11 @@ package object mgo {
   type NonStrictEpsilonDominance = dominance.NonStrictEpsilonDominance
   type StrictDominance = dominance.StrictDominance
   type StrictEpsilonDominance = dominance.StrictEpsilonDominance
+  type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
   type Elitism = elitism.Elitism
-  type MapElitism = elitism.MapElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
   type NicheElitism = elitism.NicheElitism
-  type ProfileElitism = elitism.ProfileElitism
-  type RandomNichingElitism = elitism.RandomNichingElitism
+  type RandomNicheElitism = elitism.RandomNicheElitism
   type RankElitism = elitism.RankElitism
   type Aggregation = fitness.Aggregation
   type F = fitness.F
@@ -132,6 +132,9 @@ package object mgo {
   type Mutation = mutation.Mutation
   type IdentityMutation = mutation.IdentityMutation
   type RandomMutation = mutation.RandomMutation
+  type MapNiche = niche.MapNiche
+  type Niche = niche.Niche
+  type ProfileNiche = niche.ProfileNiche
   type P = phenotype.P
   type Evaluation = phenotype.Evaluation
   type DoubleSeqPhenotype = phenotype.DoubleSeqPhenotype
