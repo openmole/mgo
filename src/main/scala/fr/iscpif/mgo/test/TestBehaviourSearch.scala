@@ -28,7 +28,7 @@ object TestBehaviourSearch extends App {
 
   implicit val rng = new Random
 
-  val m = new BehaviourSearch {
+  val m = new BehaviourSearch with PhenotypeGridNiche {
 
     override def genomeSize: Int = 2
 
@@ -50,10 +50,7 @@ object TestBehaviourSearch extends App {
     override type P = Seq[Double]
     override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
 
-    val divsSize = 0.1
-
-    def niche(individual: Individual[G, P, F]) = scale(individual.phenotype).map((x: Double) => (x / divsSize).toInt).toSeq
-
+    def gridSize = Seq.fill(2)(0.1)
     def hitCell(i: Individual[G, P, F]) = niche(i)
 
   }

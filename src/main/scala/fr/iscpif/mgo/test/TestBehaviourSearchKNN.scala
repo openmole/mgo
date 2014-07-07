@@ -27,7 +27,7 @@ object TestBehaviourSearchKNN extends App {
 
   implicit val rng = new Random
 
-  val m = new GAProblem with NoFitness with NoArchive with GeneticBreeding with SortedTournamentSelection with IdentityCrossOver with TournamentOnRank with RankModifier with RankOnPhenotypeDiversity with KNearestNeighboursDiversity with RandomNicheElitism with CounterTermination with CoEvolvingSigmaValuesMutation with GAGenomeWithSigma {
+  val m = new GAProblem with NoFitness with NoArchive with GeneticBreeding with SortedTournamentSelection with IdentityCrossOver with TournamentOnRank with RankModifier with RankOnPhenotypeDiversity with KNearestNeighboursDiversity with RandomNicheElitism with CounterTermination with CoEvolvingSigmaValuesMutation with GAGenomeWithSigma with PhenotypeGridNiche {
 
     def k = 5
 
@@ -51,10 +51,7 @@ object TestBehaviourSearchKNN extends App {
     override type P = Seq[Double]
     override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
 
-    val divsSize = 0.1
-    override def niche(individual: Individual[G, P, F]) =
-      scale(individual.phenotype).map((x: Double) => (x / divsSize).toInt).toSeq
-
+    def gridSize = Seq.fill(2)(0.1)
   }
 
   m.evolve.untilConverged {

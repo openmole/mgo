@@ -15,11 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.phenotype
+package fr.iscpif.mgo.niche
 
-import monocle._
+import fr.iscpif.mgo._
+import monocle.syntax._
 
-trait DoubleSeqPhenotype <: P {
-  type P = Seq[Double]
-  def doubleSeq: SimpleLens[P, Seq[Double]] = SimpleLens(identity, (_, v) => v)
+trait PhenotypeGridNiche <: Niche with DoubleSeqPhenotype {
+  def gridSize: Seq[Double]
+
+  def niche(individual: Individual[G, P, F]): Seq[Int] = ((individual.phenotype |-> doubleSeq get) zip gridSize).map { case (x, g) => (x / g).toInt }
 }

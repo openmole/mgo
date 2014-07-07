@@ -134,6 +134,7 @@ package object mgo {
   type RandomMutation = mutation.RandomMutation
   type MapNiche = niche.MapNiche
   type Niche = niche.Niche
+  type PhenotypeGridNiche = niche.PhenotypeGridNiche
   type ProfileNiche = niche.ProfileNiche
   type P = phenotype.P
   type Evaluation = phenotype.Evaluation
