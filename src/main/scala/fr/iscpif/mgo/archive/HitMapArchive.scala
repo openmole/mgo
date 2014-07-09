@@ -20,24 +20,20 @@ package fr.iscpif.mgo.archive
 import fr.iscpif.mgo._
 import scala.collection.Map
 
-trait HitMapArchive <: Archive {
+trait HitMapArchive <: Archive with Niche {
 
-  type A = Map[Seq[Int], Int]
+  type A = Map[NICHE, Int]
 
-  type Cell = Seq[Int]
+  def hits(a: A, c: NICHE): Int = a.getOrElse(c, 0)
 
-  def hitCell(i: Individual[G, P, F]): Cell
-
-  def hits(a: A, c: Seq[Int]): Int = a(c)
-
-  def initialArchive = Map[Seq[Int], Int]()
+  def initialArchive = Map[NICHE, Int]()
 
   def toArchive(individuals: Seq[Individual[G, P, F]]): A = {
-    individuals.groupBy(hitCell).map { case (k, v) => (k -> v.size) }
+    individuals.groupBy(niche).map { case (k, v) => (k -> v.size) }
   }
 
-  def combine(a1: A, a2: A): A = a2.foldLeft(a1)((a: A, kv: (Seq[Int], Int)) => {
-    val a2key: Seq[Int] = kv._1
+  def combine(a1: A, a2: A): A = a2.foldLeft(a1)((a: A, kv: (NICHE, Int)) => {
+    val a2key: NICHE = kv._1
     val a2value: Int = kv._2
     if (a contains a2key) a + ((a2key, a(a2key) + a2value))
     else a + ((a2key, a2value))

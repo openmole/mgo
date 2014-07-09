@@ -21,6 +21,7 @@ import fr.iscpif.mgo.Individual
 import fr.iscpif.mgo.map.ProfilePlotter
 
 trait ProfileNiche <: Niche with ProfilePlotter {
+  type NICHE = Int
   def nicheSize = 1
   override def niche(individual: Individual[G, P, F]) = plot(individual)
 }

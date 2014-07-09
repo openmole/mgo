@@ -51,7 +51,6 @@ object TestBehaviourSearch extends App {
     override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
 
     def gridSize = Seq.fill(2)(0.1)
-    def hitCell(i: Individual[G, P, F]) = niche(i)
 
   }
 
@@ -59,7 +58,7 @@ object TestBehaviourSearch extends App {
     s =>
       val output = Resource.fromFile(s"/tmp/behaviourSearch/behaviourSearch${s.generation}.csv")
       output.append((0 until m.genomeSize).map("par" + _).mkString(",") + "," + (0 until 2).map("bhv" + _).mkString(",") + ",hitcounts,niche0,niche1" + "\n")
-      val hitcounts = s.population.map(i => m.hits(s.archive, m.hitCell(i.toIndividual)))
+      val hitcounts = s.population.map(i => m.hits(s.archive, m.niche(i.toIndividual)))
       (s.population.content zip hitcounts).foreach {
         case (i, hc) => output.append(i.genome.values.mkString(",") + "," + i.phenotype.mkString(",") + "," + hc + "," + m.niche(i.toIndividual).mkString(",") + "\n")
       }

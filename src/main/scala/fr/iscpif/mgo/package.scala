@@ -17,7 +17,6 @@
 
 package fr.iscpif
 
-import fr.iscpif.mgo.elitism.RandomNicheElitism
 import org.apache.commons.math3.random._
 
 package object mgo {

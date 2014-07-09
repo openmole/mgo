@@ -21,6 +21,7 @@ import fr.iscpif.mgo._
 import monocle.syntax._
 
 trait PhenotypeGridNiche <: Niche with DoubleSeqPhenotype {
+  type NICHE = Seq[Int]
   def gridSize: Seq[Double]
 
   def niche(individual: Individual[G, P, F]): Seq[Int] = ((individual.phenotype |-> doubleSeq get) zip gridSize).map { case (x, g) => (x / g).toInt }

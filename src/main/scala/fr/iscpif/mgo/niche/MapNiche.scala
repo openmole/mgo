@@ -20,6 +20,7 @@ package fr.iscpif.mgo.niche
 import fr.iscpif.mgo._
 
 trait MapNiche <: Niche with MapPlotter {
+  type NICHE = (Int, Int)
   def nicheSize = 1
-  override def niche(individual: Individual[G, P, F]): Any = plot(individual)
+  override def niche(individual: Individual[G, P, F]) = plot(individual)
 }
