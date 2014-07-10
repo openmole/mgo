@@ -60,7 +60,6 @@ package object mgo {
   type HitMapArchive = archive.HitMapArchive
   type NoArchive = archive.NoArchive
   type NoveltyArchive = archive.NoveltyArchive
-  type OptimumDiversityArchive = archive.OptimumDiversityArchive
   type Breeding = breed.Breeding
   type GeneticBreeding = breed.GeneticBreeding
   type AverageCrossOver = crossover.AverageCrossover
@@ -89,6 +88,7 @@ package object mgo {
   type StrictDominance = dominance.StrictDominance
   type StrictEpsilonDominance = dominance.StrictEpsilonDominance
   type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
+  type BestRankedNicheElitism = elitism.BestRankedNicheElitism
   type Elitism = elitism.Elitism
   type NonDominatedElitism = elitism.NonDominatedElitism
   type NicheElitism = elitism.NicheElitism
@@ -131,6 +131,7 @@ package object mgo {
   type Mutation = mutation.Mutation
   type IdentityMutation = mutation.IdentityMutation
   type RandomMutation = mutation.RandomMutation
+  type GAGenotypeGridNiche = niche.GAGenotypeGridNiche
   type MapNiche = niche.MapNiche
   type Niche = niche.Niche
   type PhenotypeGridNiche = niche.PhenotypeGridNiche

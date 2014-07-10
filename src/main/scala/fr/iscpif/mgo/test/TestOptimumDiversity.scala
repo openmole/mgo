@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import monocle.syntax._
 import scala.util.Random
 import scalax.io.Resource
 
@@ -26,14 +27,9 @@ object TestOptimumDiversity extends App {
   val m = new Rastrigin with OptimumDiversity with CounterTermination {
     def genomeSize: Int = 2
     def lambda: Int = 200
-    def mu = 200
-    def archiveSize = 200
-
-    def neighbours = 8
     def steps = 400
 
-    def isGood(individual: Individual[G, P, F]) =
-      fitness.get(individual.fitness).max < 8.05
+    def gridSize = Seq(2, 2)
 
     def individualPosition(individual: Individual[G, P, F]): Seq[Double] = Seq(individual.phenotype)
 
@@ -44,11 +40,18 @@ object TestOptimumDiversity extends App {
   m.evolve.untilConverged {
     s =>
       val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
-      s.archive.foreach {
-        i => output.append(i.genome.values.mkString(",") + "," + m.fitness.get(i.fitness).mkString(",") + "\n")
+      s.population.foreach {
+        i => output.append((i.genome |-> m.values get).mkString(",") + "," + i.fitness.mkString(",") + "\n")
       }
-      println(s.individuals.map(i => m.fitness.get(i.fitness).max).min)
-    //println(s.generation + " " + s.archive.size)
+      //println(s.individuals.map(_.fitness))
+
+      //import Ordering.Implicits._
+      //println(s.individuals.map(m.niche).sorted.mkString("\n"))
+
+      //println(s.individuals.map(i => m.niche(i).mkString(",")).mkString("\n"))
+
+      //println(s.individuals.size)
+      println(s.generation)
   }
 
 }

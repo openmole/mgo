@@ -25,7 +25,10 @@ import scala.util.Random
  * sequences of doubles).
  */
 trait GA extends G with RandomGenome {
+  /** The value part of the genome actually used for the optimisation */
   def values: SimpleLens[G, Seq[Double]]
+
+  /** The entire genome with potentially additional information */
   def genome: SimpleLens[G, Seq[Double]]
 
   /** Size of the value part of the genome */

@@ -18,13 +18,14 @@
 package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.genome.GAScaling
 import scala.util.Random
 import monocle.syntax._
 
 /**
  * Layer to scale a sequence of Double in [0.0, 1.0]
  */
-trait Scaling <: Problem with GA {
+trait Scaling <: Problem with GA with GAScaling {
 
   /** minimum scaled value in the correct order */
   def min: Seq[Double]

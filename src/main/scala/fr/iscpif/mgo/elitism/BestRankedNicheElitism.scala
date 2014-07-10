@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 29/11/13 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,28 +9,23 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.elitism.BestRankedNicheElitism
 
-trait OptimumDiversity <: NoArchive
-  with BestRankedNicheElitism
-  with GAGenotypeGridNiche
-  with MG
-  with GAGenomeWithSigma
-  with CrowdingDiversity
-  with GeneticBreeding
-  with BinaryTournamentSelection
-  with TournamentOnRankAndDiversity
-  with CoEvolvingSigmaValuesMutation
-  with SBXBoundedCrossover
-  with StrictDominance
-  with RankDiversityModifier
-  with ParetoRanking
+import scala.util.Random
+
+trait BestRankedNicheElitism <: NicheElitism with Ranking with MGFitness {
+  override def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] = {
+    val ranks = rank(individuals.map(_.fitness))
+    val topRank = ranks.min
+    val niche = (individuals zip ranks).filter { case (_, r) => r == topRank }.map { case (i, _) => i }
+    niche
+  }
+}

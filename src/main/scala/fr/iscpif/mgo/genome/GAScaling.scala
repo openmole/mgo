@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 29/11/13 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,28 +9,14 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.genome
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.elitism.BestRankedNicheElitism
-
-trait OptimumDiversity <: NoArchive
-  with BestRankedNicheElitism
-  with GAGenotypeGridNiche
-  with MG
-  with GAGenomeWithSigma
-  with CrowdingDiversity
-  with GeneticBreeding
-  with BinaryTournamentSelection
-  with TournamentOnRankAndDiversity
-  with CoEvolvingSigmaValuesMutation
-  with SBXBoundedCrossover
-  with StrictDominance
-  with RankDiversityModifier
-  with ParetoRanking
+trait GAScaling <: GA {
+  def scale(values: Seq[Double]): Seq[Double]
+}
