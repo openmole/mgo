@@ -24,15 +24,11 @@ import scalax.io.Resource
 
 object TestOptimumDiversity extends App {
 
-  val m = new Rastrigin with OptimumDiversity with CounterTermination {
+  val m = new ZDT4 with OptimumDiversity with CounterTermination {
     def genomeSize: Int = 2
     def lambda: Int = 200
     def steps = 400
-
-    def gridSize = Seq(2, 2)
-
-    def individualPosition(individual: Individual[G, P, F]): Seq[Double] = Seq(individual.phenotype)
-
+    def gridSize = Seq(0.1, 0.5, 0.5)
   }
 
   implicit val rng = new Random
@@ -41,7 +37,7 @@ object TestOptimumDiversity extends App {
     s =>
       val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
       s.population.foreach {
-        i => output.append((i.genome |-> m.values get).mkString(",") + "," + i.fitness.mkString(",") + "\n")
+        i => output.append((m.scale(i.genome) |-> m.values get).mkString(",") + "," + i.fitness.mkString(",") + "\n")
       }
       //println(s.individuals.map(_.fitness))
 
