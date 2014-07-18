@@ -30,11 +30,13 @@ trait ParetoRanking extends Ranking with Dominance {
   override def rank(values: Seq[Seq[Double]]) = {
     values.zipWithIndex.map {
       case (v1, index1) =>
-        Lazy(values.par.zipWithIndex.filter {
-          case (_, index2) => index1 != index2
-        }.count {
+        Lazy(
+          values.zipWithIndex.filter {
+            case (_, index2) => index1 != index2
+          }.count {
           case (v2, _) => isDominated(v1, v2)
-        })
+          }
+        )
     }
   }
 }
