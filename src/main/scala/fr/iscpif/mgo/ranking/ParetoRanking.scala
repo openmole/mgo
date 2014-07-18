@@ -34,7 +34,7 @@ trait ParetoRanking extends Ranking with Dominance {
           values.zipWithIndex.filter {
             case (_, index2) => index1 != index2
           }.count {
-          case (v2, _) => isDominated(v1, v2)
+            case (v2, _) => isDominated(v1, v2)
           }
         )
     }
