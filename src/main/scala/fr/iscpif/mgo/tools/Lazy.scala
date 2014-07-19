@@ -36,5 +36,13 @@ class Lazy[T](f: => T) {
   /** Get the value */
   def apply() = value
 
+  override def equals(o: Any) =
+    o match {
+      case that: Lazy[_] => that() == this()
+      case _ => false
+    }
+
+  override def hashCode = this().hashCode()
+
   override def toString() = value.toString
 }
