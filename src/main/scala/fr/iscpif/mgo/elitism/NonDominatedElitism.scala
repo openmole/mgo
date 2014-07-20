@@ -23,7 +23,7 @@ import annotation.tailrec
 import util.Random
 
 /**
- * Reduce the size of the population according to a divesity metric and a rank
+ * Reduce the size of the population according to a diversity metric and a rank
  */
 trait NonDominatedElitism extends Elitism with Mu with MergedGenerations with RankMF with DiversityMF {
 
@@ -37,10 +37,10 @@ trait NonDominatedElitism extends Elitism with Mu with MergedGenerations with Ra
 
       type FE = (Individual[G, P, F], Lazy[Double])
 
-      @tailrec def addFronts[I](fronts: List[Seq[FE]], acc: List[Seq[FE]]): (Seq[FE], Seq[FE]) = {
-        if (fronts.isEmpty) (Seq.empty, acc.flatten)
-        else if (acc.size + fronts.head.size < mu) addFronts[I](fronts.tail, fronts.head :: acc)
-        else (fronts.head, acc.flatten)
+      @tailrec def addFronts(fronts: List[Seq[FE]], acc: List[FE]): (Seq[FE], Seq[FE]) = {
+        if (fronts.isEmpty) (Seq.empty, acc)
+        else if (acc.size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head.toList ::: acc)
+        else (fronts.head, acc)
       }
 
       val (lastFront, selected) = addFronts(fronts, List.empty)
