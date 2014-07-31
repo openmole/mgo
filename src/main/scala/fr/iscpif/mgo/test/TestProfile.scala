@@ -23,8 +23,8 @@ import scalax.io._
 
 object TestProfile extends App {
   val m =
-    new Rastrigin with Profile with CounterTermination with ProfileGenomePlotter {
-      def genomeSize: Int = 6
+    new Himmelblau with Profile with CounterTermination with ProfileGenomePlotter {
+      //def genomeSize: Int = 6
       def lambda: Int = 200
       def steps = 200
       def x: Int = 0

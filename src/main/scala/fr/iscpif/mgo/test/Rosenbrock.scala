@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 20/11/12 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,7 +9,7 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
@@ -17,18 +17,27 @@
 
 package fr.iscpif.mgo.test
 
-import fr.iscpif.mgo._
-import scala.util.Random
+import fr.iscpif.mgo.fitness.MGFitness
+import fr.iscpif.mgo.problem.GAProblem
 
-trait Sphere <: GAProblem {
-  def n: Int
+import util.Random
+import math._
+import monocle.syntax._
 
-  def min = List.fill(n)(0.0)
-  def max = List.fill(n)(2.0)
+trait Rosenbrock <: GAProblem with MGFitness {
+  def genomeSize: Int = 2
+
+  def min = List(-2.0, -1.0)
+  def max = List(2.0, 3.0)
 
   type P = Seq[Double]
 
-  override def express(g: G, rng: Random) = List(values.get(g).map(x => x * x).sum)
+  override def express(g: G, rng: Random) = {
+    val Seq(x, y) = g |-> values get
+    val z = pow(1 - x, 2) + 100 * pow(y - pow(x, 2), 2)
+    List(z)
+  }
 
-  def apply(x: Seq[Double], rng: Random) = x
+  def evaluate(x: Seq[Double], rng: Random) = x
+
 }
