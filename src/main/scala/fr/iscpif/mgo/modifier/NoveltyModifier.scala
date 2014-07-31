@@ -18,10 +18,7 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.distance.EuclideanDistance
 import fr.iscpif.mgo.tools.{ Lazy, Neighbours }
-import fr.iscpif.mgo.metric.CrowdingDistance
-import scalaz.Lens
 
 trait NoveltyModifier <: RankDiversityModifier
     with Archive

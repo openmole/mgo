@@ -18,8 +18,9 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import scalaz.Lens
 import fr.iscpif.mgo.tools.Lazy
+import monocle._
+import Macro._
 
 /**
  * Compute a meta-fitness with a rank an a diversity
@@ -46,12 +47,14 @@ object RankDiversityModifier {
     }
 }
 
+import RankDiversityModifier._
+
 trait RankDiversityModifier <: Modifier with Ranking with DiversityMetric with ModifiedFitness {
 
-  type MF = RankDiversityModifier.RankDiversity
+  type MF = RankDiversity
 
-  def diversity: Lens[MF, Lazy[Double]] = Lens.lensu[MF, Lazy[Double]]((c, v) => c.copy(diversity = v), _.diversity)
-  def rank: Lens[MF, Lazy[Int]] = Lens.lensu[MF, Lazy[Int]]((c, v) => c.copy(rank = v), _.rank)
+  def diversity: SimpleLens[RankDiversity, Lazy[Double]] = mkLens("diversity") //(_.diversity, (c, v) => c.copy(diversity = v))
+  def rank: SimpleLens[RankDiversity, Lazy[Int]] = mkLens("rank")
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val f = fitnesses(evaluated, archive)

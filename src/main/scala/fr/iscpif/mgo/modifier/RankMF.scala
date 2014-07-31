@@ -18,8 +18,8 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo.tools.Lazy
-import scalaz.Lens
+import monocle.SimpleLens
 
 trait RankMF <: MF {
-  def rank: Lens[MF, Lazy[Int]]
+  def rank: SimpleLens[MF, Lazy[Int]]
 }

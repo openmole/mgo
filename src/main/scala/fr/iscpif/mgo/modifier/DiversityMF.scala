@@ -17,9 +17,9 @@
 
 package fr.iscpif.mgo.modifier
 
-import scalaz.Lens
+import monocle.SimpleLens
 import fr.iscpif.mgo.tools.Lazy
 
 trait DiversityMF <: MF {
-  def diversity: Lens[MF, Lazy[Double]]
+  def diversity: SimpleLens[MF, Lazy[Double]]
 }

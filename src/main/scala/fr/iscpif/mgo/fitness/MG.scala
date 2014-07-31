@@ -17,8 +17,8 @@
 
 package fr.iscpif.mgo.fitness
 
-import scalaz.Lens
+import monocle._
 
 trait MG extends F {
-  def fitness: Lens[F, Seq[Double]]
+  def fitness: SimpleLens[F, Seq[Double]]
 }

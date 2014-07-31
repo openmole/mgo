@@ -18,8 +18,8 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import scalaz.Lens
 import fr.iscpif.mgo.tools.Lazy
+import monocle.Macro._
 
 object DiversityModifier {
   case class Diversity(diversity: Lazy[Double]) {
@@ -37,7 +37,7 @@ object DiversityModifier {
 trait DiversityModifier extends Modifier with DiversityMetric with DiversityMF with MG {
   type MF = DiversityModifier.Diversity
 
-  override def diversity: Lens[MF, Lazy[Double]] = Lens.lensu[MF, Lazy[Double]]((c, v) => c.copy(diversity = v), _.diversity)
+  override def diversity = mkLens("diversity")
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
     DiversityModifier.toPopulationElements[G, P, F](evaluated, diversity(evaluated.map(e => fitness.get(e.fitness))))

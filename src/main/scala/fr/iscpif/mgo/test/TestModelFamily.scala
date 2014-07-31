@@ -19,7 +19,6 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo.{ Population, Individual }
 import fr.iscpif.mgo._
-import scalaz.Lens
 import scala.util.Random
 import fr.iscpif.mgo.modelfamily.{ ModelFamilyGenome, ModelFamilyMutation, ModelFamilyElitism }
 import tools.Math._

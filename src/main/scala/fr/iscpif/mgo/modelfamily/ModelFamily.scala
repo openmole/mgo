@@ -18,13 +18,14 @@
 package fr.iscpif.mgo.modelfamily
 
 import fr.iscpif.mgo._
-import scalaz._
+import monocle._
 
 trait ModelFamily <: GA {
 
-  def modelId: Lens[Seq[Double], Int] =
-    Lens.lensu[Seq[Double], Int](
-      (c, v) => Seq(v.toDouble) ++ c.drop(1),
-      _.head.toInt)
+  def modelId =
+    SimpleLens[Seq[Double], Int](
+      _.head.toInt,
+      (c, v) => Seq(v.toDouble) ++ c.drop(1)
+    )
 
 }

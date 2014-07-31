@@ -18,8 +18,9 @@
 package fr.iscpif.mgo.modifier
 
 import fr.iscpif.mgo._
-import scalaz.Lens
 import fr.iscpif.mgo.tools.Lazy
+import monocle.SimpleLens
+import monocle.Macro._
 
 /**
  * Layer for modifier that adds a rank to the meta-fitness
@@ -40,7 +41,7 @@ object RankModifier {
 trait RankModifier extends Modifier with Ranking with RankMF with MG with ModifiedFitness {
   type MF = RankModifier.Rank
 
-  def rank: Lens[MF, Lazy[Int]] = Lens.lensu[MF, Lazy[Int]]((c, v) => c.copy(rank = v), _.rank)
+  def rank = mkLens("rank")
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
     val ranks = rank(fitnesses(evaluated, archive))
