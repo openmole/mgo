@@ -27,15 +27,18 @@ import monocle.syntax._
 trait Himmelblau <: GAProblem with MGFitness {
   def genomeSize: Int = 2
 
-  def min = List(-5.0, -5.0)
-  def max = List(5.0, 5.0)
+  def min = List(-4.5, -4.5)
+  def max = List(4.5, 4.5)
 
   type P = Seq[Double]
 
+  def z(x: Double, y: Double) = {
+    pow(pow(x, 2) + y - 11, 2) + pow(x + pow(y, 2) - 7, 2)
+  }
+
   override def express(g: G, rng: Random) = {
-    val Seq(x, y) = g |-> values get
-    val z = pow(pow(x, 2) + y - 11, 2) + pow(x + pow(y, 2) - 7, 2)
-    List(z)
+    val Seq(x, y) = (g |-> values get)
+    Seq(z(x, y))
   }
 
   def evaluate(x: Seq[Double], rng: Random) = x

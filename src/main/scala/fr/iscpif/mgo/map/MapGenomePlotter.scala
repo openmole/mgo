@@ -26,7 +26,9 @@ trait MapGenomePlotter extends MapPlotter with GA {
   def nX: Int
   def nY: Int
 
-  override def plot(i: Individual[G, P, F]) =
-    ((values.get(i.genome)(x) * nX).toInt, (values.get(i.genome)(y) * nY).toInt)
+  override def plot(i: Individual[G, P, F]) = {
+    val (nicheX, nicheY) = ((values.get(i.genome)(x) * nX).toInt, (values.get(i.genome)(y) * nY).toInt)
+    (if (nicheX == nX) nicheX - 1 else nicheX, if (nicheY == nY) nicheY - 1 else nicheY)
+  }
 
 }

@@ -26,21 +26,84 @@ object TestProfile extends App {
     new Himmelblau with Profile with CounterTermination with ProfileGenomePlotter {
       //def genomeSize: Int = 6
       def lambda: Int = 200
-      def steps = 200
+      def steps = 1000
       def x: Int = 0
-      def nX: Int = 1000
+      def nX: Int = 8
     }
 
-  implicit val rng = newRNG(42)
+  implicit val rng = newRNG(46)
 
-  val res = m.evolve.untilConverged(s => println(s.generation)).individuals
+  //  /*val output = Resource.fromFile(s"/tmp/generation.csv")
+  //
+  //  for {
+  //    x <- -4.0 to 4.0 by 0.1
+  //    y <- -4.0 to 4.0 by 0.2
+  //  } {
+  //    output.append(Seq(x, y, m.z(x, y)).mkString(",") + "\n")
+  //  }*/
+  //
+  //  val archive = m.initialArchive
+  //  val offspringGenomes = m.breed(Seq.empty, archive, 16)
+  //
+  //  //val rngs = (0 until offspringGenomes.size).map(_ => buildRNG(rng.nextLong))
+  //
+  //  val offspring = offspringGenomes.map { g => m.express(m.scale(g), rng) }
+  //
+  //  val output = Resource.fromFile(s"/tmp/S0.csv")
+  //  (offspringGenomes zip offspring).foreach {
+  //    case (g, f) =>
+  //      val scaled = m.scale(g)
+  //      output.append((m.values.get(scaled) ++ f).mkString(",") + "\n")
+  //  }
+  //
+  //  val individuals = (offspringGenomes zip offspring).map {
+  //    case (g, f) => Individual[m.G, m.P, m.F](g, f, f)
+  //  }
+  //
+  //  val g2 = m.elitism(individuals, None)
+  //
+  //  def write(individuals: Seq[Individual[m.G, m.P, m.F]], file: String) = {
+  //    val output2 = Resource.fromFile(file)
+  //    individuals.foreach {
+  //      i =>
+  //        val scaled = m.scale(i)
+  //        output2.append((m.values.get(scaled.genome) ++ scaled.fitness).mkString(",") + "\n")
+  //    }
+  //  }
+  //
+  //  write(g2, "/tmp/S2.csv")
+  //
+  //  val offspringGenomes2 = m.breed(g2, None, 16)
+  //  val offspring2 = offspringGenomes2.map { g => m.express(m.scale(g), rng) }
+  //
+  //  val individuals2 = (offspringGenomes2 zip offspring2).map {
+  //    case (g, f) => Individual[m.G, m.P, m.F](g, f, f)
+  //  }
+  //
+  //  write(individuals2, "/tmp/S3.csv")
 
-  val output = Resource.fromFile("/tmp/matrix2.csv")
+  val save = Set(1000)
+
+  val res =
+    m.evolve.untilConverged {
+      s =>
+        if (save.contains(s.generation)) {
+          val output = Resource.fromFile(s"/tmp/generation${s.generation}.csv")
+          s.population.toIndividuals.foreach {
+            i =>
+              val scaled = m.scale(i)
+              output.append((m.values.get(scaled.genome) ++ m.fitness.get(scaled.fitness)).mkString(",") + "\n")
+          }
+        }
+        println(s.generation)
+    }.individuals
+
+  /*val output = Resource.fromFile("/tmp/matrix2.csv")
   for {
     i <- res
     x = m.plot(i)
     v = m.aggregate(i.fitness)
     if !v.isPosInfinity
-  } output.append(s"$x,$v\n")
+  } output.append(s"$x,$v\n")*/
 
 }

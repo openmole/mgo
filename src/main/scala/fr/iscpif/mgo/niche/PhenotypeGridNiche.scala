@@ -26,7 +26,6 @@ trait PhenotypeGridNiche <: Niche with DoubleSeqPhenotype {
 
   def niche(individual: Individual[G, P, F]): Seq[Int] =
     ((individual.phenotype |-> doubleSeq get) zip gridSize).map {
-      case (x, g) =>
-        (x / g).toInt + (if(x == 1.0) -1 else 0 )
+      case (x, g) => (x / g).toInt
     }
 }

@@ -24,5 +24,8 @@ trait ProfileGenomePlotter extends ProfilePlotter with GA {
   def x: Int
   def nX: Int
 
-  override def plot(i: Individual[G, P, F]) = (values.get(i.genome)(x) * nX).toInt
+  override def plot(i: Individual[G, P, F]) = {
+    val niche = (values.get(i.genome)(x) * nX).toInt
+    if (niche == nX) niche - 1 else niche
+  }
 }
