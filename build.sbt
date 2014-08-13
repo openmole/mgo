@@ -12,7 +12,7 @@ resolvers ++= Seq(
 
 libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-core" % "0.4.3"
 
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.2"
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.3"
 
 val monocleVersion = "0.4.0"
 

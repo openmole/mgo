@@ -28,9 +28,11 @@ trait HitMapArchive <: Archive with Niche {
 
   def initialArchive = Map[NICHE, Int]()
 
-  def toArchive(individuals: Seq[Individual[G, P, F]]): A = {
+  def archive(archive: A, offspring: Seq[Individual[G, P, F]]): A =
+    combine(archive, toArchive(offspring))
+
+  def toArchive(individuals: Seq[Individual[G, P, F]]): A =
     individuals.groupBy(niche).map { case (k, v) => (k -> v.size) }
-  }
 
   def combine(a1: A, a2: A): A = a2.foldLeft(a1)((a: A, kv: (NICHE, Int)) => {
     val a2key: NICHE = kv._1
