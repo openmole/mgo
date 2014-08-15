@@ -29,7 +29,7 @@ object TestModelFamily extends App {
 
   val testModels = 1
 
-  val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with SBXBoundedCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination {
+  val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with SBXBoundedCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination with ClampedGenome {
     /** Number of steps before the algorithm stops */
     override def steps: Int = 10000
 

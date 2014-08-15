@@ -36,8 +36,8 @@ trait Himmelblau <: GAProblem with MGFitness {
     pow(pow(x, 2) + y - 11, 2) + pow(x + pow(y, 2) - 7, 2)
   }
 
-  override def express(g: G, rng: Random) = {
-    val Seq(x, y) = (g |-> values get)
+  override def express(g: Seq[Double], rng: Random) = {
+    val Seq(x, y) = g
     Seq(z(x, y))
   }
 

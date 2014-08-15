@@ -55,8 +55,6 @@ object SBXBoundedCrossover {
               val yL = 0.0 //g1e.getLowerBound
               val yU = 1.0 //g1e.getUpperBound
 
-              def inBound(v: Double) = if (v < yL) yL else if (v > yU) yU else v
-
               val rand = rng.nextDouble // ui
 
               val beta1 = 1.0 + (2.0 * (y1 - yL) / (y2 - y1))
@@ -67,7 +65,7 @@ object SBXBoundedCrossover {
                 else pow((1.0 / (2.0 - rand * alpha1)), (1.0 / (distributionIndex + 1.0)))
               }
 
-              val c1 = inBound(0.5 * ((y1 + y2) - betaq1 * (y2 - y1)))
+              val c1 = 0.5 * ((y1 + y2) - betaq1 * (y2 - y1))
 
               // -----------------------------------------------
 
@@ -79,7 +77,7 @@ object SBXBoundedCrossover {
                 else pow((1.0 / (2.0 - rand * alpha2)), (1.0 / (distributionIndex + 1.0)))
               }
 
-              val c2 = inBound(0.5 * ((y1 + y2) + betaq2 * (y2 - y1)))
+              val c2 = 0.5 * ((y1 + y2) + betaq2 * (y2 - y1))
 
               if (rng.nextBoolean) (c2, c1) else (c1, c2)
             } else (g1e, g2e)

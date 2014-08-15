@@ -28,7 +28,7 @@ object TestBehaviourSearch extends App {
 
   implicit val rng = new Random
 
-  val m = new BehaviourSearch with PhenotypeGridNiche {
+  val m = new BehaviourSearch with PhenotypeGridNiche with GAProblem {
 
     override def genomeSize: Int = 2
 
@@ -48,7 +48,7 @@ object TestBehaviourSearch extends App {
     override def lambda = 3
 
     override type P = Seq[Double]
-    override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
+    override def express(g: Seq[Double], rng: Random): P = Vector(f1(g), f2(g))
 
     def gridSize = Seq.fill(2)(0.1)
 

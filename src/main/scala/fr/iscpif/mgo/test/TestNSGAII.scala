@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 import util.Random
 import scalax.io.Resource
 
-object TestFunction extends App {
+object TestNSGAII extends App {
 
   implicit val rng = new Random
 
@@ -29,7 +29,7 @@ object TestFunction extends App {
     new Rastrigin with NSGAII with HierarchicalRanking {
       def mu = 100
       def lambda = 100
-      def genomeSize = 6
+      def genomeSize = 20
       def steps = 1000
     }
 
@@ -44,8 +44,7 @@ object TestFunction extends App {
   for {
     r <- res
   } {
-    val scaled = nsga2.scale(r)
-    def line = nsga2.values.get(scaled.genome) ++ nsga2.fitness.get(scaled.fitness)
+    def line = nsga2.scale(nsga2.values.get(r.genome)) ++ nsga2.fitness.get(r.fitness)
     output.append(line.mkString(",") + "\n")
   }
 

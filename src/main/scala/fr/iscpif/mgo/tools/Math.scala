@@ -34,9 +34,6 @@ object Math {
   /// Definintion of epsilon
   val epsilon = 1.0e-30
 
-  def clamp(value: Double, min_v: Double, max_v: Double): Double =
-    max(min(value, max_v), min_v)
-
   def same(i1: Iterable[Double], i2: Iterable[Double]): Boolean =
     (i1.headOption, i2.headOption) match {
       case (None, None) => true

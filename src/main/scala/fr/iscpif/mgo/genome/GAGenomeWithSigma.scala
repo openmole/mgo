@@ -32,7 +32,7 @@ trait GAGenomeWithSigma extends GA with Sigma {
 
   type G = GAGenomeWithSigma.Genome
 
-  def values = mkLens[G, Seq[Double]]("values")
+  def rawValues = mkLens[G, Seq[Double]]("values")
 
   def genome = SimpleLens[G, Seq[Double]](
     v => v.values ++ v.sigma,

@@ -27,7 +27,7 @@ object TestBehaviourSearchKNN extends App {
 
   implicit val rng = new Random
 
-  val m = new GAProblem with NoFitness with NoArchive with GeneticBreeding with SortedTournamentSelection with IdentityCrossOver with TournamentOnRank with RankModifier with RankOnPhenotypeDiversity with KNearestNeighboursDiversity with RandomNicheElitism with CounterTermination with CoEvolvingSigmaValuesMutation with GAGenomeWithSigma with PhenotypeGridNiche {
+  val m = new GAProblem with NoFitness with NoArchive with GeneticBreeding with SortedTournamentSelection with IdentityCrossOver with TournamentOnRank with RankModifier with RankOnPhenotypeDiversity with KNearestNeighboursDiversity with RandomNicheElitism with CounterTermination with CoEvolvingSigmaValuesMutation with GAGenomeWithSigma with PhenotypeGridNiche with ClampedGenome {
 
     def k = 5
 
@@ -49,7 +49,7 @@ object TestBehaviourSearchKNN extends App {
     override def lambda = 3
 
     override type P = Seq[Double]
-    override def express(g: G, rng: Random): P = Vector(f1(g.values), f2(g.values))
+    override def express(g: Seq[Double], rng: Random): P = Vector(f1(g), f2(g))
 
     def gridSize = Seq.fill(2)(0.1)
   }

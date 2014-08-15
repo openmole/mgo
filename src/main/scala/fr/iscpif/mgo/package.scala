@@ -99,10 +99,12 @@ package object mgo {
   type MaxAggregation = fitness.MaxAggregation
   type MG = fitness.MG
   type MGFitness = fitness.MGFitness
+  type ClampedGenome = genome.ClampedGenome
   type G = genome.G
   type GAGenome = genome.GAGenome
   type GAGenomeWithSigma = genome.GAGenomeWithSigma
   type GA = genome.GA
+  type NoGenomeClamping = genome.NoGenomeClamping
   type RandomValue = genome.RandomValue
   type Sigma = genome.Sigma
   type MapGenomePlotter = map.MapGenomePlotter

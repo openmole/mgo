@@ -15,29 +15,24 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.test
+package fr.iscpif.mgo.genome
 
-import fr.iscpif.mgo.fitness.MGFitness
-import fr.iscpif.mgo.problem.GAProblem
+import monocle.SimpleLens
 
-import util.Random
-import math._
-import monocle.syntax._
+import scala.math._
 
-trait Rosenbrock <: GAProblem with MGFitness {
-  def genomeSize: Int = 2
+trait GenomeClamping <: G {
+  def clamp(values: SimpleLens[G, Seq[Double]]): SimpleLens[G, Seq[Double]]
+}
 
-  def min = List(-2.0, -1.0)
-  def max = List(2.0, 3.0)
+trait NoGenomeClamping <: GenomeClamping {
+  override def clamp(values: SimpleLens[G, Seq[Double]]) = values
+}
 
-  type P = Seq[Double]
+trait ClampedGenome <: GenomeClamping {
+  override def clamp(values: SimpleLens[G, Seq[Double]]) =
+    SimpleLens[G, Seq[Double]](values.get(_).map(clamp(_, 0.0, 1.0)), values.set)
 
-  def express(g: Seq[Double], rng: Random) = {
-    val Seq(x, y) = g
-    val z = pow(1 - x, 2) + 100 * pow(y - pow(x, 2), 2)
-    List(z)
-  }
-
-  def evaluate(x: Seq[Double], rng: Random) = x
-
+  def clamp(value: Double, min_v: Double, max_v: Double): Double =
+    max(min(value, max_v), min_v)
 }

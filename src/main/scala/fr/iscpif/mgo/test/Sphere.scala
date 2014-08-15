@@ -28,7 +28,7 @@ trait Sphere <: GAProblem {
 
   type P = Seq[Double]
 
-  override def express(g: G, rng: Random) = List(values.get(g).map(x => x * x).sum)
+  override def express(g: Seq[Double], rng: Random) = List(g.map(x => x * x).sum)
 
   def apply(x: Seq[Double], rng: Random) = x
 }

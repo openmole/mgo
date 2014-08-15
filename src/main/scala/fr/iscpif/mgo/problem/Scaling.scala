@@ -39,29 +39,10 @@ trait Scaling <: Problem with GA with GAScaling {
    * @param x the vector to scale
    * @return the scaled vector
    */
-  def scale(x: Seq[Double]) =
+  override def scale(x: Seq[Double]) =
     (x zip (min zip max)) map { case (x, (min, max)) => x scale (min, max) }
 
-  override def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve((g, rng) => express(scale(g), rng), evaluate)
-
-  /**
-   * Scale the genome from [0.0, 1.0] to the correct scale for the fitness
-   * evaluation
-   *
-   * @param g the genome to scale
-   * @return the scaled genome
-   */
-  def scale(g: G): G = (g |-> values modify)(scale)
-
-  /**
-   * Scale a population element genome from [0.0, 1.0] to the correct scale
-   *
-   * @param i the population element to scale
-   * @return the scaled population element
-   */
-  def scale[MF](i: PopulationElement[G, P, F, MF]): PopulationElement[G, P, F, MF] =
-    i.copy(genome = scale(i.genome))
-
-  def scale(i: Individual[G, P, F]): Individual[G, P, F] = i.copy(genome = scale(i.genome))
+  /*override def evolve(implicit rng: Random): Iterator[EvolutionState] =
+    evolve((g, rng) => express(scale(g), rng), evaluate)*/
 
 }

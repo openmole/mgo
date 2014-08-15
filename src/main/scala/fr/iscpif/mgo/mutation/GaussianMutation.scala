@@ -33,8 +33,7 @@ trait GaussianMutation extends Mutation with GA {
 
   override def mutate(g: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
     val newValues = genome.get(g) map {
-      v =>
-        clamp(v + (rng.nextGaussian * sigma), 0, 1)
+      _ + (rng.nextGaussian * sigma)
     }
     genome.set(g, newValues)
   }

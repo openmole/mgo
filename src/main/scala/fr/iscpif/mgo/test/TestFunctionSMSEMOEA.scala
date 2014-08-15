@@ -45,8 +45,7 @@ object TestFunctionSMSEMOEA extends App {
   for {
     r <- res
   } {
-    val scaled = smsemoea.scale(r)
-    def line = smsemoea.values.get(scaled.genome) ++ smsemoea.fitness.get(scaled.fitness)
+    def line = smsemoea.scale(smsemoea.values.get(r.genome)) ++ smsemoea.fitness.get(r.fitness)
     output.append(line.mkString(",") + "\n")
   }
 

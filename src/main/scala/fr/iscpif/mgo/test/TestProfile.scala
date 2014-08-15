@@ -20,15 +20,16 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import util.Random
 import scalax.io._
+import monocle.syntax._
 
 object TestProfile extends App {
   val m =
-    new Himmelblau with Profile with CounterTermination with ProfileGenomePlotter {
-      //def genomeSize: Int = 6
-      def lambda: Int = 200
-      def steps = 1000
+    new Rastrigin with Profile with CounterTermination with ProfileGenomePlotter {
+      def genomeSize: Int = 6
+      def lambda: Int = 100
+      def steps = 5000
       def x: Int = 0
-      def nX: Int = 8
+      def nX: Int = 1000
     }
 
   implicit val rng = newRNG(46)
@@ -82,7 +83,7 @@ object TestProfile extends App {
   //
   //  write(individuals2, "/tmp/S3.csv")
 
-  val save = Set(1000)
+  val save = Set(5000)
 
   val res =
     m.evolve.untilConverged {
@@ -91,8 +92,7 @@ object TestProfile extends App {
           val output = Resource.fromFile(s"/tmp/generation${s.generation}.csv")
           s.population.toIndividuals.foreach {
             i =>
-              val scaled = m.scale(i)
-              output.append((m.values.get(scaled.genome) ++ m.fitness.get(scaled.fitness)).mkString(",") + "\n")
+              output.append((m.scale(i.genome |-> m.values get) ++ m.fitness.get(i.fitness)).mkString(",") + "\n")
           }
         }
         println(s.generation)

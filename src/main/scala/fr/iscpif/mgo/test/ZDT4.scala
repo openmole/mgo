@@ -17,10 +17,7 @@ trait ZDT4 extends GAProblem with MGFitness {
 
   type P = Seq[Double]
 
-  override def express(g: G, rng: Random) = {
-    val x = values.get(g)
-    Seq(f1(x), f2(x))
-  }
+  def express(g: Seq[Double], rng: Random) = Seq(f1(g), f2(g))
 
   override def evaluate(p: P, rng: Random) = p
 

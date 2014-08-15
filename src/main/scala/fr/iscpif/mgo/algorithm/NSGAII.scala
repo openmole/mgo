@@ -34,3 +34,4 @@ trait NSGAII <: Evolution
   with CloneRemoval
   with GeneticBreeding
   with MGFitness
+  with ClampedGenome

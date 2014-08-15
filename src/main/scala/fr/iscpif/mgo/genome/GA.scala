@@ -24,9 +24,11 @@ import scala.util.Random
  * Base of the cake for a genetic algorithm evolutions (algorithms evolving
  * sequences of doubles).
  */
-trait GA extends G with RandomGenome {
+trait GA extends G with RandomGenome with GenomeClamping {
   /** The value part of the genome actually used for the optimisation */
-  def values: SimpleLens[G, Seq[Double]]
+  def values: SimpleLens[G, Seq[Double]] = clamp(rawValues)
+
+  def rawValues: SimpleLens[G, Seq[Double]]
 
   /** The entire genome with potentially additional information */
   def genome: SimpleLens[G, Seq[Double]]

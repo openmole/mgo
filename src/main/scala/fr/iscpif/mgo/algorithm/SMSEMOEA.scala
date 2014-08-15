@@ -32,3 +32,4 @@ trait SMSEMOEA <: Evolution
   with HypervolumeDiversity
   with NoArchive
   with GeneticBreeding
+  with ClampedGenome

@@ -30,6 +30,6 @@ trait Rastrigin <: GAProblem with MGFitness {
 
   type P = Double
 
-  override def express(g: G, rng: Random) = Rastrigin.value(values.get(g))
-  override def evaluate(phenotype: P, rng: Random) = Seq(phenotype)
+  def express(g: Seq[Double], rng: Random) = Rastrigin.value(g)
+  def evaluate(phenotype: P, rng: Random) = Seq(phenotype)
 }

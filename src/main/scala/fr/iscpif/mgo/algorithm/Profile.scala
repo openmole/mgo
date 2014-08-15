@@ -34,3 +34,4 @@ trait Profile <: Evolution
   with StrictDominance
   with GeneticBreeding
   with ProfileModifier
+  with ClampedGenome

@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.test
 
 import scala.util.Random
-import fr.iscpif.mgo.problem.{ GAProblem, Problem }
+import fr.iscpif.mgo.problem.{ Scaling, GAProblem, Problem }
 import fr.iscpif.mgo.modelfamily.ModelFamilyGenome
 import fr.iscpif.mgo.fitness.MGFitness
 import scala.collection.immutable.NumericRange
@@ -37,7 +37,7 @@ object RastriginVector {
 
 }
 
-trait RastriginVector <: GAProblem with ModelFamilyGenome with MGFitness {
+trait RastriginVector <: Problem with Scaling with ModelFamilyGenome with MGFitness {
 
   def modelMasks: Range
   def models = modelMasks.size
@@ -52,11 +52,11 @@ trait RastriginVector <: GAProblem with ModelFamilyGenome with MGFitness {
 
   type P = Double
 
-  override def express(g: G, rng: Random) = {
+  def express(g: G, rng: Random) = {
     val id = modelId.get(g)
 
     val vector =
-      (masks(id) zip values.get(g)).flatMap {
+      (masks(id) zip scale(values.get(g))).flatMap {
         case (true, v) => Some(v)
         case _ => None
       }

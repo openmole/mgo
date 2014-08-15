@@ -19,8 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait BehaviourSearch <: GAProblem
-  with NoFitness
+trait BehaviourSearch <: NoFitness
   with HitMapArchive
   with GeneticBreeding
   with SortedTournamentSelection
@@ -33,3 +32,4 @@ trait BehaviourSearch <: GAProblem
   with CounterTermination
   with CoEvolvingSigmaValuesMutation
   with GAGenomeWithSigma
+  with ClampedGenome

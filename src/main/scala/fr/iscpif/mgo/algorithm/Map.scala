@@ -33,3 +33,4 @@ trait Map <: Evolution
   with StrictDominance
   with GeneticBreeding
   with NoModifier
+  with ClampedGenome

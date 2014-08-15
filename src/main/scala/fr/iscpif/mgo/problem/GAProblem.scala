@@ -19,10 +19,15 @@ package fr.iscpif.mgo.problem
 
 import fr.iscpif.mgo._
 import scala.util.Random
+import monocle.syntax._
 
 /**
  * Cake to define a problem for a genetic algorithm
  */
 trait GAProblem extends Problem with Scaling with MG with GA { pb =>
   def genomeSize: Int
+
+  def express(g: G, rng: Random): P = express(scale(g |-> values get), rng)
+  def express(values: Seq[Double], rng: Random): P
+
 }

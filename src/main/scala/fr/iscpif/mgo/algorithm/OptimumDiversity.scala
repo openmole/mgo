@@ -34,3 +34,4 @@ trait OptimumDiversity <: NoArchive
   with StrictDominance
   with RankDiversityModifier
   with ParetoRanking
+  with ClampedGenome
