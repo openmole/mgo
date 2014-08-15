@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.archive
 
-import fr.iscpif.mgo.genome.{ GA, Sigma }
+import fr.iscpif.mgo.genome.{ RandomValue, GA, Sigma }
 import fr.iscpif.mgo.{ Lambda, Individual }
 import fr.iscpif.mgo.fitness.Aggregation
 import org.apache.commons.math3.linear.{ EigenDecomposition, MatrixUtils, Array2DRowRealMatrix, RealMatrix }
@@ -27,7 +27,7 @@ import monocle.syntax._
 object CMAESArchive {
 
   case class FIFO[T](val content: List[T]) {
-    def +=(t: T): FIFO[T] = copy(content = t :: content.slice(0, content.size - 1))
+    def +=(t: T, size: Int): FIFO[T] = copy(content = t :: content.slice(0, size - 1))
   }
 
   case class Archive(
@@ -47,29 +47,13 @@ object CMAESArchive {
     iterations: Long)
 }
 
-trait CMAESArchive <: Archive with Aggregation with Lambda with GA with Sigma {
+trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
 
-  def mu = lambda / 2
   def initialSigma = 0.3
   def guess = Seq.fill[Double](genomeSize)(0.5)
   def negminresidualvariance = 0.66
   // where to make up for the variance loss
   def negalphaold = 0.5
-
-  lazy val logMu2 = FastMath.log(mu + 0.5)
-  lazy val rawWeights = log(sequence(1, mu, 1)).scalarMultiply(-1).scalarAdd(logMu2)
-  lazy val sumw = rawWeights.getColumn(0).sum
-  lazy val sumwq = rawWeights.getColumn(0).map(x => x * x).sum
-
-  lazy val weights = rawWeights.scalarMultiply(1 / sumw)
-  lazy val mueff = sumw * sumw / sumwq
-  lazy val cc = (4 + mueff / genomeSize) / (genomeSize + 4 + 2 * mueff / genomeSize)
-  lazy val cs = (mueff + 2) / (genomeSize + mueff + 3.0)
-
-  lazy val damps = (1 + 2 * FastMath.max(0, FastMath.sqrt((mueff - 1) / (genomeSize + 1)) - 1)) + cs // minor increment
-  lazy val ccov1 = 2 / ((genomeSize + 1.3) * (genomeSize + 1.3) + mueff)
-  lazy val ccovmu = FastMath.min(1 - ccov1, 2 * (mueff - 2 + 1 / mueff) / ((genomeSize + 2) * (genomeSize + 2) + mueff))
-  lazy val chiN = FastMath.sqrt(genomeSize) * (1 - 1 / (4.0 * genomeSize) + 1 / (21.0 * genomeSize * genomeSize))
 
   type A = CMAESArchive.Archive
   def initialArchive: A = {
@@ -124,8 +108,6 @@ trait CMAESArchive <: Archive with Aggregation with Lambda with GA with Sigma {
     val D = ones(genomeSize, 1) // diagonal D defines the scaling
     val BD = times(B, repmat(diagD.transpose(), genomeSize, 1))
     val C = B.multiply(diag(square(D)).multiply(B.transpose())) // covariance
-    val historySize = 10 + (3 * 10 * genomeSize / lambda.toDouble).toInt
-    val fitnessHistory = CMAESArchive.FIFO(List.fill[Double](historySize)(Double.PositiveInfinity))
     CMAESArchive.Archive(
       xmean = xmean,
       B = B,
@@ -138,12 +120,178 @@ trait CMAESArchive <: Archive with Aggregation with Lambda with GA with Sigma {
       ps = ps,
       pc = pc,
       normps = normps,
-      fitnessHistory = fitnessHistory,
+      fitnessHistory = CMAESArchive.FIFO(List(Double.PositiveInfinity)),
       bestValue = Double.PositiveInfinity,
       iterations = 0)
   }
 
   def archive(a: A, offspring: Seq[Individual[G, P, F]]): A = {
+    lazy val lambda = offspring.size
+    lazy val mu = lambda / 2
+    lazy val logMu2 = FastMath.log(mu + 0.5)
+    lazy val rawWeights = log(sequence(1, mu, 1)).scalarMultiply(-1).scalarAdd(logMu2)
+    lazy val sumw = rawWeights.getColumn(0).sum
+    lazy val sumwq = rawWeights.getColumn(0).map(x => x * x).sum
+
+    lazy val weights = rawWeights.scalarMultiply(1 / sumw)
+    lazy val mueff = sumw * sumw / sumwq
+    lazy val cc = (4 + mueff / genomeSize) / (genomeSize + 4 + 2 * mueff / genomeSize)
+    lazy val cs = (mueff + 2) / (genomeSize + mueff + 3.0)
+
+    lazy val damps = (1 + 2 * FastMath.max(0, FastMath.sqrt((mueff - 1) / (genomeSize + 1)) - 1)) + cs // minor increment
+    lazy val ccov1 = 2 / ((genomeSize + 1.3) * (genomeSize + 1.3) + mueff)
+    lazy val ccovmu = FastMath.min(1 - ccov1, 2 * (mueff - 2 + 1 / mueff) / ((genomeSize + 2) * (genomeSize + 2) + mueff))
+    lazy val chiN = FastMath.sqrt(genomeSize) * (1 - 1 / (4.0 * genomeSize) + 1 / (21.0 * genomeSize * genomeSize))
+
+    /**
+     * Update of the evolution paths ps and pc.
+     *
+     * @param zmean Weighted row matrix of the gaussian random numbers generating
+     * the current offspring.
+     * @param xold xmean matrix of the previous generation.
+     * @return hsig flag indicating a small correction.
+     */
+    def updateEvolutionPaths(
+      zmean: RealMatrix,
+      xold: RealMatrix,
+      xmean: RealMatrix,
+      ps: RealMatrix,
+      pc: RealMatrix,
+      sigma: Double,
+      B: RealMatrix,
+      iterations: Double) = {
+      val newPs = ps.scalarMultiply(1 - cs).add(B.multiply(zmean).scalarMultiply(FastMath.sqrt(cs * (2 - cs) * mueff)))
+      val normps = newPs.getFrobeniusNorm
+      val hsig = normps / FastMath.sqrt(1 - FastMath.pow(1 - cs, 2 * iterations)) / chiN < 1.4 + 2 / (genomeSize + 1.0);
+      val pc1 = pc.scalarMultiply(1 - cc);
+      val newPc =
+        if (hsig) pc1.add(xmean.subtract(xold).scalarMultiply(FastMath.sqrt(cc * (2 - cc) * mueff) / sigma))
+        else pc1
+      (hsig, newPs, normps, newPc)
+    }
+
+    /**
+     * Update of the covariance matrix C.
+     *
+     * @param hsig Flag indicating a small correction.
+     * @param bestArx Fitness-sorted matrix of the argument vectors producing the
+     * current offspring.
+     * @param arz Unsorted matrix containing the gaussian random values of the
+     * current offspring.
+     * @param arindex Indices indicating the fitness-order of the current offspring.
+     * @param xold xmean matrix of the previous generation.
+     */
+    def updateCovariance(
+      hsig: Boolean,
+      bestArx: RealMatrix,
+      arzNeg: RealMatrix, // final int[] arindex,
+      xold: RealMatrix,
+      pc: RealMatrix,
+      BD: RealMatrix,
+      C: RealMatrix,
+      sigma: Double) = {
+      //val negccov = 0
+      if (ccov1 + ccovmu > 0) {
+        val arpos = bestArx.subtract(repmat(xold, 1, mu)).scalarMultiply(1 / sigma) // mu difference vectors
+        val roneu = pc.multiply(pc.transpose()).scalarMultiply(ccov1) // rank one update
+        // minor correction if hsig==false
+        //if (isActiveCMA) {
+        // Adapt covariance matrix C active CMA
+        // keep at least 0.66 in all directions, small popsize are most
+        // critical
+
+        // prepare vectors, compute negative updating matrix Cneg
+        //          final int[] arReverseIndex = reverse(arindex);
+        //          RealMatrix arzneg = selectColumns(arz, MathArrays.copyOf(arReverseIndex, mu));
+        //         RealMatrix arnorms = sqrt(sumRows(square(arzneg)));
+        //          final int[] idxnorms = sortedIndices(arnorms.getRow(0));
+        //          final RealMatrix arnormsSorted = selectColumns(arnorms, idxnorms);
+        //          final int[] idxReverse = reverse(idxnorms);
+        //          final RealMatrix arnormsReverse = selectColumns(arnorms, idxReverse);
+        //          arnorms = divide(arnormsReverse, arnormsSorted);
+
+        val arnormsRaw = sqrt(sumRows(square(arzNeg)))
+        val idxnormsRaw = sortedIndices(arnormsRaw.getRow(0))
+        val arnormsSorted = selectColumns(arnormsRaw, idxnormsRaw)
+        val idxReverseRaw = reverse(idxnormsRaw)
+        val arnormsReverse = selectColumns(arnormsRaw, idxReverseRaw);
+        val arnorms = divide(arnormsReverse, arnormsSorted);
+
+        // val arnormsSorted = arnormsRaw.getRow(1).sorted
+        //val arnormsReverse = arnormsSorted.reverse
+        //val arnorms = (arnormsReverse zip arnormsSorted).map{case (v1, v2) => v1 / v2} //divide(arnormsReverse, arnormsSorted)
+
+        val idxnorms = sortedIndices(arnorms.getRow(0))
+        val idxInv = inverse(idxnorms)
+        val arnormsInv = selectColumns(arnorms, idxInv)
+
+        // check and set learning rate negccov
+        val negccovVal = (1 - ccovmu) * 0.25 * mueff / (FastMath.pow(genomeSize + 2, 1.5) + 2 * mueff)
+        val negcovMax = (1 - negminresidualvariance) / square(arnormsInv).multiply(weights).getEntry(0, 0)
+
+        val negccov = if (negccovVal > negcovMax) negcovMax else negccovVal
+
+        //arzneg = times(arzneg, repmat(arnormsInv, dimension, 1));
+        val artmp = BD.multiply(times(arzNeg, repmat(arnormsInv, genomeSize, 1)))
+        val Cneg = artmp.multiply(diag(weights)).multiply(artmp.transpose())
+
+        val oldFac = (if (hsig) 0 else ccov1 * cc * (2 - cc)) + (1 - ccov1 - ccovmu) + (negalphaold * negccov)
+        val newC = C.scalarMultiply(oldFac)
+          .add(roneu) // regard old matrix
+          .add(arpos.scalarMultiply( // plus rank one update
+            ccovmu + (1 - negalphaold) * negccov) // plus rank mu update
+            .multiply(times(repmat(weights, 1, genomeSize),
+              arpos.transpose)))
+          .subtract(Cneg.scalarMultiply(negccov))
+
+        (newC, negccov)
+        /*} else {
+                  // Adapt covariance matrix C - nonactive
+                  C = C.scalarMultiply(oldFac) // regard old matrix
+                      .add(roneu) // plus rank one update
+                      .add(arpos.scalarMultiply(ccovmu) // plus rank mu update
+                           .multiply(times(repmat(weights, 1, dimension),
+                                           arpos.transpose())));
+              }*/
+      } else (C, 0.0)
+    }
+
+    /**
+     * Update B and D from C.
+     *
+     * @param negccov Negative covariance factor.
+     */
+    def updateBD(negccov: Double, C: RealMatrix, iterations: Long, B: RealMatrix, D: RealMatrix, diagD: RealMatrix, BD: RealMatrix) = {
+      if (ccov1 + ccovmu + negccov > 0 && (iterations % 1.0 / (ccov1 + ccovmu + negccov) / genomeSize / 10.0) < 1) {
+        // to achieve O(N^2)
+        val newC = triu(C, 0).add(triu(C, 1).transpose);
+        // enforce symmetry to prevent complex numbers
+        val eig = new EigenDecomposition(newC)
+        val newB = eig.getV // eigen decomposition, B==normalized eigenvectors
+        val newD = eig.getD
+        //val newDiagD = diag(newD)
+        /*if (min(newDiagD) <= 0) {
+          for (int i = 0; i < dimension; i++) {
+            if (newDiagD.getEntry(i, 0) < 0) {
+              newDiagD.setEntry(i, 0, 0);
+            }
+          }
+
+          final double tfac = max(newDiagD) / 1e14;
+          C = C.add(eye(dimension, dimension).scalarMultiply(tfac));
+          newDiagD = newDiagD.add(ones(dimension, 1).scalarMultiply(tfac));
+        }
+        if (max(newDiagD) > 1e14 * min(newDiagD)) {
+          final double tfac = max(newDiagD) / 1e14 - min(newDiagD);
+          C = C.add(eye(dimension, dimension).scalarMultiply(tfac));
+          newDiagD = newDiagD.add(ones(dimension, 1).scalarMultiply(tfac));
+        }*/
+        val newDiagD = sqrt(diag(newD)) // D contains standard deviations now
+        val newBD = times(B, repmat(newDiagD.transpose, genomeSize, 1)); // O(n^2)
+        (newC, newB, newD, newDiagD, newBD)
+      } else (C, B, D, diagD, BD)
+    }
+
     val fitness = offspring.map(i => aggregate(i.fitness))
     val sortedFiteness = fitness.sorted
     // Sort by fitness and compute weighted mean into xmean
@@ -157,9 +305,9 @@ trait CMAESArchive <: Archive with Aggregation with Lambda with GA with Sigma {
     val bestGenomes = sortedOffspring.take(mu).map { i => i.genome |-> values get }
     val bestArx: RealMatrix = new Array2DRowRealMatrix(bestGenomes.map(_.toArray).toArray, false) //selectColumns(arx, MathArrays.copyOf(arindex, mu))
 
-    val sortedSigmas = sortedOffspring.map { i => i.genome |-> sigma get }
+    val sortedRandomValues = sortedOffspring.map { i => i.genome |-> randomValues get }
     //val arz: RealMatrix = new Array2DRowRealMatrix(sigmas.map(_.toArray).toArray, false)
-    val bestArz: RealMatrix = new Array2DRowRealMatrix(sortedSigmas.take(mu).map(_.toArray).toArray, false) //selectColumns(arz, MathArrays.copyOf(arindex, mu));
+    val bestArz: RealMatrix = new Array2DRowRealMatrix(sortedRandomValues.take(mu).map(_.toArray).toArray, false) //selectColumns(arz, MathArrays.copyOf(arindex, mu));
 
     val xmean = bestArx.multiply(weights)
     val zmean = bestArz.multiply(weights)
@@ -176,7 +324,7 @@ trait CMAESArchive <: Archive with Aggregation with Lambda with GA with Sigma {
         iterations = a.iterations)
 
     //if (diagonalOnly <= 0) {
-    val arzNeg = new Array2DRowRealMatrix(sortedSigmas.reverse.take(mu).map(_.toArray).toArray, false)
+    val arzNeg = new Array2DRowRealMatrix(sortedRandomValues.reverse.take(mu).map(_.toArray).toArray, false)
     val (matC, negccov) = updateCovariance(hsig, bestArx, arzNeg, xold, newPc, a.BD, a.C, a.sigma)
     val (newC, newB, newD, newDiagD, newBD) = updateBD(negccov, matC, a.iterations, a.B, a.D, a.diagD, a.BD)
     val newDiagC = diag(newC)
@@ -203,7 +351,8 @@ trait CMAESArchive <: Archive with Aggregation with Lambda with GA with Sigma {
         nS2 * FastMath.exp(0.2 + cs / damps)
       else nS2
 
-    val fitnessHistory = a.fitnessHistory += bestFitness
+    val historySize = 10 + (3 * 10 * genomeSize / lambda.toDouble).toInt
+    val fitnessHistory = a.fitnessHistory += (bestFitness, historySize)
 
     CMAESArchive.Archive(
       xmean = xmean,
@@ -298,157 +447,6 @@ trait CMAESArchive <: Archive with Aggregation with Lambda with GA with Sigma {
       statisticsMeanHistory.add(xmean.transpose());
       statisticsDHistory.add(diagD.transpose().scalarMultiply(1E5));
     }*/
-  }
-
-  private case class UpdateEvolutionPathsReturn(hsig: Boolean, ps: Double)
-
-  /**
-   * Update of the evolution paths ps and pc.
-   *
-   * @param zmean Weighted row matrix of the gaussian random numbers generating
-   * the current offspring.
-   * @param xold xmean matrix of the previous generation.
-   * @return hsig flag indicating a small correction.
-   */
-  private def updateEvolutionPaths(
-    zmean: RealMatrix,
-    xold: RealMatrix,
-    xmean: RealMatrix,
-    ps: RealMatrix,
-    pc: RealMatrix,
-    sigma: Double,
-    B: RealMatrix,
-    iterations: Double) = {
-    val newPs = ps.scalarMultiply(1 - cs).add(B.multiply(zmean).scalarMultiply(FastMath.sqrt(cs * (2 - cs) * mueff)))
-    val normps = newPs.getFrobeniusNorm
-    val hsig = normps / FastMath.sqrt(1 - FastMath.pow(1 - cs, 2 * iterations)) / chiN < 1.4 + 2 / (genomeSize + 1.0);
-    val pc1 = pc.scalarMultiply(1 - cc);
-    val newPc =
-      if (hsig) pc1.add(xmean.subtract(xold).scalarMultiply(FastMath.sqrt(cc * (2 - cc) * mueff) / sigma))
-      else pc1
-    (hsig, newPs, normps, newPc)
-  }
-
-  /**
-   * Update of the covariance matrix C.
-   *
-   * @param hsig Flag indicating a small correction.
-   * @param bestArx Fitness-sorted matrix of the argument vectors producing the
-   * current offspring.
-   * @param arz Unsorted matrix containing the gaussian random values of the
-   * current offspring.
-   * @param arindex Indices indicating the fitness-order of the current offspring.
-   * @param xold xmean matrix of the previous generation.
-   */
-  private def updateCovariance(
-    hsig: Boolean,
-    bestArx: RealMatrix,
-    arzNeg: RealMatrix, // final int[] arindex,
-    xold: RealMatrix,
-    pc: RealMatrix,
-    BD: RealMatrix,
-    C: RealMatrix,
-    sigma: Double) = {
-    //val negccov = 0
-    if (ccov1 + ccovmu > 0) {
-      val arpos = bestArx.subtract(repmat(xold, 1, mu)).scalarMultiply(1 / sigma) // mu difference vectors
-      val roneu = pc.multiply(pc.transpose()).scalarMultiply(ccov1) // rank one update
-      // minor correction if hsig==false
-      //if (isActiveCMA) {
-      // Adapt covariance matrix C active CMA
-      // keep at least 0.66 in all directions, small popsize are most
-      // critical
-
-      // prepare vectors, compute negative updating matrix Cneg
-      //          final int[] arReverseIndex = reverse(arindex);
-      //          RealMatrix arzneg = selectColumns(arz, MathArrays.copyOf(arReverseIndex, mu));
-      //         RealMatrix arnorms = sqrt(sumRows(square(arzneg)));
-      //          final int[] idxnorms = sortedIndices(arnorms.getRow(0));
-      //          final RealMatrix arnormsSorted = selectColumns(arnorms, idxnorms);
-      //          final int[] idxReverse = reverse(idxnorms);
-      //          final RealMatrix arnormsReverse = selectColumns(arnorms, idxReverse);
-      //          arnorms = divide(arnormsReverse, arnormsSorted);
-
-      val arnormsRaw = sqrt(sumRows(square(arzNeg)))
-      val idxnormsRaw = sortedIndices(arnormsRaw.getRow(0))
-      val arnormsSorted = selectColumns(arnormsRaw, idxnormsRaw)
-      val idxReverseRaw = reverse(idxnormsRaw)
-      val arnormsReverse = selectColumns(arnormsRaw, idxReverseRaw);
-      val arnorms = divide(arnormsReverse, arnormsSorted);
-
-      // val arnormsSorted = arnormsRaw.getRow(1).sorted
-      //val arnormsReverse = arnormsSorted.reverse
-      //val arnorms = (arnormsReverse zip arnormsSorted).map{case (v1, v2) => v1 / v2} //divide(arnormsReverse, arnormsSorted)
-
-      val idxnorms = sortedIndices(arnorms.getRow(0))
-      val idxInv = inverse(idxnorms)
-      val arnormsInv = selectColumns(arnorms, idxInv)
-
-      // check and set learning rate negccov
-      val negccovVal = (1 - ccovmu) * 0.25 * mueff / (FastMath.pow(genomeSize + 2, 1.5) + 2 * mueff)
-      val negcovMax = (1 - negminresidualvariance) / square(arnormsInv).multiply(weights).getEntry(0, 0)
-
-      val negccov = if (negccovVal > negcovMax) negcovMax else negccovVal
-
-      //arzneg = times(arzneg, repmat(arnormsInv, dimension, 1));
-      val artmp = BD.multiply(times(arzNeg, repmat(arnormsInv, genomeSize, 1)))
-      val Cneg = artmp.multiply(diag(weights)).multiply(artmp.transpose())
-
-      val oldFac = (if (hsig) 0 else ccov1 * cc * (2 - cc)) + (1 - ccov1 - ccovmu) + (negalphaold * negccov)
-      val newC = C.scalarMultiply(oldFac)
-        .add(roneu) // regard old matrix
-        .add(arpos.scalarMultiply( // plus rank one update
-          ccovmu + (1 - negalphaold) * negccov) // plus rank mu update
-          .multiply(times(repmat(weights, 1, genomeSize),
-            arpos.transpose)))
-        .subtract(Cneg.scalarMultiply(negccov))
-
-      (newC, negccov)
-      /*} else {
-                // Adapt covariance matrix C - nonactive
-                C = C.scalarMultiply(oldFac) // regard old matrix
-                    .add(roneu) // plus rank one update
-                    .add(arpos.scalarMultiply(ccovmu) // plus rank mu update
-                         .multiply(times(repmat(weights, 1, dimension),
-                                         arpos.transpose())));
-            }*/
-    } else (C, 0.0)
-  }
-
-  /**
-   * Update B and D from C.
-   *
-   * @param negccov Negative covariance factor.
-   */
-  private def updateBD(negccov: Double, C: RealMatrix, iterations: Long, B: RealMatrix, D: RealMatrix, diagD: RealMatrix, BD: RealMatrix) = {
-    if (ccov1 + ccovmu + negccov > 0 && (iterations % 1.0 / (ccov1 + ccovmu + negccov) / genomeSize / 10.0) < 1) {
-      // to achieve O(N^2)
-      val newC = triu(C, 0).add(triu(C, 1).transpose);
-      // enforce symmetry to prevent complex numbers
-      val eig = new EigenDecomposition(newC)
-      val newB = eig.getV // eigen decomposition, B==normalized eigenvectors
-      val newD = eig.getD
-      //val newDiagD = diag(newD)
-      /*if (min(newDiagD) <= 0) {
-        for (int i = 0; i < dimension; i++) {
-          if (newDiagD.getEntry(i, 0) < 0) {
-            newDiagD.setEntry(i, 0, 0);
-          }
-        }
-
-        final double tfac = max(newDiagD) / 1e14;
-        C = C.add(eye(dimension, dimension).scalarMultiply(tfac));
-        newDiagD = newDiagD.add(ones(dimension, 1).scalarMultiply(tfac));
-      }
-      if (max(newDiagD) > 1e14 * min(newDiagD)) {
-        final double tfac = max(newDiagD) / 1e14 - min(newDiagD);
-        C = C.add(eye(dimension, dimension).scalarMultiply(tfac));
-        newDiagD = newDiagD.add(ones(dimension, 1).scalarMultiply(tfac));
-      }*/
-      val newDiagD = sqrt(diag(newD)) // D contains standard deviations now
-      val newBD = times(B, repmat(newDiagD.transpose, genomeSize, 1)); // O(n^2)
-      (newC, newB, newD, newDiagD, newBD)
-    } else (C, B, D, diagD, BD)
   }
 
   /**

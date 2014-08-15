@@ -103,6 +103,7 @@ package object mgo {
   type GAGenome = genome.GAGenome
   type GAGenomeWithSigma = genome.GAGenomeWithSigma
   type GA = genome.GA
+  type RandomValue = genome.RandomValue
   type Sigma = genome.Sigma
   type MapGenomePlotter = map.MapGenomePlotter
   type MapPlotter = map.MapPlotter

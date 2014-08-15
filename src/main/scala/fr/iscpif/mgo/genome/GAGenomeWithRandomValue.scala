@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -17,38 +17,35 @@
 
 package fr.iscpif.mgo.genome
 
-import monocle._
 import monocle.Macro._
+import monocle.SimpleLens
+
 import scala.util.Random
 
-object GAGenomeWithSigma {
-  case class Genome(values: Seq[Double], sigma: Seq[Double])
+object GAGenomeWithRandomValue {
+  case class Genome(values: Seq[Double], randomValues: Seq[Double])
 }
 
-/**
- * Genome for genetic algorithm with an autoadaptative sigma component
- */
-trait GAGenomeWithSigma extends GA with Sigma {
+trait GAGenomeWithRandomValue extends GA with Sigma {
 
-  type G = GAGenomeWithSigma.Genome
+  type G = GAGenomeWithRandomValue.Genome
 
   def values = mkLens[G, Seq[Double]]("values")
 
   def genome = SimpleLens[G, Seq[Double]](
-    v => v.values ++ v.sigma,
+    v => v.values ++ v.randomValues,
     (c, v) =>
-      GAGenomeWithSigma.Genome(
+      GAGenomeWithRandomValue.Genome(
         v.slice(0, v.size / 2),
         v.slice(v.size / 2, v.size)
       )
   )
 
-  def sigma = mkLens[G, Seq[Double]]("sigma")
+  def randomValues = mkLens[G, Seq[Double]]("randomValues")
 
   def randomGenome(implicit rng: Random) = {
     def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq
-    GAGenomeWithSigma.Genome(rnd, rnd)
+    GAGenomeWithRandomValue.Genome(rnd, rnd)
   }
 
 }
-
