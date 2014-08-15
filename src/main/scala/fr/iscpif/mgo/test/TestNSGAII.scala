@@ -25,26 +25,25 @@ object TestNSGAII extends App {
 
   implicit val rng = new Random
 
-  val nsga2 =
+  val m =
     new Rastrigin with NSGAII with HierarchicalRanking {
-      def mu = 100
-      def lambda = 100
+      def mu = 200
+      def lambda = 200
       def genomeSize = 20
       def steps = 1000
     }
 
   val res =
-    nsga2.evolve.untilConverged {
+    m.evolve.untilConverged {
       s =>
-        println(s.individuals.map(_.fitness))
-        println(s.generation)
+        println(s.generation + " " + s.individuals.map(i => m.fitness.get(i).head).min)
     }.individuals
 
   val output = Resource.fromFile("/tmp/res.csv")
   for {
     r <- res
   } {
-    def line = nsga2.scale(nsga2.values.get(r.genome)) ++ nsga2.fitness.get(r.fitness)
+    def line = m.scale(m.values.get(r.genome)) ++ m.fitness.get(r.fitness)
     output.append(line.mkString(",") + "\n")
   }
 

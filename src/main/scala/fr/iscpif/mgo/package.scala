@@ -90,6 +90,7 @@ package object mgo {
   type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
   type BestRankedNicheElitism = elitism.BestRankedNicheElitism
   type Elitism = elitism.Elitism
+  type KeepOffspringElitism = elitism.KeepOffspringElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
   type NicheElitism = elitism.NicheElitism
   type RandomNicheElitism = elitism.RandomNicheElitism

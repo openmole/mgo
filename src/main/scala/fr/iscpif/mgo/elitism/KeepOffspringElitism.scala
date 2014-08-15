@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -17,16 +17,10 @@
 
 package fr.iscpif.mgo.elitism
 
-import fr.iscpif.mgo._
-import genome.G
+import fr.iscpif.mgo.Individual
+
 import scala.util.Random
-import fr.iscpif.mgo.modifier.MF
 
-/**
- * Cake layer to eliminated elements of a population
- */
-trait Elitism extends G with P with F with MF with Modifier {
-
-  def elitism(oldGeneration: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]]
-
+trait KeepOffspringElitism <: Elitism {
+  def elitism(oldGeneration: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = offspring
 }

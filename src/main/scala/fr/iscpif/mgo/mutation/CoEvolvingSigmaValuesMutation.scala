@@ -48,9 +48,7 @@ object CoEvolvingSigmaValuesMutation {
 
 }
 
-trait CoEvolvingSigmaValuesMutation <: Mutation with Sigma with GA with MutationRate {
-
-  def minimumSigma = 1e-6
+trait CoEvolvingSigmaValuesMutation <: Mutation with Sigma with GA with MutationRate with MinimumSigma {
 
   override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
     val (newValues, indexedSeqSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma, mutationRate)

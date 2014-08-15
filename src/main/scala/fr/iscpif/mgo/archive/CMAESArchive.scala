@@ -18,10 +18,11 @@
 package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo.genome.{ RandomValue, GA, Sigma }
+import fr.iscpif.mgo.mutation.MinimumSigma
 import fr.iscpif.mgo.{ Lambda, Individual }
 import fr.iscpif.mgo.fitness.Aggregation
 import org.apache.commons.math3.linear.{ EigenDecomposition, MatrixUtils, Array2DRowRealMatrix, RealMatrix }
-import org.apache.commons.math3.util.{ FastMath, MathArrays }
+import org.apache.commons.math3.util.{ MathUtils, FastMath, MathArrays }
 import monocle.syntax._
 
 object CMAESArchive {
@@ -47,7 +48,7 @@ object CMAESArchive {
     iterations: Long)
 }
 
-trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
+trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with MinimumSigma {
 
   def initialSigma = 0.3
   def guess = Seq.fill[Double](genomeSize)(0.5)
@@ -163,7 +164,7 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
       val newPs = ps.scalarMultiply(1 - cs).add(B.multiply(zmean).scalarMultiply(FastMath.sqrt(cs * (2 - cs) * mueff)))
       val normps = newPs.getFrobeniusNorm
       val hsig = normps / FastMath.sqrt(1 - FastMath.pow(1 - cs, 2 * iterations)) / chiN < 1.4 + 2 / (genomeSize + 1.0);
-      val pc1 = pc.scalarMultiply(1 - cc);
+      val pc1 = pc.scalarMultiply(1 - cc)
       val newPc =
         if (hsig) pc1.add(xmean.subtract(xold).scalarMultiply(FastMath.sqrt(cc * (2 - cc) * mueff) / sigma))
         else pc1
@@ -264,11 +265,14 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
     def updateBD(negccov: Double, C: RealMatrix, iterations: Long, B: RealMatrix, D: RealMatrix, diagD: RealMatrix, BD: RealMatrix) = {
       if (ccov1 + ccovmu + negccov > 0 && (iterations % 1.0 / (ccov1 + ccovmu + negccov) / genomeSize / 10.0) < 1) {
         // to achieve O(N^2)
-        val newC = triu(C, 0).add(triu(C, 1).transpose);
+        val newC = triu(C, 0).add(triu(C, 1).transpose)
         // enforce symmetry to prevent complex numbers
+        //(0 until newC.getRowDimension).foreach(l => println(newC.getRow(l).toSeq))
         val eig = new EigenDecomposition(newC)
+
         val newB = eig.getV // eigen decomposition, B==normalized eigenvectors
         val newD = eig.getD
+
         //val newDiagD = diag(newD)
         /*if (min(newDiagD) <= 0) {
           for (int i = 0; i < dimension; i++) {
@@ -286,8 +290,17 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
           C = C.add(eye(dimension, dimension).scalarMultiply(tfac));
           newDiagD = newDiagD.add(ones(dimension, 1).scalarMultiply(tfac));
         }*/
+        //(0 until newD.getRowDimension).foreach(l => println(newD.getRow(l).toSeq))
         val newDiagD = sqrt(diag(newD)) // D contains standard deviations now
-        val newBD = times(B, repmat(newDiagD.transpose, genomeSize, 1)); // O(n^2)
+
+        for {
+          r <- 0 until newDiagD.getRowDimension
+          c <- 0 until newDiagD.getColumnDimension
+          if newDiagD.getEntry(r, c) < minimumSigma
+        } newDiagD.setEntry(r, c, minimumSigma)
+
+        val newBD = times(B, repmat(newDiagD.transpose, genomeSize, 1)) // O(n^2)
+
         (newC, newB, newD, newDiagD, newBD)
       } else (C, B, D, diagD, BD)
     }
@@ -303,11 +316,11 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
     val sortedOffspring = offspring.sortBy(i => aggregate(i.fitness))
 
     val bestGenomes = sortedOffspring.take(mu).map { i => i.genome |-> values get }
-    val bestArx: RealMatrix = new Array2DRowRealMatrix(bestGenomes.map(_.toArray).toArray, false) //selectColumns(arx, MathArrays.copyOf(arindex, mu))
+    val bestArx: RealMatrix = new Array2DRowRealMatrix(bestGenomes.transpose.map(_.toArray).toArray, false) //selectColumns(arx, MathArrays.copyOf(arindex, mu))
 
     val sortedRandomValues = sortedOffspring.map { i => i.genome |-> randomValues get }
     //val arz: RealMatrix = new Array2DRowRealMatrix(sigmas.map(_.toArray).toArray, false)
-    val bestArz: RealMatrix = new Array2DRowRealMatrix(sortedRandomValues.take(mu).map(_.toArray).toArray, false) //selectColumns(arz, MathArrays.copyOf(arindex, mu));
+    val bestArz: RealMatrix = new Array2DRowRealMatrix(sortedRandomValues.take(mu).transpose.map(_.toArray).toArray, false) //selectColumns(arz, MathArrays.copyOf(arindex, mu));
 
     val xmean = bestArx.multiply(weights)
     val zmean = bestArz.multiply(weights)
@@ -324,7 +337,7 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
         iterations = a.iterations)
 
     //if (diagonalOnly <= 0) {
-    val arzNeg = new Array2DRowRealMatrix(sortedRandomValues.reverse.take(mu).map(_.toArray).toArray, false)
+    val arzNeg = new Array2DRowRealMatrix(sortedRandomValues.reverse.take(mu).transpose.map(_.toArray).toArray, false)
     val (matC, negccov) = updateCovariance(hsig, bestArx, arzNeg, xold, newPc, a.BD, a.C, a.sigma)
     val (newC, newB, newD, newDiagD, newBD) = updateBD(negccov, matC, a.iterations, a.B, a.D, a.diagD, a.BD)
     val newDiagC = diag(newC)
@@ -458,17 +471,6 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
     val d = Array.tabulate[Double](m.getRowDimension, cols.length) {
       (r, c) => m.getEntry(r, cols(c))
     }
-    new Array2DRowRealMatrix(d, false)
-  }
-
-  /**
-   * @param start Start value.
-   * @param end End value.
-   * @param step Step size.
-   * @return a sequence as column matrix.
-   */
-  private def sequence(start: Double, end: Double, step: Double) = {
-    val d = Array((start until end by step).toArray)
     new Array2DRowRealMatrix(d, false)
   }
 
@@ -648,4 +650,20 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue {
     new Array2DRowRealMatrix(d, false)
   }
 
+  /**
+   * @param start Start value.
+   * @param end End value.
+   * @param step Step size.
+   * @return a sequence as column matrix.
+   */
+  private def sequence(start: Double, end: Double, step: Double) = {
+    val size = ((end - start) / step + 1).toInt
+    val d = Array.ofDim[Double](size, 1)
+    var value = start
+    for (r <- 0 until size) {
+      d(r)(0) = value
+      value += step
+    }
+    new Array2DRowRealMatrix(d, false)
+  }
 }

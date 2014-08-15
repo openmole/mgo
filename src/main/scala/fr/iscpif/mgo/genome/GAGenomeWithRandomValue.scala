@@ -26,7 +26,7 @@ object GAGenomeWithRandomValue {
   case class Genome(values: Seq[Double], randomValues: Seq[Double])
 }
 
-trait GAGenomeWithRandomValue extends GA with Sigma {
+trait GAGenomeWithRandomValue extends GA with RandomValue {
 
   type G = GAGenomeWithRandomValue.Genome
 

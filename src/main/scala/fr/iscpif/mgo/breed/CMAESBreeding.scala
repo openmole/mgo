@@ -29,6 +29,7 @@ trait CMAESBreeding <: Breeding with GA with CMAESArchive {
   def breed(individuals: Seq[Individual[G, P, F]], a: A, size: Int)(implicit rng: Random): Seq[G] = {
     // Generate lambda offspring
     val arz = randn1(genomeSize, size)
+
     (0 until size).map {
       k =>
         val v = a.xmean.add(a.BD.multiply(arz.getColumnMatrix(k)).scalarMultiply(a.sigma))

@@ -17,6 +17,14 @@
 
 package fr.iscpif.mgo.test
 
+import fr.iscpif.mgo.Evolution
+import fr.iscpif.mgo.archive.CMAESArchive
+import fr.iscpif.mgo.breed.CMAESBreeding
+import fr.iscpif.mgo.elitism.KeepOffspringElitism
+import fr.iscpif.mgo.fitness.MaxAggregation
+import fr.iscpif.mgo.genome.{ GAGenomeWithRandomValue, ClampedGenome, GAGenome }
+import fr.iscpif.mgo.modifier.NoModifier
+import fr.iscpif.mgo.termination.CounterTermination
 import org.apache.commons.math3.analysis.MultivariateFunction
 import org.apache.commons.math3.linear.RealMatrix
 import org.apache.commons.math3.optim._
@@ -26,9 +34,38 @@ import org.apache.commons.math3.optim.univariate.SearchInterval
 import org.apache.commons.math3.random.Well1024a
 import org.apache.commons.math3.util.{ FastMath, MathArrays }
 
+import scala.util.Random
+import scalax.io
+
 object TestCMAES extends App {
 
-  val rng = new Well1024a
+  val m = new Rastrigin with Evolution with KeepOffspringElitism with GAGenomeWithRandomValue with NoModifier with MaxAggregation with CMAESBreeding with CMAESArchive with CounterTermination with ClampedGenome {
+    /** Number of steps before the algorithm stops */
+    override def steps: Int = 1000
+
+    override def genomeSize: Int = 20
+
+    /** the size of the offspring */
+    override def lambda: Int = 200
+  }
+
+  implicit val rng = new Random(42)
+
+  val res =
+    m.evolve.untilConverged {
+      s =>
+        println(s.generation + " " + s.individuals.map(i => m.aggregate(m.fitness.get(i))).min)
+    }.individuals
+
+  val output = io.Resource.fromFile("/tmp/res.csv")
+  for {
+    r <- res
+  } {
+    def line = m.scale(m.values.get(r.genome)) ++ m.fitness.get(r.fitness)
+    output.append(line.mkString(",") + "\n")
+  }
+
+  /*val rng = new Well1024a
 
   val f = new MultivariateFunction {
     override def value(point: Array[Double]): Double = {
@@ -59,217 +96,6 @@ object TestCMAES extends App {
     new MaxEval(Int.MaxValue),
     new MaxIter(Int.MaxValue))
 
-  println(solution.getPoint.toSeq)
+  println(solution.getPoint.toSeq)*/
 
-  /*
-
-  def optim = {
-    // Generate and evaluate lambda offspring
-    val arz: RealMatrix = randn1(dimension, lambda)
-    val arx: RealMatrix = zeros(dimension, lambda)
-
-    val fitness: Array[Double] = new Array[Double](lambda)
-
-    val valuePenaltyPairs: Array[CMAESOptimizer.ValuePenaltyPair] = new Array[CMAESOptimizer.ValuePenaltyPair](lambda)
-
-
-    // generate random offspring
-    {
-      var k: Int = 0
-      while (k < lambda) {
-        {
-          var arxk: RealMatrix = null
-          {
-            var i: Int = 0
-            while (i < checkFeasableCount + 1) {
-              {
-                if (diagonalOnly <= 0) {
-                  arxk = xmean.add(BD.multiply(arz.getColumnMatrix(k)).scalarMultiply(sigma))
-                }
-                else {
-                  arxk = xmean.add(times(diagD, arz.getColumnMatrix(k)).scalarMultiply(sigma))
-                }
-                if (i >= checkFeasableCount || fitfun.isFeasible(arxk.getColumn(0))) {
-                  break //todo: break is not supported
-                }
-                arz.setColumn(k, randn(dimension))
-              }
-              ({
-                i += 1; i - 1
-              })
-            }
-          }
-          copyColumn(arxk, 0, arx, k)
-          valuePenaltyPairs(k) = fitfun.value(arx.getColumn(k))
-        }
-        ({
-          k += 1; k - 1
-        })
-      }
-    }
-
-
-
-    // Compute fitnesses by adding value and penalty after scaling by value range.
-    val valueRange: Double = valueRange(valuePenaltyPairs)
-    {
-      var iValue: Int = 0
-      while (iValue < valuePenaltyPairs.length) {
-        {
-          fitness(iValue) = valuePenaltyPairs(iValue).value + valuePenaltyPairs(iValue).penalty * valueRange
-        }
-        ({
-          iValue += 1; iValue - 1
-        })
-      }
-    }
-
-
-
-    // Sort by fitness and compute weighted mean into xmean
-    val arindex: Array[Int] = sortedIndices(fitness)
-
-
-    // Calculate new xmean, this is selection and recombination
-    val xold: RealMatrix = xmean
-
-
-    val bestArx: RealMatrix = selectColumns(arx, MathArrays.copyOf(arindex, mu))
-
-
-    xmean = bestArx.multiply(weights)
-
-
-    val bestArz: RealMatrix = selectColumns(arz, MathArrays.copyOf(arindex, mu))
-
-
-    val zmean: RealMatrix = bestArz.multiply(weights)
-
-
-    val hsig: Boolean = updateEvolutionPaths(zmean, xold)
-
-
-    if (diagonalOnly <= 0) {
-      updateCovariance(hsig, bestArx, arz, arindex, xold)
-    }
-    else {
-      updateCovarianceDiagonalOnly(hsig, bestArz)
-    }
-
-
-    // Adapt step size sigma - Eq. (5)
-
-
-    sigma *= FastMath.exp(FastMath.min(1, (normps / chiN - 1) * cs / damps))
-
-
-    val bestFitness: Double = fitness(arindex(0))
-
-
-    val worstFitness: Double = fitness(arindex(arindex.length - 1))
-
-
-    if (bestValue > bestFitness) {
-      bestValue = bestFitness
-      lastResult = optimum
-      optimum = new PointValuePair(fitfun.repair(bestArx.getColumn(0)), if (isMinimize) bestFitness else -bestFitness)
-      if (getConvergenceChecker != null && lastResult != null && getConvergenceChecker.converged(iterations, optimum, lastResult)) {
-        break //todo: label break is not supported
-      }
-    }
-
-
-    // handle termination criteria
-    // Break, if fitness is good enough
-
-
-    if (stopFitness != 0 && bestFitness < (if (isMinimize) stopFitness else -stopFitness)) {
-      break //todo: label break is not supported
-    }
-
-
-    val sqrtDiagC: Array[Double] = sqrt(diagC).getColumn(0)
-
-
-    val pcCol: Array[Double] = pc.getColumn(0)
-    {
-      var i: Int = 0
-      while (i < dimension) {
-        {
-          if (sigma * FastMath.max(FastMath.abs(pcCol(i)), sqrtDiagC(i)) > stopTolX) {
-            break //todo: break is not supported
-          }
-          if (i >= dimension - 1) {
-            break //todo: label break is not supported
-          }
-        }
-        ({
-          i += 1; i - 1
-        })
-      }
-    }
-    {
-      var i: Int = 0
-      while (i < dimension) {
-        {
-          if (sigma * sqrtDiagC(i) > stopTolUpX) {
-            break //todo: label break is not supported
-          }
-        }
-        ({
-          i += 1; i - 1
-        })
-      }
-    }
-
-
-    val historyBest: Double = min(fitnessHistory)
-
-
-    val historyWorst: Double = max(fitnessHistory)
-
-
-    if (iterations > 2 && FastMath.max(historyWorst, worstFitness) - FastMath.min(historyBest, bestFitness) < stopTolFun) {
-      break //todo: label break is not supported
-    }
-
-
-    if (iterations > fitnessHistory.length && historyWorst - historyBest < stopTolHistFun) {
-      break //todo: label break is not supported
-    }
-
-
-    // condition number of the covariance matrix exceeds 1e14
-
-
-    if (max(diagD) / min(diagD) > 1e7) {
-      break //todo: label break is not supported
-    }
-
-
-    // user defined termination
-
-
-    if (getConvergenceChecker != null) {
-      val current: PointValuePair = new PointValuePair(bestArx.getColumn(0), if (isMinimize) bestFitness else -bestFitness)
-      if (lastResult != null && getConvergenceChecker.converged(iterations, current, lastResult)) {
-        break //todo: label break is not supported
-      }
-      lastResult = current
-    }
-
-
-    // Adjust step size in case of equal function values (flat fitness)
-
-
-    if (bestValue == fitness(arindex((0.1 + lambda / 4.).asInstanceOf[Int]))) {
-      sigma *= FastMath.exp(0.2 + cs / damps)
-    }
-
-
-    if (iterations > 2 && FastMath.max(historyWorst, bestFitness) - FastMath.min(historyBest, bestFitness) == 0) {
-      sigma *= FastMath.exp(0.2 + cs / damps)
-    }
-  }
-*/
 }
