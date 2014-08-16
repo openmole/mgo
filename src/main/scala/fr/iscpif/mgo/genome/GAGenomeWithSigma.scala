@@ -20,6 +20,7 @@ package fr.iscpif.mgo.genome
 import monocle._
 import monocle.Macro._
 import scala.util.Random
+import monocle.syntax._
 
 object GAGenomeWithSigma {
   case class Genome(values: Seq[Double], sigma: Seq[Double])
@@ -35,12 +36,9 @@ trait GAGenomeWithSigma extends GA with Sigma {
   def rawValues = mkLens[G, Seq[Double]]("values")
 
   def genome = SimpleLens[G, Seq[Double]](
-    v => v.values ++ v.sigma,
+    v => values.get(v) ++ sigma.get(v),
     (c, v) =>
-      GAGenomeWithSigma.Genome(
-        v.slice(0, v.size / 2),
-        v.slice(v.size / 2, v.size)
-      )
+      (c |-> values set v.slice(0, v.size / 2)) |-> sigma set v.slice(v.size / 2, v.size)
   )
 
   def sigma = mkLens[G, Seq[Double]]("sigma")

@@ -19,6 +19,7 @@ package fr.iscpif.mgo.genome
 
 import monocle.Macro._
 import monocle.SimpleLens
+import monocle.syntax._
 
 import scala.util.Random
 
@@ -33,12 +34,9 @@ trait GAGenomeWithRandomValue extends GA with RandomValue {
   def rawValues = mkLens[G, Seq[Double]]("values")
 
   def genome = SimpleLens[G, Seq[Double]](
-    v => v.values ++ v.randomValues,
+    v => values.get(v) ++ randomValues.get(v),
     (c, v) =>
-      GAGenomeWithRandomValue.Genome(
-        v.slice(0, v.size / 2),
-        v.slice(v.size / 2, v.size)
-      )
+      (c |-> values set v.slice(0, v.size / 2)) |-> randomValues set v.slice(v.size / 2, v.size)
   )
 
   def randomValues = mkLens[G, Seq[Double]]("randomValues")
