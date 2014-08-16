@@ -28,7 +28,7 @@ import fr.iscpif.mgo.modifier.RankMF
 trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with RankMF with StabilityTermination with MG {
 
   override def terminated(population: => Population[G, P, F, MF], terminationState: STATE): (Boolean, STATE) = {
-    val front = population.map { i => fitness.get(i.toIndividual.fitness) }
+    val front = population.map { i => fitness(i.toIndividual) }
     val hv = Hypervolume(front, referencePoint)
     stability(terminationState, hv)
   }

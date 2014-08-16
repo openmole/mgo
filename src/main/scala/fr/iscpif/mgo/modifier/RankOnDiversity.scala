@@ -20,5 +20,5 @@ package fr.iscpif.mgo.modifier
 import fr.iscpif.mgo._
 
 trait RankOnDiversity <: ModifiedFitness with DiversityMetric with HierarchicalRanking {
-  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = diversity(evaluated.map(e => fitness.get(e.fitness))).map(d => Seq(1 / d()))
+  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = diversity(evaluated.map(e => fitness(e))).map(d => Seq(1 / d()))
 }

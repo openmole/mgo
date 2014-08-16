@@ -36,14 +36,14 @@ object TestNSGAII extends App {
   val res =
     m.evolve.untilConverged {
       s =>
-        println(s.generation + " " + s.individuals.map(i => m.fitness.get(i).head).min)
+        println(s.generation + " " + s.individuals.map(i => m.fitness(i).head).min)
     }.individuals
 
   val output = Resource.fromFile("/tmp/res.csv")
   for {
     r <- res
   } {
-    def line = m.scale(m.values.get(r.genome)) ++ m.fitness.get(r.fitness)
+    def line = m.scale(m.values.get(r.genome)) ++ m.fitness(r)
     output.append(line.mkString(",") + "\n")
   }
 

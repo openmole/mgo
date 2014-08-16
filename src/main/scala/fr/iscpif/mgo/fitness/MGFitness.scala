@@ -17,17 +17,10 @@
 
 package fr.iscpif.mgo.fitness
 
-import monocle._
-
 /**
  * The fitness is a vector a of Doubles, one Double for each objective.
  */
 trait MGFitness <: MG {
   type F = Seq[Double]
-
-  def fitness = SimpleLens(
-    identity,
-    (v, f) => f
-  )
-
+  def fitness(f: F) = f
 }

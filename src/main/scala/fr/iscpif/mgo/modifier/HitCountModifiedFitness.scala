@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 trait HitCountModifiedFitness extends ModifiedFitness with HitMapArchive {
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = {
     val hitcounts: Seq[Int] = evaluated.map(i => hits(archive, niche(i)))
-    (evaluated zip hitcounts).map { case (i, h) => fitness.get(i.fitness) ++ Seq(h.toDouble) }
+    (evaluated zip hitcounts).map { case (i, h) => fitness(i) ++ Seq(h.toDouble) }
   }
 
 }

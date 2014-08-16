@@ -40,6 +40,6 @@ object TestRastrigin extends App {
   val res =
     m.evolve.untilConverged {
       s =>
-        println(s.generation + " " + s.individuals.map(i => m.fitness.get(i.fitness).head).min)
+        println(s.generation + " " + s.individuals.map(i => m.fitness(i).head).min)
     }.individuals
 }

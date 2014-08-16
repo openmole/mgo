@@ -127,7 +127,10 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
   }
 
   def archive(a: A, offspring: Seq[Individual[G, P, F]]): A = {
-    lazy val lambda = offspring.size
+    lazy val population = offspring
+
+    lazy val lambda = population.size
+
     lazy val mu = lambda / 2
     lazy val logMu2 = FastMath.log(mu + 0.5)
     lazy val rawWeights = log(sequence(1, mu, 1)).scalarMultiply(-1).scalarAdd(logMu2)
@@ -305,7 +308,7 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
       } else (C, B, D, diagD, BD)
     }
 
-    val fitness = offspring.map(i => aggregate(i.fitness))
+    val fitness = population.map(i => aggregate(i.fitness))
     val sortedFiteness = fitness.sorted
     // Sort by fitness and compute weighted mean into xmean
     val arindex = fitness.zipWithIndex.sortBy { case (v, _) => v }.map(_._2).toArray //val arindex: Array[Int] = sortedIndices(fitness)
@@ -313,7 +316,7 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
     // Calculate new xmean, this is selection and recombination
     val xold = a.xmean //val xold: RealMatrix = xmean
 
-    val sortedOffspring = offspring.sortBy(i => aggregate(i.fitness))
+    val sortedOffspring = population.sortBy(i => aggregate(i.fitness))
 
     val bestGenomes = sortedOffspring.take(mu).map { i => i.genome |-> values get }
     val bestArx: RealMatrix = new Array2DRowRealMatrix(bestGenomes.transpose.map(_.toArray).toArray, false) //selectColumns(arx, MathArrays.copyOf(arindex, mu))

@@ -40,6 +40,6 @@ trait DiversityModifier extends Modifier with DiversityMetric with DiversityMF w
   override def diversity = mkLens("diversity")
 
   override def modify(evaluated: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
-    DiversityModifier.toPopulationElements[G, P, F](evaluated, diversity(evaluated.map(e => fitness.get(e.fitness))))
+    DiversityModifier.toPopulationElements[G, P, F](evaluated, diversity(evaluated.map(e => fitness(e))))
 
 }

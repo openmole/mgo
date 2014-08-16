@@ -29,7 +29,7 @@ trait IndividualDiversityModifier <: RankDiversityModifier with IndividualDistan
   override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) =
     (evaluated zip individualDistance(evaluated)).map {
       case (i, gd) =>
-        fitness.get(i.fitness).toList ::: 1 / gd() :: Nil
+        fitness(i).toList ::: 1 / gd() :: Nil
     }
 
 }

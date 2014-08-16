@@ -47,9 +47,9 @@ object TestNovelty extends App {
     s =>
       val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
       s.archive.foreach {
-        i => output.append(m.values.get(i.genome).mkString(",") + "," + m.fitness.get(i.fitness).mkString(",") + "\n")
+        i => output.append(m.values.get(i.genome).mkString(",") + "," + m.fitness(i).mkString(",") + "\n")
       }
-      println(s.individuals.map(i => m.fitness.get(i.fitness).max).min)
+      println(s.individuals.map(i => m.fitness(i).max).min)
     //println(s.generation + " " + s.archive.size)
   }
 

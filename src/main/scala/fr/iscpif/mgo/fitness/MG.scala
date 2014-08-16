@@ -17,8 +17,9 @@
 
 package fr.iscpif.mgo.fitness
 
-import monocle._
+import fr.iscpif.mgo._
 
-trait MG extends F {
-  def fitness: SimpleLens[F, Seq[Double]]
+trait MG <: G with P with F {
+  def fitness(f: F): Seq[Double]
+  def fitness(individual: Individual[G, P, F]): Seq[Double] = fitness(individual.fitness)
 }

@@ -92,7 +92,7 @@ object TestProfile extends App {
           val output = Resource.fromFile(s"/tmp/generation${s.generation}.csv")
           s.population.toIndividuals.foreach {
             i =>
-              output.append((m.scale(i.genome |-> m.values get) ++ m.fitness.get(i.fitness)).mkString(",") + "\n")
+              output.append((m.scale(i.genome |-> m.values get) ++ m.fitness(i)).mkString(",") + "\n")
           }
         }
         println(s.generation)

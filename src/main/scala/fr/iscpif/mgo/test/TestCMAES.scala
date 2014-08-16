@@ -20,7 +20,7 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo.Evolution
 import fr.iscpif.mgo.archive.CMAESArchive
 import fr.iscpif.mgo.breed.CMAESBreeding
-import fr.iscpif.mgo.elitism.KeepOffspringElitism
+import fr.iscpif.mgo.elitism.{ BestAggregatedElitism, KeepOffspringElitism }
 import fr.iscpif.mgo.fitness.MaxAggregation
 import fr.iscpif.mgo.genome.{ GAGenomeWithRandomValue, ClampedGenome, GAGenome }
 import fr.iscpif.mgo.modifier.NoModifier
@@ -46,22 +46,22 @@ object TestCMAES extends App {
     override def genomeSize: Int = 20
 
     /** the size of the offspring */
-    override def lambda: Int = 200
+    override def lambda: Int = 1000
   }
 
-  implicit val rng = new Random(42)
+  implicit val rng = new Random(46)
 
   val res =
     m.evolve.untilConverged {
       s =>
-        println(s.generation + " " + s.individuals.map(i => m.aggregate(m.fitness.get(i))).min)
+        println(s.generation + " " + s.individuals.map(i => m.aggregate(m.fitness(i))).min)
     }.individuals
 
   val output = io.Resource.fromFile("/tmp/res.csv")
   for {
     r <- res
   } {
-    def line = m.scale(m.values.get(r.genome)) ++ m.fitness.get(r.fitness)
+    def line = m.scale(m.values.get(r.genome)) ++ m.fitness(r)
     output.append(line.mkString(",") + "\n")
   }
 

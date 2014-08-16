@@ -25,7 +25,7 @@ trait NoFitness <: Problem with MG {
 
   type F = None.type
 
-  override def fitness = SimpleLens[F, Seq[Double]](v => Seq.empty, (v, f) => None)
+  override def fitness(f: F) = Seq.empty
 
   def evaluate(phenotype: P, rng: Random): F = None
 }

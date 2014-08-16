@@ -20,5 +20,5 @@ package fr.iscpif.mgo.modifier
 import fr.iscpif.mgo._
 
 trait ModifiedFitness <: G with P with A with MG {
-  def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = evaluated.map(i => fitness.get(i.fitness))
+  def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = evaluated.map(i => fitness(i))
 }
