@@ -216,17 +216,17 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
 
         val arnormsRaw = sqrt(sumRows(square(arzNeg)))
         val idxnormsRaw = sortedIndices(arnormsRaw.getRow(0))
-        val arnormsSorted = selectColumns(arnormsRaw, idxnormsRaw)
-        val idxReverseRaw = reverse(idxnormsRaw)
-        val arnormsReverse = selectColumns(arnormsRaw, idxReverseRaw);
-        val arnorms = divide(arnormsReverse, arnormsSorted);
+        val arnormsSorted = selectColumns(arnormsRaw, idxnormsRaw.toArray)
+        val idxReverseRaw = reverse(idxnormsRaw.toArray)
+        val arnormsReverse = selectColumns(arnormsRaw, idxReverseRaw)
+        val arnorms = divide(arnormsReverse, arnormsSorted)
 
         // val arnormsSorted = arnormsRaw.getRow(1).sorted
         //val arnormsReverse = arnormsSorted.reverse
         //val arnorms = (arnormsReverse zip arnormsSorted).map{case (v1, v2) => v1 / v2} //divide(arnormsReverse, arnormsSorted)
 
         val idxnorms = sortedIndices(arnorms.getRow(0))
-        val idxInv = inverse(idxnorms)
+        val idxInv = inverse(idxnorms.toArray)
         val arnormsInv = selectColumns(arnorms, idxInv)
 
         // check and set learning rate negccov
