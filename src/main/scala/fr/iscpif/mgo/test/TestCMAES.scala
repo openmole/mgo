@@ -21,12 +21,13 @@ import fr.iscpif.mgo.Evolution
 import fr.iscpif.mgo.archive.CMAESArchive
 import fr.iscpif.mgo.breed.CMAESBreeding
 import fr.iscpif.mgo.elitism.{ BestAggregatedElitism, KeepOffspringElitism }
-import fr.iscpif.mgo.fitness.MaxAggregation
+import fr.iscpif.mgo.fitness.{ MGFitness, MaxAggregation }
 import fr.iscpif.mgo.genome.{ GAGenomeWithRandomValue, ClampedGenome, GAGenome }
 import fr.iscpif.mgo.modifier.NoModifier
+import fr.iscpif.mgo.problem.GAProblem
 import fr.iscpif.mgo.termination.CounterTermination
 import org.apache.commons.math3.analysis.MultivariateFunction
-import org.apache.commons.math3.linear.RealMatrix
+import org.apache.commons.math3.linear.{ EigenDecomposition, Array2DRowRealMatrix, RealMatrix }
 import org.apache.commons.math3.optim._
 import org.apache.commons.math3.optim.nonlinear.scalar.{ GoalType, ObjectiveFunction }
 import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer
@@ -43,10 +44,10 @@ object TestCMAES extends App {
     /** Number of steps before the algorithm stops */
     override def steps: Int = 1000
 
-    override def genomeSize: Int = 20
+    override def genomeSize: Int = 10
 
     /** the size of the offspring */
-    override def lambda: Int = 200
+    override def lambda: Int = 1000
   }
 
   implicit val rng = new Random(46)

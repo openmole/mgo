@@ -46,6 +46,7 @@ object CMAESArchive {
     fitnessHistory: FIFO[Double],
     bestValue: Double,
     iterations: Long)
+
 }
 
 trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with MinimumSigma {
@@ -276,6 +277,8 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
         val newB = eig.getV // eigen decomposition, B==normalized eigenvectors
         val newD = eig.getD
 
+        assert(!newB.getData.exists(_.exists(_.isNaN)))
+        assert(!newD.getData.exists(_.exists(_.isNaN)))
         //val newDiagD = diag(newD)
         /*if (min(newDiagD) <= 0) {
           for (int i = 0; i < dimension; i++) {
@@ -294,7 +297,17 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
           newDiagD = newDiagD.add(ones(dimension, 1).scalarMultiply(tfac));
         }*/
         //(0 until newD.getRowDimension).foreach(l => println(newD.getRow(l).toSeq))
-        val newDiagD = sqrt(diag(newD)) // D contains standard deviations now
+
+        val diagDSquare = diag(newD)
+        for {
+          r <- 0 until diagDSquare.getRowDimension
+          c <- 0 until diagDSquare.getColumnDimension
+          if diagDSquare.getEntry(r, c) < 0
+        } diagDSquare.setEntry(r, c, 0)
+
+        val newDiagD = sqrt(diagDSquare) // D contains standard deviations now
+
+        assert(!newDiagD.getData.exists(_.exists(_.isNaN)))
 
         for {
           r <- 0 until newDiagD.getRowDimension

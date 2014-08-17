@@ -30,12 +30,13 @@ object TestNSGAII extends App {
       def mu = 200
       def lambda = 200
       def genomeSize = 20
-      def steps = 1000
+      def steps = 10000
     }
 
   val res =
     m.evolve.untilConverged {
       s =>
+        assert(!s.individuals.exists(i => m.genome.get(i.genome).exists(_.isNaN)))
         println(s.generation + " " + s.individuals.map(i => m.fitness(i).head).min)
     }.individuals
 

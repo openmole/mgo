@@ -33,6 +33,7 @@ trait CMAESBreeding <: Breeding with GA with CMAESArchive {
     (0 until size).map {
       k =>
         val v = a.xmean.add(a.BD.multiply(arz.getColumnMatrix(k)).scalarMultiply(a.sigma))
+        assert(!v.getColumn(0).exists(_.isNaN), a.C.getData.map(_.mkString(",")).mkString("\n"))
         (randomGenome |-> values set v.getColumn(0)) |-> randomValues set arz.getColumn(k)
     }
 
