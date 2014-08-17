@@ -18,8 +18,7 @@
 package fr.iscpif.mgo.genome
 
 import monocle.SimpleLens
-
-import scala.math._
+import fr.iscpif.mgo._
 
 trait GenomeClamping <: G {
   def clamp(values: SimpleLens[G, Seq[Double]]): SimpleLens[G, Seq[Double]]
@@ -31,8 +30,5 @@ trait NoGenomeClamping <: GenomeClamping {
 
 trait ClampedGenome <: GenomeClamping {
   override def clamp(values: SimpleLens[G, Seq[Double]]) =
-    SimpleLens[G, Seq[Double]](values.get(_).map(clamp(_, 0.0, 1.0)), values.set)
-
-  def clamp(value: Double, min_v: Double, max_v: Double): Double =
-    max(min(value, max_v), min_v)
+    SimpleLens[G, Seq[Double]](values.get(_).map(tools.Math.clamp(_, 0.0, 1.0)), values.set)
 }

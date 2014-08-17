@@ -46,7 +46,7 @@ object TestCMAES extends App {
     override def genomeSize: Int = 20
 
     /** the size of the offspring */
-    override def lambda: Int = 1000
+    override def lambda: Int = 200
   }
 
   implicit val rng = new Random(46)

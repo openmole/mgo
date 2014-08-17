@@ -31,6 +31,9 @@ object Math {
     def y = p._2
   }
 
+  def clamp(value: Double, min_v: Double, max_v: Double): Double =
+    max(min(value, max_v), min_v)
+
   /// Definintion of epsilon
   val epsilon = 1.0e-30
 
