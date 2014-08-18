@@ -42,12 +42,12 @@ object TestCMAES extends App {
 
   val m = new Rastrigin with Evolution with KeepOffspringElitism with GAGenomeWithRandomValue with NoModifier with MaxAggregation with CMAESBreeding with CMAESArchive with CounterTermination with ClampedGenome {
     /** Number of steps before the algorithm stops */
-    override def steps: Int = 1000
-
+    override def steps: Int = 100000
     override def genomeSize: Int = 10
 
     /** the size of the offspring */
-    override def lambda: Int = 1000
+    override def lambda: Int = 1
+    def mu = 1000
   }
 
   implicit val rng = new Random(46)
@@ -55,7 +55,7 @@ object TestCMAES extends App {
   val res =
     m.evolve.untilConverged {
       s =>
-        println(s.generation + " " + s.individuals.map(i => m.aggregate(m.fitness(i))).min)
+        println(s.generation + " " + s.individuals.size + " " + s.individuals.map(i => m.aggregate(m.fitness(i))).min)
     }.individuals
 
   val output = io.Resource.fromFile("/tmp/res.csv")

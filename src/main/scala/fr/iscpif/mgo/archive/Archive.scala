@@ -23,5 +23,5 @@ import fr.iscpif.mgo.modifier.MF
 trait Archive extends G with P with F with MF with A {
   type A
   def initialArchive: A
-  def archive(a: A, offspring: Seq[Individual[G, P, F]]): A
+  def archive(a: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]]): A
 }

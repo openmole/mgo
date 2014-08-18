@@ -49,13 +49,15 @@ object CMAESArchive {
 
 }
 
-trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with MinimumSigma {
+trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with MinimumSigma { ar =>
 
   def initialSigma = 0.3
   def guess = Seq.fill[Double](genomeSize)(0.5)
   def negminresidualvariance = 0.66
   // where to make up for the variance loss
   def negalphaold = 0.5
+  def mu(lambda: Int) = math.ceil(lambda / 2.0).toInt
+  def activeCMAES = true
 
   type A = CMAESArchive.Archive
   def initialArchive: A = {
@@ -127,12 +129,12 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
       iterations = 0)
   }
 
-  def archive(a: A, offspring: Seq[Individual[G, P, F]]): A = {
+  def archive(a: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]]): A = {
     lazy val population = offspring
 
     lazy val lambda = population.size
+    lazy val mu = ar.mu(lambda)
 
-    lazy val mu = lambda / 2
     lazy val logMu2 = FastMath.log(mu + 0.5)
     lazy val rawWeights = log(sequence(1, mu, 1)).scalarMultiply(-1).scalarAdd(logMu2)
     lazy val sumw = rawWeights.getColumn(0).sum
@@ -200,64 +202,66 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
         val arpos = bestArx.subtract(repmat(xold, 1, mu)).scalarMultiply(1 / sigma) // mu difference vectors
         val roneu = pc.multiply(pc.transpose()).scalarMultiply(ccov1) // rank one update
         // minor correction if hsig==false
-        //if (isActiveCMA) {
-        // Adapt covariance matrix C active CMA
-        // keep at least 0.66 in all directions, small popsize are most
-        // critical
+        if (activeCMAES) {
+          // Adapt covariance matrix C active CMA
+          // keep at least 0.66 in all directions, small popsize are most
+          // critical
 
-        // prepare vectors, compute negative updating matrix Cneg
-        //          final int[] arReverseIndex = reverse(arindex);
-        //          RealMatrix arzneg = selectColumns(arz, MathArrays.copyOf(arReverseIndex, mu));
-        //         RealMatrix arnorms = sqrt(sumRows(square(arzneg)));
-        //          final int[] idxnorms = sortedIndices(arnorms.getRow(0));
-        //          final RealMatrix arnormsSorted = selectColumns(arnorms, idxnorms);
-        //          final int[] idxReverse = reverse(idxnorms);
-        //          final RealMatrix arnormsReverse = selectColumns(arnorms, idxReverse);
-        //          arnorms = divide(arnormsReverse, arnormsSorted);
+          // prepare vectors, compute negative updating matrix Cneg
+          //          final int[] arReverseIndex = reverse(arindex);
+          //          RealMatrix arzneg = selectColumns(arz, MathArrays.copyOf(arReverseIndex, mu));
+          //         RealMatrix arnorms = sqrt(sumRows(square(arzneg)));
+          //          final int[] idxnorms = sortedIndices(arnorms.getRow(0));
+          //          final RealMatrix arnormsSorted = selectColumns(arnorms, idxnorms);
+          //          final int[] idxReverse = reverse(idxnorms);
+          //          final RealMatrix arnormsReverse = selectColumns(arnorms, idxReverse);
+          //          arnorms = divide(arnormsReverse, arnormsSorted);
 
-        val arnormsRaw = sqrt(sumRows(square(arzNeg)))
-        val idxnormsRaw = sortedIndices(arnormsRaw.getRow(0))
-        val arnormsSorted = selectColumns(arnormsRaw, idxnormsRaw.toArray)
-        val idxReverseRaw = reverse(idxnormsRaw.toArray)
-        val arnormsReverse = selectColumns(arnormsRaw, idxReverseRaw)
-        val arnorms = divide(arnormsReverse, arnormsSorted)
+          val arnormsRaw = sqrt(sumRows(square(arzNeg)))
+          val idxnormsRaw = sortedIndices(arnormsRaw.getRow(0))
+          val arnormsSorted = selectColumns(arnormsRaw, idxnormsRaw.toArray)
+          val idxReverseRaw = reverse(idxnormsRaw.toArray)
+          val arnormsReverse = selectColumns(arnormsRaw, idxReverseRaw)
+          val arnorms = divide(arnormsReverse, arnormsSorted)
 
-        // val arnormsSorted = arnormsRaw.getRow(1).sorted
-        //val arnormsReverse = arnormsSorted.reverse
-        //val arnorms = (arnormsReverse zip arnormsSorted).map{case (v1, v2) => v1 / v2} //divide(arnormsReverse, arnormsSorted)
+          // val arnormsSorted = arnormsRaw.getRow(1).sorted
+          //val arnormsReverse = arnormsSorted.reverse
+          //val arnorms = (arnormsReverse zip arnormsSorted).map{case (v1, v2) => v1 / v2} //divide(arnormsReverse, arnormsSorted)
 
-        val idxnorms = sortedIndices(arnorms.getRow(0))
-        val idxInv = inverse(idxnorms.toArray)
-        val arnormsInv = selectColumns(arnorms, idxInv)
+          val idxnorms = sortedIndices(arnorms.getRow(0))
+          val idxInv = inverse(idxnorms.toArray)
+          val arnormsInv = selectColumns(arnorms, idxInv)
 
-        // check and set learning rate negccov
-        val negccovVal = (1 - ccovmu) * 0.25 * mueff / (FastMath.pow(genomeSize + 2, 1.5) + 2 * mueff)
-        val negcovMax = (1 - negminresidualvariance) / square(arnormsInv).multiply(weights).getEntry(0, 0)
+          // check and set learning rate negccov
+          val negccovVal = (1 - ccovmu) * 0.25 * mueff / (FastMath.pow(genomeSize + 2, 1.5) + 2 * mueff)
+          val negcovMax = (1 - negminresidualvariance) / square(arnormsInv).multiply(weights).getEntry(0, 0)
 
-        val negccov = if (negccovVal > negcovMax) negcovMax else negccovVal
+          val negccov = if (negccovVal > negcovMax) negcovMax else negccovVal
 
-        //arzneg = times(arzneg, repmat(arnormsInv, dimension, 1));
-        val artmp = BD.multiply(times(arzNeg, repmat(arnormsInv, genomeSize, 1)))
-        val Cneg = artmp.multiply(diag(weights)).multiply(artmp.transpose())
+          //arzneg = times(arzneg, repmat(arnormsInv, dimension, 1));
+          val artmp = BD.multiply(times(arzNeg, repmat(arnormsInv, genomeSize, 1)))
+          val Cneg = artmp.multiply(diag(weights)).multiply(artmp.transpose())
 
-        val oldFac = (if (hsig) 0 else ccov1 * cc * (2 - cc)) + (1 - ccov1 - ccovmu) + (negalphaold * negccov)
-        val newC = C.scalarMultiply(oldFac)
-          .add(roneu) // regard old matrix
-          .add(arpos.scalarMultiply( // plus rank one update
-            ccovmu + (1 - negalphaold) * negccov) // plus rank mu update
-            .multiply(times(repmat(weights, 1, genomeSize),
-              arpos.transpose)))
-          .subtract(Cneg.scalarMultiply(negccov))
+          val oldFac = (if (hsig) 0 else ccov1 * cc * (2 - cc)) + (1 - ccov1 - ccovmu) + (negalphaold * negccov)
+          val newC = C.scalarMultiply(oldFac)
+            .add(roneu) // regard old matrix
+            .add(arpos.scalarMultiply( // plus rank one update
+              ccovmu + (1 - negalphaold) * negccov) // plus rank mu update
+              .multiply(times(repmat(weights, 1, genomeSize),
+                arpos.transpose)))
+            .subtract(Cneg.scalarMultiply(negccov))
 
-        (newC, negccov)
-        /*} else {
-                  // Adapt covariance matrix C - nonactive
-                  C = C.scalarMultiply(oldFac) // regard old matrix
-                      .add(roneu) // plus rank one update
-                      .add(arpos.scalarMultiply(ccovmu) // plus rank mu update
-                           .multiply(times(repmat(weights, 1, dimension),
-                                           arpos.transpose())));
-              }*/
+          (newC, negccov)
+        } else {
+          val oldFac = (if (hsig) 0 else ccov1 * cc * (2 - cc)) + (1 - ccov1 - ccovmu)
+          val newC =
+            C.scalarMultiply(oldFac)
+              .add(roneu) // regard old matrix
+              .add(arpos.scalarMultiply(ccovmu) // plus rank mu update
+                .multiply(times(repmat(weights, 1, genomeSize),
+                  arpos.transpose)))
+          (newC, 0.0)
+        }
       } else (C, 0.0)
     }
 

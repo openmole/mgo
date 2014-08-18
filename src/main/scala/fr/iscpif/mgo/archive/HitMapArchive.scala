@@ -28,7 +28,7 @@ trait HitMapArchive <: Archive with Niche {
 
   def initialArchive = Map[NICHE, Int]()
 
-  def archive(archive: A, offspring: Seq[Individual[G, P, F]]): A =
+  def archive(archive: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]]): A =
     combine(archive, toArchive(offspring))
 
   def toArchive(individuals: Seq[Individual[G, P, F]]): A =

@@ -23,5 +23,5 @@ trait NoArchive extends Archive {
   type A = None.type
 
   override def initialArchive: A = None
-  override def archive(a: A, offspring: Seq[Individual[G, P, F]]): A = None
+  override def archive(a: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]]): A = None
 }
