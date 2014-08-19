@@ -27,7 +27,8 @@ import util.Random
  */
 trait BinaryTournamentSelection extends Selection with OneByOne with Tournament {
 
-  def rounds = 1
+  def selectionPressure = 1.0
+  def rounds(populationSize: Int) = math.round(math.log10(populationSize) * selectionPressure).toInt
 
   override def selectOne(population: Population[G, P, F, MF])(implicit rng: Random): Individual[G, P, F] = {
     def newChallenger: PopulationElement[G, P, F, MF] = population.content.random(rng)
@@ -36,7 +37,7 @@ trait BinaryTournamentSelection extends Selection with OneByOne with Tournament 
       if (rounds <= 0) champion
       else round(tournament(champion, newChallenger), rounds - 1)
 
-    round(newChallenger, rounds).toIndividual
+    round(newChallenger, rounds(population.size)).toIndividual
   }
 
 }

@@ -27,7 +27,7 @@ object TestProfile extends App {
     new Rastrigin with Profile with CounterTermination with ProfileGenomePlotter {
       def genomeSize: Int = 6
       def lambda: Int = 100
-      def steps = 5000
+      def steps = 500
       def x: Int = 0
       def nX: Int = 1000
     }
@@ -83,27 +83,18 @@ object TestProfile extends App {
   //
   //  write(individuals2, "/tmp/S3.csv")
 
-  val save = Set(5000)
-
   val res =
     m.evolve.untilConverged {
       s =>
-        if (save.contains(s.generation)) {
-          val output = Resource.fromFile(s"/tmp/generation${s.generation}.csv")
-          s.population.toIndividuals.foreach {
-            i =>
-              output.append((m.scale(i.genome |-> m.values get) ++ m.fitness(i)).mkString(",") + "\n")
-          }
-        }
         println(s.generation)
     }.individuals
 
-  /*val output = Resource.fromFile("/tmp/matrix2.csv")
+  val output = Resource.fromFile("/tmp/profile.csv")
   for {
     i <- res
     x = m.plot(i)
     v = m.aggregate(i.fitness)
     if !v.isPosInfinity
-  } output.append(s"$x,$v\n")*/
+  } output.append(s"$x,$v\n")
 
 }
