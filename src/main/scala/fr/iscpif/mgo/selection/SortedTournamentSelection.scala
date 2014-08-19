@@ -28,11 +28,6 @@ import scala.collection.Iterator
 trait SortedTournamentSelection extends Selection with Tournament {
   override def selection(population: Population[G, P, F, MF])(implicit rng: Random): Iterator[Individual[G, P, F]] = {
     val sortedIndividuals = population.content.sortWith((a, b) => tournament(a, b) == a).map(_.toIndividual)
-
-    var itIndivs = sortedIndividuals.iterator
-    Iterator.continually {
-      if (!itIndivs.hasNext) itIndivs = sortedIndividuals.iterator
-      itIndivs.next()
-    }
+    Iterator.continually(sortedIndividuals.iterator).flatten
   }
 }
