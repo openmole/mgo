@@ -30,7 +30,10 @@ trait Selection extends G with P with F with MF {
   /**
    * Select an individual among the population.
    *
-   * @param population the population in which selection occurs
+   *
+   * @
+   *
+   * param population the population in which selection occurs
    * @return the selected individual
    */
   def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Iterator[Individual[G, P, F]]
