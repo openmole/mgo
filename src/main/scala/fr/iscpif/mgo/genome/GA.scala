@@ -31,7 +31,7 @@ trait GA extends G with RandomGenome with GenomeClamping {
   def rawValues: SimpleLens[G, Seq[Double]]
 
   /** The entire genome with potentially additional information */
-  def genome: SimpleLens[G, Seq[Double]]
+  def fullGenome: SimpleLens[G, Seq[Double]]
 
   /** Size of the value part of the genome */
   def genomeSize: Int

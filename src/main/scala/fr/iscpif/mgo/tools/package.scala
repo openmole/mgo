@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo
 
+import scala.util.Random
+
 package object tools {
 
   implicit class ArrayDecorator[A](array: Array[A]) {
@@ -58,8 +60,13 @@ package object tools {
     def shadows[B] =
       for (i <- xs.indices; (as, bs) = xs splitAt i) yield as ++ bs.tail
 
+    def random(implicit rng: Random) = xs(rng.nextInt(xs.size))
+
   }
 
+  def rndmChoice[T](t1: T, t2: T)(implicit rng: Random): T = {
+    if (rng.nextDouble < 0.5) t1 else t2
+  }
   //implicit def lazyOrdering[T](implicit ord: Ordering[T]) = tools.Lazy.lazyOrdering(ord)
 
   /*implicit class OptionDecorator[A](option: Option[A]) {

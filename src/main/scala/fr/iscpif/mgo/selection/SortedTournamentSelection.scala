@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Random._
 import util.Random
 import scala.collection.Iterator
 

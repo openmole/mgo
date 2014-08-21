@@ -37,7 +37,7 @@ trait ModelFamilyGenome <: ModelId with Sigma with GA with RandomGenome {
 
   def rawValues = mkLens[G, Seq[Double]]("values")
 
-  def genome = SimpleLens[G, Seq[Double]](
+  def fullGenome = SimpleLens[G, Seq[Double]](
     v => v.values ++ v.sigma,
     (c, v) =>
       ModelFamilyGenome.Genome(

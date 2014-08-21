@@ -48,6 +48,7 @@ package object mgo {
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
   def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
+  type AggregatedOptimisation = algorithm.AggregatedOptimisation
   type BehaviourSearch = algorithm.BehaviourSearch
   type Map = algorithm.Map
   type OptimumDiversity = algorithm.OptimumDiversity
@@ -65,6 +66,7 @@ package object mgo {
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
   type AverageCrossOver = crossover.AverageCrossover
+  type BLXCrossover = crossover.BLXCrossover
   type CrossOver = crossover.Crossover
   type IdentityCrossOver = crossover.IdentityCrossover
   type SBXBoundedCrossover = crossover.SBXBoundedCrossover
@@ -89,8 +91,11 @@ package object mgo {
   type NonStrictEpsilonDominance = dominance.NonStrictEpsilonDominance
   type StrictDominance = dominance.StrictDominance
   type StrictEpsilonDominance = dominance.StrictEpsilonDominance
+  type BestAggregatedElitism = elitism.BestAggregatedElitism
   type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
   type BestRankedNicheElitism = elitism.BestRankedNicheElitism
+  type ConservativeFIFOAggregatedElitism = elitism.ConservativeFIFOAggregatedElitism
+  type DiversityAggregatedElitism = elitism.DiversityAggregatedElitism
   type Elitism = elitism.Elitism
   type KeepOffspringElitism = elitism.KeepOffspringElitism
   type NonDominatedElitism = elitism.NonDominatedElitism
@@ -133,6 +138,7 @@ package object mgo {
   type RankModifier = modifier.RankModifier
   type IndividualDiversityModifier = modifier.IndividualDiversityModifier
   type RankDiversityModifier = modifier.RankDiversityModifier
+  type BGAMutation = mutation.BGAMutation
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
   type GaussianMutation = mutation.GaussianMutation
   type Mutation = mutation.Mutation
@@ -155,12 +161,14 @@ package object mgo {
   type ParetoRanking = ranking.ParetoRanking
   type Ranking = ranking.Ranking
   type BinaryTournamentSelection = selection.BinaryTournamentSelection
+  type RandomSelection = selection.RandomSelection
   type TournamentOnDiversity = selection.TournamentOnDiversity
   type TournamentOnRank = selection.TournamentOnRank
   type TournamentOnRankAndDiversity = selection.TournamentOnRankAndDiversity
   type MapSelection = selection.MapSelection
   type Selection = selection.Selection
   type SortedTournamentSelection = selection.SortedTournamentSelection
+  type TournamentOnAggregatedFitness = selection.TournamentOnAggregatedFitness
   type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
   type CounterTermination = termination.CounterTermination
   type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination

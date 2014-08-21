@@ -19,7 +19,6 @@ package fr.iscpif.mgo.mutation
 
 import util.Random
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Random._
 
 /**
  * Randomly changes components with a uniformly drawn number
@@ -29,13 +28,13 @@ trait RandomMutation extends Mutation with GA {
   def mutationRate = 0.5
 
   override def mutate(g: G, population: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): G = {
-    val valMutationZipped = genome.get(g) zip genome.get(randomGenome)
+    val valMutationZipped = fullGenome.get(g) zip fullGenome.get(randomGenome)
     val newValues = valMutationZipped map {
       case (v, vrg) =>
         if (aprng.nextDouble < mutationRate) vrg else v
     }
 
-    genome.set(g, newValues)
+    fullGenome.set(g, newValues)
   }
 
 }

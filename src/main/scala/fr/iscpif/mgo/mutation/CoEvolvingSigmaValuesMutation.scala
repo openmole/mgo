@@ -18,8 +18,6 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Math._
-import fr.iscpif.mgo.tools.Random._
 import util.Random
 import scala.math._
 

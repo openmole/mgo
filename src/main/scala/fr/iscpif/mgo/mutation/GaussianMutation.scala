@@ -18,8 +18,6 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Random._
-import fr.iscpif.mgo.tools.Math._
 import util.Random
 
 /**
@@ -32,9 +30,9 @@ trait GaussianMutation extends Mutation with GA {
   def sigma: Double
 
   override def mutate(g: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
-    val newValues = genome.get(g) map {
+    val newValues = fullGenome.get(g) map {
       _ + (rng.nextGaussian * sigma)
     }
-    genome.set(g, newValues)
+    fullGenome.set(g, newValues)
   }
 }

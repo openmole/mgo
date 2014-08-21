@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
+ * it under the terms of the GNU Affero General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -15,24 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.genome
+package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import scala.util.Random
-import monocle.Macro._
 
-object GAGenome {
-  case class Genome(values: Seq[Double])
-}
-
-/**
- * Genome for genetic algorithms
- */
-trait GAGenome extends GA {
-  type G = GAGenome.Genome
-
-  def rawValues = mkLens[G, Seq[Double]]("values")
-  def fullGenome = values
-
-  def randomGenome(implicit rng: Random) = GAGenome.Genome(Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq)
-}
+trait AggregatedOptimisation <: Evolution
+  with GAGenome
+  with BinaryTournamentSelection
+  with TournamentOnAggregatedFitness
+  with BestAggregatedElitism
+  with BLXCrossover
+  with BGAMutation
+  with NoArchive
+  with CloneRemoval
+  with GeneticBreeding
+  with MGFitness
+  with ClampedGenome
+  with MaxAggregation
+  with NoModifier

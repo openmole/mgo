@@ -19,7 +19,6 @@ package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
 import util.Random
-import fr.iscpif.mgo.tools.Random._
 
 /**
  * Swap part of each genome
@@ -30,13 +29,13 @@ trait UniformCrossover extends Crossover with GA {
   def crossoverRate: Double = 0.5
 
   override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random) = {
-    val rngValue = (0 until genome.get(g1).size).map { x => !(aprng.nextDouble < crossoverRate) }
-    val offspringValues = (rngValue zip (genome.get(g1) zip genome.get(g2))) map {
+    val rngValue = (0 until fullGenome.get(g1).size).map { x => !(aprng.nextDouble < crossoverRate) }
+    val offspringValues = (rngValue zip (fullGenome.get(g1) zip fullGenome.get(g2))) map {
       case (b, (g1e, g2e)) =>
         if (b) (g1e, g2e) else (g2e, g1e)
     }
 
-    IndexedSeq(genome.set(g1, offspringValues.map { _._1 }), genome.set(g2, offspringValues.map { _._2 }))
+    IndexedSeq(fullGenome.set(g1, offspringValues.map { _._1 }), fullGenome.set(g2, offspringValues.map { _._2 }))
   }
 
 }

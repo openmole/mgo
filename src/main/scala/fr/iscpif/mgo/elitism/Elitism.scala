@@ -27,6 +27,6 @@ import fr.iscpif.mgo.modifier.MF
  */
 trait Elitism extends G with P with F with MF with Modifier {
 
-  def elitism(oldGeneration: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]]
+  def elitism(oldGeneration: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]]
 
 }

@@ -28,10 +28,10 @@ trait AverageCrossover extends Crossover with GA {
   override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random) = {
     val pds = aprng.nextDouble
 
-    val newValues = IndexedSeq.tabulate(genome.get(g1).size)(i =>
-      (pds * genome.get(g1)(i) + (1 - pds) * genome.get(g2)(i)) / 2)
+    val newValues = IndexedSeq.tabulate(fullGenome.get(g1).size)(i =>
+      (pds * fullGenome.get(g1)(i) + (1 - pds) * fullGenome.get(g2)(i)) / 2)
 
-    IndexedSeq(genome.set(g1, newValues))
+    IndexedSeq(fullGenome.set(g1, newValues))
   }
 }
 

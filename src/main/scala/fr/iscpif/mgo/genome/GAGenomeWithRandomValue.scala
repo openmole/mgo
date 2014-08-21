@@ -33,7 +33,7 @@ trait GAGenomeWithRandomValue extends GA with RandomValue {
 
   def rawValues = mkLens[G, Seq[Double]]("values")
 
-  def genome = SimpleLens[G, Seq[Double]](
+  def fullGenome = SimpleLens[G, Seq[Double]](
     v => values.get(v) ++ randomValues.get(v),
     (c, v) =>
       (c |-> values set v.slice(0, v.size / 2)) |-> randomValues set v.slice(v.size / 2, v.size)

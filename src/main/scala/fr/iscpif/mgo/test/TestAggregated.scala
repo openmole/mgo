@@ -15,24 +15,38 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.genome
+package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+
 import scala.util.Random
-import monocle.Macro._
+import scalax.io.Resource
 
-object GAGenome {
-  case class Genome(values: Seq[Double])
-}
+object TestAggregated extends App {
 
-/**
- * Genome for genetic algorithms
- */
-trait GAGenome extends GA {
-  type G = GAGenome.Genome
+  implicit val rng = new Random
 
-  def rawValues = mkLens[G, Seq[Double]]("values")
-  def fullGenome = values
+  val m =
+    new Rastrigin with AggregatedOptimisation with CounterTermination {
+      def mu = 200
+      def lambda = 1
+      def genomeSize = 10
+      def steps = 100000
+    }
 
-  def randomGenome(implicit rng: Random) = GAGenome.Genome(Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq)
+  val res =
+    m.evolve.untilConverged {
+      s =>
+        assert(!s.individuals.exists(i => m.fullGenome.get(i.genome).exists(_.isNaN)))
+        println(s.generation + " " + s.individuals.map(i => m.aggregate(i.fitness)).min)
+    }.individuals
+
+  val output = Resource.fromFile("/tmp/res.csv")
+  for {
+    r <- res
+  } {
+    def line = m.scale(m.values.get(r.genome)) ++ m.fitness(r)
+    output.append(line.mkString(",") + "\n")
+  }
+
 }

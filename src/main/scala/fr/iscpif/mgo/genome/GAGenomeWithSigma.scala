@@ -35,7 +35,7 @@ trait GAGenomeWithSigma extends GA with Sigma {
 
   def rawValues = mkLens("values")
 
-  def genome = SimpleLens[G, Seq[Double]](
+  def fullGenome = SimpleLens[G, Seq[Double]](
     v => values.get(v) ++ sigma.get(v),
     (c, v) =>
       (c |-> values set v.slice(0, v.size / 2)) |-> sigma set v.slice(v.size / 2, v.size)

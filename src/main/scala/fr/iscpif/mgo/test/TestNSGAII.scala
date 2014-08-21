@@ -26,17 +26,17 @@ object TestNSGAII extends App {
   implicit val rng = new Random
 
   val m =
-    new Rastrigin with NSGAII with HierarchicalRanking {
+    new Rastrigin with NSGAII with HierarchicalRanking with CounterTermination {
       def mu = 200
       def lambda = 200
-      def genomeSize = 20
-      def steps = 10000
+      def genomeSize = 10
+      def steps = 500
     }
 
   val res =
     m.evolve.untilConverged {
       s =>
-        assert(!s.individuals.exists(i => m.genome.get(i.genome).exists(_.isNaN)))
+        assert(!s.individuals.exists(i => m.fullGenome.get(i.genome).exists(_.isNaN)))
         println(s.generation + " " + s.individuals.map(i => m.fitness(i).head).min)
     }.individuals
 

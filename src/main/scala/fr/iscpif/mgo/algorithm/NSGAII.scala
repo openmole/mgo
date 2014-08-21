@@ -23,7 +23,6 @@ trait NSGAII <: Evolution
   with GAGenomeWithSigma
   with BinaryTournamentSelection
   with TournamentOnRankAndDiversity
-  with CounterTermination
   with NonDominatedElitism
   with CoEvolvingSigmaValuesMutation
   with SBXBoundedCrossover

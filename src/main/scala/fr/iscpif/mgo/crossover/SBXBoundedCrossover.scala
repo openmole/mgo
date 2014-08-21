@@ -110,9 +110,9 @@ trait SBXBoundedCrossover extends Crossover with GA with CrossoverRate {
   }
 
   def sbxCrossover(g1: G, g2: G)(implicit rng: Random) = {
-    val (o1, o2) = SBXBoundedCrossover.crossOver(genome.get(g1), genome.get(g2), crossoverRate, distributionIndex)
+    val (o1, o2) = SBXBoundedCrossover.crossOver(fullGenome.get(g1), fullGenome.get(g2), crossoverRate, distributionIndex)
     assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-    (genome.set(g1, o1), genome.set(g2, o2))
+    (fullGenome.set(g1, o1), fullGenome.set(g2, o2))
   }
 
 }

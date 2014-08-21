@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Random._
+import fr.iscpif.mgo.tools._
 import util.Random
 
 /**
@@ -31,7 +31,7 @@ trait BinaryTournamentSelection extends Selection with OneByOne with Tournament 
   def rounds(populationSize: Int) = math.round(math.log10(populationSize) * selectionPressure).toInt
 
   override def selectOne(population: Population[G, P, F, MF])(implicit rng: Random): Individual[G, P, F] = {
-    def newChallenger: PopulationElement[G, P, F, MF] = population.content.random(rng)
+    def newChallenger: PopulationElement[G, P, F, MF] = population.content.random
 
     def round(champion: PopulationElement[G, P, F, MF], rounds: Int): PopulationElement[G, P, F, MF] =
       if (rounds <= 0) champion
