@@ -26,7 +26,7 @@ object TestNSGAII extends App {
   implicit val rng = new Random
 
   val m =
-    new Rastrigin with NSGAII with HierarchicalRanking with CounterTermination {
+    new ZDT4 with NSGAII with CounterTermination {
       def mu = 200
       def lambda = 200
       def genomeSize = 10
@@ -36,8 +36,7 @@ object TestNSGAII extends App {
   val res =
     m.evolve.untilConverged {
       s =>
-        assert(!s.individuals.exists(i => m.fullGenome.get(i.genome).exists(_.isNaN)))
-        println(s.generation + " " + s.individuals.map(i => m.fitness(i).head).min)
+        println(s.generation + " " + s.individuals.map(i => m.fitness(i)).transpose.map(_.min))
     }.individuals
 
   val output = Resource.fromFile("/tmp/res.csv")
