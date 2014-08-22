@@ -17,6 +17,7 @@
 
 package fr.iscpif
 
+import fr.iscpif.mgo.elitism.CloneRemoval
 import org.apache.commons.math3.random._
 
 package object mgo {
@@ -94,10 +95,12 @@ package object mgo {
   type BestAggregatedElitism = elitism.BestAggregatedElitism
   type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
   type BestRankedNicheElitism = elitism.BestRankedNicheElitism
+  type CloneRemoval = elitism.CloneRemoval
   type ConservativeFIFOAggregatedElitism = elitism.ConservativeFIFOAggregatedElitism
   type DiversityAggregatedElitism = elitism.DiversityAggregatedElitism
   type Elitism = elitism.Elitism
   type KeepOffspringElitism = elitism.KeepOffspringElitism
+  type IndividualFilter = elitism.IndividualFilter
   type NonDominatedElitism = elitism.NonDominatedElitism
   type NicheElitism = elitism.NicheElitism
   type RandomNicheElitism = elitism.RandomNicheElitism
@@ -122,10 +125,8 @@ package object mgo {
   type ProfilePlotter = map.ProfilePlotter
   val Hypervolume = metric.Hypervolume
   type ReferencePoint = metric.ReferencePoint
-  type CloneRemoval = modifier.CloneRemoval
   type DiversityMF = modifier.DiversityMF
   type DiversityModifier = modifier.DiversityModifier
-  type IndividualFilter = modifier.IndividualFilter
   type HitCountModifiedFitness = modifier.HitCountModifiedFitness
   type RankMF = modifier.RankMF
   type RankOnDiversity = modifier.RankOnDiversity

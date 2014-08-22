@@ -3,10 +3,10 @@
  * and open the template in the editor.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
-import genome.G
+import fr.iscpif.mgo.genome.G
 
 /**
  * Layer of the cake for filtering individuals in the set of evaluted individuals

@@ -21,7 +21,7 @@ import fr.iscpif.mgo.Individual
 import scala.util.Random
 
 trait MergedGenerations <: Elitism {
-  def elitism(oldGeneration: Seq[Individual[G, P, F]], newGeneration: Seq[Individual[G, P, F]], archive: A)(implicit aprng: Random): Seq[Individual[G, P, F]] =
+  def elitism(oldGeneration: Seq[Individual[G, P, F]], newGeneration: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
     elitism(newGeneration.toList ::: oldGeneration.toList, archive)
 
   /**
@@ -30,6 +30,6 @@ trait MergedGenerations <: Elitism {
    * @param individuals the population to shrink
    * @return the shrinked population
    */
-  def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit prng: Random): Seq[Individual[G, P, F]]
+  def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]]
 
 }

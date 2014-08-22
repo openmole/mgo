@@ -30,7 +30,7 @@ trait NSGAII <: Evolution
   with ParetoRanking
   with StrictDominance
   with NoArchive
-  with CloneRemoval
+  with elitism.CloneRemoval
   with GeneticBreeding
   with MGFitness
   with ClampedGenome
