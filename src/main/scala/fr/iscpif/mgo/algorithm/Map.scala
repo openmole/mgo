@@ -34,3 +34,4 @@ trait Map <: Evolution
   with GeneticBreeding
   with NoModifier
   with ClampedGenome
+  with ProportionalNumberOfRounds
