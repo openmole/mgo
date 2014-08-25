@@ -15,10 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 package fr.iscpif.mgo.selection
 
-trait ProportionalNumberOfRounds <: BinaryTournamentSelection {
+trait ProportionalNumberOfRound <: NumberOfRound {
   def selectionPressure = 1.0
   override def rounds(populationSize: Int) = math.round(math.log10(populationSize) * selectionPressure).toInt
 }

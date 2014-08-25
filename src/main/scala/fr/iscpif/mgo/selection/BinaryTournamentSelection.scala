@@ -25,7 +25,7 @@ import util.Random
  * Select the best ranked and if equal the more diverse individual between
  * two individual randomly drawn in the population.
  */
-trait BinaryTournamentSelection extends Selection with OneByOne with Tournament {
+trait BinaryTournamentSelection extends Selection with OneByOne with Tournament with NumberOfRound {
 
   def rounds(populationSize: Int) = 1
 
