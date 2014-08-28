@@ -24,8 +24,8 @@ import monocle.syntax._
 
 object TestProfile extends App {
   val m =
-    new Rastrigin with Profile with CounterTermination with ProfileGenomePlotter {
-      def genomeSize: Int = 6
+    new Himmelblau with Profile with CounterTermination with ProfileGenomePlotter {
+      // def genomeSize: Int = 6
       def lambda: Int = 100
       def steps = 500
       def x: Int = 0
@@ -91,10 +91,10 @@ object TestProfile extends App {
 
   val output = Resource.fromFile("/tmp/profile.csv")
   for {
-    i <- res
+    i <- res.sortBy(i => m.values.get(i.genome).head)
     x = m.plot(i)
     v = m.aggregate(i.fitness)
     if !v.isPosInfinity
-  } output.append(s"$x,$v\n")
+  } output.append(s"${m.scale(m.values.get(i.genome)).head},$v\n")
 
 }

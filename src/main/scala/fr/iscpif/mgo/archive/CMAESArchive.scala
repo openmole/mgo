@@ -25,6 +25,8 @@ import org.apache.commons.math3.linear.{ EigenDecomposition, MatrixUtils, Array2
 import org.apache.commons.math3.util.{ MathUtils, FastMath, MathArrays }
 import monocle.syntax._
 
+import scala.util.Random
+
 object CMAESArchive {
 
   case class FIFO[T](val content: List[T]) {
@@ -52,7 +54,7 @@ object CMAESArchive {
 trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with MinimumSigma { ar =>
 
   def initialSigma = 0.3
-  def guess = Seq.fill[Double](genomeSize)(0.5)
+  def guess(implicit rng: Random) = Seq.fill[Double](genomeSize)(0.5)
   def negminresidualvariance = 0.66
   // where to make up for the variance loss
   def negalphaold = 0.5
@@ -60,7 +62,7 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
   def activeCMAES = true
 
   type A = CMAESArchive.Archive
-  def initialArchive: A = {
+  def initialArchive(implicit rng: Random): A = {
     // initialize sigma
 
     // final double[][] sigmaArray = new double[guess.length][1];
@@ -129,7 +131,7 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
       iterations = 0)
   }
 
-  def archive(a: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]]): A = {
+  def archive(a: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]])(implicit rng: Random): A = {
     lazy val population = offspring
 
     lazy val lambda = population.size

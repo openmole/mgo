@@ -19,6 +19,7 @@ package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 import scala.collection.Map
+import scala.util.Random
 
 trait HitMapArchive <: Archive with Niche {
 
@@ -26,9 +27,9 @@ trait HitMapArchive <: Archive with Niche {
 
   def hits(a: A, c: NICHE): Int = a.getOrElse(c, 0)
 
-  def initialArchive = Map[NICHE, Int]()
+  def initialArchive(implicit rng: Random) = Map[NICHE, Int]()
 
-  def archive(archive: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]]): A =
+  def archive(archive: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]])(implicit rng: Random): A =
     combine(archive, toArchive(offspring))
 
   def toArchive(individuals: Seq[Individual[G, P, F]]): A =
@@ -41,7 +42,7 @@ trait HitMapArchive <: Archive with Niche {
     else a + ((a2key, a2value))
   })
 
-  def diff(original: A, modified: A): A = {
+  def diff(original: A, modified: A)(implicit rng: Random): A = {
     modified.foldLeft(initialArchive)((m, kv) => {
       val key = kv._1
       val value = kv._2

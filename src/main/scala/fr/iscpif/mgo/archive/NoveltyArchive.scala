@@ -19,13 +19,15 @@ package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 
+import scala.util.Random
+
 trait NoveltyArchive <: Archive with IndividualDistanceFromArchive with ArchiveIndividuals {
 
   def archiveEpsilon: Double
 
-  def initialArchive = Seq.empty
+  def initialArchive(implicit rng: Random) = Seq.empty
 
-  def archive(a1: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]]) = offspring.foldLeft(a1)((a, i) => addMaybe(a, i))
+  def archive(a1: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]])(implicit rng: Random) = offspring.foldLeft(a1)((a, i) => addMaybe(a, i))
 
   def addMaybe(a: A, i: Individual[G, P, F]): A = {
     if (distanceOfIndividualFromArchive(i, a)() > archiveEpsilon) a :+ i

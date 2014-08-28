@@ -39,6 +39,7 @@ package object mgo {
   }
 
   implicit class StateIteratorDecorator[S <: { def terminated: Boolean }](i: Iterator[S]) {
+    def last = i.drop(1).dropWhile { !_.terminated }.next
     def untilConverged(f: S => Unit) = i.drop(1).dropWhile { s => f(s); !s.terminated }.next
   }
 
@@ -51,6 +52,7 @@ package object mgo {
 
   type AggregatedOptimisation = algorithm.AggregatedOptimisation
   type BehaviourSearch = algorithm.BehaviourSearch
+  type CMAES = algorithm.CMAES
   type Map = algorithm.Map
   type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
