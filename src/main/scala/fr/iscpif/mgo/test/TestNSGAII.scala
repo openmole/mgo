@@ -23,7 +23,6 @@ import scalax.io.Resource
 
 object TestNSGAII extends App {
 
-  implicit val rng = new Random
 
   val m =
     new ZDT4 with NSGAII with CounterTermination {
@@ -33,14 +32,17 @@ object TestNSGAII extends App {
       def genomeSize = 10
     }
 
+
+  implicit val rng = newRNG(42)
+
   val res =
     m.evolve.untilConverged {
       s => println(s.generation)
-    }.population
+    }
 
   val output = Resource.fromFile("/tmp/res.csv")
   for {
-    r <- res.toIndividuals
+    r <- res.population.toIndividuals
   } {
     def line = m.scale(m.values.get(r.genome)) ++ m.fitness(r)
     output.append(line.mkString(",") + "\n")
