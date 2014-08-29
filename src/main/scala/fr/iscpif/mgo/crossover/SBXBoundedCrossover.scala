@@ -77,7 +77,7 @@ trait SBXBoundedCrossover extends Crossover with GA {
   /** distribution index parameter of the algorithm */
   def distributionIndex: Double = 1.0
 
-  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = {
+  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = {
     val (o1, o2) = sbxCrossover(g1, g2)
     Seq(o1, o2)
   }

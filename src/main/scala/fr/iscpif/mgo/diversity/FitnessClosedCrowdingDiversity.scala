@@ -19,15 +19,13 @@ package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
-import metric._
+import fr.iscpif.mgo.tools.metric._
 
 /**
  * Crowding distance, see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
  * A fast elitist non-dominated sorting genetic algorithm for multi-objective
  * optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
  */
-trait ClosedCrowdingDiversity extends DiversityMetric {
-
-  override def diversity(values: Seq[Seq[Double]]) = ClosedCrowdingDistance(values.toIndexedSeq)
-
+trait FitnessClosedCrowdingDiversity extends Diversity with MG {
+  override def diversity(values: Population[G, P, F]) = ClosedCrowdingDistance(values.map(e => fitness(e.toIndividual)))
 }

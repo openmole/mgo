@@ -27,14 +27,14 @@ import tools.SeqDecorator
  */
 trait DiversityAggregatedElitism <: Elitism with ConservativeFIFOAggregatedElitism with Aggregation with Mu with GA {
 
-  def averageIntervalUsage(individuals: Seq[Individual[G, P, F]]): Double = {
+  def averageIntervalUsage(individuals: Population[G, P, F]): Double = {
     val transposedGenomes = individuals.map(i => values.get(i.genome)).transpose
     val mins = transposedGenomes.map(_.min)
     val maxs = transposedGenomes.map(_.max)
     (maxs zip mins).map { case (max, min) => max - min }.sum / genomeSize
   }
 
-  override def elitism(oldGeneration: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
+  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] =
     if (oldGeneration.size < mu) oldGeneration ++ offspring
     else offspring.foldLeft(oldGeneration) {
       (individuals, candidate) =>

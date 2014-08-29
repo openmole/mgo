@@ -26,7 +26,7 @@ trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenom
 
   def changeNiche = 0.1
 
-  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
+  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
     val (newValues, newSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
     val res = sigma.set(values.set(genome, newValues), newSigma)
     if (rng.nextDouble < changeNiche) modelId.set(res, rng.nextInt(models)) else res

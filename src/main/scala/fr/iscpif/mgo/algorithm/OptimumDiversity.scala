@@ -20,7 +20,7 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.elitism.BestRankedNicheElitism
 
-trait OptimumDiversity <: NoArchive
+/*trait OptimumDiversity <: NoArchive
   with BestRankedNicheElitism
   with GAGenotypeGridNiche
   with MG
@@ -34,4 +34,4 @@ trait OptimumDiversity <: NoArchive
   with StrictDominance
   with RankDiversityModifier
   with ParetoRanking
-  with ClampedGenome
+  with ClampedGenome*/ 

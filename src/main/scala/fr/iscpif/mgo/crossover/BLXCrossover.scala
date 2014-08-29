@@ -26,7 +26,7 @@ trait BLXCrossover <: Crossover with GA {
 
   def alpha: Double = 0.5
 
-  override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[G] = {
+  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[G] = {
     val (newG1, newG2) =
       (values.get(g1) zip values.get(g2)).map {
         case (c1, c2) =>

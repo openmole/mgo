@@ -37,9 +37,9 @@ object TestAggregated extends App {
   val res =
     m.evolve.untilConverged {
       s =>
-        assert(!s.individuals.exists(i => m.fullGenome.get(i.genome).exists(_.isNaN)))
-        println(s.generation + " " + s.individuals.map(i => m.aggregate(i.fitness)).min)
-    }.individuals
+        assert(!s.population.exists(i => m.fullGenome.get(i.genome).exists(_.isNaN)))
+        println(s.generation + " " + s.population.map(i => m.aggregate(i.fitness)).min)
+    }.population.toIndividuals
 
   val output = Resource.fromFile("/tmp/res.csv")
   for {

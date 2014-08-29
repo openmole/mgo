@@ -25,16 +25,16 @@ import tools.Lazy
  * Layer to compute the rank according to the number individual that dominate a
  * given individual.
  */
-trait ParetoRanking extends Ranking with Dominance {
+trait ParetoRanking extends Ranking with Dominance with MG {
 
-  override def rank(values: Seq[Seq[Double]]) = {
+  override def rank(values: Population[G, P, F]) = {
     values.zipWithIndex.map {
       case (v1, index1) =>
         Lazy(
           values.zipWithIndex.filter {
             case (_, index2) => index1 != index2
           }.count {
-            case (v2, _) => isDominated(v1, v2)
+            case (v2, _) => isDominated(fitness(v1.toIndividual), fitness(v2.toIndividual))
           }
         )
     }

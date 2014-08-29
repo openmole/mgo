@@ -23,8 +23,8 @@ import tools._
 import scala.util.Random
 
 trait ConservativeFIFOAggregatedElitism <: Elitism with Aggregation with Mu {
-  def conservativeFIFO(oldGeneration: Seq[Individual[G, P, F]], candidate: Individual[G, P, F])(implicit rng: Random) =
-    if (oldGeneration.size < 2) Seq(candidate) ++ oldGeneration
+  def conservativeFIFO(oldGeneration: Population[G, P, F], candidate: PopulationElement[G, P, F])(implicit rng: Random): Population[G, P, F] =
+    if (oldGeneration.size < 2) oldGeneration ++ Seq(candidate)
     else {
       val (oldest, oldestIndex) =
         oldGeneration.zipWithIndex.groupBy { case (i, _) => i.age }.toSeq.
@@ -35,7 +35,9 @@ trait ConservativeFIFOAggregatedElitism <: Elitism with Aggregation with Mu {
       else oldGeneration.updated(oldestIndex, candidate)
     }
 
-  override def elitism(oldGeneration: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
-    if (oldGeneration.size < mu) oldGeneration ++ offspring
-    else offspring.foldLeft(oldGeneration)(conservativeFIFO)
+  override def elitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] =
+    filter(
+      if (oldGeneration.size < mu) oldGeneration ++ offspring
+      else offspring.foldLeft(oldGeneration)(conservativeFIFO)
+    ).age
 }

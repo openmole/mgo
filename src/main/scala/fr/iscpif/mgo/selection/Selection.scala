@@ -20,22 +20,18 @@ package fr.iscpif.mgo.selection
 import fr.iscpif.mgo._
 import genome.G
 import util.Random
-import fr.iscpif.mgo.modifier.MF
 
 /**
  * Selection layer for the evolutionary algorithms.
  */
-trait Selection extends G with P with F with MF {
+trait Selection extends G with P with F with Archive {
 
   /**
    * Select an individual among the population.
    *
-   *
-   * @
-   *
    * param population the population in which selection occurs
    * @return the selected individual
    */
-  def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Iterator[Individual[G, P, F]]
+  def selection(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[Individual[G, P, F]]
 
 }

@@ -22,14 +22,13 @@ import fr.iscpif.mgo._
 trait BehaviourSearch <: NoFitness
   with HitMapArchive
   with GeneticBreeding
-  with SortedTournamentSelection
+  with BinaryTournamentSelection
   with IdentityCrossOver
-  with TournamentOnRank
-  with RankModifier
+  with TournamentOnHitCount
   with HierarchicalRanking
-  with HitCountModifiedFitness
   with RandomNicheElitism
   with CounterTermination
   with CoEvolvingSigmaValuesMutation
   with GAGenomeWithSigma
   with ClampedGenome
+  with ProportionalNumberOfRounds

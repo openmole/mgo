@@ -27,7 +27,7 @@ trait BGAMutation <: Mutation with GA with MutationRate {
   override def mutationRate = 1.0 / genomeSize
   def mutationRange = 0.1
 
-  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
+  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
     val newG = values.get(genome).map {
       g =>
         if (rng.nextDouble < mutationRate) {

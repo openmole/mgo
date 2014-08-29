@@ -25,17 +25,23 @@ import util.Random
 /**
  * Reduce the size of the population according to a diversity metric and a rank
  */
-trait NonDominatedElitism extends Elitism with Mu with MergedGenerations with RankMF with DiversityMF {
+trait NonDominatedElitism extends Elitism with Mu with Ranking with Diversity {
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] = {
-    if (individuals.size < mu) individuals
+  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] = {
+    val population = filter(oldGeneration ++ offspring)
+    if (population.size < mu) population
     else {
-      val population = toPopulation(individuals, archive)
-      val fronts =
-        population.groupBy(i => rank.get(i.metaFitness)()).toList.
-          sortBy(_._1).map { case (_, e) => e.map(i => i.toIndividual -> diversity.get(i.metaFitness)) }
+      val ranks = rank(population).map { _() }
+      val diversities = diversity(population)
 
-      type FE = (Individual[G, P, F], Lazy[Double])
+      val sortedByRank: List[Seq[FE]] =
+        (ranks zip diversities zip population).
+          groupBy { case ((r, _), _) => r }.
+          toList.
+          sortBy { case (r, _) => r }.
+          map { case (_, v) => v.map { case ((_, d), e) => e -> d } }
+
+      type FE = (PopulationElement[G, P, F], Lazy[Double])
 
       @tailrec def addFronts(fronts: List[Seq[FE]], acc: List[FE]): (Seq[FE], Seq[FE]) = {
         if (fronts.isEmpty) (Seq.empty, acc)
@@ -43,7 +49,7 @@ trait NonDominatedElitism extends Elitism with Mu with MergedGenerations with Ra
         else (fronts.head, acc)
       }
 
-      val (lastFront, selected) = addFronts(fronts, List.empty)
+      val (lastFront, selected) = addFronts(sortedByRank, List.empty)
 
       (if (selected.size < mu)
         selected ++ lastFront.sortBy(_._2()).reverse.slice(0, mu - selected.size)

@@ -35,7 +35,7 @@ trait PolynomialMutation extends Mutation with GA {
 
   def distributionIndex: Double
 
-  override def mutate(g: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
+  override def mutate(g: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
     val newValues = fullGenome.get(g) map {
       v =>
         if (rng.nextDouble <= mutationRate) {

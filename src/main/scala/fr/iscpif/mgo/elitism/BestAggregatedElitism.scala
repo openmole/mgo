@@ -17,12 +17,10 @@
 
 package fr.iscpif.mgo.elitism
 
-import fr.iscpif.mgo.{ Mu, Individual }
-import fr.iscpif.mgo.fitness.Aggregation
-
+import fr.iscpif.mgo._
 import scala.util.Random
 
-trait BestAggregatedElitism <: Elitism with MergedGenerations with Aggregation with Mu {
-  def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) =
-    individuals.sortBy(i => aggregate(i.fitness)).take(mu)
+trait BestAggregatedElitism <: Elitism with Aggregation with Mu {
+  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] =
+    filter(oldGeneration ++ offspring).sortBy(i => aggregate(i.fitness)).take(mu)
 }

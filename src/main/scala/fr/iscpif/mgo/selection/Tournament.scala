@@ -19,17 +19,13 @@ package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
 import scala.util.Random
-import fr.iscpif.mgo.modifier.MF
 
-trait Tournament <: Selection with MF {
-  /**
-   * Select the best ranked and if equal the more diverse individual between
-   * two population elements.
-   *
-   * @param e1 the first population element
-   * @param e2 the second population element
-   * @return the winning population element
-   */
-  def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF]
+trait Tournament <: Selection {
+
+  type Evaluation
+  type IndividualEvaluation = (Individual[G, P, F], Evaluation)
+
+  def evaluate(population: Population[G, P, F], archive: A): Seq[Evaluation]
+  def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random): IndividualEvaluation
 
 }

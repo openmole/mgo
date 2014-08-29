@@ -22,9 +22,14 @@ import fr.iscpif.mgo._
 import scala.util.Random
 
 trait TournamentOnAggregatedFitness <: Tournament with Aggregation {
-  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF] = {
-    val a1 = aggregate(e1.fitness)
-    val a2 = aggregate(e2.fitness)
+
+  type Evaluation = None.type
+
+  override def evaluate(population: Population[G, P, F], archive: A): Seq[Evaluation] = population.map(_ => None)
+
+  override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
+    val a1 = aggregate(e1._1.fitness)
+    val a2 = aggregate(e2._1.fitness)
     if (a1 < a2) e1
     else if (a2 < a1) e2
     else if (rng.nextBoolean) e1 else e2

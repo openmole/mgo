@@ -21,9 +21,11 @@ import fr.iscpif.mgo._
 import tools._
 import Ordering.Implicits._
 
-trait HierarchicalRanking extends Ranking {
+object HierarchicalRanking {
 
-  override def rank(values: Seq[Seq[Double]]): Seq[Lazy[Int]] =
+  def downRank[T](values: Seq[T])(implicit ordering: Ordering[T]) = upRank(values)(ordering.reverse)
+
+  def upRank[T](values: Seq[T])(implicit ordering: Ordering[T]) =
     values.
       zipWithIndex.
       sortBy { case (v, _) => v }.
@@ -31,5 +33,12 @@ trait HierarchicalRanking extends Ranking {
       zipWithIndex.
       sortBy { case (originalOrder, _) => originalOrder }.
       map(_._2).map(Lazy(_))
+
+}
+
+trait HierarchicalRanking extends Ranking with MG {
+
+  override def rank(values: Population[G, P, F]): Seq[Lazy[Int]] =
+    HierarchicalRanking.upRank(values.map(v => fitness(v.toIndividual)))
 
 }

@@ -29,7 +29,7 @@ object TestModelFamily extends App {
 
   val testModels = 1
 
-  val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with SBXBoundedCrossover with NoArchive with RankModifier with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination with ClampedGenome {
+  val m = new RastriginVector with Evolution with ModelFamilyElitism with ModelFamilyMutation with SBXBoundedCrossover with NoArchive with MaxAggregation with GeneticBreeding with BinaryTournamentSelection with TournamentOnRank with HierarchicalRanking with ModelFamilyGenome with CounterTermination with ClampedGenome {
     /** Number of steps before the algorithm stops */
     override def steps: Int = 10000
 
@@ -40,7 +40,7 @@ object TestModelFamily extends App {
 
     override def modelMasks = ((1024 - testModels) until 1024)
 
-    override def terminated(population: => Population[G, P, F, MF], step: STATE): (Boolean, STATE) = {
+    /*override def terminated(population: => Population[G, P, F, MF], step: STATE): (Boolean, STATE) = {
       val avgError =
         (population.toIndividuals.map {
           idv =>
@@ -49,7 +49,7 @@ object TestModelFamily extends App {
         }.sum - bestFitness.sum) / testModels
       val (term, s) = super.terminated(population, step)
       (term || avgError < 0.01, s)
-    }
+    }*/
   }
 
   println(m.masks.map(_.count(_ == true)))

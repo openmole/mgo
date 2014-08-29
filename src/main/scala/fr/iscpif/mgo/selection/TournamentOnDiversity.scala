@@ -18,11 +18,20 @@
 package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
+import tools.Lazy
 import util.Random
 
-trait TournamentOnDiversity <: Tournament with DiversityModifier {
-  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF] =
-    if (diversity.get(e1.metaFitness)() < diversity.get(e2.metaFitness)()) e1
-    else if (diversity.get(e1.metaFitness)() > diversity.get(e2.metaFitness)()) e2
-    else if (rng.nextDouble < 0.5) e1 else e2
+trait TournamentOnDiversity <: Tournament with Diversity {
+
+  type Evaluation = Lazy[Double]
+  def evaluation(population: Population[G, P, F], archive: A) = diversity(population)
+
+  override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
+    val (_, d1) = e1
+    val (_, d2) = e2
+
+    if (d1() < d2()) e2
+    else if (d1() > d2()) e1
+    else if (rng.nextBoolean) e1 else e2
+  }
 }

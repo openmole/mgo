@@ -24,7 +24,7 @@ import scalax.io.Resource
 
 object TestOptimumDiversity extends App {
 
-  val m = new ZDT4 with OptimumDiversity with CounterTermination {
+  /*val m = new ZDT4 with OptimumDiversity with CounterTermination {
     def genomeSize: Int = 2
     def lambda: Int = 200
     def steps = 400
@@ -48,6 +48,6 @@ object TestOptimumDiversity extends App {
 
       //println(s.individuals.size)
       println(s.generation)
-  }
+  }*/
 
 }

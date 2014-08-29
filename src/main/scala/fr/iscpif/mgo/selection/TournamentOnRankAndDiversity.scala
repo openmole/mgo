@@ -18,13 +18,23 @@
 package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
+import tools.Lazy
 import scala.util.Random
 
-trait TournamentOnRankAndDiversity <: Tournament with RankDiversityModifier {
-  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF] =
-    if (rank.get(e1.metaFitness)() < rank.get(e2.metaFitness)()) e1
-    else if (rank.get(e1.metaFitness)() > rank.get(e2.metaFitness)()) e2
-    else if (diversity.get(e1.metaFitness)() > diversity.get(e2.metaFitness)()) e1
-    else if (diversity.get(e2.metaFitness)() > diversity.get(e1.metaFitness)()) e2
-    else if (rng.nextDouble < 0.5) e1 else e2
+trait TournamentOnRankAndDiversity <: Tournament with Ranking with Diversity {
+
+  type Evaluation = (Lazy[Int], Lazy[Double])
+  override def evaluate(population: Population[G, P, F], archive: A) =
+    rank(population) zip diversity(population)
+
+  override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
+    val (_, (r1, d1)) = e1
+    val (_, (r2, d2)) = e2
+
+    if (r1() < r2()) e1
+    else if (r1() > r2()) e2
+    else if (d1() > d2()) e1
+    else if (d1() < d2()) e2
+    else if (rng.nextBoolean) e1 else e2
+  }
 }

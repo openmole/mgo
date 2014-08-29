@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 2011 sebastien rey
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -11,14 +11,27 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools._
+import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
+import fr.iscpif.mgo.tools.metric.Hypervolume
 
-trait RankOnDiversity <: ModifiedFitness with DiversityMetric with HierarchicalRanking {
-  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = diversity(evaluated.map(e => fitness(e))).map(d => Seq(1 / d()))
+import scala.math._
+
+/**
+ * Diversity computed from an hypervolume contribution metric
+ *
+ * @see Hypervolume
+ */
+trait FitnessHypervolumeDiversity extends Diversity with ReferencePoint with MG {
+
+  override def diversity(values: Population[G, P, F]) =
+    Hypervolume.contributions(values.map(e => fitness(e.toIndividual)), referencePoint)
+
 }

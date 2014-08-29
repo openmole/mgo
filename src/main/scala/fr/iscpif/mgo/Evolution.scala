@@ -24,12 +24,10 @@ import org.apache.commons.math3.random.{ RandomAdaptor, Well44497b }
  * Trait evolution provide the feature to define an evolutionary algorithm
  */
 trait Evolution extends Termination
-    with Modifier
     with Lambda
     with G
     with F
     with P
-    with MF
     with Archive
     with Breeding
     with Elitism { self =>
@@ -39,7 +37,7 @@ trait Evolution extends Termination
    */
   case class EvolutionState(
       /** The current population of solution */
-      population: Population[G, P, F, MF],
+      population: Population[G, P, F],
       /** The current achive */
       archive: A,
       /** The number of the generation */
@@ -48,8 +46,6 @@ trait Evolution extends Termination
       terminationState: STATE,
       /** true if the termination criterium is met false otherwhise */
       terminated: Boolean) {
-    /** The current population of solution */
-    def individuals: Seq[Individual[G, P, F]] = population.toIndividuals
   }
 
   def buildRNG(seed: Long) = new Random(new RandomAdaptor(new Well44497b(seed)))
@@ -57,16 +53,16 @@ trait Evolution extends Termination
   /**
    * Run the evolutionary algorithm
    *
-   * @param individuals the initial individuals
+   * @param population the initial individuals
    * @param expression the genome expression
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def evolve(individuals: Seq[Individual[G, P, F]], a: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit aprng: Random): Iterator[EvolutionState] =
-    Iterator.iterate(EvolutionState(toPopulation(individuals, a), a, 0, initialState, false)) {
+  def evolve(population: Population[G, P, F], a: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): Iterator[EvolutionState] =
+    Iterator.iterate(EvolutionState(population, a, 0, initialState, false)) {
       s =>
-        val (newIndividuals, newArchive) = step(s.individuals, s.archive, expression, evaluation)
-        val newPop = toPopulation(newIndividuals, newArchive)
+        val (newIndividuals, newArchive) = step(s.population, s.archive, expression, evaluation)
+        val newPop = Population(newIndividuals).age
         val (stop, newState) = terminated(newPop, s.terminationState)
         EvolutionState(newPop, newArchive, s.generation + 1, newState, stop)
     }
@@ -85,22 +81,22 @@ trait Evolution extends Termination
   /**
    * Evolve one step
    *
-   * @param individuals the current population
+   * @param population the current population
    * @param archive the current archive
    * @param expression expression of the genome
    * @param evaluation the fitness evaluator
    * @return a new population of evaluated solutions
    *
    */
-  def step(individuals: Seq[Individual[G, P, F]], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): (Seq[Individual[G, P, F]], A) = {
-    val offspringGenomes = breed(individuals, archive, lambda)
+  def step(population: Population[G, P, F], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): (Population[G, P, F], A) = {
+    val offspringGenomes = breed(population, archive, lambda)
     val rngs = (0 until offspringGenomes.size).map(_ => buildRNG(rng.nextLong))
 
-    val offspring = (offspringGenomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq
-    val newArchive = self.archive(archive, individuals, offspring)
+    val offspring = Population.fromIndividuals((offspringGenomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq)
+    val newArchive = self.archive(archive, population, offspring)
 
     //Elitism strategy
-    (elitism(individuals.toList, offspring.toList, newArchive), newArchive)
+    (elitism(population, offspring.toList, newArchive), newArchive)
   }
 
 }

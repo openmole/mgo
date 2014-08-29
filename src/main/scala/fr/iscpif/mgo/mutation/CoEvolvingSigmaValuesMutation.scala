@@ -47,7 +47,7 @@ object CoEvolvingSigmaValuesMutation {
 
 trait CoEvolvingSigmaValuesMutation <: Mutation with Sigma with GA with MinimumSigma {
 
-  override def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G = {
+  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
     val (newValues, indexedSeqSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
     newValues.foreach(v => assert(!v.isNaN))
     val updatedValues = values.set(genome, newValues)

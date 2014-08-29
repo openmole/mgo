@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 09/05/2014 Guillaume Chérel
+ * Copyright (C) 2012 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,28 +15,22 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.metric
+package fr.iscpif.mgo.diversity
 
-import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.tools.KDTree
+import fr.iscpif.mgo._
+import genome.G
+import tools.Lazy
 
 /**
- * Distance to the K Nearest Neighbours using the KD-Tree algorithm
- *
+ * Layer of the cake that compute a diversity metric for a set of values
  */
-
-object KNearestNeighboursAverageDistance {
-
-  def apply(values: Seq[Seq[Double]], k: Int) = {
-    val tree = KDTree(values)
-
-    values.map {
-      v =>
-        Lazy({
-          val neighbours: Seq[Seq[Double]] = tree.knearest(k, v)
-          neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur, v) } / neighbours.size
-        }
-        )
-    }
-  }
+trait Diversity <: G with P with F {
+  /**
+   * Compute the diversity metric of the values
+   *
+   * @param values a set of values
+   * @return a diversity sequence in the diversity of the individual i at the
+   * position i
+   */
+  def diversity(values: Population[G, P, F]): Seq[Lazy[Double]]
 }

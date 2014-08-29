@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.metric
+package fr.iscpif.mgo.tools.metric
 
 import fr.iscpif.mgo.tools.Lazy
 

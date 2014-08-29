@@ -19,12 +19,11 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 import genome.G
-import fr.iscpif.mgo.modifier.MF
 
 /**
  * Layer to compute the stopping condition of the evolutionary algorithm
  */
-trait Termination extends G with P with F with MF {
+trait Termination extends G with P with F {
 
   /** Type of the state maintained to study the evolution of the algorithm */
   type STATE
@@ -32,7 +31,6 @@ trait Termination extends G with P with F with MF {
   /**
    * Compute the initial state
    *
-   * @param p the initial population
    * @return the initial state
    */
   def initialState: STATE
@@ -45,5 +43,5 @@ trait Termination extends G with P with F with MF {
    * @return a boolean which is equal to true if a terminal state has
    * been detected and the new termination state
    */
-  def terminated(population: => Population[G, P, F, MF], terminationState: STATE): (Boolean, STATE)
+  def terminated(population: Population[G, P, F], terminationState: STATE): (Boolean, STATE)
 }

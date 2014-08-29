@@ -23,5 +23,5 @@ import scala.util.Random
 
 trait BestAggregatedNicheElitism <: NicheElitism with Aggregation {
   def nicheSize: Int
-  override def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] = individuals.sortBy(i => aggregate(i.fitness)).take(nicheSize)
+  override def keep(individuals: Population[G, P, F])(implicit rng: Random): Population[G, P, F] = individuals.sortBy(i => aggregate(i.fitness)).take(nicheSize)
 }

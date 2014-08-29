@@ -24,8 +24,7 @@ trait SMSEMOEA <: Evolution
   with MG
   with BinaryTournamentSelection
   with TournamentOnRank
-  with RankModifier
-  with RankOnDiversity
+  with HypervolumeRanking
   with RankElitism
   with CoEvolvingSigmaValuesMutation
   with SBXBoundedCrossover

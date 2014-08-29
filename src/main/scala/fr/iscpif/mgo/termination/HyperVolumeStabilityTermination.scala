@@ -18,17 +18,17 @@
 package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
-import math._
-import fr.iscpif.mgo.modifier.RankMF
+import fr.iscpif.mgo.tools.metric.Hypervolume
+import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
 
 /**
  * Terminates when the hypervolume contribution of the last ranked individuals
  * in the population has been stabilized.
  */
-trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with RankMF with StabilityTermination with MG {
+trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with StabilityTermination with MG {
 
-  override def terminated(population: => Population[G, P, F, MF], terminationState: STATE): (Boolean, STATE) = {
-    val front = population.map { i => fitness(i.toIndividual) }
+  override def terminated(population: Population[G, P, F], terminationState: STATE): (Boolean, STATE) = {
+    val front = population.map { e => fitness(e.toIndividual) }
     val hv = Hypervolume(front, referencePoint)
     stability(terminationState, hv)
   }

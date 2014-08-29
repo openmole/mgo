@@ -27,7 +27,7 @@ trait NoveltyArchive <: Archive with IndividualDistanceFromArchive with ArchiveI
 
   def initialArchive(implicit rng: Random) = Seq.empty
 
-  def archive(a1: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]])(implicit rng: Random) = offspring.foldLeft(a1)((a, i) => addMaybe(a, i))
+  def archive(a1: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random) = offspring.toIndividuals.foldLeft(a1)((a, i) => addMaybe(a, i))
 
   def addMaybe(a: A, i: Individual[G, P, F]): A = {
     if (distanceOfIndividualFromArchive(i, a)() > archiveEpsilon) a :+ i

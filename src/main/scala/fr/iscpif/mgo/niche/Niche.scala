@@ -21,6 +21,5 @@ import fr.iscpif.mgo._
 
 trait Niche <: G with P with F {
   type NICHE
-
   def niche(individual: Individual[G, P, F]): NICHE
 }

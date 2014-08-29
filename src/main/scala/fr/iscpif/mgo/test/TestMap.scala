@@ -36,7 +36,7 @@ object TestMap extends App {
 
   implicit val rng = new Random
 
-  val res = m.evolve.untilConverged(s => println(s.generation)).individuals
+  val res = m.evolve.untilConverged(s => println(s.generation)).population.toIndividuals
 
   val writer = new FileWriter(new File("/tmp/matrix.csv"))
   for {

@@ -32,5 +32,4 @@ trait Map <: Evolution
   with HierarchicalRanking
   with StrictDominance
   with GeneticBreeding
-  with NoModifier
   with ClampedGenome

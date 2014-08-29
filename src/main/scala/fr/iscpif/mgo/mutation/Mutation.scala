@@ -35,5 +35,5 @@ trait Mutation <: G with P with F with A {
    * @param rng a random number geneartor
    * @return the mutated genome
    */
-  def mutate(genome: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): G
+  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G
 }

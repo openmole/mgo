@@ -17,10 +17,10 @@
 
 package fr.iscpif.mgo.elitism
 
-import fr.iscpif.mgo.Individual
+import fr.iscpif.mgo.{ A, Population, Individual }
 
 import scala.util.Random
 
 trait KeepOffspringElitism <: Elitism {
-  def elitism(oldGeneration: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = offspring
+  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random) = offspring
 }

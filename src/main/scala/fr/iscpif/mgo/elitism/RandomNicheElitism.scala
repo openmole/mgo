@@ -25,6 +25,6 @@ import scala.util.Random
 trait RandomNicheElitism <: Niche with NicheElitism {
   def nicheSize: Int = 1
 
-  def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] =
-    rng.shuffle(individuals).take(nicheSize)
+  def keep(population: Population[G, P, F])(implicit rng: Random): Population[G, P, F] =
+    rng.shuffle(population.content).take(nicheSize)
 }

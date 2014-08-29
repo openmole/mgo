@@ -22,10 +22,10 @@ import fr.iscpif.mgo._
 import scala.util.Random
 
 trait BestRankedNicheElitism <: NicheElitism with Ranking with MGFitness {
-  override def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] = {
-    val ranks = rank(individuals.map(_.fitness))
+  override def keep(population: Population[G, P, F])(implicit rng: Random): Population[G, P, F] = {
+    val ranks = rank(population).map(_())
     val topRank = ranks.min
-    val niche = (individuals zip ranks).filter { case (_, r) => r == topRank }.map { case (i, _) => i }
+    val niche = (population zip ranks).filter { case (_, r) => r == topRank }.map { case (i, _) => i }
     niche
   }
 }

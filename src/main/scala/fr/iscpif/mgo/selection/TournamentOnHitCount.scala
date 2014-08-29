@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Guillaume Chérel 04/04/14
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,16 +17,23 @@
 
 package fr.iscpif.mgo.selection
 
-import fr.iscpif.mgo._
-import util.Random
-import scala.collection.Iterator
+import fr.iscpif.mgo.archive.HitMapArchive
+import fr.iscpif.mgo.{ Population }
 
-/**
- * Select the first individuals of the population sorted by fitness. If all individuals have been used, start back with the first
- */
-trait SortedTournamentSelection extends Selection with Tournament {
-  override def selection(population: Population[G, P, F, MF])(implicit rng: Random): Iterator[Individual[G, P, F]] = {
-    val sortedIndividuals = population.content.sortWith((a, b) => tournament(a, b) == a).map(_.toIndividual)
-    Iterator.continually(sortedIndividuals.iterator).flatten
+import scala.util.Random
+
+trait TournamentOnHitCount <: Tournament with HitMapArchive {
+  override type Evaluation = Int
+
+  override def evaluate(population: Population[G, P, F], archive: A) = population.map(i => hits(archive, niche(i.toIndividual)))
+
+  override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
+    val (_, h1) = e1
+    val (_, h2) = e2
+
+    if (h1 < h2) e1
+    else if (h2 < h1) e2
+    else if (rng.nextBoolean) e1 else e2
   }
+
 }

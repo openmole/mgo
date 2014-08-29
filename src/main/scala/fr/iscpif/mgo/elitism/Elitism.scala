@@ -18,15 +18,14 @@
 package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
-import genome.G
 import scala.util.Random
-import fr.iscpif.mgo.modifier.MF
 
 /**
  * Cake layer to eliminated elements of a population
  */
-trait Elitism extends G with P with F with MF with Modifier {
+trait Elitism extends G with P with F with IndividualFilter with Archive {
+  def elitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] =
+    filter(computeElitism(oldGeneration, offspring, archive)).age
 
-  def elitism(oldGeneration: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]]
-
+  def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F]
 }

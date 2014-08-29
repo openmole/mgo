@@ -18,8 +18,6 @@
 package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
-import tools._
-import math._
 
 /**
  * Termination creterium computed from the variation of the maximum crowding distance
@@ -28,10 +26,11 @@ import math._
  * FIXME: take into account only the last ranked individual, pb it can be empty
  * due to the filter on the positive infinity diversity
  */
-trait CrowdingStabilityTermination extends Termination with CrowdingDiversity with DiversityModifier with StabilityTermination {
+trait CrowdingStabilityTermination extends Termination with FitnessCrowdingDiversity with StabilityTermination {
 
-  override def terminated(population: => Population[G, P, F, MF], terminationState: STATE): (Boolean, STATE) = {
-    val maxCrowding = population.map { e => diversity.get(e.metaFitness)() }.filter(_ != Double.PositiveInfinity).max
+  override def terminated(population: Population[G, P, F], terminationState: STATE): (Boolean, STATE) = {
+    val crowdings = diversity(population).map(_())
+    val maxCrowding = crowdings.filter(_ != Double.PositiveInfinity).max
     stability(terminationState, maxCrowding)
   }
 

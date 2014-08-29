@@ -35,5 +35,5 @@ trait Crossover <: G with P with F with A {
    *  @param archive last archive
    *  @return the result of the crossover
    */
-  def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[G]
+  def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[G]
 }

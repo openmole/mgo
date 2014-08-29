@@ -22,7 +22,6 @@ import fr.iscpif.mgo._
 trait CMAES <: Evolution
   with KeepOffspringElitism
   with GAGenomeWithRandomValue
-  with NoModifier
   with MaxAggregation
   with CMAESBreeding
   with CMAESArchive

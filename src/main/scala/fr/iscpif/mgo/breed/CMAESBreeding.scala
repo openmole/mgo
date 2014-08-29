@@ -17,16 +17,14 @@
 
 package fr.iscpif.mgo.breed
 
-import fr.iscpif.mgo.Individual
-import fr.iscpif.mgo.archive.CMAESArchive
-import fr.iscpif.mgo.genome.GA
+import fr.iscpif.mgo._
 import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import monocle.syntax._
 
 import scala.util.Random
 
 trait CMAESBreeding <: Breeding with GA with CMAESArchive {
-  def breed(individuals: Seq[Individual[G, P, F]], a: A, size: Int)(implicit rng: Random): Seq[G] = {
+  def breed(population: Population[G, P, F], a: A, size: Int)(implicit rng: Random): Seq[G] = {
     // Generate lambda offspring
     val arz = randn1(genomeSize, size)
 

@@ -17,10 +17,8 @@
 
 package fr.iscpif.mgo.archive
 
-import fr.iscpif.mgo.genome.{ RandomValue, GA, Sigma }
+import fr.iscpif.mgo._
 import fr.iscpif.mgo.mutation.MinimumSigma
-import fr.iscpif.mgo.{ Lambda, Individual }
-import fr.iscpif.mgo.fitness.Aggregation
 import org.apache.commons.math3.linear.{ EigenDecomposition, MatrixUtils, Array2DRowRealMatrix, RealMatrix }
 import org.apache.commons.math3.util.{ MathUtils, FastMath, MathArrays }
 import monocle.syntax._
@@ -131,7 +129,7 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
       iterations = 0)
   }
 
-  def archive(a: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]])(implicit rng: Random): A = {
+  override def archive(a: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): A = {
     lazy val population = offspring
 
     lazy val lambda = population.size

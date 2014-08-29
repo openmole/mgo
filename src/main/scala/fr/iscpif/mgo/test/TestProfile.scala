@@ -87,7 +87,7 @@ object TestProfile extends App {
     m.evolve.untilConverged {
       s =>
         println(s.generation)
-    }.individuals
+    }.population.toIndividuals
 
   val output = Resource.fromFile("/tmp/profile.csv")
   for {

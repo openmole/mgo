@@ -36,8 +36,8 @@ object TestNSGAII extends App {
   val res =
     m.evolve.untilConverged {
       s =>
-        println(s.generation + " " + s.individuals.map(i => m.fitness(i)).transpose.map(_.min))
-    }.individuals
+        println(s.generation + " " + s.population.toIndividuals.map(i => m.fitness(i)).transpose.map(_.min))
+    }.population.toIndividuals
 
   val output = Resource.fromFile("/tmp/res.csv")
   for {

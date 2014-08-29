@@ -17,7 +17,10 @@
 
 package fr.iscpif.mgo.selection
 
+import fr.iscpif.mgo._
+
 trait ProportionalNumberOfRound <: NumberOfRound {
   def selectionPressure = 1.0
-  override def rounds(populationSize: Int) = math.round(math.log10(populationSize) * selectionPressure).toInt
+  override def rounds(population: Population[G, P, F], archive: A) =
+    math.round(math.log10(population.size) * selectionPressure).toInt
 }

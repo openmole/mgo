@@ -19,13 +19,12 @@ package fr.iscpif.mgo.modelfamily
 
 import fr.iscpif.mgo._
 import scala.util.Random
-import fr.iscpif.mgo.elitism.{ MergedGenerations, Elitism }
 
 trait ModelFamilyElitism <: Elitism with Aggregation with NicheElitism with ModelFamilyGenome {
   type NICHE = Int
   def nicheSize: Int
 
   override def niche(individual: Individual[G, P, F]) = modelId.get(individual.genome)
-  override def keep(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Individual[G, P, F]] = individuals.sortBy(i => aggregate(i.fitness)).take(nicheSize)
+  override def keep(individuals: Population[G, P, F])(implicit rng: Random): Population[G, P, F] = individuals.sortBy(i => aggregate(i.fitness)).take(nicheSize)
 
 }

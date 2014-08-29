@@ -16,8 +16,8 @@ trait IndividualFilter extends G with F with P {
   /**
    * Filter the individuals
    *
-   * @param individuals the set of evaluated individuals
+   * @param population the set of evaluated individuals
    * @return the filtrated individuals
    */
-  def filter(individuals: Seq[Individual[G, P, F]]) = individuals
+  def filter(population: Population[G, P, F]) = population
 }

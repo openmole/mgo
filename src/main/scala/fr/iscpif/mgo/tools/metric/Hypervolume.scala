@@ -15,13 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.metric
+package fr.iscpif.mgo.tools.metric
 
 import collection.mutable.{ IndexedSeq => MIndexedSeq }
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import fr.iscpif.mgo.Dominance
 import math._
 import fr.iscpif.mgo.dominance.NonStrictDominance
+import fr.iscpif.mgo.tools._
 
 // A translation/adaptation based on the python source code by Simon Wessing :
 // http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
@@ -37,6 +39,27 @@ import fr.iscpif.mgo.dominance.NonStrictDominance
  *
  */
 object Hypervolume {
+
+  /**
+   * Compute the hypervolume contribution for each front
+   */
+  def contributions(front: Seq[Seq[Double]], referencePoint: Seq[Double]): Seq[Lazy[Double]] = {
+
+    lazy val globalHypervolume = Hypervolume(front, referencePoint)
+
+    //compute a new collection with automatic removed incremental of frontValues item by item
+    front.shadows.map {
+      case (e) => Lazy(globalHypervolume - Hypervolume(e, referencePoint))
+    }
+  }
+
+  /**
+   * Reference point for the hypervolume computation
+   */
+  trait ReferencePoint {
+    /** value of the reference point for the hypervolume computation */
+    def referencePoint: Seq[Double]
+  }
 
   /**
    * Compute the nadir of a set of points

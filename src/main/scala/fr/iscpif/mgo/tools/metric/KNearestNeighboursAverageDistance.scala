@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 09/05/2014 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,20 +15,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.tools.metric
 
-import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
+import fr.iscpif.mgo.tools.KDTree
 
 /**
- * Store raw individuals in the population
+ * Distance to the K Nearest Neighbours using the KD-Tree algorithm
+ *
  */
-trait NoModifier extends Modifier {
 
-  type MF = None.type
+object KNearestNeighboursAverageDistance {
 
-  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] =
-    new Population[G, P, F, MF] {
-      lazy val content = individuals.map { PopulationElement(_, None) }
+  def apply(values: Seq[Seq[Double]], k: Int) = {
+    val tree = KDTree(values)
+
+    values.map {
+      v =>
+        Lazy({
+          val neighbours: Seq[Seq[Double]] = tree.knearest(k, v)
+          neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur, v) } / neighbours.size
+        }
+        )
     }
-
+  }
 }

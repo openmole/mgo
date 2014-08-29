@@ -23,6 +23,6 @@ import fr.iscpif.mgo.tools._
 import scala.util.Random
 
 trait RandomSelection <: Selection {
-  override def selection(population: Population[G, P, F, MF])(implicit rng: Random): Iterator[Individual[G, P, F]] =
+  override def selection(population: Population[G, P, F], a: A)(implicit rng: Random): Iterator[Individual[G, P, F]] =
     Iterator.continually(population.toIndividuals.random)
 }

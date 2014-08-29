@@ -15,10 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.ranking
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
+import fr.iscpif.mgo.tools.metric.Hypervolume
+import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
 
-trait ModifiedFitness <: G with P with A with MG {
-  def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) = evaluated.map(i => fitness(i))
+trait HypervolumeRanking <: Ranking with MG with ReferencePoint {
+  /**
+   * Compute the rank of a set of individuals.
+   *
+   * @param values the values to rank
+   * @return the ranks of the individuals in the same order
+   */
+  override def rank(values: Population[G, P, F]): Seq[Lazy[Int]] =
+    HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => fitness(e.toIndividual)), referencePoint))
+
 }

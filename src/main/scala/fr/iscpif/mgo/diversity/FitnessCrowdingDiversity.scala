@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 Romain Reuillon
+ * Copyright (C) 2012 reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,21 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.Lazy
+import fr.iscpif.mgo.tools.metric._
 
 /**
- * Decorate the inidividual with a rank and a diversity. The rank is evaluated on
- * the fitness with an additionnal objective of genomic diversity 1 / crowding distance
- * of the genome.
+ * Crowding distance, see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
+ * A fast elitist non-dominated sorting genetic algorithm for multi-objective
+ * optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
  */
-trait IndividualDiversityModifier <: RankDiversityModifier with IndividualDistance with MG {
-
-  override def fitnesses(evaluated: Seq[Individual[G, P, F]], archive: A) =
-    (evaluated zip individualDistance(evaluated)).map {
-      case (i, gd) =>
-        fitness(i).toList ::: 1 / gd() :: Nil
-    }
-
+trait FitnessCrowdingDiversity <: Diversity with MGFitness {
+  override def diversity(values: Population[G, P, F]) = CrowdingDistance(values.map(e => fitness(e.toIndividual)))
 }

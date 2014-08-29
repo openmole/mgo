@@ -31,7 +31,7 @@ trait TimedTermination extends Termination {
 
   def initialState = System.currentTimeMillis
 
-  override def terminated(population: => Population[G, P, F, MF], begin: STATE) =
+  override def terminated(population: Population[G, P, F], begin: STATE) =
     (begin + duration <= System.currentTimeMillis, begin)
 
 }

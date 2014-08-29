@@ -22,7 +22,7 @@ import org.scalacheck.Gen
 import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 
-import fr.iscpif.mgo.metric.ClosedCrowdingDistance
+import fr.iscpif.mgo.tools.metric.ClosedCrowdingDistance
 
 object ClosedCrowdingDistanceSpecification extends Properties("ClosedCrowdingDistance") {
   property("1D 3 points not ordered") =

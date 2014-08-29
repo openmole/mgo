@@ -19,11 +19,19 @@ package fr.iscpif.mgo.selection
 
 import scala.util.Random
 import fr.iscpif.mgo._
+import tools.Lazy
 
-trait TournamentOnRank <: Tournament with RankModifier {
-  override def tournament(e1: PopulationElement[G, P, F, MF], e2: PopulationElement[G, P, F, MF])(implicit rng: Random): PopulationElement[G, P, F, MF] =
-    if (rank.get(e1.metaFitness)() < rank.get(e2.metaFitness)()) e1
-    else if (rank.get(e1.metaFitness)() > rank.get(e2.metaFitness)()) e2
-    else if (rng.nextDouble < 0.5) e1 else e2
+trait TournamentOnRank <: Tournament with Ranking {
 
+  type Evaluation = Lazy[Int]
+  override def evaluate(population: Population[G, P, F], archive: A) = rank(population)
+
+  override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
+    val (_, r1) = e1
+    val (_, r2) = e2
+
+    if (r1() < r2()) e1
+    else if (r1() > r2()) e2
+    else if (rng.nextBoolean) e1 else e2
+  }
 }

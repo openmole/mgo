@@ -28,7 +28,7 @@ trait MapSelection <: Selection
   def neighbourPressure: Int = 8
   def tournamentSize: Int = 1
 
-  def selection(population: Population[G, P, F, MF])(implicit rng: Random) = {
+  def selection(population: Population[G, P, F], a: A)(implicit rng: Random) = {
     assert(!population.isEmpty)
     val matrix = NeighborMatrix(population.toIndividuals, plot _)
 

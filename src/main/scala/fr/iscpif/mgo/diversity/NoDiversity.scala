@@ -20,6 +20,6 @@ package fr.iscpif.mgo.diversity
 import fr.iscpif.mgo._
 import tools._
 
-trait NoDiversity extends DiversityMetric {
-  def diversity(individuals: Seq[Seq[Double]]): Seq[Lazy[Double]] = individuals.map(i => Lazy(0.0))
+trait NoDiversity extends Diversity {
+  def diversity(individuals: Population[G, P, F]): Seq[Lazy[Double]] = individuals.map(i => Lazy(0.0))
 }

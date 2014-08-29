@@ -21,13 +21,15 @@ import fr.iscpif.mgo._
 import util.Random
 import tools._
 
-trait RankElitism <: Elitism with G with P with F with RankMF with Mu with MergedGenerations {
+trait RankElitism <: Elitism with G with P with F with Mu with Ranking {
 
-  override def elitism(individuals: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random): Seq[Individual[G, P, F]] =
-    if (individuals.size < mu) individuals
+  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] = {
+    val population = filter(oldGeneration ++ offspring)
+    if (population.size < mu) population
     else {
-      val population = toPopulation(rng.shuffle(individuals), archive)
-      population.sortBy(i => rank.get(i.metaFitness)).toIndividuals.take(mu)
+      val ranks = rank(population)
+      (population zip ranks).sortBy { case (_, r) => r() }.map(_._1).take(mu)
     }
+  }
 
 }

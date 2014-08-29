@@ -21,9 +21,9 @@ import fr.iscpif.mgo._
 import scala.util.Random
 
 trait OneByOne <: Selection {
-  def selection(population: Population[G, P, F, MF])(implicit aprng: Random): Iterator[Individual[G, P, F]] =
+  def selection(population: Population[G, P, F])(implicit rng: Random): Iterator[Individual[G, P, F]] =
     Iterator.continually(selectOne(population))
 
-  def selectOne(population: Population[G, P, F, MF])(implicit aprng: Random): Individual[G, P, F]
+  def selectOne(population: Population[G, P, F])(implicit rng: Random): Individual[G, P, F]
 
 }

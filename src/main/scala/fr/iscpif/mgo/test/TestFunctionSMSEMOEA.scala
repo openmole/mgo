@@ -39,11 +39,11 @@ object TestFunctionSMSEMOEA extends App {
     smsemoea.evolve.untilConverged {
       s =>
         println(s.generation + " " + s.terminationState)
-    }.individuals
+    }.population
 
   val output = Resource.fromFile("/tmp/res.csv")
   for {
-    r <- res
+    r <- res.toIndividuals
   } {
     def line = smsemoea.scale(smsemoea.values.get(r.genome)) ++ smsemoea.fitness(r)
     output.append(line.mkString(",") + "\n")

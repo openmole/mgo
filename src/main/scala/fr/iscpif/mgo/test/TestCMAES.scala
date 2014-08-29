@@ -17,30 +17,14 @@
 
 package fr.iscpif.mgo.test
 
-import fr.iscpif.mgo.Evolution
-import fr.iscpif.mgo.archive.CMAESArchive
-import fr.iscpif.mgo.breed.CMAESBreeding
-import fr.iscpif.mgo.elitism.{ BestAggregatedElitism, KeepOffspringElitism }
-import fr.iscpif.mgo.fitness.{ MGFitness, MaxAggregation }
-import fr.iscpif.mgo.genome.{ GAGenomeWithRandomValue, ClampedGenome, GAGenome }
-import fr.iscpif.mgo.modifier.NoModifier
-import fr.iscpif.mgo.problem.GAProblem
-import fr.iscpif.mgo.termination.CounterTermination
-import org.apache.commons.math3.analysis.MultivariateFunction
-import org.apache.commons.math3.linear.{ EigenDecomposition, Array2DRowRealMatrix, RealMatrix }
-import org.apache.commons.math3.optim._
-import org.apache.commons.math3.optim.nonlinear.scalar.{ GoalType, ObjectiveFunction }
-import org.apache.commons.math3.optim.nonlinear.scalar.noderiv.CMAESOptimizer
-import org.apache.commons.math3.optim.univariate.SearchInterval
-import org.apache.commons.math3.random.Well1024a
-import org.apache.commons.math3.util.{ FastMath, MathArrays }
+import fr.iscpif.mgo._
 
 import scala.util.Random
 import scalax.io
 
 object TestCMAES extends App {
 
-  val m = new Rastrigin with Evolution with KeepOffspringElitism with GAGenomeWithRandomValue with NoModifier with MaxAggregation with CMAESBreeding with CMAESArchive with CounterTermination with ClampedGenome {
+  val m = new Rastrigin with CMAES with CounterTermination {
     /** Number of steps before the algorithm stops */
     override def steps: Int = 1000
     override def genomeSize: Int = 5
@@ -56,12 +40,12 @@ object TestCMAES extends App {
   val res =
     m.evolve.untilConverged {
       s =>
-        println(s.generation + " " + s.individuals.size + " " + s.individuals.map(i => m.aggregate(m.fitness(i))).min)
-    }.individuals
+        println(s.generation + " " + s.population.size + " " + s.population.toIndividuals.map(i => m.aggregate(m.fitness(i))).min)
+    }.population
 
   val output = io.Resource.fromFile("/tmp/res.csv")
   for {
-    r <- res
+    r <- res.toIndividuals
   } {
     def line = m.scale(m.values.get(r.genome)) ++ m.fitness(r)
     output.append(line.mkString(",") + "\n")

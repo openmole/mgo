@@ -25,18 +25,20 @@ import util.Random
  * Select the best ranked and if equal the more diverse individual between
  * two individual randomly drawn in the population.
  */
-trait BinaryTournamentSelection extends Selection with OneByOne with Tournament with NumberOfRound {
+trait BinaryTournamentSelection extends Selection with Tournament with NumberOfRound {
 
-  def rounds(populationSize: Int) = 1
+  def rounds(population: Population[G, P, F], archive: A) = 1
 
-  override def selectOne(population: Population[G, P, F, MF])(implicit rng: Random): Individual[G, P, F] = {
-    def newChallenger: PopulationElement[G, P, F, MF] = population.content.random
+  override def selection(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[Individual[G, P, F]] = {
+    lazy val evaluation = population.toIndividuals zip evaluate(population, archive)
 
-    def round(champion: PopulationElement[G, P, F, MF], rounds: Int): PopulationElement[G, P, F, MF] =
+    def newChallenger = evaluation.random
+
+    def round(champion: IndividualEvaluation, rounds: Int): IndividualEvaluation =
       if (rounds <= 0) champion
       else round(tournament(champion, newChallenger), rounds - 1)
 
-    round(newChallenger, rounds(population.size)).toIndividual
+    Iterator.continually(round(newChallenger, rounds(population, archive))._1)
   }
 
 }

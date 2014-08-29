@@ -18,12 +18,11 @@
 package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.modifier.MF
 
 import scala.util.Random
 
-trait Archive extends G with P with F with MF with A {
+trait Archive extends G with P with F with A {
   type A
   def initialArchive(implicit rng: Random): A
-  def archive(a: A, oldIndividuals: Seq[Individual[G, P, F]], offspring: Seq[Individual[G, P, F]])(implicit rng: Random): A
+  def archive(a: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): A
 }

@@ -19,7 +19,7 @@ package fr.iscpif.mgo.distance
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.metric.ClosedCrowdingDistance
+import fr.iscpif.mgo.tools.metric.ClosedCrowdingDistance
 
 trait ClosedCrowdingIndividualDistance <: IndividualDistance with IndividualPosition {
 

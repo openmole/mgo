@@ -17,9 +17,10 @@
 
 package fr.iscpif.mgo.ranking
 
+import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 
 trait NoRanking <: Ranking {
-  def rank(values: Seq[Seq[Double]]): Seq[Lazy[Int]] =
+  def rank(values: Population[G, P, F]): Seq[Lazy[Int]] =
     values.map(i => Lazy(0))
 }

@@ -27,9 +27,8 @@ trait AggregatedOptimisation <: Evolution
   with BLXCrossover
   with BGAMutation
   with NoArchive
-  with elitism.CloneRemoval
+  with CloneRemoval
   with GeneticBreeding
   with MGFitness
   with ClampedGenome
   with MaxAggregation
-  with NoModifier

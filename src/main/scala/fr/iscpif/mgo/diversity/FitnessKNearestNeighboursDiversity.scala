@@ -1,8 +1,8 @@
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 09/05/14 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -15,11 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.diversity
 
-import fr.iscpif.mgo.tools.Lazy
-import monocle.SimpleLens
+import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools.metric._
 
-trait RankMF <: MF {
-  def rank: SimpleLens[MF, Lazy[Int]]
+trait FitnessKNearestNeighboursDiversity <: Diversity with MG {
+
+  def k: Int
+
+  override def diversity(values: Population[G, P, F]) = KNearestNeighboursAverageDistance(values.map(e => fitness(e.toIndividual)), k)
+
 }

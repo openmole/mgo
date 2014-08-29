@@ -21,12 +21,8 @@ import fr.iscpif.mgo.elitism.CloneRemoval
 import org.apache.commons.math3.random._
 
 package object mgo {
-  implicit def traversable2Population[G, P, F, I](seq: Traversable[PopulationElement[G, P, F, I]]) =
-    new Population[G, P, F, I] {
-      override val content = seq.toIndexedSeq
-    }
-
-  implicit def population2IndexedSeq[G, P, F, I](pop: Population[G, P, F, I]) = pop.content
+  implicit def traversable2Population[G, P, F](elements: Seq[PopulationElement[G, P, F]]) = Population(elements)
+  implicit def population2IndexedSeq[G, P, F, I](pop: Population[G, P, F]) = pop.content
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
     val factor = (boundaryMax - boundaryMin) / (max - min)
@@ -54,7 +50,7 @@ package object mgo {
   type BehaviourSearch = algorithm.BehaviourSearch
   type CMAES = algorithm.CMAES
   type Map = algorithm.Map
-  type OptimumDiversity = algorithm.OptimumDiversity
+  //type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
   type Profile = algorithm.Profile
   type SMSEMOEA = algorithm.SMSEMOEA
@@ -68,12 +64,10 @@ package object mgo {
   type Breeding = breed.Breeding
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
-  type AverageCrossOver = crossover.AverageCrossover
   type BLXCrossover = crossover.BLXCrossover
   type CrossOver = crossover.Crossover
   type IdentityCrossOver = crossover.IdentityCrossover
   type SBXBoundedCrossover = crossover.SBXBoundedCrossover
-  type UniformCrossOver = crossover.UniformCrossover
   type CrowdingIndividualDistance = distance.CrowdingIndividualDistance
   type ClosedCrowdingIndividualDistance = distance.ClosedCrowdingIndividualDistance
   type ClosedCrowdingIndividualDistanceFromArchive = distance.ClosedCrowdingIndividualDistanceFromArchive
@@ -83,11 +77,11 @@ package object mgo {
   type PhenotypeIsPosition = distance.PhenotypeIsPosition
   type IndividualDistanceFromArchive = distance.IndividualDistanceFromArchive
   type KNearestNeighboursIndividualDistance = distance.KNearestNeighboursIndividualDistance
-  type CrowdingDiversity = diversity.CrowdingDiversity
-  type ClosedCrowdingDiversity = diversity.ClosedCrowdingDiversity
-  type KNearestNeighboursDiversity = diversity.KNearestNeighboursDiversity
-  type DiversityMetric = diversity.DiversityMetric
-  type HypervolumeDiversity = diversity.HypervolumeDiversity
+  type FitnessCrowdingDiversity = diversity.FitnessCrowdingDiversity
+  type FitnessClosedCrowdingDiversity = diversity.FitnessClosedCrowdingDiversity
+  type KNearestNeighboursDiversity = diversity.FitnessKNearestNeighboursDiversity
+  type Diversity = diversity.Diversity
+  type HypervolumeDiversity = diversity.FitnessHypervolumeDiversity
   type NoDiversity = diversity.NoDiversity
   type Dominance = dominance.Dominance
   type NonStrictDominance = dominance.NonStrictDominance
@@ -125,28 +119,11 @@ package object mgo {
   type MapPlotter = map.MapPlotter
   type ProfileGenomePlotter = map.ProfileGenomePlotter
   type ProfilePlotter = map.ProfilePlotter
-  val Hypervolume = metric.Hypervolume
-  type ReferencePoint = metric.ReferencePoint
-  type DiversityMF = modifier.DiversityMF
-  type DiversityModifier = modifier.DiversityModifier
-  type HitCountModifiedFitness = modifier.HitCountModifiedFitness
-  type RankMF = modifier.RankMF
-  type RankOnDiversity = modifier.RankOnDiversity
-  type MF = modifier.MF
-  type Modifier = modifier.Modifier
-  type NoModifier = modifier.NoModifier
-  type NoveltyModifier = modifier.NoveltyModifier
-  type RankOnPhenotypeDiversity = modifier.RankOnPhenotypeDiversity
-  type ProfileModifier = modifier.ProfileModifier
-  type RankModifier = modifier.RankModifier
-  type IndividualDiversityModifier = modifier.IndividualDiversityModifier
-  type RankDiversityModifier = modifier.RankDiversityModifier
   type BGAMutation = mutation.BGAMutation
   type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
   type GaussianMutation = mutation.GaussianMutation
   type Mutation = mutation.Mutation
   type IdentityMutation = mutation.IdentityMutation
-  type RandomMutation = mutation.RandomMutation
   type GAGenotypeGridNiche = niche.GAGenotypeGridNiche
   type MapNiche = niche.MapNiche
   type Niche = niche.Niche
@@ -160,8 +137,10 @@ package object mgo {
   type NoFitness = problem.NoFitness
   type Scaling = problem.Scaling
   type HierarchicalRanking = ranking.HierarchicalRanking
+  type HypervolumeRanking = ranking.HypervolumeRanking
   type NoRanking = ranking.NoRanking
   type ParetoRanking = ranking.ParetoRanking
+  type ProfileRanking = ranking.ProfileRanking
   type Ranking = ranking.Ranking
   type BinaryTournamentSelection = selection.BinaryTournamentSelection
   type RandomSelection = selection.RandomSelection
@@ -171,8 +150,8 @@ package object mgo {
   type MapSelection = selection.MapSelection
   type ProportionalNumberOfRounds = selection.ProportionalNumberOfRound
   type Selection = selection.Selection
-  type SortedTournamentSelection = selection.SortedTournamentSelection
   type TournamentOnAggregatedFitness = selection.TournamentOnAggregatedFitness
+  type TournamentOnHitCount = selection.TournamentOnHitCount
   type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
   type CounterTermination = termination.CounterTermination
   type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination

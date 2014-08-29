@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo.selection
 
-trait NumberOfRound {
-  def rounds(populationSize: Int): Int
+import fr.iscpif.mgo._
+
+trait NumberOfRound <: G with P with F with Archive {
+  def rounds(population: Population[G, P, F], archive: A): Int
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 07/01/13 Romain Reuillon
+ * Copyright (C) 2014 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,28 +9,29 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modifier
+package fr.iscpif.mgo.ranking
 
 import fr.iscpif.mgo._
-import tools._
+import fr.iscpif.mgo.tools._
 import Math._
 
-trait ProfileModifier <: Modifier
-    with Aggregation
-    with ProfilePlotter
-    with RankModifier
-    with HierarchicalRanking {
-
-  override def modify(individuals: Seq[Individual[G, P, F]], archive: A): Population[G, P, F, MF] = {
+trait ProfileRanking <: Ranking with Aggregation with ProfilePlotter {
+  /**
+   * Compute the rank of a set of individuals.
+   *
+   * @param population the values to rank
+   * @return the ranks of the individuals in the same order
+   */
+  override def rank(population: Population[G, P, F]): Seq[Lazy[Int]] = {
     val (points, indexes) =
-      individuals.map {
-        i => (plot(i).toDouble, aggregate(i.fitness))
+      population.map {
+        i => (plot(i.toIndividual).toDouble, aggregate(i.fitness))
       }.zipWithIndex.sortBy(_._1._1).unzip
 
     def signedSurface(p1: Point2D, p2: Point2D, p3: Point2D) = {
@@ -64,11 +65,6 @@ trait ProfileModifier <: Modifier
           surfaces.map(s => s - smallest)
       }
 
-    val modified = contributions.map(c => Seq(1 / c))
-    val ranks = rank(modified)
-
-    RankModifier.toPopulationElements[G, P, F](individuals, ranks)
+    HierarchicalRanking.downRank(contributions)
   }
-
 }
-

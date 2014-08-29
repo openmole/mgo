@@ -21,12 +21,17 @@ object Population {
   /**
    * @tparam G the genome type
    * @tparam F the fitness type
-   * @tparam MF the meta-fitness type
    * @return an empty population
    */
-  def empty[G, P, F, MF]: Population[G, P, F, MF] = IndexedSeq.empty
+  def empty[G, P, F]: Population[G, P, F] = IndexedSeq.empty
 
-  def age[G, P, F, MF](p: Population[G, P, F, MF]): Population[G, P, F, MF] = p.map(PopulationElement.age)
+  def apply[G, P, F](elements: Seq[PopulationElement[G, P, F]]): Population[G, P, F] =
+    new Population[G, P, F] {
+      lazy val content = elements
+    }
+
+  def fromIndividuals[G, P, F](individuals: Seq[Individual[G, P, F]]): Population[G, P, F] = Population(individuals.map { PopulationElement(_) })
+
 }
 
 object PopulationElement {
@@ -35,16 +40,14 @@ object PopulationElement {
    *
    * @tparam G the genome type
    * @tparam F the fitness type
-   * @tparam MF the meta-fitness type
    * @param i an individual
-   * @param mf the meta-fitness of the individual in the population
    * @return a population element
    */
-  def apply[G, P, F, MF](i: Individual[G, P, F], mf: MF) =
-    new PopulationElement[G, P, F, MF](i.genome, i.phenotype, i.fitness, i.age, mf)
+  def apply[G, P, F](i: Individual[G, P, F]) =
+    new PopulationElement[G, P, F](i.genome, i.phenotype, i.fitness, i.age)
 
-  def age[G, P, F, MF](pe: PopulationElement[G, P, F, MF]) =
-    apply[G, P, F, MF](Individual.age(pe.toIndividual), pe.metaFitness)
+  def age[G, P, F](pe: PopulationElement[G, P, F]) =
+    apply[G, P, F](Individual.age(pe.toIndividual))
 
 }
 
@@ -52,12 +55,16 @@ object PopulationElement {
  * A population of solution
  *
  * @tparam G the genome type
- * @tparam MF the meta-fitness type
  */
-trait Population[+G, +P, +F, +MF] {
+trait Population[+G, +P, +F] { pop =>
 
   /** the content of the population */
-  def content: Seq[PopulationElement[G, P, F, MF]]
+  def content: Seq[PopulationElement[G, P, F]]
+
+  def age: Population[G, P, F] =
+    new Population[G, P, F] {
+      lazy val content = pop.content.map { PopulationElement.age }
+    }
 
   /** transform this population in a set of individual */
   def toIndividuals: Seq[Individual[G, P, F]] = content map { _.toIndividual }
@@ -69,19 +76,16 @@ trait Population[+G, +P, +F, +MF] {
  * An element of the population
  *
  * @tparam G the genome type
- * @tparam MF the meta-fitness type
  * @param genome the genome of the element
  * @param fitness the fitness evaluated for the genome
- * @param metaFitness the meta fitness of the element in the population
  */
-case class PopulationElement[+G, +P, +F, +MF](
+case class PopulationElement[+G, +P, +F](
     genome: G,
     phenotype: P,
     fitness: F,
-    age: Long,
-    metaFitness: MF) {
+    age: Long) {
 
   def toIndividual = Individual(genome, phenotype, fitness, age)
 
-  override def toString = s"genome = $genome, phenotype = $phenotype, fitness = $fitness, ages = $age, metaFitness = $metaFitness)"
+  override def toString = s"genome = $genome, phenotype = $phenotype, fitness = $fitness, ages = $age)"
 }

@@ -33,6 +33,6 @@ trait Profile <: Evolution
   with HierarchicalRanking
   with StrictDominance
   with GeneticBreeding
-  with ProfileModifier
+  with ProfileRanking
   with ClampedGenome
   with ProportionalNumberOfRounds

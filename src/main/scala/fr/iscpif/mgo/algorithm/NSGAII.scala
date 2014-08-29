@@ -26,11 +26,11 @@ trait NSGAII <: Evolution
   with NonDominatedElitism
   with CoEvolvingSigmaValuesMutation
   with SBXBoundedCrossover
-  with CrowdingDiversity
+  with FitnessCrowdingDiversity
   with ParetoRanking
   with StrictDominance
   with NoArchive
-  with elitism.CloneRemoval
+  with CloneRemoval
   with GeneticBreeding
   with MGFitness
   with ClampedGenome
