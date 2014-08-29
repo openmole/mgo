@@ -27,21 +27,20 @@ object TestNSGAII extends App {
 
   val m =
     new ZDT4 with NSGAII with CounterTermination {
+      def steps = 1000
       def mu = 200
       def lambda = 200
       def genomeSize = 10
-      def steps = 500
     }
 
   val res =
     m.evolve.untilConverged {
-      s =>
-        println(s.generation + " " + s.population.toIndividuals.map(i => m.fitness(i)).transpose.map(_.min))
-    }.population.toIndividuals
+      s => println(s.generation)
+    }.population
 
   val output = Resource.fromFile("/tmp/res.csv")
   for {
-    r <- res
+    r <- res.toIndividuals
   } {
     def line = m.scale(m.values.get(r.genome)) ++ m.fitness(r)
     output.append(line.mkString(",") + "\n")
