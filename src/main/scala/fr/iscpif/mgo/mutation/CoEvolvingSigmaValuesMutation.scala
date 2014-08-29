@@ -32,13 +32,12 @@ import scala.math._
  */
 object CoEvolvingSigmaValuesMutation {
 
-  def mutate(genome: Seq[Double], sigma: Seq[Double], minimumSigma: Double, rate: Double)(implicit rng: Random) = {
+  def mutate(genome: Seq[Double], sigma: Seq[Double], minimumSigma: Double)(implicit rng: Random) = {
     val indexedSeqSigma = sigma.map { s => s * exp(rng.nextGaussian) }
 
     val newValues =
       (genome zip indexedSeqSigma) map {
-        case (v, s) =>
-          if (rng.nextDouble < rate) rng.nextGaussian * s + v else v
+        case (v, s) => rng.nextGaussian * s + v
       }
 
     (newValues, indexedSeqSigma)
