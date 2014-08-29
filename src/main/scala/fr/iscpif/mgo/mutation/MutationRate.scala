@@ -17,8 +17,6 @@
 
 package fr.iscpif.mgo.mutation
 
-import fr.iscpif.mgo._
-
 trait MutationRate <: Mutation {
   def mutationRate: Double = 0.5
 }

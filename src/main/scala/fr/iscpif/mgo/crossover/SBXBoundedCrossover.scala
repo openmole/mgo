@@ -37,72 +37,45 @@ import util.Random
  * Notes : Deb implementation differs from NSGA2 he proposed on this site :
  * http://www.iitk.ac.in/kangal/codes.shtml
  *
- * Implementation based on http://www.moeaframework.org/
+ * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
  *
  */
 object SBXBoundedCrossover {
 
-  def elementCrossOver(x0i: Double, x1i: Double, distributionIndex: Double)(implicit rng: Random): (Double, Double) = {
-    val lb = 0.0
-    val ub = 1.0
-    val x0 = clamp(x0i, lb, ub)
-    val x1 = clamp(x1i, lb, ub)
+  def crossOver(g1: Seq[Double], g2: Seq[Double], distributionIndex: Double)(implicit rng: Random): (Seq[Double], Seq[Double]) = {
 
-    val dx = Math.abs(x1 - x0)
-    if (dx > epsilon) {
-      var bl: Double = 0.0
-      var bu: Double = 0.0
+    def exponent = 1.0 / (distributionIndex + 1.0)
 
-      if (x0 < x1) {
-        bl = 1 + 2 * (x0 - lb) / dx
-        bu = 1 + 2 * (ub - x1) / dx
-      } else {
-        bl = 1 + 2 * (x1 - lb) / dx
-        bu = 1 + 2 * (ub - x0) / dx
-      }
+    lazy val bq =
+      if (rng.nextBoolean) math.pow(2.0 * rng.nextDouble, exponent)
+      else math.pow(1.0 / (2.0 * (1.0 - rng.nextDouble)), exponent)
 
-      //use symmetric distributions
-      if (bl < bu) {
-        bu = bl
-      } else {
-        bl = bu
-      }
+    def elementCrossOver(x0i: Double, x1i: Double)(implicit rng: Random): (Double, Double) = {
+      val lb = 0.0
+      val ub = 1.0
+      val x0 = clamp(x0i, lb, ub)
+      val x1 = clamp(x1i, lb, ub)
 
-      val p_bl = 1 - 1 / (2 * Math.pow(bl, distributionIndex + 1))
-      val p_bu = 1 - 1 / (2 * Math.pow(bu, distributionIndex + 1))
-      val u = rng.nextDouble
-      val u0 = u * p_bl
-      val u1 = u * p_bu
+      val dx = Math.abs(x1 - x0)
+      if (dx > epsilon) {
+        val newX0 = 0.5 * ((1.0 + bq) * x0 + (1.0 - bq) * x1)
+        val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
+        (newX0, newX1)
+      } else (x0, x1)
+    }
 
-      val b0 =
-        if (u0 <= 0.5) Math.pow(2 * u0, 1 / (distributionIndex + 1))
-        else Math.pow(0.5 / (1 - u0), 1 / (distributionIndex + 1))
-
-      val b1 =
-        if (u1 <= 0.5) Math.pow(2 * u1, 1 / (distributionIndex + 1))
-        else Math.pow(0.5 / (1 - u1), 1 / (distributionIndex + 1))
-
-      val res =
-        if (x0 < x1) (0.5 * (x0 + x1 + b0 * (x0 - x1)), 0.5 * (x0 + x1 + b1 * (x1 - x0)))
-        else (0.5 * (x0 + x1 + b1 * (x0 - x1)), 0.5 * (x0 + x1 + b0 * (x1 - x0)))
-
-      if (rng.nextBoolean) res else res.swap
-    } else (x0, x1)
-  }
-
-  def crossOver(g1: Seq[Double], g2: Seq[Double], crossoverRate: Double, distributionIndex: Double)(implicit rng: Random): (Seq[Double], Seq[Double]) =
-    /** crossover probability */
     (g1 zip g2).map {
-      case (g1e, g2e) =>
-        if (rng.nextDouble <= crossoverRate) elementCrossOver(g1e, g2e, distributionIndex) else (g1e, g2e)
+      case (g1e, g2e) => elementCrossOver(g1e, g2e)
     }.unzip
+
+  }
 
 }
 
-trait SBXBoundedCrossover extends Crossover with GA with CrossoverRate {
+trait SBXBoundedCrossover extends Crossover with GA {
 
   /** distribution index parameter of the algorithm */
-  def distributionIndex: Double = 2
+  def distributionIndex: Double = 1.0
 
   override def crossover(g1: G, g2: G, population: Seq[Individual[G, P, F]], archive: A)(implicit rng: Random) = {
     val (o1, o2) = sbxCrossover(g1, g2)
@@ -110,7 +83,7 @@ trait SBXBoundedCrossover extends Crossover with GA with CrossoverRate {
   }
 
   def sbxCrossover(g1: G, g2: G)(implicit rng: Random) = {
-    val (o1, o2) = SBXBoundedCrossover.crossOver(fullGenome.get(g1), fullGenome.get(g2), crossoverRate, distributionIndex)
+    val (o1, o2) = SBXBoundedCrossover.crossOver(fullGenome.get(g1), fullGenome.get(g2), distributionIndex)
     assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
     (fullGenome.set(g1, o1), fullGenome.set(g2, o2))
   }
