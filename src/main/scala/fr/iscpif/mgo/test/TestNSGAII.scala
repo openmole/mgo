@@ -23,7 +23,6 @@ import scalax.io.Resource
 
 object TestNSGAII extends App {
 
-
   val m =
     new ZDT4 with NSGAII with CounterTermination {
       def steps = 1000
@@ -31,7 +30,6 @@ object TestNSGAII extends App {
       def lambda = 200
       def genomeSize = 10
     }
-
 
   implicit val rng = newRNG(42)
 

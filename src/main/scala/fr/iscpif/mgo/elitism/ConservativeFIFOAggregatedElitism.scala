@@ -35,9 +35,8 @@ trait ConservativeFIFOAggregatedElitism <: Elitism with Aggregation with Mu {
       else oldGeneration.updated(oldestIndex, candidate)
     }
 
-  override def elitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] =
-    filter(
-      if (oldGeneration.size < mu) oldGeneration ++ offspring
-      else offspring.foldLeft(oldGeneration)(conservativeFIFO)
-    ).age
+  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] =
+    if (oldGeneration.size < mu) oldGeneration ++ offspring
+    else offspring.foldLeft(oldGeneration)(conservativeFIFO)
+
 }

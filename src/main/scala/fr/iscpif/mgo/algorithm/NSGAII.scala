@@ -28,7 +28,7 @@ trait NSGAII <: Evolution
   with SBXBoundedCrossover
   with FitnessCrowdingDiversity
   with ParetoRanking
-  with StrictDominance
+  with NonStrictDominance
   with NoArchive
   with CloneRemoval
   with GeneticBreeding
