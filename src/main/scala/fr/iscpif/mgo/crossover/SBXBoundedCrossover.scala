@@ -46,11 +46,11 @@ object SBXBoundedCrossover {
 
     def exponent = 1.0 / (distributionIndex + 1.0)
 
-    lazy val bq =
-      if (rng.nextBoolean) math.pow(2.0 * rng.nextDouble, exponent)
-      else math.pow(1.0 / (2.0 * (1.0 - rng.nextDouble)), exponent)
-
     def elementCrossOver(x0i: Double, x1i: Double)(implicit rng: Random): (Double, Double) = {
+      val bq =
+        if (rng.nextBoolean) math.pow(2.0 * rng.nextDouble, exponent)
+        else math.pow(1.0 / (2.0 * (1.0 - rng.nextDouble)), exponent)
+      
       val lb = 0.0
       val ub = 1.0
       val x0 = clamp(x0i, lb, ub)
