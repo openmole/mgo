@@ -119,8 +119,8 @@ package object mgo {
   type MapPlotter = map.MapPlotter
   type ProfileGenomePlotter = map.ProfileGenomePlotter
   type ProfilePlotter = map.ProfilePlotter
-  type BGAMutation = mutation.BGAMutation
   type AdaptiveCauchyMutation = mutation.AdaptiveCauchyMutation
+  type BGAMutation = mutation.BGAMutation
   type GaussianMutation = mutation.GaussianMutation
   type Mutation = mutation.Mutation
   type IdentityMutation = mutation.IdentityMutation

@@ -28,7 +28,7 @@ trait BehaviourSearch <: NoFitness
   with HierarchicalRanking
   with RandomNicheElitism
   with CounterTermination
-  with CoEvolvingSigmaValuesMutation
+  with AdaptiveCauchyMutation
   with GAGenomeWithSigma
   with ClampedGenome
   with ProportionalNumberOfRounds

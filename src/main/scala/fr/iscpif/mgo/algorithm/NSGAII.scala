@@ -24,8 +24,8 @@ trait NSGAII <: Evolution
   with BinaryTournamentSelection
   with TournamentOnRankAndDiversity
   with NonDominatedElitism
-  with CoEvolvingSigmaValuesMutation
-  with SBXBoundedCrossover
+  with AdaptiveCauchyMutation
+  with SBXCrossover
   with FitnessCrowdingDiversity
   with ParetoRanking
   with NonStrictDominance

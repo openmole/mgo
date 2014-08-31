@@ -26,8 +26,8 @@ trait SMSEMOEA <: Evolution
   with TournamentOnRank
   with HypervolumeRanking
   with RankElitism
-  with CoEvolvingSigmaValuesMutation
-  with SBXBoundedCrossover
+  with AdaptiveCauchyMutation
+  with SBXCrossover
   with HypervolumeDiversity
   with NoArchive
   with GeneticBreeding

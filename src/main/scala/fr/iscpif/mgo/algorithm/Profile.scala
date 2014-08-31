@@ -24,10 +24,10 @@ trait Profile <: Evolution
   with NoArchive
   with GAGenomeWithSigma
   with MaxAggregation
-  with SBXBoundedCrossover
+  with SBXCrossover
   with BestAggregatedNicheElitism
   with ProfileNiche
-  with CoEvolvingSigmaValuesMutation
+  with AdaptiveCauchyMutation
   with BinaryTournamentSelection
   with TournamentOnRank
   with HierarchicalRanking

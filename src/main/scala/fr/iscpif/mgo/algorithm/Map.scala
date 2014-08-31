@@ -25,10 +25,10 @@ trait Map <: Evolution
   with MapSelection
   with GAGenomeWithSigma
   with MaxAggregation
-  with SBXBoundedCrossover
+  with SBXCrossover
   with BestAggregatedNicheElitism
   with MapNiche
-  with CoEvolvingSigmaValuesMutation
+  with AdaptiveCauchyMutation
   with HierarchicalRanking
   with StrictDominance
   with GeneticBreeding
