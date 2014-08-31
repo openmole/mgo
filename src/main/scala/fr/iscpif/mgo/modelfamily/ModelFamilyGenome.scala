@@ -36,17 +36,6 @@ trait ModelFamilyGenome <: ModelId with Sigma with GA with RandomGenome {
   def modelId = mkLens[G, Int]("modelId")
 
   def rawValues = mkLens[G, Seq[Double]]("values")
-
-  def fullGenome = SimpleLens[G, Seq[Double]](
-    v => v.values ++ v.sigma,
-    (c, v) =>
-      ModelFamilyGenome.Genome(
-        c.modelId,
-        v.slice(0, v.size / 2),
-        v.slice(v.size / 2, v.size)
-      )
-  )
-
   def sigma = mkLens[G, Seq[Double]]("sigma")
 
   def randomGenome(implicit rng: Random) = {
