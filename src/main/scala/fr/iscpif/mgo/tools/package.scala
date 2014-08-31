@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo
 
+import org.apache.commons.math3.random.RandomGenerator
+
 import scala.util.Random
 
 package object tools {
@@ -67,6 +69,22 @@ package object tools {
   def rndmChoice[T](t1: T, t2: T)(implicit rng: Random): T = {
     if (rng.nextDouble < 0.5) t1 else t2
   }
+
+  implicit class ScalaToApacheRng(rng: Random) extends RandomGenerator {
+    override def setSeed(i: Int): Unit = rng.setSeed(i)
+    override def setSeed(ints: Array[Int]): Unit = ???
+    override def setSeed(l: Long): Unit = rng.setSeed(l)
+
+    override def nextBoolean(): Boolean = rng.nextBoolean
+    override def nextBytes(bytes: Array[Byte]): Unit = rng.nextBytes(bytes)
+    override def nextDouble(): Double = rng.nextDouble()
+    override def nextLong(): Long = rng.nextLong()
+    override def nextFloat(): Float = rng.nextFloat()
+    override def nextGaussian(): Double = rng.nextGaussian()
+    override def nextInt(): Int = rng.nextInt()
+    override def nextInt(i: Int): Int = rng.nextInt(i)
+  }
+
   //implicit def lazyOrdering[T](implicit ord: Ordering[T]) = tools.Lazy.lazyOrdering(ord)
 
   /*implicit class OptionDecorator[A](option: Option[A]) {

@@ -67,7 +67,7 @@ package object mgo {
   type BLXCrossover = crossover.BLXCrossover
   type CrossOver = crossover.Crossover
   type IdentityCrossOver = crossover.IdentityCrossover
-  type SBXBoundedCrossover = crossover.SBXBoundedCrossover
+  type SBXBoundedCrossover = crossover.SBXCrossover
   type CrowdingIndividualDistance = distance.CrowdingIndividualDistance
   type ClosedCrowdingIndividualDistance = distance.ClosedCrowdingIndividualDistance
   type ClosedCrowdingIndividualDistanceFromArchive = distance.ClosedCrowdingIndividualDistanceFromArchive
@@ -120,7 +120,7 @@ package object mgo {
   type ProfileGenomePlotter = map.ProfileGenomePlotter
   type ProfilePlotter = map.ProfilePlotter
   type BGAMutation = mutation.BGAMutation
-  type CoEvolvingSigmaValuesMutation = mutation.CoEvolvingSigmaValuesMutation
+  type CoEvolvingSigmaValuesMutation = mutation.AdaptiveCauchyMutation
   type GaussianMutation = mutation.GaussianMutation
   type Mutation = mutation.Mutation
   type IdentityMutation = mutation.IdentityMutation

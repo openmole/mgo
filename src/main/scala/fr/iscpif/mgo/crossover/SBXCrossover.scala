@@ -40,28 +40,26 @@ import util.Random
  * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
  *
  */
-object SBXBoundedCrossover {
+object SBXCrossover {
 
   def crossOver(g1: Seq[Double], g2: Seq[Double], distributionIndex: Double)(implicit rng: Random): (Seq[Double], Seq[Double]) = {
 
-    def exponent = 1.0 / (distributionIndex + 1.0)
+    val exponent = 1.0 / (distributionIndex + 1.0)
 
     def elementCrossOver(x0i: Double, x1i: Double)(implicit rng: Random): (Double, Double) = {
+      val u = rng.nextDouble
+
       val bq =
-        if (rng.nextBoolean) math.pow(2.0 * rng.nextDouble, exponent)
-        else math.pow(1.0 / (2.0 * (1.0 - rng.nextDouble)), exponent)
-      
+        if (u <= 0.5) math.pow(2 * u, exponent)
+        else math.pow(1.0 / (2.0 * (1.0 - u)), exponent)
+
       val lb = 0.0
       val ub = 1.0
       val x0 = clamp(x0i, lb, ub)
       val x1 = clamp(x1i, lb, ub)
-
-      val dx = Math.abs(x1 - x0)
-      if (dx > epsilon) {
-        val newX0 = 0.5 * ((1.0 + bq) * x0 + (1.0 - bq) * x1)
-        val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
-        (newX0, newX1)
-      } else (x0, x1)
+      val newX0 = 0.5 * ((1.0 + bq) * x0 + (1.0 - bq) * x1)
+      val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
+      (newX0, newX1)
     }
 
     (g1 zip g2).map {
@@ -72,7 +70,7 @@ object SBXBoundedCrossover {
 
 }
 
-trait SBXBoundedCrossover extends Crossover with GA {
+trait SBXCrossover extends Crossover with GA {
 
   /** distribution index parameter of the algorithm */
   def distributionIndex: Double = 1.0
@@ -83,9 +81,9 @@ trait SBXBoundedCrossover extends Crossover with GA {
   }
 
   def sbxCrossover(g1: G, g2: G)(implicit rng: Random) = {
-    val (o1, o2) = SBXBoundedCrossover.crossOver(fullGenome.get(g1), fullGenome.get(g2), distributionIndex)
+    val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)
     assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-    (fullGenome.set(g1, o1), fullGenome.set(g2, o2))
+    (values.set(g1, o1), values.set(g2, o2))
   }
 
 }

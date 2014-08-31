@@ -18,6 +18,8 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
+import tools._
+import org.apache.commons.math3.distribution.CauchyDistribution
 import util.Random
 import scala.math._
 
@@ -30,14 +32,14 @@ import scala.math._
  * Hinterding, and Zbigniew Michalewicz, Senior Member, IEEE) + How to Solve It,
  * Modern Heuristics
  */
-object CoEvolvingSigmaValuesMutation {
+object AdaptiveCauchyMutation {
 
   def mutate(genome: Seq[Double], sigma: Seq[Double], minimumSigma: Double)(implicit rng: Random) = {
-    val indexedSeqSigma = sigma.map { s => s * exp(rng.nextGaussian) }
+    val indexedSeqSigma = sigma.map { s => math.max(minimumSigma, s * exp(rng.nextGaussian)) }
 
     val newValues =
       (genome zip indexedSeqSigma) map {
-        case (v, s) => rng.nextGaussian * s + v
+        case (v, s) => new CauchyDistribution(rng, v, s).sample //.nextGaussian * s + v
       }
 
     (newValues, indexedSeqSigma)
@@ -45,10 +47,10 @@ object CoEvolvingSigmaValuesMutation {
 
 }
 
-trait CoEvolvingSigmaValuesMutation <: Mutation with Sigma with GA with MinimumSigma {
+trait AdaptiveCauchyMutation <: Mutation with Sigma with GA with MinimumSigma {
 
   override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val (newValues, indexedSeqSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
+    val (newValues, indexedSeqSigma) = AdaptiveCauchyMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
     newValues.foreach(v => assert(!v.isNaN))
     val updatedValues = values.set(genome, newValues)
     sigma.set(updatedValues, indexedSeqSigma)

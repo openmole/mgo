@@ -30,9 +30,9 @@ trait GaussianMutation extends Mutation with GA {
   def sigma: Double
 
   override def mutate(g: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val newValues = fullGenome.get(g) map {
+    val newValues = values.get(g) map {
       _ + (rng.nextGaussian * sigma)
     }
-    fullGenome.set(g, newValues)
+    values.set(g, newValues)
   }
 }

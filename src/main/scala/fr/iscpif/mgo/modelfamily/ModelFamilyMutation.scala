@@ -17,17 +17,17 @@
 
 package fr.iscpif.mgo.modelfamily
 
-import fr.iscpif.mgo.mutation.CoEvolvingSigmaValuesMutation
+import fr.iscpif.mgo.mutation.AdaptiveCauchyMutation
 import scala.util.Random
 import fr.iscpif.mgo._
 import tools.Math._
 
-trait ModelFamilyMutation <: CoEvolvingSigmaValuesMutation with ModelFamilyGenome with Aggregation {
+trait ModelFamilyMutation <: AdaptiveCauchyMutation with ModelFamilyGenome with Aggregation {
 
   def changeNiche = 0.1
 
   override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val (newValues, newSigma) = CoEvolvingSigmaValuesMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
+    val (newValues, newSigma) = AdaptiveCauchyMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
     val res = sigma.set(values.set(genome, newValues), newSigma)
     if (rng.nextDouble < changeNiche) modelId.set(res, rng.nextInt(models)) else res
   }
