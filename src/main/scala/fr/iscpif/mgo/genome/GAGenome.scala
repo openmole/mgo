@@ -32,7 +32,5 @@ trait GAGenome extends GA {
   type G = GAGenome.Genome
 
   def rawValues = mkLens[G, Seq[Double]]("values")
-  def fullGenome = values
-
   def randomGenome(implicit rng: Random) = GAGenome.Genome(Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq)
 }

@@ -34,7 +34,7 @@ trait ParetoRanking extends Ranking with Dominance with MG {
           values.zipWithIndex.filter {
             case (_, index2) => index1 != index2
           }.count {
-            case (v2, _) => isDominated(fitness(v1.toIndividual), fitness(v2.toIndividual))
+            case (v2, _) => isDominated(v1.fitness, v2.fitness)
           }
         )
     }

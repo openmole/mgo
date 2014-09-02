@@ -75,15 +75,12 @@ trait SBXCrossover extends Crossover with GA {
   /** distribution index parameter of the algorithm */
   def distributionIndex: Double = 1.0
 
-  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = {
-    val (o1, o2) = sbxCrossover(g1, g2)
-    Seq(o1, o2)
-  }
+  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = sbxCrossover(g1, g2)
 
   def sbxCrossover(g1: G, g2: G)(implicit rng: Random) = {
     val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)
     assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-    (values.set(g1, o1), values.set(g2, o2))
+    Seq(values.set(g1, o1), values.set(g2, o2))
   }
 
 }

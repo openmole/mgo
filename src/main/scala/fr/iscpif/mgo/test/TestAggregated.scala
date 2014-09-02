@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import tools.Math._
 
 import scala.util.Random
 import scalax.io.Resource
@@ -27,17 +28,25 @@ object TestAggregated extends App {
   implicit val rng = new Random
 
   val m =
-    new Rastrigin with AggregatedOptimisation with CounterTermination {
+    new Rastrigin with AggregatedOptimisation {
       def mu = 200
       def lambda = 1
-      def genomeSize = 10
+      def genomeSize = 5
       def steps = 100000
+
+      override type STATE = None.type
+      override def terminated(population: Population[G, P, F], terminationState: STATE): (Boolean, STATE) = {
+        (population.map(i => aggregate(i.fitness)).min < 10, None)
+      }
+
+      override def initialState: STATE = None
     }
 
-  val res =
+  println(average((0 until 100).par.map(i => m.evolve.untilConverged { i => println(i.generation) }.generation.toDouble).seq))
+
+  /*val res =
     m.evolve.untilConverged {
       s =>
-        assert(!s.population.exists(i => m.fullGenome.get(i.genome).exists(_.isNaN)))
         println(s.generation + " " + s.population.map(i => m.aggregate(i.fitness)).min)
     }.population.toIndividuals
 
@@ -47,6 +56,6 @@ object TestAggregated extends App {
   } {
     def line = m.scale(m.values.get(r.genome)) ++ m.fitness(r)
     output.append(line.mkString(",") + "\n")
-  }
+  }*/
 
 }

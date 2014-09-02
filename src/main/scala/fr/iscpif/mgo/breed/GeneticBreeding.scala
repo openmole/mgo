@@ -24,7 +24,7 @@ import fr.iscpif.mgo.genome.RandomGenome
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait GeneticBreeding <: Breeding with G with F with P with Selection with CrossOver with Mutation with RandomGenome {
+trait GeneticBreeding <: Breeding with G with F with P with Selection with Crossover with Mutation with RandomGenome {
 
   def cloneProbability: Double = 0.0
 
@@ -36,12 +36,12 @@ trait GeneticBreeding <: Breeding with G with F with P with Selection with Cross
    * @return the breeded genomes
    */
   def breed(population: Population[G, P, F], a: A, size: Int)(implicit rng: Random): Seq[G] = {
-    val breeded =
+    val breeded: Iterator[G] =
       if (population.isEmpty) Iterator.continually(randomGenome)
       else
         for {
           Seq(i1, i2) <- selection(population, a).grouped(2)
-          breed <- crossover(i1.genome, i2.genome, population, a).map { mutate(_, population, a) }
+          breed <- breed(i1, i2, population, a)
         } yield breed
 
     Iterator.continually {
@@ -49,5 +49,8 @@ trait GeneticBreeding <: Breeding with G with F with P with Selection with Cross
       else selection(population, a).next().genome
     }.take(size).toIndexedSeq
   }
+
+  def breed(i1: Individual[G, P, F], i2: Individual[G, P, F], population: Population[G, P, F], a: A)(implicit rng: Random) =
+    crossover(i1.genome, i2.genome, population, a).map { mutate(_, population, a) }
 
 }

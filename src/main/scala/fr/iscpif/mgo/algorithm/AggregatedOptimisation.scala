@@ -21,11 +21,11 @@ import fr.iscpif.mgo._
 
 trait AggregatedOptimisation <: Evolution
   with GAGenome
+  with BGAMutation
+  with SBXCrossover
   with BinaryTournamentSelection
   with TournamentOnAggregatedFitness
   with BestAggregatedElitism
-  with BLXCrossover
-  with BGAMutation
   with NoArchive
   with CloneRemoval
   with GeneticBreeding

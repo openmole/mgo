@@ -16,8 +16,6 @@
  */
 
 package fr.iscpif
-
-import fr.iscpif.mgo.elitism.CloneRemoval
 import org.apache.commons.math3.random._
 
 package object mgo {
@@ -65,7 +63,7 @@ package object mgo {
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
   type BLXCrossover = crossover.BLXCrossover
-  type CrossOver = crossover.Crossover
+  type Crossover = crossover.Crossover
   type IdentityCrossOver = crossover.IdentityCrossover
   type SBXCrossover = crossover.SBXCrossover
   type CrowdingIndividualDistance = distance.CrowdingIndividualDistance

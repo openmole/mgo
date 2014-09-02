@@ -25,5 +25,5 @@ import util.Random
  * No modification to the genomes
  */
 trait IdentityCrossover extends Crossover {
-  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = IndexedSeq(g1, g2)
+  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = Seq(g1, g2)
 }

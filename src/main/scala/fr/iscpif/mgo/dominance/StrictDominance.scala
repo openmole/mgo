@@ -22,9 +22,9 @@ import fr.iscpif.mgo._
 /**
  * A point dominates another if all its objective are better
  */
-trait StrictDominance extends Dominance {
+trait StrictDominance <: Dominance with MG {
 
-  override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
-    (p1 zip p2).forall { case (g1, g2) => g2 < g1 }
+  override def isDominated(p1: F, p2: F): Boolean =
+    (fitness(p1) zip fitness(p2)).forall { case (g1, g2) => g2 < g1 }
 
 }

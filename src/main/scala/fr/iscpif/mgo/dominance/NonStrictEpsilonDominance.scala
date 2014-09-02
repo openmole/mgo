@@ -25,10 +25,10 @@ import fr.iscpif.mgo._
  * J.M. Luque,   "Pareto-adaptive epsilon-dominance",
  *  presented at Evolutionary Computation, 2007, pp.493-517.
  */
-trait NonStrictEpsilonDominance extends EpsilonDominance {
+trait NonStrictEpsilonDominance <: EpsilonDominance {
 
-  override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
-    !(p1.iterator zip p2.iterator zip infiniteEpsilons).exists {
+  override def isDominated(p1: F, p2: F): Boolean =
+    !(fitness(p1).iterator zip fitness(p2).iterator zip infiniteEpsilons).exists {
       case (((g1, g2), e)) => g2 > e + g1
     }
 

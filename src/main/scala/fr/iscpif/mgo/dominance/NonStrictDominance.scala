@@ -19,12 +19,17 @@ package fr.iscpif.mgo.dominance
 
 import fr.iscpif.mgo._
 
+object NonStrictDominance {
+  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
+    !(p1 zip p2).exists { case (g1, g2) => g1 < g2 }
+}
+
 /**
  * A point dominates another if it is not better on any objective
  */
-trait NonStrictDominance extends Dominance {
+trait NonStrictDominance <: Dominance with MG {
 
-  override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
-    !(p1 zip p2).exists { case (g1, g2) => g1 < g2 }
+  override def isDominated(p1: F, p2: F): Boolean =
+    !(fitness(p1) zip fitness(p2)).exists { case (g1, g2) => g1 < g2 }
 
 }

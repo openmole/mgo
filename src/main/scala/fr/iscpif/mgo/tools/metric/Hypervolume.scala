@@ -86,10 +86,8 @@ object Hypervolume {
    * @return the hypervolume
    */
   def apply(front: Seq[Seq[Double]], referencePoint: Seq[Double]): Double = {
-    val d = new NonStrictDominance {}
-
     def dominates(point: Seq[Double], other: Seq[Double]): Boolean =
-      d.isDominated(other, point)
+      NonStrictDominance.isDominated(other, point)
 
     val dimensions = referencePoint.size
 
