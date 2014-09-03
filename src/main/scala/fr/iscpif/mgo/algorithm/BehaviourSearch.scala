@@ -23,12 +23,10 @@ trait BehaviourSearch <: NoFitness
   with HitMapArchive
   with GeneticBreeding
   with BinaryTournamentSelection
-  with IdentityCrossOver
+  with dynamic.DynamicApplicationGA
   with TournamentOnHitCount
   with HierarchicalRanking
   with RandomNicheElitism
   with CounterTermination
-  with AdaptiveCauchyMutation
-  with GAGenomeWithSigma
   with ClampedGenome
   with ProportionalNumberOfRounds
