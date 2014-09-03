@@ -17,11 +17,10 @@
 
 package fr.iscpif.mgo.genome
 
-import scala.util.Random
-
 /**
  * Cake layer for the genome
  */
 trait G {
   type G
+  def genomesEqualOn(g: G): Any = g
 }

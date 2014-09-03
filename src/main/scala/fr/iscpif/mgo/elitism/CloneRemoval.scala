@@ -13,5 +13,5 @@ import fr.iscpif.mgo.genome.G
  */
 trait CloneRemoval extends IndividualFilter with G with P with F {
   override def filter(population: Population[G, P, F]) =
-    population.groupBy(_.genome).values.map { _.sortBy(_.age).head }.toIndexedSeq
+    population.groupBy(i => genomesEqualOn(i.genome)).values.map { _.sortBy(_.age).head }.toIndexedSeq
 }

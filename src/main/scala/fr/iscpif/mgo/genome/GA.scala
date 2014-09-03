@@ -33,4 +33,6 @@ trait GA extends G with RandomGenome with GenomeClamping {
   def genomeSize: Int
 
   def randomGenome(implicit rng: Random): G
+
+  override def genomesEqualOn(g: G): Any = values.get(g)
 }

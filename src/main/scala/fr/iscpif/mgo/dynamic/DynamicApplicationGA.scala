@@ -66,16 +66,15 @@ trait DynamicApplicationGA <: Crossover with Mutation with DynamicApplicationGAG
   def mutations: Seq[CandidateMutation] = IndexedSeq(bga, adaptiveCauchy, bigbga)
 
   private def select(workingStats: SMap[Int, Double], size: Int)(implicit rng: Random) = {
-    lazy val unselected = (0 until size).filterNot(workingStats.contains)
-
+    lazy val all = (0 until size)
     def roulette(weights: List[(Int, Double)], selected: Double): Int =
       weights match {
-        case Nil => unselected.random
+        case Nil => all.random
         case (i, p) :: t =>
           if (selected <= p) i
           else roulette(t, selected - p)
       }
-    if (rng.nextDouble < operatorExploration && !unselected.isEmpty) unselected.random
+    if (rng.nextDouble < operatorExploration) all.random
     else roulette(workingStats.toList, rng.nextDouble)
   }
 
