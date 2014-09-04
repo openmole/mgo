@@ -78,22 +78,22 @@ trait DynamicApplicationGA <: Crossover with Mutation with DynamicApplicationGAG
     else roulette(workingStats.toList, rng.nextDouble)
   }
 
-  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = {
-    def crossoverStats(p: Population[G, P, F]) = {
-      val working = p.flatMap(_.genome |-> crossover get)
-      working.groupBy(identity).mapValues(_.size.toDouble / working.size)
-    }
+  def crossoverStats(p: Population[G, P, F]): SMap[Int, Double] = {
+    val working = p.flatMap(_.genome |-> crossover get)
+    working.groupBy(identity).mapValues(_.size.toDouble / working.size)
+  }
 
+  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = {
     val i = select(crossoverStats(population), crossovers.size)
     crossovers(i).crossover(g1, g2, population, archive).map(g => g |-> crossover set Some(i))
   }
 
-  override def mutate(g: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    def mutationStats(p: Population[G, P, F]) = {
-      val working = p.flatMap(_.genome |-> mutation get)
-      working.groupBy(identity).mapValues(_.size.toDouble / working.size)
-    }
+  def mutationStats(p: Population[G, P, F]): SMap[Int, Double] = {
+    val working = p.flatMap(_.genome |-> mutation get)
+    working.groupBy(identity).mapValues(_.size.toDouble / working.size)
+  }
 
+  override def mutate(g: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
     val i = select(mutationStats(population), mutations.size)
     mutations(i).mutate(g, population, archive) |-> mutation set Some(i)
   }

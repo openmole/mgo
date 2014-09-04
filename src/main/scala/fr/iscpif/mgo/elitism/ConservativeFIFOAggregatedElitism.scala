@@ -26,10 +26,9 @@ trait ConservativeFIFOAggregatedElitism <: Elitism with Aggregation with Mu {
   def conservativeFIFO(oldGeneration: Population[G, P, F], candidate: PopulationElement[G, P, F])(implicit rng: Random): Population[G, P, F] =
     if (oldGeneration.size < 2) oldGeneration ++ Seq(candidate)
     else {
-      val (oldest, oldestIndex) =
-        oldGeneration.zipWithIndex.groupBy { case (i, _) => i.age }.toSeq.
-          sortBy { case (age, _) => age }.reverse.head._2.
-          sortBy { case (i, _) => aggregate(i.fitness) }.head
+      val oldests = oldGeneration.zipWithIndex.groupBy { case (i, _) => i.age }.toSeq.sortBy { case (age, _) => age }.reverse.head._2
+      val (oldest, oldestIndex) = oldests.sortBy { case (i, _) => aggregate(i.fitness) }.head
+
       val (concurrent, concurrentIndex) = oldGeneration.zipWithIndex.patch(oldestIndex, Seq.empty, 1).random
       if (aggregate(oldest.fitness) <= aggregate(concurrent.fitness)) oldGeneration.updated(concurrentIndex, candidate)
       else oldGeneration.updated(oldestIndex, candidate)

@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import util.Random
 import scalax.io._
 import monocle.syntax._
 
@@ -91,7 +90,7 @@ object TestProfile extends App {
 
   val output = Resource.fromFile("/tmp/profile.csv")
   for {
-    i <- res.sortBy(i => m.values.get(i.genome).head)
+    i <- res
     x = m.plot(i)
     v = m.aggregate(i.fitness)
     if !v.isPosInfinity

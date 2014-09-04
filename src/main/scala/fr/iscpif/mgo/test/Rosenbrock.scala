@@ -27,17 +27,16 @@ import monocle.syntax._
 trait Rosenbrock <: GAProblem with MGFitness {
   def genomeSize: Int = 2
 
-  def min = List(-2.0, -1.0)
-  def max = List(2.0, 3.0)
+  def min = Seq.fill(2)(-2048.0)
+  def max = Seq.fill(2)(2048.0)
 
-  type P = Seq[Double]
+  type P = Double
 
   def express(g: Seq[Double], rng: Random) = {
     val Seq(x, y) = g
-    val z = pow(1 - x, 2) + 100 * pow(y - pow(x, 2), 2)
-    List(z)
+    pow(1 - x, 2) + 100 * pow(y - pow(x, 2), 2)
   }
 
-  def evaluate(x: Seq[Double], rng: Random) = x
+  def evaluate(x: Double, rng: Random) = Seq(x)
 
 }

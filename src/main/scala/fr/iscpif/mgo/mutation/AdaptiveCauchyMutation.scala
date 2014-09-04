@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
+import monocle.syntax._
 import tools._
 import org.apache.commons.math3.distribution.CauchyDistribution
 import util.Random
@@ -35,14 +36,14 @@ import scala.math._
 object AdaptiveCauchyMutation {
 
   def mutate(genome: Seq[Double], sigma: Seq[Double], minimumSigma: Double)(implicit rng: Random) = {
-    val indexedSeqSigma = sigma.map { s => math.max(minimumSigma, s * exp(rng.nextGaussian)) }
+    val newSigma = sigma.map { s => math.max(minimumSigma, s * exp(rng.nextGaussian)) }
 
     val newValues =
-      (genome zip indexedSeqSigma) map {
+      (genome zip newSigma) map {
         case (v, s) => new CauchyDistribution(rng, v, s).sample //.nextGaussian * s + v
       }
 
-    (newValues, indexedSeqSigma)
+    (newValues, newSigma)
   }
 
 }
@@ -50,10 +51,9 @@ object AdaptiveCauchyMutation {
 trait AdaptiveCauchyMutation <: Mutation with Sigma with GA with MinimumSigma {
 
   override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val (newValues, indexedSeqSigma) = AdaptiveCauchyMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
+    val (newValues, newSigma) = AdaptiveCauchyMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
     newValues.foreach(v => assert(!v.isNaN))
-    val updatedValues = values.set(genome, newValues)
-    sigma.set(updatedValues, indexedSeqSigma)
+    (genome |-> values set newValues) |-> sigma set newSigma
   }
 
 }

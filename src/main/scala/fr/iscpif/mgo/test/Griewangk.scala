@@ -15,21 +15,20 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 
-trait AggregatedOptimisation <: Evolution
-  /*with GAGenome
-  with BGAMutation
-  with SBXCrossover*/
-  with dynamic.DynamicApplicationGA
-  with BinaryTournamentSelection
-  with TournamentOnAggregatedFitness
-  with BestAggregatedElitism
-  with NoArchive
-  with CloneRemoval
-  with GeneticBreeding
-  with MGFitness
-  with ClampedGenome
-  with MaxAggregation
+import scala.util.Random
+
+trait Griewangk <: GAProblem with MGFitness {
+  def min = Seq.fill(genomeSize)(-600)
+  def max = Seq.fill(genomeSize)(600)
+
+  type P = Double
+
+  def express(g: Seq[Double], rng: Random) =
+    1.0 + g.map(x => math.pow(x, 2.0) / 4000).sum - g.zipWithIndex.map { case (x, i) => x / math.sqrt(i + 1.0) }.map(math.cos).reduce(_ * _)
+
+  def evaluate(phenotype: P, rng: Random) = Seq(phenotype)
+}

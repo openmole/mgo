@@ -25,7 +25,7 @@ import tools.SeqDecorator
 /**
  * Based on http://sci2s.ugr.es/publications/ficheros/2005-SC-Lozano.pdf
  */
-trait DiversityAggregatedElitism <: Elitism with ConservativeFIFOAggregatedElitism with Aggregation with Mu with GA {
+trait DiversityAggregatedElitism <: Elitism with Aggregation with Mu with GA {
 
   def averageIntervalUsage(individuals: Population[G, P, F]): Double = {
     val transposedGenomes = individuals.map(i => values.get(i.genome)).transpose
@@ -37,28 +37,31 @@ trait DiversityAggregatedElitism <: Elitism with ConservativeFIFOAggregatedEliti
   override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] =
     if (oldGeneration.size < mu) oldGeneration ++ offspring
     else offspring.foldLeft(oldGeneration) {
-      (individuals, candidate) =>
+      (population, candidate) =>
         val worsts =
-          individuals.zipWithIndex.filter {
-            case (i, _) => aggregate(i.fitness) > aggregate(candidate.fitness)
+          population.zipWithIndex.filter {
+            case (i, _) => aggregate(i.fitness) >= aggregate(candidate.fitness)
           }
 
-        lazy val individualsAIU = averageIntervalUsage(individuals)
-        lazy val candidateAIUContribution = averageIntervalUsage(Seq(candidate) ++ individuals) - individualsAIU
+        if (worsts.isEmpty) population
+        else {
+          lazy val populationAIU = averageIntervalUsage(population)
 
-        val smallerAIU: Seq[Int] =
-          worsts.map {
-            case e @ (_, index) => e -> (individualsAIU - averageIntervalUsage(oldGeneration.patch(index, Seq.empty, 1)))
-          }.filter {
-            case (_, aiuContribution) => aiuContribution < candidateAIUContribution
-          }.sortBy {
-            case (_, aiuContribution) => aiuContribution
-          }.map {
-            case ((_, index), _) => index
-          }
+          val (worstIndex, aiuDiff) =
+            worsts.map {
+              case (_, index) =>
+                val modifiedPopulation = population.patch(index, Seq.empty, 1)
+                val modifiedPopulationAIU = averageIntervalUsage(modifiedPopulation)
+                val candidateAIUContribution = averageIntervalUsage(Seq(candidate) ++ modifiedPopulation) - modifiedPopulationAIU
+                val elementContribution = populationAIU - modifiedPopulationAIU
+                index -> (candidateAIUContribution - elementContribution)
+            }.maxBy {
+              _._2
+            }
 
-        if (!smallerAIU.isEmpty) individuals.updated(smallerAIU.head, candidate)
-        else conservativeFIFO(individuals, candidate)
+          if (aiuDiff > 0) population.updated(worstIndex, candidate)
+          else candidate :: population.sortBy(i => aggregate(i.fitness)).reverse.tail.toList
+        }
     }
 
 }
