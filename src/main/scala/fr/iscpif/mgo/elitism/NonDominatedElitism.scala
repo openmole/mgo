@@ -32,18 +32,15 @@ trait NonDominatedElitism extends Elitism with Mu with Ranking with Diversity {
     if (population.size < mu) population
     else {
       val ranks = rank(population).map { _() }
-      val diversities = diversity(population)
 
-      val sortedByRank: List[Seq[FE]] =
-        (ranks zip diversities zip population).
-          groupBy { case ((r, _), _) => r }.
+      val sortedByRank: List[Seq[PopulationElement[G, P, F]]] =
+        (ranks zip population).
+          groupBy { case (r, _) => r }.
           toList.
           sortBy { case (r, _) => r }.
-          map { case (_, v) => v.map { case ((_, d), e) => e -> d } }
+          map { case (_, v) => v.map { case (_, e) => e } }
 
-      type FE = (PopulationElement[G, P, F], Lazy[Double])
-
-      @tailrec def addFronts(fronts: List[Seq[FE]], acc: List[FE]): (Seq[FE], Seq[FE]) = {
+      @tailrec def addFronts(fronts: List[Seq[PopulationElement[G, P, F]]], acc: List[PopulationElement[G, P, F]]): (Seq[PopulationElement[G, P, F]], Seq[PopulationElement[G, P, F]]) = {
         if (fronts.isEmpty) (Seq.empty, acc)
         else if (acc.size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head.toList ::: acc)
         else (fronts.head, acc)
@@ -51,9 +48,14 @@ trait NonDominatedElitism extends Elitism with Mu with Ranking with Diversity {
 
       val (lastFront, selected) = addFronts(sortedByRank, List.empty)
 
-      (if (selected.size < mu)
-        selected ++ lastFront.sortBy(_._2()).reverse.slice(0, mu - selected.size)
-      else selected).map(_._1)
+      if (selected.size < mu) {
+        selected ++
+          (lastFront zip diversity(lastFront)).
+          sortBy { case (_, d) => d() }.
+          reverse.
+          slice(0, mu - selected.size).
+          map { case (e, _) => e }
+      } else selected
     }
   }
 }
