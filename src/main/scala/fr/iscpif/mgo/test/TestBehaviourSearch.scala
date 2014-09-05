@@ -60,7 +60,7 @@ object TestBehaviourSearch extends App {
       output.append((0 until m.genomeSize).map("par" + _).mkString(",") + "," + (0 until 2).map("bhv" + _).mkString(",") + ",hitcounts,niche0,niche1" + "\n")
       val hitcounts = s.population.map(i => m.hits(s.archive, m.niche(i.toIndividual)))
       (s.population.content zip hitcounts).foreach {
-        case (i, hc) => output.append(i.genome.values.mkString(",") + "," + i.phenotype.mkString(",") + "," + hc + "," + m.niche(i.toIndividual).mkString(",") + "\n")
+        case (i, hc) => output.append(m.values.get(i.genome).mkString(",") + "," + i.phenotype.mkString(",") + "," + hc + "," + m.niche(i.toIndividual).mkString(",") + "\n")
       }
       println("step " + s.generation + " popsize " + s.population.content.size + " volume discovered " + s.archive.count { case (k, v) => s.archive.contains(k) && (s.archive(k) > 0) })
   }
