@@ -1,8 +1,7 @@
 MGO
 ===
 
-MGO is a library based on the cake pattern for multi-objective evolutionary algorithm:
-* written in scala,
+MGO is a scala library based on the cake pattern for multi-objective evolutionary / genetic algorithms:
 * enforcing immutability,
 * exposes a modular and extensible architecture,
 * implements state of the art algorithms,
