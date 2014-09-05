@@ -27,7 +27,7 @@ import util.Random
 trait ZDT4 extends GAProblem with MGFitness {
 
   def min = Seq.fill(genomeSize)(0.0)
-  def max = 1.0 :: List.fill(genomeSize - 1)(5.0)
+  def max = 1.0 :: Seq.fill(genomeSize - 1)(5.0)
 
   type P = Seq[Double]
 
