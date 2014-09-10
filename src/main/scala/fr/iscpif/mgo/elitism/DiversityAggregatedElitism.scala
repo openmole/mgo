@@ -68,5 +68,4 @@ trait DiversityAggregatedElitism <: Elitism with Aggregation with Mu with GA {
         }
     }
 
-
 }

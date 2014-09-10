@@ -36,42 +36,23 @@ object CrowdingDistance {
   def apply(data: Seq[Seq[Double]]): Seq[Lazy[Double]] = {
     if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
     else {
-      class CrowdingInfo(val d: Seq[Double], var crowding: Double = 0.0)
+      (0 until data.head.size).map {
+        i =>
+          val (sorted, indices) = data.map(_(i)).zipWithIndex.sortBy { case (d, _) => d }.unzip
+          val head = sorted.head
+          val last = sorted.last
+          val diff = last - head
 
-      val crowding = data.map(new CrowdingInfo(_))
+          def crowding(l: List[Double], acc: List[Double]): List[Double] =
+            l match {
+              case e1 :: e2 :: Nil => Double.PositiveInfinity :: (Double.PositiveInfinity :: acc).reverse
+              case e1 :: e2 :: e3 :: _ =>
+                val c = e3 - e1 / diff
+                crowding(l.tail, c :: acc)
+            }
 
-      // for each objective
-      for (curDim <- 0 until data.head.size) {
-
-        val curCrowding = crowding.sortBy(_.d(curDim))
-
-        val firstCrowdingInfo = curCrowding.head
-        val lastCrowdingInfo = curCrowding.last
-
-        val first = firstCrowdingInfo.d
-        val last = lastCrowdingInfo.d
-
-        val min = first(curDim)
-        val max = last(curDim)
-
-        firstCrowdingInfo.crowding = Double.PositiveInfinity
-        lastCrowdingInfo.crowding = Double.PositiveInfinity
-
-        val maxMinusMin = max - min
-
-        val itOpod = curCrowding.iterator
-        var ptMinus1 = itOpod.next
-        var pt = itOpod.next
-
-        while (itOpod.hasNext) {
-          val ptPlus1 = itOpod.next
-          pt.crowding += (ptPlus1.d(curDim) - ptMinus1.d(curDim)) / maxMinusMin
-          ptMinus1 = pt
-          pt = ptPlus1
-        }
-      }
-
-      crowding.map(c => Lazy(c.crowding))
+          (crowding(sorted.toList, Nil) zip indices).sortBy { case (_, i) => i }.unzip._1
+      }.transpose.map { _.sum }.map(Lazy(_))
     }
   }
 
