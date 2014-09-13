@@ -17,25 +17,23 @@
 
 package fr.iscpif.mgo.genome
 
-import monocle.Macro._
 import monocle.SimpleLens
-import monocle.syntax._
 
 import scala.util.Random
 
 object GAGenomeWithRandomValue {
-  case class Genome(values: Seq[Double], randomValues: Seq[Double])
+  case class Genome(values: Array[Double], randomValues: Array[Double])
 }
 
 trait GAGenomeWithRandomValue extends GA with RandomValue {
 
   type G = GAGenomeWithRandomValue.Genome
 
-  def rawValues = mkLens[G, Seq[Double]]("values")
-  def randomValues = mkLens[G, Seq[Double]]("randomValues")
+  def rawValues = SimpleLens[G, Seq[Double]](_.values.toArray, (g, v) => g.copy(values = v.toArray))
+  def randomValues = SimpleLens[G, Seq[Double]](_.randomValues.toArray, (g, v) => g.copy(randomValues = v.toArray))
 
   def randomGenome(implicit rng: Random) = {
-    def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq
+    def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toArray
     GAGenomeWithRandomValue.Genome(rnd, rnd)
   }
 

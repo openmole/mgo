@@ -146,7 +146,7 @@ package object mgo {
   type TournamentOnRank = selection.TournamentOnRank
   type TournamentOnRankAndDiversity = selection.TournamentOnRankAndDiversity
   type MapSelection = selection.MapSelection
-  type ProportionalNumberOfRounds = selection.ProportionalNumberOfRound
+  type ProportionalNumberOfRound = selection.ProportionalNumberOfRound
   type Selection = selection.Selection
   type TournamentOnAggregatedFitness = selection.TournamentOnAggregatedFitness
   type TournamentOnHitCount = selection.TournamentOnHitCount

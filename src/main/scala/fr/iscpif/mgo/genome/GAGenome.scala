@@ -17,12 +17,11 @@
 
 package fr.iscpif.mgo.genome
 
-import fr.iscpif.mgo._
 import scala.util.Random
-import monocle.Macro._
+import monocle._
 
 object GAGenome {
-  case class Genome(values: Seq[Double])
+  case class Genome(values: Array[Double])
 }
 
 /**
@@ -31,6 +30,6 @@ object GAGenome {
 trait GAGenome extends GA {
   type G = GAGenome.Genome
 
-  def rawValues = mkLens[G, Seq[Double]]("values")
-  def randomGenome(implicit rng: Random) = GAGenome.Genome(Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq)
+  def rawValues = SimpleLens[G, Seq[Double]](_.values.toArray, (g, v) => g.copy(values = v.toArray))
+  def randomGenome(implicit rng: Random) = GAGenome.Genome(Stream.continually(rng.nextDouble).take(genomeSize).toArray)
 }

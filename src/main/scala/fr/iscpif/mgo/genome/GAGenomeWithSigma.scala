@@ -23,7 +23,7 @@ import scala.util.Random
 import monocle.syntax._
 
 object GAGenomeWithSigma {
-  case class Genome(values: Seq[Double], sigma: Seq[Double])
+  case class Genome(values: Array[Double], sigma: Array[Double])
 }
 
 /**
@@ -33,12 +33,11 @@ trait GAGenomeWithSigma extends GA with Sigma {
 
   type G = GAGenomeWithSigma.Genome
 
-  def rawValues = mkLens("values")
-
-  def sigma = mkLens[G, Seq[Double]]("sigma")
+  def rawValues = SimpleLens[G, Seq[Double]](_.values.toArray, (g, v) => g.copy(values = v.toArray))
+  def sigma = SimpleLens[G, Seq[Double]](_.sigma.toArray, (g, v) => g.copy(sigma = v.toArray))
 
   def randomGenome(implicit rng: Random) = {
-    def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq
+    def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toArray
     GAGenomeWithSigma.Genome(rnd, rnd)
   }
 

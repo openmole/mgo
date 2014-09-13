@@ -29,4 +29,4 @@ trait BehaviourSearch <: NoFitness
   with RandomNicheElitism
   with CounterTermination
   with ClampedGenome
-  with ProportionalNumberOfRounds
+  with ProportionalNumberOfRound

@@ -39,6 +39,7 @@ object CrowdingDistance {
       (0 until data.head.size).map {
         i =>
           val (sorted, indices) = data.map(_(i)).zipWithIndex.sortBy { case (d, _) => d }.unzip
+
           val head = sorted.head
           val last = sorted.last
           val diff = last - head

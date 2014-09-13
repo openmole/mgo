@@ -35,4 +35,4 @@ trait Profile <: Evolution
   with GeneticBreeding
   with ProfileRanking
   with ClampedGenome
-  with ProportionalNumberOfRounds
+  with ProportionalNumberOfRound
