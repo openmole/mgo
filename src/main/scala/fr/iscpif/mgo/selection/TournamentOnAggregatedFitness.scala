@@ -25,7 +25,7 @@ trait TournamentOnAggregatedFitness <: Tournament with Aggregation {
 
   type Evaluation = None.type
 
-  override def evaluate(population: Population[G, P, F], archive: A): Seq[Evaluation] = population.map(_ => None)
+  override def evaluate(population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[Evaluation] = population.map(_ => None)
 
   override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
     val a1 = aggregate(e1._1.fitness)

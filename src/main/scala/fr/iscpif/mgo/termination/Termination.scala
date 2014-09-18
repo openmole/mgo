@@ -20,6 +20,8 @@ package fr.iscpif.mgo.termination
 import fr.iscpif.mgo._
 import genome.G
 
+import scala.util.Random
+
 /**
  * Layer to compute the stopping condition of the evolutionary algorithm
  */
@@ -43,5 +45,5 @@ trait Termination extends G with P with F {
    * @return a boolean which is equal to true if a terminal state has
    * been detected and the new termination state
    */
-  def terminated(population: Population[G, P, F], terminationState: STATE): (Boolean, STATE)
+  def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE)
 }

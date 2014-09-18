@@ -17,7 +17,9 @@
 
 package fr.iscpif.mgo.tools.metric
 
-import fr.iscpif.mgo.tools.Lazy
+import fr.iscpif.mgo.tools._
+
+import scala.util.Random
 
 /**
  * Crowding distance computation see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
@@ -33,28 +35,43 @@ object CrowdingDistance {
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
-  def apply(data: Seq[Seq[Double]]): Seq[Lazy[Double]] = {
-    if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
-    else {
-      data.transpose.map {
-        d =>
-          val (sorted, indices) = d.zipWithIndex.sortBy { case (d, _) => d }.unzip
+  def apply(data: Seq[Seq[Double]])(implicit rng: Random): Seq[Lazy[Double]] = {
+    data.transpose.map {
+      d: Seq[Double] =>
+        val grouped: Map[Double, Seq[Int]] =
+          (d.zipWithIndex).groupBy { case (d, _) => d }.mapValues { _.map { case (_, i) => i } }
+        val sortedDistances = grouped.keys.toSeq.sorted
 
-          val head = sorted.head
-          val last = sorted.last
-          val diff = last - head
+        type Crowding = (Double, Int)
 
-          def crowding(l: List[Double], acc: List[Double]): List[Double] =
-            l match {
-              case e1 :: e2 :: Nil => Double.PositiveInfinity :: (Double.PositiveInfinity :: acc).reverse
-              case e1 :: e2 :: e3 :: _ =>
-                val c = e3 - e1 / diff
-                crowding(l.tail, c :: acc)
-            }
+        def groupCrowding(group: Seq[Int], c: Double): List[(Double, Int)] = {
+          val randomIndice = rng.nextInt(group.size)
+          (c -> group(randomIndice)) :: group.patch(randomIndice, Seq.empty, 1).toList.map { t => 0.0 -> t }
+        }
 
-          (crowding(sorted.toList, Nil) zip indices).sortBy { case (_, i) => i }.unzip._1
-      }.transpose.map { _.sum }.map(Lazy(_))
-    }
+        val res: Seq[Crowding] =
+          if (sortedDistances.size <= 2)
+            sortedDistances.flatMap(d => groupCrowding(grouped(d), Double.PositiveInfinity))
+          else {
+            //val head = grouped.head._1
+            //val last = grouped.last._1
+            //val diff = last - head
+
+            def crowding(distances: List[Double], acc: List[Crowding]): List[Crowding] =
+              distances match {
+                case d1 :: d2 :: Nil =>
+                  groupCrowding(grouped(sortedDistances.head), Double.PositiveInfinity) :::
+                    (groupCrowding(grouped(sortedDistances.last), Double.PositiveInfinity) ::: acc).reverse
+                case d1 :: d2 :: d3 :: _ =>
+                  val gc = groupCrowding(grouped(d2), d3 - d1)
+                  crowding(distances.tail, gc ::: acc)
+              }
+
+            crowding(sortedDistances.toList, List.empty)
+          }
+        res.sortBy { case (_, indice) => indice }.map { case (c, _) => c }
+    }.transpose.map { _.sum }.map(Lazy(_))
+
   }
 
 }

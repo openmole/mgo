@@ -38,7 +38,7 @@ object TestAggregated extends App {
       def steps = 100000
 
       override type STATE = None.type
-      override def terminated(population: Population[G, P, F], terminationState: STATE): (Boolean, STATE) = {
+      override def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE) = {
         (population.map(i => aggregate(i.fitness)).min <= 0.0, None)
       }
 

@@ -19,6 +19,8 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 
+import scala.util.Random
+
 /**
  * Terminate the algorithm after a given share of time.
  */
@@ -31,7 +33,7 @@ trait TimedTermination extends Termination {
 
   def initialState = System.currentTimeMillis
 
-  override def terminated(population: Population[G, P, F], begin: STATE) =
+  override def terminated(population: Population[G, P, F], begin: STATE)(implicit rng: Random) =
     (begin + duration <= System.currentTimeMillis, begin)
 
 }

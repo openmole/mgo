@@ -21,13 +21,15 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.metric.Hypervolume
 import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
 
+import scala.util.Random
+
 /**
  * Terminates when the hypervolume contribution of the last ranked individuals
  * in the population has been stabilized.
  */
 trait HyperVolumeStabilityTermination extends Termination with ReferencePoint with StabilityTermination with MG {
 
-  override def terminated(population: Population[G, P, F], terminationState: STATE): (Boolean, STATE) = {
+  override def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE) = {
     val front = population.map { e => fitness(e.toIndividual) }
     val hv = Hypervolume(front, referencePoint)
     stability(terminationState, hv)

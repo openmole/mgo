@@ -19,6 +19,8 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 
+import scala.util.Random
+
 /**
  * Stop after a finite number of state
  */
@@ -31,7 +33,7 @@ trait CounterTermination extends Termination {
 
   def initialState = 0
 
-  override def terminated(population: Population[G, P, F], step: STATE): (Boolean, STATE) =
+  override def terminated(population: Population[G, P, F], step: STATE)(implicit rng: Random): (Boolean, STATE) =
     (step >= steps, step + 1)
 
 }

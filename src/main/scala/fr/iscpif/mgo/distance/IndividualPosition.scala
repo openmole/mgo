@@ -19,6 +19,8 @@ package fr.iscpif.mgo.distance
 
 import fr.iscpif.mgo._
 
+import scala.util.Random
+
 trait IndividualPosition <: G with P with F {
-  def individualPosition(individuals: Individual[G, P, F]): Seq[Double]
+  def individualPosition(individuals: Individual[G, P, F])(implicit rng: Random): Seq[Double]
 }

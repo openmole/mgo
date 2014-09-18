@@ -20,6 +20,8 @@ package fr.iscpif.mgo.diversity
 import fr.iscpif.mgo._
 import tools._
 
+import scala.util.Random
+
 trait NoDiversity extends Diversity {
-  def diversity(individuals: Population[G, P, F]): Seq[Lazy[Double]] = individuals.map(i => Lazy(0.0))
+  def diversity(individuals: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Double]] = individuals.map(i => Lazy(0.0))
 }

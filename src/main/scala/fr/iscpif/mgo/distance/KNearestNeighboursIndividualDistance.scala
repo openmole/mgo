@@ -21,11 +21,13 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.tools.metric._
 
+import scala.util.Random
+
 trait KNearestNeighboursIndividualDistance <: IndividualDistance with IndividualPosition {
 
   def k: Int
 
-  def individualDistance(individuals: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
+  def individualDistance(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Lazy[Double]] =
     KNearestNeighboursAverageDistance(individuals.map(individualPosition), k)
 
 }

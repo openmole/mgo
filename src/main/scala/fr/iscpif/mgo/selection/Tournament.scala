@@ -25,7 +25,7 @@ trait Tournament <: Selection {
   type Evaluation
   type IndividualEvaluation = (Individual[G, P, F], Evaluation)
 
-  def evaluate(population: Population[G, P, F], archive: A): Seq[Evaluation]
+  def evaluate(population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[Evaluation]
   def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random): IndividualEvaluation
 
 }

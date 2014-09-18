@@ -21,9 +21,11 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.tools.metric.CrowdingDistance
 
+import scala.util.Random
+
 trait CrowdingIndividualDistance <: IndividualDistance with IndividualPosition {
 
-  def individualDistance(individuals: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
+  def individualDistance(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Lazy[Double]] =
     CrowdingDistance(individuals.map(individualPosition))
 
 }

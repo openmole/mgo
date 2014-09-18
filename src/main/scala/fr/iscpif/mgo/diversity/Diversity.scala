@@ -21,6 +21,8 @@ import fr.iscpif.mgo._
 import genome.G
 import tools.Lazy
 
+import scala.util.Random
+
 /**
  * Layer of the cake that compute a diversity metric for a set of values
  */
@@ -32,5 +34,5 @@ trait Diversity <: G with P with F {
    * @return a diversity sequence in the diversity of the individual i at the
    * position i
    */
-  def diversity(values: Population[G, P, F]): Seq[Lazy[Double]]
+  def diversity(values: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Double]]
 }

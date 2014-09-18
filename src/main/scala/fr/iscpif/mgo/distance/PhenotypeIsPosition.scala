@@ -19,8 +19,10 @@ package fr.iscpif.mgo.distance
 
 import fr.iscpif.mgo.Individual
 
+import scala.util.Random
+
 trait PhenotypeIsPosition <: IndividualPosition {
   type P <: Seq[Double]
 
-  override def individualPosition(individual: Individual[G, P, F]): Seq[Double] = individual.phenotype
+  override def individualPosition(individual: Individual[G, P, F])(implicit rng: Random): Seq[Double] = individual.phenotype
 }

@@ -23,6 +23,7 @@ import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
 import fr.iscpif.mgo.tools.metric.Hypervolume
 
 import scala.math._
+import scala.util.Random
 
 /**
  * Diversity computed from an hypervolume contribution metric
@@ -31,7 +32,7 @@ import scala.math._
  */
 trait FitnessHypervolumeDiversity extends Diversity with ReferencePoint with MG {
 
-  override def diversity(values: Population[G, P, F]) =
+  override def diversity(values: Population[G, P, F])(implicit rng: Random) =
     Hypervolume.contributions(values.map(e => fitness(e.toIndividual)), referencePoint)
 
 }

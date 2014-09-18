@@ -21,6 +21,8 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.tools.distance.EuclideanDistance
 
+import scala.util.Random
+
 trait EuclideanIndividualDiversity <: GA with EuclideanDistance with IndividualPosition {
   def genomeDiversity(g: Seq[G]) = {
     g.map {
@@ -33,7 +35,7 @@ trait EuclideanIndividualDiversity <: GA with EuclideanDistance with IndividualP
     }
   }
 
-  def individualDistance(individuals: Seq[Individual[G, P, F]]): Seq[Lazy[Double]] =
+  def individualDistance(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Lazy[Double]] =
     individuals map {
       i1 =>
         val i1Pos = individualPosition(i1)

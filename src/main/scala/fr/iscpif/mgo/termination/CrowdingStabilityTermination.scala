@@ -19,6 +19,8 @@ package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
 
+import scala.util.Random
+
 /**
  * Termination creterium computed from the variation of the maximum crowding distance
  * among the population elements. It stop when this metric stabilize.
@@ -28,7 +30,7 @@ import fr.iscpif.mgo._
  */
 trait CrowdingStabilityTermination extends Termination with FitnessCrowdingDiversity with StabilityTermination {
 
-  override def terminated(population: Population[G, P, F], terminationState: STATE): (Boolean, STATE) = {
+  override def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE) = {
     val crowdings = diversity(population).map(_())
     val maxCrowding = crowdings.filter(_ != Double.PositiveInfinity).max
     stability(terminationState, maxCrowding)

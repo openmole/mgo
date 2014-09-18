@@ -20,10 +20,12 @@ package fr.iscpif.mgo.diversity
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.metric._
 
+import scala.util.Random
+
 trait FitnessKNearestNeighboursDiversity <: Diversity with MG {
 
   def k: Int
 
-  override def diversity(values: Population[G, P, F]) = KNearestNeighboursAverageDistance(values.map(e => fitness(e.toIndividual)), k)
+  override def diversity(values: Population[G, P, F])(implicit rng: Random) = KNearestNeighboursAverageDistance(values.map(e => fitness(e.toIndividual)), k)
 
 }

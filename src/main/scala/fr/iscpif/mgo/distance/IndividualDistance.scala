@@ -20,6 +20,8 @@ package fr.iscpif.mgo.distance
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo._
 
+import scala.util.Random
+
 trait IndividualDistance <: G with P with F {
-  def individualDistance(g: Seq[Individual[G, P, F]]): Seq[Lazy[Double]]
+  def individualDistance(g: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Lazy[Double]]
 }

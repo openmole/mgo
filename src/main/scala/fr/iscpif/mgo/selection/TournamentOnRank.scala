@@ -24,7 +24,7 @@ import tools.Lazy
 trait TournamentOnRank <: Tournament with Ranking {
 
   type Evaluation = Lazy[Int]
-  override def evaluate(population: Population[G, P, F], archive: A) = rank(population)
+  override def evaluate(population: Population[G, P, F], archive: A)(implicit rng: Random) = rank(population)
 
   override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
     val (_, r1) = e1

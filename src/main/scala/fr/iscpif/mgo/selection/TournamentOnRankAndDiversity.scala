@@ -24,7 +24,7 @@ import scala.util.Random
 trait TournamentOnRankAndDiversity <: Tournament with Ranking with Diversity {
 
   type Evaluation = (Lazy[Int], Lazy[Double])
-  override def evaluate(population: Population[G, P, F], archive: A) =
+  override def evaluate(population: Population[G, P, F], archive: A)(implicit rng: Random) =
     rank(population) zip diversity(population)
 
   override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {

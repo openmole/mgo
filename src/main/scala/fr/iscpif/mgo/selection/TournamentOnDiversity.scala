@@ -24,7 +24,7 @@ import util.Random
 trait TournamentOnDiversity <: Tournament with Diversity {
 
   type Evaluation = Lazy[Double]
-  def evaluation(population: Population[G, P, F], archive: A) = diversity(population)
+  def evaluation(population: Population[G, P, F], archive: A)(implicit rng: Random) = diversity(population)
 
   override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
     val (_, d1) = e1
