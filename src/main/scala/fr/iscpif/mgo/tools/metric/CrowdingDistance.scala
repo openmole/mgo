@@ -36,9 +36,9 @@ object CrowdingDistance {
   def apply(data: Seq[Seq[Double]]): Seq[Lazy[Double]] = {
     if (data.size <= 2) data.map(d => Lazy(Double.PositiveInfinity))
     else {
-      (0 until data.head.size).map {
-        i =>
-          val (sorted, indices) = data.map(_(i)).zipWithIndex.sortBy { case (d, _) => d }.unzip
+      data.transpose.map {
+        d =>
+          val (sorted, indices) = d.zipWithIndex.sortBy { case (d, _) => d }.unzip
 
           val head = sorted.head
           val last = sorted.last
