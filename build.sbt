@@ -46,9 +46,9 @@ pomIncludeRepository := { _ => false }
 
 licenses := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
 
-homepage := Some(url("https://github.com/romainreuillon/mgo"))
+homepage := Some(url("https://github.com/openmole/mgo"))
 
-scmInfo := Some(ScmInfo(url("https://github.com/romainreuillon/mgo.git"), "scm:git:git@github.com:romainreuillon/mgo.git"))
+scmInfo := Some(ScmInfo(url("https://github.com/openmole/mgo.git"), "scm:git:git@github.com:openmole/mgo.git"))
 
 pomExtra := (
   <developers>
