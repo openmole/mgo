@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.dynamic
 
-import monocle.Macro._
+import monocle._
 import fr.iscpif.mgo._
 import scala.util.Random
 
@@ -34,11 +34,11 @@ trait DynamicApplicationGAGenome <: GA with Sigma with F {
 
   type G = Genome
 
-  def rawValues = mkLens[G, Seq[Double]]("values")
-  def sigma = mkLens[G, Seq[Double]]("sigma")
-  def ancestors = mkLens[G, Option[Ancestors]]("ancestors")
-  def mutation = mkLens[G, Option[Int]]("mutation")
-  def crossover = mkLens[G, Option[Int]]("crossover")
+  def rawValues = Lenser[G](_.values)
+  def sigma = Lenser[G](_.sigma)
+  def ancestors = Lenser[G](_.ancestors)
+  def mutation = Lenser[G](_.mutation)
+  def crossover = Lenser[G](_.crossover)
 
   def randomGenome(implicit rng: Random) = {
     def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq

@@ -25,7 +25,8 @@ import scala.util.Random
 trait TournamentOnHitCount <: Tournament with HitMapArchive {
   override type Evaluation = Int
 
-  override def evaluate(population: Population[G, P, F], archive: A)(implicit rng: Random) = population.map(i => hits(archive, niche(i.toIndividual)))
+  override def evaluate(population: Population[G, P, F], archive: A)(implicit rng: Random) =
+    population.map(i => hits(archive, niche(i.toIndividual)))
 
   override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
     val (_, h1) = e1

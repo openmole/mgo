@@ -14,7 +14,7 @@ libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-core" % "0.4
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.3"
 
-val monocleVersion = "0.4.0"
+val monocleVersion = "0.5.1"
 
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 

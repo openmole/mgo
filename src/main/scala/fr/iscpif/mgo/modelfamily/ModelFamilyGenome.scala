@@ -33,10 +33,10 @@ trait ModelFamilyGenome <: ModelId with Sigma with GA with RandomGenome {
   def models: Int
   def genomeSize: Int
 
-  def modelId = mkLens[G, Int]("modelId")
+  def modelId = Lenser[G](_.modelId)
 
-  def rawValues = mkLens[G, Seq[Double]]("values")
-  def sigma = mkLens[G, Seq[Double]]("sigma")
+  def rawValues = Lenser[G](_.values)
+  def sigma = Lenser[G](_.sigma)
 
   def randomGenome(implicit rng: Random) = {
     def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq
