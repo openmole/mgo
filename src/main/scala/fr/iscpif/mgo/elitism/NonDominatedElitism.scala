@@ -22,16 +22,13 @@ import tools._
 import annotation.tailrec
 import util.Random
 
-/**
- * Reduce the size of the population according to a diversity metric and a rank
- */
-trait NonDominatedElitism extends Elitism with Mu with Ranking with Diversity {
+object NonDominatedElitism {
 
-  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] = {
-    val population = filter(oldGeneration ++ offspring)
+  def apply(ga: Ranking with Diversity)(population: Population[ga.G, ga.P, ga.F], mu: Int)(implicit rng: Random): Population[ga.G, ga.P, ga.F] = {
+    import ga._
     if (population.size < mu) population
     else {
-      val ranks = rank(population).map { _() }
+      val ranks = ga.rank(population).map { _() }
 
       val sortedByRank: List[Seq[PopulationElement[G, P, F]]] =
         (ranks zip population).
@@ -50,7 +47,7 @@ trait NonDominatedElitism extends Elitism with Mu with Ranking with Diversity {
 
       if (selected.size < mu) {
         selected ++
-          (lastFront zip diversity(lastFront)).
+          (lastFront zip ga.diversity(lastFront)).
           sortBy { case (_, d) => d() }.
           reverse.
           slice(0, mu - selected.size).
@@ -58,4 +55,14 @@ trait NonDominatedElitism extends Elitism with Mu with Ranking with Diversity {
       } else selected
     }
   }
+
+}
+
+/**
+ * Reduce the size of the population according to a diversity metric and a rank
+ */
+trait NonDominatedElitism extends Elitism with Mu with Ranking with Diversity {
+
+  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random): Population[G, P, F] =
+    NonDominatedElitism(this)(filter(oldGeneration ++ offspring), mu)
 }

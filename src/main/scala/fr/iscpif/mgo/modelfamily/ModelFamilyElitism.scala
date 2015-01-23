@@ -17,14 +17,17 @@
 
 package fr.iscpif.mgo.modelfamily
 
+import fr.iscpif.mgo.NonDominatedElitism
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.elitism.NonDominatedElitism
 import scala.util.Random
 
-trait ModelFamilyElitism <: Elitism with Aggregation with NicheElitism with ModelFamilyGenome {
+trait ModelFamilyElitism <: Elitism with NicheElitism with ModelFamilyGenome with Ranking with Diversity {
+
   type NICHE = Int
   def nicheSize: Int
 
   override def niche(individual: Individual[G, P, F]) = modelId.get(individual.genome)
-  override def keep(individuals: Population[G, P, F])(implicit rng: Random): Population[G, P, F] = individuals.sortBy(i => aggregate(i.fitness)).take(nicheSize)
+  override def keep(individuals: Population[G, P, F])(implicit rng: Random): Population[G, P, F] = NonDominatedElitism(this)(individuals, nicheSize)
 
 }

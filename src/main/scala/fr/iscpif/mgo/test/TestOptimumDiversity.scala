@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.diversity.GenomeDiversity
 import fr.iscpif.mgo.ranking.{ CeilDiversityRanking, DiversityRanking }
 import monocle.syntax._
 import scala.util.Random
