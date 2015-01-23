@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 2015 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -18,20 +18,26 @@
 package fr.iscpif.mgo.ranking
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.tools.metric.Hypervolume
-import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
+import fr.iscpif.mgo.tools.KDTree
+import fr.iscpif.mgo.tools.metric.CrowdingDistance
 
 import scala.util.Random
 
-trait HypervolumeRanking <: Ranking with MG with ReferencePoint {
-  /**
-   * Compute the rank of a set of individuals.
-   *
-   * @param values the values to rank
-   * @return the ranks of the individuals in the same order
-   */
-  override def rank(values: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Int]] =
-    HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => fitness(e.toIndividual)), referencePoint))
+trait DiversityRanking <: ParetoRanking with GA with MG {
+
+  def neighbours = 10
+
+  override def rank(p: Population[G, P, F])(implicit rng: Random) = {
+    val genomes = p.map(i => values.get(i.genome))
+    val tree = KDTree(genomes)
+
+    def distance(g: Seq[Double]) =
+      tree.knearest(neighbours, g).map { n => tree.distance(g, n) }.sum
+
+    def diversityObjective = genomes.map(distance).map(1 / _)
+
+    def fitnessAndCrowding: Seq[Seq[Double]] = (p zip diversityObjective).map { case (i, c) => fitness(i.fitness) ++ Seq(c) }
+    paretoRanking(fitnessAndCrowding)
+  }
 
 }

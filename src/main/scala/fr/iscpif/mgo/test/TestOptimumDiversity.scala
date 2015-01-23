@@ -18,11 +18,60 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.diversity.GenomeDiversity
+import fr.iscpif.mgo.ranking.{ CeilDiversityRanking, DiversityRanking }
 import monocle.syntax._
 import scala.util.Random
 import scalax.io.Resource
 
 object TestOptimumDiversity extends App {
+
+  /* trait OptimumDiversity <: Evolution
+    with BinaryTournamentSelection
+    with TournamentOnRankAndDiversity
+    with NonDominatedElitism
+    with DynamicApplicationGA
+    with DiversityRanking
+    with FitnessCrowdingDiversity
+    with CeilDiversityRanking
+    with MaxAggregation
+    with NonStrictDominance
+    with NoArchive
+    with CloneRemoval
+    with GeneticBreeding
+    with MGFitness
+    with ClampedGenome*/
+
+  /*trait OptimumDiversity <: NoArchive
+    with BestRankedNicheElitism
+    with ParetoRanking
+    with GAGenotypeGridNiche
+    with MG
+    with FitnessCrowdingDiversity
+    with GeneticBreeding
+    with BinaryTournamentSelection
+    with TournamentOnRankAndDiversity
+    with DynamicApplicationGA
+    with NonStrictDominance
+    with ClampedGenome
+    with ProportionalNumberOfRound
+
+  val m = new Rastrigin with OptimumDiversity with CounterTermination {
+    def genomeSize: Int = 2
+    def lambda: Int = 200
+    //def mu: Int = 200
+    def steps = 1000
+    def gridSize = Seq(0.25, 0.25)
+  }
+
+  implicit val rng = new Random
+
+  m.evolve.untilConverged { s =>
+    val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
+    s.population.foreach {
+      i => output.append((m.scale(i.genome |-> m.values get)).mkString(",") + "," + i.fitness.mkString(",") + "\n")
+    }
+  }*/
 
   /*val m = new ZDT4 with OptimumDiversity with CounterTermination {
     def genomeSize: Int = 2

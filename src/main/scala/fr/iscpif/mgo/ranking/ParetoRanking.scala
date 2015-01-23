@@ -21,23 +21,26 @@ import fr.iscpif.mgo._
 import genome.G
 import tools.Lazy
 
+import scala.util.Random
+
 /**
  * Layer to compute the rank according to the number individual that dominate a
  * given individual.
  */
 trait ParetoRanking extends Ranking with Dominance with MG {
 
-  override def rank(values: Population[G, P, F]) = {
+  override def rank(values: Population[G, P, F])(implicit rng: Random) = paretoRanking(values.toIndividuals.map(fitness))
+
+  def paretoRanking(values: Seq[Seq[Double]]) =
     values.zipWithIndex.map {
       case (v1, index1) =>
         Lazy(
           values.zipWithIndex.filter {
             case (_, index2) => index1 != index2
           }.count {
-            case (v2, _) => isDominated(v1.fitness, v2.fitness)
+            case (v2, _) => isDominated(v1, v2)
           }
         )
     }
-  }
 }
 

@@ -21,6 +21,8 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools._
 import Math._
 
+import scala.util.Random
+
 trait ProfileRanking <: Ranking with Aggregation with ProfilePlotter {
   /**
    * Compute the rank of a set of individuals.
@@ -28,7 +30,7 @@ trait ProfileRanking <: Ranking with Aggregation with ProfilePlotter {
    * @param population the values to rank
    * @return the ranks of the individuals in the same order
    */
-  override def rank(population: Population[G, P, F]): Seq[Lazy[Int]] = {
+  override def rank(population: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Int]] = {
     val (points, indexes) =
       population.map {
         i => (plot(i.toIndividual).toDouble, aggregate(i.fitness))

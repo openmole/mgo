@@ -20,7 +20,9 @@ package fr.iscpif.mgo.ranking
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 
+import scala.util.Random
+
 trait NoRanking <: Ranking {
-  def rank(values: Population[G, P, F]): Seq[Lazy[Int]] =
+  override def rank(values: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Int]] =
     values.map(i => Lazy(0))
 }

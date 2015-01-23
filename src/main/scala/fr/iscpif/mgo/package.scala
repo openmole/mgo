@@ -86,6 +86,7 @@ package object mgo {
   type NonStrictEpsilonDominance = dominance.NonStrictEpsilonDominance
   type StrictDominance = dominance.StrictDominance
   type StrictEpsilonDominance = dominance.StrictEpsilonDominance
+  type DynamicApplicationGA = dynamic.DynamicApplicationGA
   type BestAggregatedElitism = elitism.BestAggregatedElitism
   type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
   type BestRankedNicheElitism = elitism.BestRankedNicheElitism

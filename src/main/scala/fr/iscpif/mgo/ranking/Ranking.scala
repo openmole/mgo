@@ -20,6 +20,8 @@ package fr.iscpif.mgo.ranking
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 
+import scala.util.Random
+
 /**
  * Layer of the cake for algorithm with a ranking scheme.
  */
@@ -30,5 +32,5 @@ trait Ranking <: G with P with F {
    * @param values the values to rank
    * @return the ranks of the individuals in the same order
    */
-  def rank(values: Population[G, P, F]): Seq[Lazy[Int]]
+  def rank(values: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Int]]
 }

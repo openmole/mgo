@@ -20,6 +20,7 @@ package fr.iscpif.mgo.ranking
 import fr.iscpif.mgo._
 import tools._
 import Ordering.Implicits._
+import scala.util.Random
 
 object HierarchicalRanking {
 
@@ -38,7 +39,7 @@ object HierarchicalRanking {
 
 trait HierarchicalRanking extends Ranking with MG {
 
-  override def rank(values: Population[G, P, F]): Seq[Lazy[Int]] =
+  override def rank(values: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Int]] =
     HierarchicalRanking.upRank(values.map(v => fitness(v.toIndividual)))
 
 }

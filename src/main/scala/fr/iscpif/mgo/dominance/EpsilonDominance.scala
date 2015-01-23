@@ -19,7 +19,7 @@ package fr.iscpif.mgo.dominance
 
 import fr.iscpif.mgo._
 
-trait EpsilonDominance <: Dominance with MG {
+trait EpsilonDominance <: Dominance {
 
   /** epsilons values, one for each element in the fitness */
   def epsilons: Seq[Double]
