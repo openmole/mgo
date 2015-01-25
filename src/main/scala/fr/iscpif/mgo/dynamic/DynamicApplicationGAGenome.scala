@@ -23,12 +23,9 @@ import scala.util.Random
 
 trait DynamicApplicationGAGenome <: GA with Sigma with F {
 
-  type Ancestors = (F, F)
-
   case class Genome(
     values: Seq[Double],
     sigma: Seq[Double],
-    ancestors: Option[Ancestors] = None,
     mutation: Option[Int] = None,
     crossover: Option[Int] = None)
 
@@ -36,7 +33,6 @@ trait DynamicApplicationGAGenome <: GA with Sigma with F {
 
   def rawValues = Lenser[G](_.values)
   def sigma = Lenser[G](_.sigma)
-  def ancestors = Lenser[G](_.ancestors)
   def mutation = Lenser[G](_.mutation)
   def crossover = Lenser[G](_.crossover)
 

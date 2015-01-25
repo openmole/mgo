@@ -54,7 +54,10 @@ trait DynamicApplicationGA <: Crossover with Mutation with DynamicApplicationGAG
   lazy val blx = new BLXCrossover with CandidateCrossover with DAMethodInjection {}
   lazy val idc = new IdentityCrossOver with CandidateCrossover with DAMethodInjection {}
 
-  lazy val bga = new BGAMutation with CandidateMutation with DAMethodInjection {}
+  lazy val bga = new BGAMutation with CandidateMutation with DAMethodInjection {
+    override def mutationRate = 1.0 / genomeSize
+    override def mutationRange = 0.1
+  }
   lazy val bigbga = new BGAMutation with CandidateMutation with DAMethodInjection {
     override def mutationRange: Double = 0.5
     override def mutationRate: Double = 0.5
@@ -97,8 +100,4 @@ trait DynamicApplicationGA <: Crossover with Mutation with DynamicApplicationGAG
     val i = select(mutationStats(population), mutations.size)
     mutations(i).mutate(g, population, archive) |-> mutation set Some(i)
   }
-
-  override def breed(i1: Individual[G, P, F], i2: Individual[G, P, F], population: Population[G, P, F], a: A)(implicit rng: Random): Seq[G] =
-    super.breed(i1, i2, population, a).
-      map { g => g |-> ancestors set Some((i1.fitness, i2.fitness)) }
 }
