@@ -18,18 +18,19 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import part._
 
 trait Map <: Evolution
   with MG
   with NoArchive
   with MapSelection
   with GAGenomeWithSigma
-  with MaxAggregation
-  with SBXCrossover
+  with DynamicGACrossover
+  with DynamicGAMutation
   with BestAggregatedNicheElitism
   with MapNiche
-  with AdaptiveCauchyMutation
   with HierarchicalRanking
   with StrictDominance
   with GeneticBreeding
   with ClampedGenome
+  with MaxAggregation

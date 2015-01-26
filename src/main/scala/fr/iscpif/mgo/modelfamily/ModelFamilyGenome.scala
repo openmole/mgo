@@ -23,10 +23,15 @@ import monocle._
 import scala.util.Random
 
 object ModelFamilyGenome {
-  case class Genome(modelId: Int, values: Seq[Double], sigma: Seq[Double])
+  case class Genome(
+    modelId: Int,
+    values: Seq[Double],
+    sigma: Seq[Double],
+    mutation: Option[Int] = None,
+    crossover: Option[Int] = None)
 }
 
-trait ModelFamilyGenome <: ModelId with Sigma with GA with RandomGenome {
+trait ModelFamilyGenome <: ModelId with Sigma with GA with RandomGenome with DynamicApplication {
 
   type G = ModelFamilyGenome.Genome
 
@@ -37,6 +42,9 @@ trait ModelFamilyGenome <: ModelId with Sigma with GA with RandomGenome {
 
   def rawValues = Lenser[G](_.values)
   def sigma = Lenser[G](_.sigma)
+
+  def fromMutation = Lenser[G](_.mutation)
+  def fromCrossover = Lenser[G](_.crossover)
 
   def randomGenome(implicit rng: Random) = {
     def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq

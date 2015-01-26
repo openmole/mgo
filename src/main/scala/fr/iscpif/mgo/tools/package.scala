@@ -70,6 +70,18 @@ package object tools {
     if (rng.nextDouble < 0.5) t1 else t2
   }
 
+  def mutltinomial[T](workingStats: collection.Map[T, Double])(implicit rng: Random) = {
+    lazy val all = workingStats.keys.toSeq
+    def roulette(weights: List[(T, Double)], selected: Double): T =
+      weights match {
+        case Nil => all.random
+        case (i, p) :: t =>
+          if (selected <= p) i
+          else roulette(t, selected - p)
+      }
+    roulette(workingStats.toList, rng.nextDouble)
+  }
+
   implicit class ScalaToApacheRng(rng: Random) extends RandomGenerator {
     override def setSeed(i: Int): Unit = rng.setSeed(i)
     override def setSeed(ints: Array[Int]): Unit = ???

@@ -22,21 +22,24 @@ import monocle.syntax._
 
 import scala.util.Random
 
-trait BGAMutation <: Mutation with GA with MutationRate {
+object BGAMutation {
 
-  override def mutationRate = 1.0 / genomeSize
-  def mutationRange = 0.1
-
-  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val newG = values.get(genome).map {
-      g =>
-        if (rng.nextDouble < mutationRate) {
-          def alphai = if (rng.nextDouble < (1.0 / 16)) 1.0 else 0.0
-          def ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
-          def sign = if (rng.nextBoolean) 1.0 else -1.0
-          g + (sign * mutationRange * ro)
-        } else g
+  def apply(mutation: Mutation with GA)(
+    mutationRate: Double = 1.0 / mutation.genomeSize,
+    mutationRange: Double = 0.1): mutation.Mutation = {
+    import mutation._
+    (genome: G, population: Population[G, P, F], archive: A, rng: Random) => {
+      val newG = values.get(genome).map {
+        g =>
+          if (rng.nextDouble < mutationRate) {
+            def alphai = if (rng.nextDouble < (1.0 / 16)) 1.0 else 0.0
+            def ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
+            def sign = if (rng.nextBoolean) 1.0 else -1.0
+            g + (sign * mutationRange * ro)
+          } else g
+      }
+      genome |-> values set newG
     }
-    genome |-> values set newG
   }
 }
+

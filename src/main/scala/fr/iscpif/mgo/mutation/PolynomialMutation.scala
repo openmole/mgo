@@ -29,41 +29,41 @@ import scala.math._
  * Based on the source code of Jmetal library
  * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
  */
-trait PolynomialMutation extends Mutation with GA {
+object PolynomialMutation {
 
-  def mutationRate = 0.5
+  def apply(mutation: Mutation with GA)(distributionIndex: Double, mutationRate: Double = 0.5): mutation.Mutation = {
+    import mutation._
+    (g: G, population: Population[G, P, F], archive: A, rng: Random) => {
+      val newValues = values.get(g) map {
+        v =>
+          if (rng.nextDouble <= mutationRate) {
+            val yl = 0.0 // lower bound
+            val yu = 1.0 // upper bound
+            val delta1 = (v - yl) / (yu - yl)
+            val delta2 = (yu - v) / (yu - yl)
+            val mut_pow = 1.0 / (distributionIndex + 1.0)
+            val rnd = rng.nextDouble
 
-  def distributionIndex: Double
+            val deltaq: Double = (if (rnd <= 0.5) {
+              val xy = 1.0 - delta1
+              val value = 2.0 * rnd + (1.0 - 2.0 * rnd) * (pow(xy, (distributionIndex + 1.0)))
+              pow(value, mut_pow) - 1.0
+            } else {
+              val xy = 1.0 - delta2
+              val value = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (pow(xy, (distributionIndex + 1.0)))
+              1.0 - (pow(value, mut_pow))
+            })
 
-  override def mutate(g: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val newValues = values.get(g) map {
-      v =>
-        if (rng.nextDouble <= mutationRate) {
-          val yl = 0.0 // lower bound
-          val yu = 1.0 // upper bound
-          val delta1 = (v - yl) / (yu - yl)
-          val delta2 = (yu - v) / (yu - yl)
-          val mut_pow = 1.0 / (distributionIndex + 1.0)
-          val rnd = rng.nextDouble
+            val finalValue = v + deltaq * (yu - yl)
 
-          val deltaq: Double = (if (rnd <= 0.5) {
-            val xy = 1.0 - delta1
-            val value = 2.0 * rnd + (1.0 - 2.0 * rnd) * (pow(xy, (distributionIndex + 1.0)))
-            pow(value, mut_pow) - 1.0
-          } else {
-            val xy = 1.0 - delta2
-            val value = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (pow(xy, (distributionIndex + 1.0)))
-            1.0 - (pow(value, mut_pow))
-          })
-
-          val finalValue = v + deltaq * (yu - yl)
-
-          if (finalValue < yl) yl
-          else if (finalValue > yu) yu
-          else finalValue
-        }
-        v
+            if (finalValue < yl) yl
+            else if (finalValue > yu) yu
+            else finalValue
+          }
+          v
+      }
+      values.set(g, newValues)
     }
-    values.set(g, newValues)
   }
 }
+

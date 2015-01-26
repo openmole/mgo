@@ -22,20 +22,22 @@ import monocle.syntax._
 
 import scala.util.Random
 
-trait BLXCrossover <: Crossover with GA {
+object BLXCrossover {
 
-  def alpha: Double = 0.5
-
-  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = {
-    val (newG1, newG2) =
-      (values.get(g1) zip values.get(g2)).map {
-        case (c1, c2) =>
-          val cmin = math.min(c1, c2)
-          val cmax = math.max(c1, c2)
-          val i = cmax - cmin
-          def generate = rng.nextDouble().scale(cmin - alpha * i, cmax + alpha * i)
-          (generate, generate)
-      }.unzip
-    Seq(g1 |-> values set newG1, g2 |-> values set newG2)
+  def apply(crossover: Crossover with GA)(alpha: Double = 0.5) = {
+    import crossover._
+    (g1: G, g2: G, population: Population[G, P, F], archive: A, rng: Random) => {
+      val (newG1, newG2) =
+        (values.get(g1) zip values.get(g2)).map {
+          case (c1, c2) =>
+            val cmin = math.min(c1, c2)
+            val cmax = math.max(c1, c2)
+            val i = cmax - cmin
+            def generate = rng.nextDouble().scale(cmin - alpha * i, cmax + alpha * i)
+            (generate, generate)
+        }.unzip
+      Seq(g1 |-> values set newG1, g2 |-> values set newG2)
+    }
   }
+
 }

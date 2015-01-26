@@ -23,18 +23,24 @@ import scala.util.Random
 import monocle.syntax._
 
 object GAGenomeWithSigma {
-  case class Genome(values: Array[Double], sigma: Array[Double])
+  case class Genome(
+    values: Array[Double],
+    sigma: Array[Double],
+    mutation: Option[Int] = None,
+    crossover: Option[Int] = None)
 }
 
 /**
  * Genome for genetic algorithm with an autoadaptative sigma component
  */
-trait GAGenomeWithSigma extends GA with Sigma {
+trait GAGenomeWithSigma extends GA with Sigma with DynamicApplication {
 
   type G = GAGenomeWithSigma.Genome
 
   def rawValues = SimpleLens[G, Seq[Double]](_.values.toArray, (g, v) => g.copy(values = v.toArray))
   def sigma = SimpleLens[G, Seq[Double]](_.sigma.toArray, (g, v) => g.copy(sigma = v.toArray))
+  def fromMutation = Lenser[G](_.mutation)
+  def fromCrossover = Lenser[G](_.crossover)
 
   def randomGenome(implicit rng: Random) = {
     def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toArray

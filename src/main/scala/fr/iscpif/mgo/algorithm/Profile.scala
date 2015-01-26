@@ -19,15 +19,17 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
+import part._
+
 trait Profile <: Evolution
   with MG
   with NoArchive
   with GAGenomeWithSigma
   with MaxAggregation
-  with SBXCrossover
+  with DynamicGACrossover
+  with DynamicGAMutation
   with BestAggregatedNicheElitism
   with ProfileNiche
-  with AdaptiveCauchyMutation
   with BinaryTournamentSelection
   with TournamentOnRank
   with HierarchicalRanking

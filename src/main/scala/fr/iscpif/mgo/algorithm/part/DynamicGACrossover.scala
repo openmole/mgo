@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 2015 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,21 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modelfamily
+package fr.iscpif.mgo.algorithm.part
 
-import fr.iscpif.mgo.mutation.AdaptiveCauchyMutation
-import scala.util.Random
 import fr.iscpif.mgo._
-import tools.Math._
 
-trait ModelFamilyMutation <: AdaptiveCauchyMutation with ModelFamilyGenome with Aggregation {
+trait DynamicGACrossover <: Crossover with GA {
 
-  def changeNiche = 0.1
-
-  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val (newValues, newSigma) = AdaptiveCauchyMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
-    val res = sigma.set(values.set(genome, newValues), newSigma)
-    if (rng.nextDouble < changeNiche) modelId.set(res, rng.nextInt(models)) else res
-  }
+  def crossovers = Vector(
+    SBXCrossover(this)(0.1),
+    BLXCrossover(this)(0.5)
+  )
 
 }

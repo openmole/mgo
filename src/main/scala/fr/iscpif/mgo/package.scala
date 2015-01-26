@@ -62,10 +62,10 @@ package object mgo {
   type Breeding = breed.Breeding
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
-  type BLXCrossover = crossover.BLXCrossover
+  lazy val BLXCrossover = crossover.BLXCrossover
   type Crossover = crossover.Crossover
-  type IdentityCrossOver = crossover.IdentityCrossover
-  type SBXCrossover = crossover.SBXCrossover
+  lazy val IdentityCrossOver = crossover.IdentityCrossover
+  lazy val SBXCrossover = crossover.SBXCrossover
   type CrowdingIndividualDistance = distance.CrowdingIndividualDistance
   type ClosedCrowdingIndividualDistance = distance.ClosedCrowdingIndividualDistance
   type ClosedCrowdingIndividualDistanceFromArchive = distance.ClosedCrowdingIndividualDistanceFromArchive
@@ -86,7 +86,6 @@ package object mgo {
   type NonStrictEpsilonDominance = dominance.NonStrictEpsilonDominance
   type StrictDominance = dominance.StrictDominance
   type StrictEpsilonDominance = dominance.StrictEpsilonDominance
-  type DynamicApplicationGA = dynamic.DynamicApplicationGA
   type BestAggregatedElitism = elitism.BestAggregatedElitism
   type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
   type BestRankedNicheElitism = elitism.BestRankedNicheElitism
@@ -118,11 +117,11 @@ package object mgo {
   type MapPlotter = map.MapPlotter
   type ProfileGenomePlotter = map.ProfileGenomePlotter
   type ProfilePlotter = map.ProfilePlotter
-  type AdaptiveCauchyMutation = mutation.AdaptiveCauchyMutation
-  type BGAMutation = mutation.BGAMutation
-  type GaussianMutation = mutation.GaussianMutation
+  lazy val AdaptiveCauchyMutation = mutation.AdaptiveCauchyMutation
+  lazy val BGAMutation = mutation.BGAMutation
+  lazy val GaussianMutation = mutation.GaussianMutation
   type Mutation = mutation.Mutation
-  type IdentityMutation = mutation.IdentityMutation
+  lazy val IdentityMutation = mutation.IdentityMutation
   type GAGenotypeGridNiche = niche.GAGenotypeGridNiche
   type MapNiche = niche.MapNiche
   type Niche = niche.Niche

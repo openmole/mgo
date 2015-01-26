@@ -18,12 +18,15 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import part._
 
 trait BehaviourSearch <: NoFitness
   with HitMapArchive
   with GeneticBreeding
   with BinaryTournamentSelection
-  with dynamic.DynamicApplicationGA
+  with DynamicGACrossover
+  with DynamicGAMutation
+  with GAGenomeWithSigma
   with TournamentOnHitCount
   with HierarchicalRanking
   with RandomNicheElitism

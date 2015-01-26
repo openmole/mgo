@@ -18,13 +18,15 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.dynamic.DynamicApplicationGA
+import part._
 
 trait NSGAII <: Evolution
   with BinaryTournamentSelection
   with TournamentOnRankAndDiversity
   with NonDominatedElitism
-  with DynamicApplicationGA
+  with DynamicGACrossover
+  with DynamicGAMutation
+  with GAGenomeWithSigma
   with FitnessCrowdingDiversity
   with ParetoRanking
   with NonStrictDominance

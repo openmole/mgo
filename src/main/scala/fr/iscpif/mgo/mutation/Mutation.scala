@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.tools._
 import genome.G
 import util.Random
 
@@ -25,6 +26,9 @@ import util.Random
  * Layer of the cake for the mutation operation.
  */
 trait Mutation <: G with P with F with A {
+
+  type Mutation = (G, Population[G, P, F], A, Random) => G
+  def mutations: Vector[Mutation]
 
   /**
    * Mutate a genome
@@ -35,5 +39,7 @@ trait Mutation <: G with P with F with A {
    * @param rng a random number geneartor
    * @return the mutated genome
    */
-  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G
+  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G =
+    mutations.random(rng)(genome, population, archive, rng)
+
 }

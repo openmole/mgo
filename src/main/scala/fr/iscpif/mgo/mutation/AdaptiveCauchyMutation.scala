@@ -35,25 +35,19 @@ import scala.math._
  */
 object AdaptiveCauchyMutation {
 
-  def mutate(genome: Seq[Double], sigma: Seq[Double], minimumSigma: Double)(implicit rng: Random) = {
-    val newSigma = sigma.map { s => math.max(minimumSigma, s * exp(rng.nextGaussian)) }
+  def apply(mutation: Mutation with Sigma with GA with MinimumSigma): mutation.Mutation = {
+    import mutation._
+    (genome: G, population: Population[G, P, F], archive: A, rng: Random) => {
+      val newSigma = sigma.get(genome).map { s => math.max(minimumSigma, s * exp(rng.nextGaussian)) }
 
-    val newValues =
-      (genome zip newSigma) map {
-        case (v, s) => new CauchyDistribution(rng, v, s).sample //.nextGaussian * s + v
-      }
+      val newValues =
+        (values.get(genome) zip newSigma) map {
+          case (v, s) => new CauchyDistribution(rng, v, s).sample //.nextGaussian * s + v
+        }
 
-    (newValues, newSigma)
-  }
-
-}
-
-trait AdaptiveCauchyMutation <: Mutation with Sigma with GA with MinimumSigma {
-
-  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val (newValues, newSigma) = AdaptiveCauchyMutation.mutate(values.get(genome), sigma.get(genome), minimumSigma)
-    newValues.foreach(v => assert(!v.isNaN))
-    (genome |-> values set newValues) |-> sigma set newSigma
+      newValues.foreach(v => assert(!v.isNaN))
+      (genome |-> values set newValues) |-> sigma set newSigma
+    }
   }
 
 }

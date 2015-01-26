@@ -18,12 +18,17 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
-import genome.G
 import util.Random
 
 /**
  * No modification to the genomes
  */
-trait IdentityCrossover extends Crossover {
-  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = Seq(g1, g2)
+object IdentityCrossover {
+
+  def apply(crossover: Crossover) = {
+    import crossover._
+    (g1: G, g2: G, population: Population[G, P, F], archive: A, rng: Random) => Seq(g1, g2)
+  }
+
 }
+

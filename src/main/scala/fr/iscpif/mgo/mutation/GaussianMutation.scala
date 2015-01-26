@@ -24,15 +24,16 @@ import util.Random
  * Mutation of a genome based on gausian distribution arrount the genome with
  * fixed sigma values.
  */
-trait GaussianMutation extends Mutation with GA {
+object GaussianMutation {
 
   /** sigma values, one for each element in the rest of the genome */
-  def sigma: Double
-
-  override def mutate(g: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
-    val newValues = values.get(g) map {
-      _ + (rng.nextGaussian * sigma)
+  def apply(mutation: Mutation with GA)(sigma: Double): mutation.Mutation = {
+    import mutation._
+    (g: G, population: Population[G, P, F], archive: A, rng: Random) => {
+      val newValues = values.get(g) map {
+        _ + (rng.nextGaussian * sigma)
+      }
+      values.set(g, newValues)
     }
-    values.set(g, newValues)
   }
 }

@@ -26,7 +26,7 @@ import util.Random
  *
  * http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.33.7291&rep=rep1&type=pdf
  *
- * @INPROCEEDINGS{Deb98anefficient,
+ * INPROCEEDINGS{Deb98anefficient,
  *   author = {Kalyanmoy Deb},
  *   title = {An Efficient Constraint Handling Method for Genetic Algorithms},
  *   booktitle = {Computer Methods in Applied Mechanics and Engineering},
@@ -41,6 +41,15 @@ import util.Random
  *
  */
 object SBXCrossover {
+
+  def apply(crossover: Crossover with GA)(distributionIndex: Double = 1.0): crossover.Crossover = {
+    import crossover._
+    (g1: G, g2: G, population: Population[G, P, F], archive: A, rng: Random) => {
+      val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)(rng)
+      assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
+      Seq(values.set(g1, o1), values.set(g2, o2))
+    }
+  }
 
   def crossOver(g1: Seq[Double], g2: Seq[Double], distributionIndex: Double)(implicit rng: Random): (Seq[Double], Seq[Double]) = {
 
@@ -66,21 +75,6 @@ object SBXCrossover {
       case (g1e, g2e) => elementCrossOver(g1e, g2e)
     }.unzip
 
-  }
-
-}
-
-trait SBXCrossover extends Crossover with GA {
-
-  /** distribution index parameter of the algorithm */
-  def distributionIndex: Double = 1.0
-
-  override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random) = sbxCrossover(g1, g2)
-
-  def sbxCrossover(g1: G, g2: G)(implicit rng: Random) = {
-    val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)
-    assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-    Seq(values.set(g1, o1), values.set(g2, o2))
   }
 
 }

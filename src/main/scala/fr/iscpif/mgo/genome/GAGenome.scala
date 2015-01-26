@@ -21,7 +21,10 @@ import scala.util.Random
 import monocle._
 
 object GAGenome {
-  case class Genome(values: Array[Double])
+  case class Genome(
+    values: Array[Double],
+    mutation: Option[Int] = None,
+    crossover: Option[Int] = None)
 }
 
 /**

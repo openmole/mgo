@@ -15,30 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.dynamic
+package fr.iscpif.mgo.genome
 
-import monocle._
 import fr.iscpif.mgo._
+import monocle._
+
 import scala.util.Random
 
-trait DynamicApplicationGAGenome <: GA with Sigma with F {
+trait DynamicApplication <: G {
 
-  case class Genome(
-    values: Seq[Double],
-    sigma: Seq[Double],
-    mutation: Option[Int] = None,
-    crossover: Option[Int] = None)
-
-  type G = Genome
-
-  def rawValues = Lenser[G](_.values)
-  def sigma = Lenser[G](_.sigma)
-  def mutation = Lenser[G](_.mutation)
-  def crossover = Lenser[G](_.crossover)
-
-  def randomGenome(implicit rng: Random) = {
-    def rnd = Stream.continually(rng.nextDouble).take(genomeSize).toIndexedSeq
-    Genome(rnd, rnd)
-  }
+  def fromCrossover: SimpleLens[G, Option[Int]]
 
 }

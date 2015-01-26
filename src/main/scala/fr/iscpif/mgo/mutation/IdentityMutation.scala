@@ -18,12 +18,16 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import genome.G
 import util.Random
 
 /**
  * Mutation that doesn't modify the genome.
  */
-trait IdentityMutation <: Mutation with G {
-  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = genome
+object IdentityMutation {
+
+  def apply(mutation: Mutation with G): mutation.Mutation = {
+    import mutation._
+    (genome: G, population: Population[G, P, F], archive: A, rng: Random) => genome
+  }
+
 }

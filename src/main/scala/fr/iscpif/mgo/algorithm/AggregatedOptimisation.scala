@@ -18,12 +18,12 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.algorithm.part._
 
 trait AggregatedOptimisation <: Evolution
-  /*with GAGenome
-  with BGAMutation
-  with SBXCrossover*/
-  with dynamic.DynamicApplicationGA
+  with DynamicGACrossover
+  with DynamicGAMutation
+  with GAGenomeWithSigma
   with BinaryTournamentSelection
   with TournamentOnAggregatedFitness
   with BestAggregatedElitism
