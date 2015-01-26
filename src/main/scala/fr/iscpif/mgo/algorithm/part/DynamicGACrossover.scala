@@ -18,8 +18,9 @@
 package fr.iscpif.mgo.algorithm.part
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.crossover.DynamicCrossover
 
-trait DynamicGACrossover <: Crossover with GA {
+trait DynamicGACrossover <: DynamicCrossover with GA {
 
   def crossovers = Vector(
     SBXCrossover(this)(0.1),
