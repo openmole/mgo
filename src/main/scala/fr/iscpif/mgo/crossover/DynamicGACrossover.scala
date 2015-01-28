@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 2015 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,19 +15,15 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modelfamily
+package fr.iscpif.mgo.crossover
 
-import fr.iscpif.mgo.NonDominatedElitism
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.elitism.NonDominatedElitism
-import scala.util.Random
 
-trait ModelFamilyElitism <: Elitism with NicheElitism with ModelFamilyGenome with Ranking with Diversity {
+trait DynamicGACrossover <: DynamicCrossover with GA {
 
-  type NICHE = Int
-  def nicheSize: Int
-
-  override def niche(individual: Individual[G, P, F]) = modelId.get(individual.genome)
-  override def keep(individuals: Population[G, P, F])(implicit rng: Random): Population[G, P, F] = NonDominatedElitism(this)(individuals, nicheSize)
+  def crossovers = Vector(
+    SBXCrossover(this)(0.1),
+    BLXCrossover(this)(0.5)
+  )
 
 }

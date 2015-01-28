@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 2015 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,11 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.modelfamily
+package fr.iscpif.mgo.mutation
 
-import fr.iscpif.mgo.genome.G
-import monocle._
+import fr.iscpif.mgo.genome.{ GA, Sigma }
 
-trait ModelId <: G {
-  def modelId: SimpleLens[G, Int]
+trait DynamicGAMutation <: DynamicMutation with GA with Sigma with MinimumSigma {
+
+  def mutations =
+    Vector(
+      BGAMutation(this)(mutationRate = 1.0 / genomeSize, mutationRange = 0.1),
+      BGAMutation(this)(mutationRate = 0.5, mutationRange = 0.5),
+      AdaptiveCauchyMutation(this)
+    )
+
 }
