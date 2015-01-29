@@ -48,7 +48,6 @@ package object mgo {
   type BehaviourSearch = algorithm.BehaviourSearch
   type CMAES = algorithm.CMAES
   type Map = algorithm.Map
-  //type OptimumDiversity = algorithm.OptimumDiversity
   type NSGAII = algorithm.NSGAII
   type Profile = algorithm.Profile
   type SMSEMOEA = algorithm.SMSEMOEA
@@ -64,6 +63,7 @@ package object mgo {
   type GeneticBreeding = breed.GeneticBreeding
   lazy val BLXCrossover = crossover.BLXCrossover
   type Crossover = crossover.Crossover
+  type DynamicGACrossover = crossover.DynamicGACrossover
   lazy val IdentityCrossOver = crossover.IdentityCrossover
   lazy val SBXCrossover = crossover.SBXCrossover
   type CrowdingIndividualDistance = distance.CrowdingIndividualDistance
@@ -79,7 +79,7 @@ package object mgo {
   type FitnessClosedCrowdingDiversity = diversity.FitnessClosedCrowdingDiversity
   type KNearestNeighboursDiversity = diversity.FitnessKNearestNeighboursDiversity
   type Diversity = diversity.Diversity
-  type HypervolumeDiversity = diversity.FitnessHypervolumeDiversity
+  type FitnessHypervolumeDiversity = diversity.FitnessHypervolumeDiversity
   type NoDiversity = diversity.NoDiversity
   type Dominance = dominance.Dominance
   type NonStrictDominance = dominance.NonStrictDominance
@@ -119,6 +119,7 @@ package object mgo {
   type ProfilePlotter = map.ProfilePlotter
   lazy val AdaptiveCauchyMutation = mutation.AdaptiveCauchyMutation
   lazy val BGAMutation = mutation.BGAMutation
+  type DynamicGAMutation = mutation.DynamicGAMutation
   lazy val GaussianMutation = mutation.GaussianMutation
   type Mutation = mutation.Mutation
   lazy val IdentityMutation = mutation.IdentityMutation

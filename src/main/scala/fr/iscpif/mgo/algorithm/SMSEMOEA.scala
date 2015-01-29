@@ -18,8 +18,6 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.crossover._
-import fr.iscpif.mgo.mutation._
 
 trait SMSEMOEA <: Evolution
   with GAGenomeWithSigma
@@ -30,7 +28,7 @@ trait SMSEMOEA <: Evolution
   with RankElitism
   with DynamicGACrossover
   with DynamicGAMutation
-  with HypervolumeDiversity
+  with FitnessHypervolumeDiversity
   with NoArchive
   with GeneticBreeding
   with ClampedGenome

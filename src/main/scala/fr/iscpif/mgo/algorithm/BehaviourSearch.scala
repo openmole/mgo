@@ -18,8 +18,6 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.crossover._
-import fr.iscpif.mgo.mutation._
 
 trait BehaviourSearch <: NoFitness
   with HitMapArchive
