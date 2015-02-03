@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo.test
 
+import java.io.File
+
 import fr.iscpif.mgo._
 import scalax.io._
 import monocle.syntax._

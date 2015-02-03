@@ -23,15 +23,12 @@ import tools.Lazy
 
 import scala.util.Random
 
-/**
- * Layer to compute the rank according to the number individual that dominate a
- * given individual.
- */
-trait ParetoRanking extends Ranking with Dominance with MG {
 
-  override def rank(values: Population[G, P, F])(implicit rng: Random) = paretoRanking(values.toIndividuals.map(fitness))
-
-  def paretoRanking(values: Seq[Seq[Double]]) =
+object ParetoRanking {
+  
+  def paretoRanking(algorithm: Dominance)(values: Seq[Seq[Double]]) = {
+    import algorithm._
+   
     values.zipWithIndex.map {
       case (v1, index1) =>
         Lazy(
@@ -42,5 +39,18 @@ trait ParetoRanking extends Ranking with Dominance with MG {
           }
         )
     }
+  }
+  
+}
+
+/**
+ * Layer to compute the rank according to the number individual that dominate a
+ * given individual.
+ */
+trait ParetoRanking extends Ranking with Dominance with MG {
+
+  override def rank(values: Population[G, P, F])(implicit rng: Random) = paretoRanking(values.toIndividuals.map(fitness))
+
+  def paretoRanking(values: Seq[Seq[Double]]) = ParetoRanking.paretoRanking(this)(values)
 }
 
