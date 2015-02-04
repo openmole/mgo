@@ -4,6 +4,8 @@ name := "mgo"
 
 scalaVersion := "2.11.5"
 
+scalacOptions in (Compile,doc) := Seq("-groups", "-implicits", "-diagrams","-diagrams-max-classes","20")
+
 crossScalaVersions := Seq("2.10.4", "2.11.4")
 
 resolvers ++= Seq(
