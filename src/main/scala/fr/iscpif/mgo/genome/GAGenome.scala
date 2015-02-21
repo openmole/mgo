@@ -33,6 +33,6 @@ object GAGenome {
 trait GAGenome extends GA {
   type G = GAGenome.Genome
 
-  def rawValues = SimpleLens[G, Seq[Double]](_.values.toArray, (g, v) => g.copy(values = v.toArray))
+  def rawValues = Lens((_: G).values.toSeq)(v => g => g.copy(values = v.toArray))
   def randomGenome(implicit rng: Random) = GAGenome.Genome(Stream.continually(rng.nextDouble).take(genomeSize).toArray)
 }

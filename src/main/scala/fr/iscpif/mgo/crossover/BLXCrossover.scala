@@ -36,7 +36,7 @@ object BLXCrossover {
             def generate = rng.nextDouble().scale(cmin - alpha * i, cmax + alpha * i)
             (generate, generate)
         }.unzip
-      Seq(g1 |-> values set newG1, g2 |-> values set newG2)
+      Seq(g1 &|-> values set newG1, g2 &|-> values set newG2)
     }
   }
 

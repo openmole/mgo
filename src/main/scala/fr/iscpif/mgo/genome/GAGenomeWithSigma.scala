@@ -18,9 +18,8 @@
 package fr.iscpif.mgo.genome
 
 import monocle._
-import monocle.Macro._
+import monocle.macros._
 import scala.util.Random
-import monocle.syntax._
 
 object GAGenomeWithSigma {
   case class Genome(
@@ -37,8 +36,8 @@ trait GAGenomeWithSigma extends GA with Sigma with DynamicApplication {
 
   type G = GAGenomeWithSigma.Genome
 
-  def rawValues = SimpleLens[G, Seq[Double]](_.values.toArray, (g, v) => g.copy(values = v.toArray))
-  def sigma = SimpleLens[G, Seq[Double]](_.sigma.toArray, (g, v) => g.copy(sigma = v.toArray))
+  def rawValues = Lens((_: G).values.toSeq)(v => g => g.copy(values = v.toArray))
+  def sigma = Lens((_: G).sigma.toSeq)(v => g => g.copy(sigma = v.toArray))
   def fromMutation = Lenser[G](_.mutation)
   def fromCrossover = Lenser[G](_.crossover)
 

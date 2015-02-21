@@ -68,7 +68,7 @@ object TestOptimumDiversity extends App {
   m.evolve.untilConverged { s =>
     val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
     s.population.foreach {
-      i => output.append((m.scale(i.genome |-> m.values get)).mkString(",") + "," + i.fitness.mkString(",") + "\n")
+      i => output.append((m.scale(i.genome &|-> m.values get)).mkString(",") + "," + i.fitness.mkString(",") + "\n")
     }
   }*/
 
@@ -85,7 +85,7 @@ object TestOptimumDiversity extends App {
     s =>
       val output = Resource.fromFile(s"/tmp/novelty/novelty${s.generation}.csv")
       s.population.foreach {
-        i => output.append((m.scale(i.genome |-> m.values get)).mkString(",") + "," + i.fitness.mkString(",") + "\n")
+        i => output.append((m.scale(i.genome &|-> m.values get)).mkString(",") + "," + i.fitness.mkString(",") + "\n")
       }
       //println(s.individuals.map(_.fitness))
 

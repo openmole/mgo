@@ -26,10 +26,10 @@ import scala.util.Random
 
 trait DynamicMutation <: Mutation {
   def mutationExploration: Double = 0.1
-  def fromMutation: SimpleLens[G, Option[Int]]
+  def fromMutation: Lens[G, Option[Int]]
 
   def mutationStats(p: Population[G, P, F]): collection.Map[Mutation, Double] = {
-    val working = p.flatMap(_.genome |-> fromMutation get)
+    val working = p.flatMap(_.genome &|-> fromMutation get)
     val map = working.groupBy(identity).mapValues(_.size.toDouble / working.size)
     (0 until mutations.size).map(i => mutations(i) -> map.getOrElse(i, 0.0)).toMap
   }

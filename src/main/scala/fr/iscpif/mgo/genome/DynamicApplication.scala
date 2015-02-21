@@ -24,6 +24,6 @@ import scala.util.Random
 
 trait DynamicApplication <: G {
 
-  def fromCrossover: SimpleLens[G, Option[Int]]
+  def fromCrossover: Lens[G, Option[Int]]
 
 }

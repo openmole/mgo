@@ -18,8 +18,9 @@
 package fr.iscpif.mgo.phenotype
 
 import monocle._
+import monocle.macros._
 
 trait DoubleSeqPhenotype <: P {
   type P = Seq[Double]
-  def doubleSeq: SimpleLens[P, Seq[Double]] = SimpleLens(identity, (_, v) => v)
+  def doubleSeq: Lens[P, Seq[Double]] = Lens((p: P) => p)(v => p => v)
 }

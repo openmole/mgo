@@ -17,8 +17,8 @@
 
 package fr.iscpif.mgo.genome
 
-import monocle.SimpleLens
+import monocle.Lens
 
 trait RandomValue <: GA {
-  def randomValues: SimpleLens[G, Seq[Double]]
+  def randomValues: Lens[G, Seq[Double]]
 }

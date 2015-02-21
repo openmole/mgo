@@ -17,18 +17,18 @@
 
 package fr.iscpif.mgo.genome
 
-import monocle.SimpleLens
+import monocle.Lens
 import fr.iscpif.mgo._
 
 trait GenomeClamping <: G {
-  def clamp(values: SimpleLens[G, Seq[Double]]): SimpleLens[G, Seq[Double]]
+  def clamp(values: Lens[G, Seq[Double]]): Lens[G, Seq[Double]]
 }
 
 trait NoGenomeClamping <: GenomeClamping {
-  override def clamp(values: SimpleLens[G, Seq[Double]]) = values
+  override def clamp(values: Lens[G, Seq[Double]]) = values
 }
 
 trait ClampedGenome <: GenomeClamping {
-  override def clamp(values: SimpleLens[G, Seq[Double]]) =
-    SimpleLens[G, Seq[Double]](values.get(_).map(tools.Math.clamp(_, 0.0, 1.0)), values.set)
+  override def clamp(values: Lens[G, Seq[Double]]) =
+    Lens((g: G) => values.get(g).map(tools.Math.clamp(_, 0.0, 1.0)))(values.set)
 }

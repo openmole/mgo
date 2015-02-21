@@ -12,9 +12,9 @@ resolvers ++= Seq(
 
 libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-core" % "0.4.3"
 
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.3"
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.4.1"
 
-val monocleVersion = "0.5.1"
+val monocleVersion = "1.0.1"
 
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 

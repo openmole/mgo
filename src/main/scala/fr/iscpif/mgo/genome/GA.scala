@@ -26,8 +26,8 @@ import scala.util.Random
  */
 trait GA extends G with RandomGenome with GenomeClamping {
   /** The value part of the genome actually used for the optimisation */
-  def values: SimpleLens[G, Seq[Double]] = clamp(rawValues)
-  def rawValues: SimpleLens[G, Seq[Double]]
+  def values: Lens[G, Seq[Double]] = clamp(rawValues)
+  def rawValues: Lens[G, Seq[Double]]
 
   /** Size of the value part of the genome */
   def genomeSize: Int

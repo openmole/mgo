@@ -32,7 +32,7 @@ trait CMAESBreeding <: Breeding with GA with CMAESArchive {
       k =>
         val v = a.xmean.add(a.BD.multiply(arz.getColumnMatrix(k)).scalarMultiply(a.sigma))
         assert(!v.getColumn(0).exists(_.isNaN), a.C.getData.map(_.mkString(",")).mkString("\n"))
-        (randomGenome |-> values set v.getColumn(0)) |-> randomValues set arz.getColumn(k)
+        (randomGenome &|-> values set v.getColumn(0)) &|-> randomValues set arz.getColumn(k)
     }
 
     //    final RealMatrix arx = zeros(dimension, lambda);

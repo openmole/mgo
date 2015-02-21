@@ -33,7 +33,7 @@ object GaussianMutation {
       val newValues = values.get(g) map {
         _ + (rng.nextGaussian * sigma)
       }
-      values.set(g, newValues)
+      values.set(newValues)(g)
     }
   }
 }

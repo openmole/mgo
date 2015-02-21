@@ -24,5 +24,5 @@ import monocle._
  * values for the mutation
  */
 trait Sigma extends G {
-  def sigma: SimpleLens[G, Seq[Double]]
+  def sigma: Lens[G, Seq[Double]]
 }

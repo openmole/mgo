@@ -20,6 +20,7 @@ package fr.iscpif.mgo.crossover
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Math._
 import util.Random
+import monocle.syntax._
 
 /**
  * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :
@@ -47,7 +48,7 @@ object SBXCrossover {
     (g1: G, g2: G, population: Population[G, P, F], archive: A, rng: Random) => {
       val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)(rng)
       assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-      Seq(values.set(g1, o1), values.set(g2, o2))
+      Seq(g1 applyLens values set o1, g2 applyLens values set o2)
     }
   }
 

@@ -23,12 +23,11 @@ import tools.Lazy
 
 import scala.util.Random
 
-
 object ParetoRanking {
-  
+
   def paretoRanking(algorithm: Dominance)(values: Seq[Seq[Double]]) = {
     import algorithm._
-   
+
     values.zipWithIndex.map {
       case (v1, index1) =>
         Lazy(
@@ -40,7 +39,7 @@ object ParetoRanking {
         )
     }
   }
-  
+
 }
 
 /**
@@ -48,9 +47,7 @@ object ParetoRanking {
  * given individual.
  */
 trait ParetoRanking extends Ranking with Dominance with MG {
-
   override def rank(values: Population[G, P, F])(implicit rng: Random) = paretoRanking(values.toIndividuals.map(fitness))
-
   def paretoRanking(values: Seq[Seq[Double]]) = ParetoRanking.paretoRanking(this)(values)
 }
 

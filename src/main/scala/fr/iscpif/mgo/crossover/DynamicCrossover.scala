@@ -27,10 +27,10 @@ import scala.util.Random
 trait DynamicCrossover <: Crossover {
 
   def crossoverExploration: Double = 0.1
-  def fromCrossover: SimpleLens[G, Option[Int]]
+  def fromCrossover: Lens[G, Option[Int]]
 
   def crossoverStats(p: Population[G, P, F]): collection.Map[Crossover, Double] = {
-    val working = p.flatMap(_.genome |-> fromCrossover get)
+    val working = p.flatMap(_.genome &|-> fromCrossover get)
     val map = working.groupBy(identity).mapValues(_.size.toDouble / working.size)
     (0 until crossovers.size).map(i => crossovers(i) -> map.getOrElse(i, 0.0)).toMap
   }

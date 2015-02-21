@@ -62,7 +62,7 @@ object PolynomialMutation {
           }
           v
       }
-      values.set(g, newValues)
+      values.set(newValues)(g)
     }
   }
 }

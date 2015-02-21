@@ -25,7 +25,7 @@ trait GAGenotypeGridNiche <: Niche with GA with GAScaling {
   type NICHE = Seq[Int]
   def gridSize: Seq[Double]
   def niche(individual: Individual[G, P, F]): Seq[Int] =
-    (scale(individual.genome |-> values get) zip gridSize).map {
+    (scale(individual.genome &|-> values get) zip gridSize).map {
       case (x, g) => (x / g).toInt
     }
 }

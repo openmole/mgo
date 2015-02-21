@@ -38,7 +38,7 @@ object BGAMutation {
             g + (sign * mutationRange * ro)
           } else g
       }
-      genome |-> values set newG
+      genome &|-> values set newG
     }
   }
 }

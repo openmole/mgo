@@ -46,7 +46,7 @@ object AdaptiveCauchyMutation {
         }
 
       newValues.foreach(v => assert(!v.isNaN))
-      (genome |-> values set newValues) |-> sigma set newSigma
+      (genome &|-> values set newValues) &|-> sigma set newSigma
     }
   }
 

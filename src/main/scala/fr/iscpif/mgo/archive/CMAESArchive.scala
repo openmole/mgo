@@ -335,10 +335,10 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
 
     val sortedOffspring = population.sortBy(i => aggregate(i.fitness))
 
-    val bestGenomes = sortedOffspring.take(mu).map { i => i.genome |-> values get }
+    val bestGenomes = sortedOffspring.take(mu).map { i => i.genome &|-> values get }
     val bestArx: RealMatrix = new Array2DRowRealMatrix(bestGenomes.transpose.map(_.toArray).toArray, false) //selectColumns(arx, MathArrays.copyOf(arindex, mu))
 
-    val sortedRandomValues = sortedOffspring.map { i => i.genome |-> randomValues get }
+    val sortedRandomValues = sortedOffspring.map { i => i.genome &|-> randomValues get }
     //val arz: RealMatrix = new Array2DRowRealMatrix(sigmas.map(_.toArray).toArray, false)
     val bestArz: RealMatrix = new Array2DRowRealMatrix(sortedRandomValues.take(mu).transpose.map(_.toArray).toArray, false) //selectColumns(arz, MathArrays.copyOf(arindex, mu));
 

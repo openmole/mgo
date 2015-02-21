@@ -27,7 +27,7 @@ import monocle.syntax._
 trait GAProblem extends Problem with Scaling with MG with GA { pb =>
   def genomeSize: Int
 
-  def express(g: G, rng: Random): P = express(scale(g |-> values get), rng)
+  def express(g: G, rng: Random): P = express(scale(g &|-> values get), rng)
   def express(values: Seq[Double], rng: Random): P
 
 }
