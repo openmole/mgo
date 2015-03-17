@@ -45,7 +45,7 @@ package object mgo {
   def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
   type AggregatedOptimisation = algorithm.AggregatedOptimisation
-  type BehaviourSearch = algorithm.BehaviourSearch
+  type PSE = algorithm.PSE
   type CMAES = algorithm.CMAES
   type Map = algorithm.Map
   type NSGAII = algorithm.NSGAII

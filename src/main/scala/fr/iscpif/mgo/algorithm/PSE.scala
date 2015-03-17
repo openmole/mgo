@@ -19,7 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait BehaviourSearch <: NoFitness
+trait PSE <: NoFitness
   with HitMapArchive
   with GeneticBreeding
   with BinaryTournamentSelection
