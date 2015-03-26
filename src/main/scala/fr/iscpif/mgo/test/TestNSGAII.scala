@@ -24,7 +24,7 @@ import scalax.io.Resource
 object TestNSGAII extends App {
 
   val m =
-    new Schaeffer with NSGAII with CounterTermination {
+    new ZDT4 with NSGAII with CounterTermination {
       def steps = 1000
       def mu = 200
       def lambda = 200
