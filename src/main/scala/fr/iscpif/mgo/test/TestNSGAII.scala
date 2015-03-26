@@ -24,11 +24,11 @@ import scalax.io.Resource
 object TestNSGAII extends App {
 
   val m =
-    new ZDT4 with NSGAII with CounterTermination {
+    new Schaeffer with NSGAII with CounterTermination {
       def steps = 1000
       def mu = 200
       def lambda = 200
-      def genomeSize = 10
+      def genomeSize = 1
     }
 
   implicit val rng = newRNG(42)
