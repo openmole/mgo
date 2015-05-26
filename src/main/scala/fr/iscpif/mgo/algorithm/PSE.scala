@@ -21,6 +21,7 @@ import fr.iscpif.mgo._
 
 trait PSE <: NoFitness
   with HitMapArchive
+  with PhenotypeGridNiche
   with GeneticBreeding
   with BinaryTournamentSelection
   with DynamicGACrossover

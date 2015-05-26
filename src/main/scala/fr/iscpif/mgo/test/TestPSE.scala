@@ -32,7 +32,7 @@ object TestPSE extends App {
 
   implicit val rng = new Random
 
-  val m = new PSE with PhenotypeGridNiche with GAProblem {
+  val m = new PSE with GAProblem {
 
     override def genomeSize: Int = 2
 
@@ -46,7 +46,7 @@ object TestPSE extends App {
       1 + 10 * (genomeSize - 1) + (1 until genomeSize).map { i => pow(x(i), 2) - 10 * cos(4 * Pi * x(i)) }.sum
 
     /** Number of steps before the algorithm stops */
-    override def steps = 100
+    override def steps = 500
 
     /** the size of the offspring */
     override def lambda = 3
@@ -54,7 +54,7 @@ object TestPSE extends App {
     override type P = Seq[Double]
     override def express(g: Seq[Double], rng: Random): P = Vector(f1(g), f2(g))
 
-    def gridSize = Seq.fill(2)(0.1)
+    def gridSize = Vector(0.1, 2)
 
   }
 

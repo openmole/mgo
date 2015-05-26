@@ -70,7 +70,7 @@ package object tools {
     if (rng.nextDouble < 0.5) t1 else t2
   }
 
-  def mutltinomial[T](workingStats: collection.Map[T, Double])(implicit rng: Random) = {
+  def multinomial[T](workingStats: collection.Map[T, Double])(implicit rng: Random) = {
     lazy val all = workingStats.keys.toSeq
     def roulette(weights: List[(T, Double)], selected: Double): T =
       weights match {
