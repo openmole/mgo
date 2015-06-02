@@ -24,9 +24,11 @@ import collection.immutable.IntMap
  * E = Edge data type
  */
 trait Network[N, E] {
-  def node(u: Int): N
+  def node(u: Int): N = nodes(u)
+  def iternodes: Iterator[(Int, N)] = nodes.indices.iterator zip nodes.iterator
+
+  def nodes: IndexedSeq[N]
   def edge(u: Int, v: Int): Option[E]
-  def iternodes: Iterator[N]
   def iteredges: Iterator[(Int, Int, E)]
 }
 
@@ -56,6 +58,14 @@ trait SparseTopology[E] {
   def in(u: Int): Seq[(Int, E)] = mapin(u).toSeq
   def out(u: Int): Seq[(Int, E)] = mapout(u).toSeq
   def edge(u: Int, v: Int): Option[E] = if ((mapout contains u) && (mapout(u) contains v)) Some(mapout(u)(v)) else None
+  def iteredges: Iterator[(Int, Int, E)] =
+    if (mapout.isEmpty)
+      Iterator.empty
+    else
+      mapout.iterator.flatMap {
+        case (node1, mapoutnode1) =>
+          mapoutnode1.iterator.map { case (node2, e) => (node1, node2, e) }
+      }
 
   def mapin: IntMap[IntMap[E]] //mapin(u) edges leading into u
   def mapout: IntMap[IntMap[E]] //mapout(u) edges leading out of u
@@ -86,6 +96,11 @@ trait DenseTopology[E] {
   def in(u: Int): Seq[(Int, E)] = (matrix zipWithIndex) map { case (row, v) => (v, row(u)) }
   def out(u: Int): Seq[(Int, E)] = (matrix(u) zipWithIndex) map { case (d, v) => (v, d) }
   def edge(u: Int, v: Int): Option[E] = Some(matrix(u)(v))
+  def iteredges: Iterator[(Int, Int, E)] =
+    matrix.iterator.zipWithIndex.flatMap {
+      case (row, u) =>
+        row.iterator.zipWithIndex.map { case (e, v) => (u, v, e) }
+    }
 
   def matrix: Array[Array[E]]
 }
@@ -96,6 +111,6 @@ trait DenseTopology[E] {
 // }
 
 // object DirectedSparseNetwork {
-//   def connectivity: IndexedSeq[(Seq[Int], Seq[Int])] //connectivity(u) = (innodes, outnodes)
+//   def apply(): :
 
 // }

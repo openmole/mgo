@@ -121,4 +121,4 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait NEAT
+trait NEAT <: Problem

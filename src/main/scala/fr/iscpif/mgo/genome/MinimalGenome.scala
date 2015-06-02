@@ -1,3 +1,7 @@
+package fr.iscpif.mgo.genome
+
+import scala.util.Random
+
 /*
  * Copyright (C) 2015 Guillaume Chérel
  *
@@ -14,22 +18,6 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-package fr.iscpif.mgo.tools.network
-
-trait NeuralNetwork {
-  def activationF(x: Double): Double
-
-  def feedForwardOnce(inputValues: Seq[Double]): Seq[Double] = ???
-
-  def feedForwardUntilStable(inputValues: Seq[Double]) = ???
-}
-
-object NeuralNetwork {
-  def apply(
-    inputnodes: Seq[Int],
-    outputnodes: Seq[Int],
-    bias: Boolean,
-    edges: Seq[(Int, Int, Double)],
-    activationfunction: Double => Double): NeuralNetwork = ???
+trait MinimalGenome <: G {
+  def minimalGenome(): G
 }

@@ -56,19 +56,21 @@ object NetworkSpecification extends Properties("Network") {
                     ((topo.edge(innode, outnode) ?= Some(edgedata)) :| s"edge $outnode,$innode,$edgedata" &&
                       (topo.in(outnode).contains((innode, edgedata))) :| "in nodes" &&
                       (topo.out(innode).contains((outnode, edgedata))) :| "out nodes")
-                }: _*)
+                }: _*) &&
+                (edges.forall { case (innode, outnode, edgedata) => topo.iteredges.contains((innode, outnode, edgedata)) } :| "all test edges are in iteredges") &&
+                (topo.iteredges.forall { case (innode, outnode, edgedata) => edges.contains((innode, outnode, edgedata)) } :| "all iteredges are in test edges")
             }
         }
     }
 
-  val denseDirectedTopology: Gen[Array[Array[EdgeDataType]]] = Gen.sized { size =>
+  def denseDirectedTopology(maxSize: Int): Gen[Array[Array[EdgeDataType]]] =
     for {
+      size <- Gen.choose(0, maxSize)
       matrix <- Gen.containerOfN[Array, Array[EdgeDataType]](size, Gen.containerOfN[Array, EdgeDataType](size, arbitrary[EdgeDataType]))
     } yield matrix
-  }
 
   property("DenseTopology") =
-    forAll(denseDirectedTopology) {
+    forAll(denseDirectedTopology(8)) {
       (t: Array[Array[EdgeDataType]]) =>
         val topo = new DenseTopology[EdgeDataType] {
           val matrix = t
@@ -84,7 +86,14 @@ object NetworkSpecification extends Properties("Network") {
           all(t.zipWithIndex.map {
             case (row, i) =>
               (row.zipWithIndex.map { case (e, j) => (j, e) }.toSeq ?= topo.out(i)) :| "out"
-          }: _*)
+          }: _*) &&
+          (t.zipWithIndex.map {
+            case (row, i) =>
+              row.zipWithIndex.map { case (e, j) => (i, j, e) }
+          }.flatten.forall { case (i, j, e) => topo.iteredges.contains((i, j, e)) } :| "all test edges in iteredges") &&
+          (topo.iteredges.forall {
+            case (i, j, e) => (t(i)(j) == e)
+          } :| s"all iteredges are in test edges")
     }
 
   property("DirectedEdges") =
