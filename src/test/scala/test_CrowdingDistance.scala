@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package test
+
 import org.scalacheck.Properties
 import org.scalacheck.Prop
 import org.scalacheck.Prop._
@@ -23,8 +25,11 @@ import org.scalacheck.Arbitrary
 import org.scalacheck.Arbitrary.arbitrary
 
 import fr.iscpif.mgo.tools.metric.CrowdingDistance
+import util.Random
 
 object CrowdingDistanceSpecification extends Properties("CrowdingDistance") {
+  implicit val rng = new Random
+
   property("1D 3 points not ordered") =
     forAll(Gen.choose(-1000.0, 1000.0), Gen.choose(0.0, 1000.0), Gen.choose(0.0, 1000.0)) {
       (x0: Double, distXMin: Double, distXMax: Double) =>

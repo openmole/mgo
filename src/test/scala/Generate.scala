@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+package test
+
 import org.scalacheck.Properties
 import org.scalacheck.Prop
 import org.scalacheck.Prop._

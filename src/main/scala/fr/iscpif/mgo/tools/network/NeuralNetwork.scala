@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Guillaume Chérel 30/04/14
+ * Copyright (C) 2015 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,20 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package test
+package fr.iscpif.mgo.tools.network
 
-import org.scalacheck.Properties
-import org.scalacheck.Prop
-import org.scalacheck.Prop._
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
-import org.scalacheck.Arbitrary.arbitrary
+trait NeuralNetwork {
+  def activationF(x: Double): Double
 
-import math._
+  def feedForwardOnce(inputValues: Seq[Double]): Seq[Double] = ???
 
-object Compare {
-  val doubleTolerance: Double = 0.00000001
-  def doubles(a: Double, b: Double): Prop =
-    if (a == Double.PositiveInfinity || a == Double.NegativeInfinity) a == b
-    else s"$a != $b" |: abs(a - b) < doubleTolerance
+  def feedForwardUntilStable(inputValues: Seq[Double]) = ???
+}
+
+object NeuralNetwork {
+  def apply(
+    inputnodes: Seq[Int],
+    outputnodes: Seq[Int],
+    bias: Boolean,
+    edges: Seq[(Int, Int, Double)],
+    activationfunction: Double => Double): NeuralNetwork = ???
 }
