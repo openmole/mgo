@@ -15,23 +15,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.tools.neuralnetwork
+package fr.iscpif.mgo.tools.network
 
-import fr.iscpif.mgo.tools.network._
+trait DirectedEdges[E] {
+  def outedges(u: Int): Seq[(Int, Int, E)] = out(u) map { case (v, d) => (u, v, d) }
+  def inedges(u: Int): Seq[(Int, Int, E)] = in(u) map { case (v, d) => (v, u, d) }
+  def outneighbours(u: Int): Seq[Int] = out(u) map { _._1 }
+  def inneighbours(u: Int): Seq[Int] = in(u) map { _._1 }
 
-trait NeuralNetwork {
-  def feedForwardOnce(inputValues: Seq[Double]): Seq[Double] = ???
-  def feedForwardUntilStable(inputValues: Seq[Double]) = ???
-  def activate(node: Int) = ???
-
-  //def network: Network
-}
-
-object NeuralNetwork {
-  def apply(
-    inputnodes: Seq[Int],
-    outputnodes: Seq[Int],
-    bias: Boolean,
-    edges: Seq[(Int, Int, Double)],
-    activationfunction: Double => Double): NeuralNetwork = ???
+  def in(u: Int): Seq[(Int, E)]
+  def out(u: Int): Seq[(Int, E)]
 }

@@ -15,23 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.tools.neuralnetwork
+package fr.iscpif.mgo.tools.network
 
-import fr.iscpif.mgo.tools.network._
+trait DenseTopology[E] {
+  def in(u: Int): Vector[(Int, E)] = (matrix zipWithIndex) map { case (row, v) => (v, row(u)) }
+  def out(u: Int): Vector[(Int, E)] = (matrix(u) zipWithIndex) map { case (d, v) => (v, d) }
+  def edge(u: Int, v: Int): Option[E] = Some(matrix(u)(v))
+  def iteredges: Iterator[(Int, Int, E)] =
+    matrix.iterator.zipWithIndex.flatMap {
+      case (row, u) =>
+        row.iterator.zipWithIndex.map { case (e, v) => (u, v, e) }
+    }
 
-trait NeuralNetwork {
-  def feedForwardOnce(inputValues: Seq[Double]): Seq[Double] = ???
-  def feedForwardUntilStable(inputValues: Seq[Double]) = ???
-  def activate(node: Int) = ???
-
-  //def network: Network
-}
-
-object NeuralNetwork {
-  def apply(
-    inputnodes: Seq[Int],
-    outputnodes: Seq[Int],
-    bias: Boolean,
-    edges: Seq[(Int, Int, Double)],
-    activationfunction: Double => Double): NeuralNetwork = ???
+  def matrix: Vector[Vector[E]]
 }

@@ -29,15 +29,19 @@ import fr.iscpif.mgo.tools.network._
 
 object NetworkSpecification extends Properties("Network") {
 
+  type NodeDataType = String
   type EdgeDataType = Char
 
   val sparseDirectedTopology: Gen[Seq[(Int, Int)]] = Gen.sized { size =>
+    sparseDirectedTopology(size)
+  }
+
+  def sparseDirectedTopology(size: Int): Gen[Seq[(Int, Int)]] =
     for {
       nodes <- Gen.choose(0, size)
       probaLink <- Gen.choose(0.0, 1.0)
       random <- Gen.containerOfN[Vector, Double](nodes * nodes, Gen.choose(0.0, 1.0))
     } yield (0 until nodes).combinations(2).toSeq.zip(random).filter { case (_, r) => r < probaLink }.map { case (pairnodes, r) => (pairnodes(0), pairnodes(1)) }
-  }
 
   property("SparseTopology") =
     forAll(sparseDirectedTopology) {
@@ -47,8 +51,8 @@ object NetworkSpecification extends Properties("Network") {
             {
               val edges = (t zip s) map { case ((n1, n2), e) => (n1, n2, e) }
               val topo = new SparseTopology[Char] {
-                val mapin = SparseTopology.mapinFromSeq(edges)
-                val mapout = SparseTopology.mapoutFromSeq(edges)
+                val mapin = SparseTopology.mapinFrom(edges)
+                val mapout = SparseTopology.mapoutFrom(edges)
               }
               all(
                 edges map {
@@ -63,15 +67,15 @@ object NetworkSpecification extends Properties("Network") {
         }
     }
 
-  def denseDirectedTopology(maxSize: Int): Gen[Array[Array[EdgeDataType]]] =
+  def denseDirectedTopology(maxSize: Int): Gen[Vector[Vector[EdgeDataType]]] =
     for {
       size <- Gen.choose(0, maxSize)
-      matrix <- Gen.containerOfN[Array, Array[EdgeDataType]](size, Gen.containerOfN[Array, EdgeDataType](size, arbitrary[EdgeDataType]))
+      matrix <- Gen.containerOfN[Vector, Vector[EdgeDataType]](size, Gen.containerOfN[Vector, EdgeDataType](size, arbitrary[EdgeDataType]))
     } yield matrix
 
   property("DenseTopology") =
     forAll(denseDirectedTopology(8)) {
-      (t: Array[Array[EdgeDataType]]) =>
+      (t: Vector[Vector[EdgeDataType]]) =>
         val topo = new DenseTopology[EdgeDataType] {
           val matrix = t
         }
@@ -146,19 +150,19 @@ object NetworkSpecification extends Properties("Network") {
         }
     }
 
-  // property("NeuralNetwork query") = 
-
-  // property("creation Undirected Sparse") =
-  //   forAll(Gen.choose(1, maxDims), Gen.choose(1, maxPoints)) {
-  //     (ndims: Int, npoints: Int) =>
-  //       forAll(Gen.containerOfN[Vector, Vector[Double]](npoints, Gen.containerOfN[Vector, Double](ndims, Gen.choose(-1000.0, 1000.0)))) {
-  //         (points: Seq[Seq[Double]]) =>
-  //           val tree = KDTree(points)
-  //           val treeSeqGrouped: Map[Seq[Double], Seq[Seq[Double]]] = tree.toSeq.groupBy[Seq[Double]]((a: Seq[Double]) => a)
-  //           val pointsGrouped: Map[Seq[Double], Seq[Seq[Double]]] = points.groupBy[Seq[Double]]((a: Seq[Double]) => a)
-  //           s"tree sequence: ${tree.toSeq}\npoints: $points" |: pointsGrouped.forall(kv => kv._2.size == treeSeqGrouped(kv._1).size)
-  //       }
-  //   }
-
+  property("Network") =
+    forAll(Gen.containerOf[Vector, NodeDataType](arbitrary[NodeDataType])) { nodes =>
+      forAll(sparseDirectedTopology(nodes.length)) { edges =>
+        forAll(Gen.containerOfN[Vector, EdgeDataType](edges.size, arbitrary[EdgeDataType])) { edgesData =>
+          {
+            val testedges = (edges zip edgesData) map { case ((n1, n2), e) => (n1, n2, e) }
+            val network = Network.directedSparse[NodeDataType, EdgeDataType](nodes, testedges)
+            (testedges.forall { case (n1, n2, e) => network.edge(n1, n2) == Some(e) } :| "all testedges in network") &&
+              (network.iteredges.forall { case (n1, n2, e) => testedges.contains((n1, n2, e)) } :| "all network edges in testedges") &&
+              (nodes.zipWithIndex.forall { case (ndata, n) => network.node(n) == ndata } :| "nodes index and data respected")
+          }
+        }
+      }
+    }
 }
 

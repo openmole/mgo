@@ -15,23 +15,16 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.tools.neuralnetwork
+package fr.iscpif.mgo.tools.network
 
-import fr.iscpif.mgo.tools.network._
+trait UndirectedEdges[E] {
+  def edges(u: Int): Seq[(Int, Int, E)] = out(u) map { case (v, d) => (u, v, d) }
+  def neighbours(u: Int): Seq[Int] = out(u) map { _._1 }
 
-trait NeuralNetwork {
-  def feedForwardOnce(inputValues: Seq[Double]): Seq[Double] = ???
-  def feedForwardUntilStable(inputValues: Seq[Double]) = ???
-  def activate(node: Int) = ???
-
-  //def network: Network
+  def out(u: Int): Seq[(Int, E)]
 }
 
-object NeuralNetwork {
-  def apply(
-    inputnodes: Seq[Int],
-    outputnodes: Seq[Int],
-    bias: Boolean,
-    edges: Seq[(Int, Int, Double)],
-    activationfunction: Double => Double): NeuralNetwork = ???
+object UndirectedEdges {
+  /** Takes a sequence of edges and returns a sequence by adding a (n2,n1,e) for all (n1,n2,e) */
+  def makeSymetric[E](s: Seq[(Int, Int, E)]) = (s.toSet ++ s.map { case (n1, n2, e) => (n2, n1, e) }).toSeq
 }
