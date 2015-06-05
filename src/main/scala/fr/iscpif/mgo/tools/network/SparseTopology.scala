@@ -20,8 +20,8 @@ package fr.iscpif.mgo.tools.network
 import collection.immutable.IntMap
 
 trait SparseTopology[E] {
-  def in(u: Int): Vector[(Int, E)] = mapin(u).toVector
-  def out(u: Int): Vector[(Int, E)] = mapout(u).toVector
+  def in(u: Int): Vector[(Int, E)] = mapin.getOrElse(u, Vector.empty).toVector
+  def out(u: Int): Vector[(Int, E)] = mapout.getOrElse(u, Vector.empty).toVector
   def edge(u: Int, v: Int): Option[E] = if ((mapout contains u) && (mapout(u) contains v)) Some(mapout(u)(v)) else None
   def iteredges: Iterator[(Int, Int, E)] =
     if (mapout.isEmpty)

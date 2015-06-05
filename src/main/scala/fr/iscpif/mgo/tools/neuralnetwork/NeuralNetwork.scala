@@ -19,29 +19,69 @@ package fr.iscpif.mgo.tools.neuralnetwork
 
 import fr.iscpif.mgo.tools.network._
 import math._
+import scala.annotation.tailrec
 
 /**
  * @tparam N the neurons output type
  * @tparam E the weights type
  */
 trait NeuralNetwork[N, W] {
-  def network: Network[Unit, W] with DirectedEdges[W]
-  def inputNeurons: Vector[Int]
-  def outputNeurons: Vector[Int]
+  def network: Network[Unit, W] with DirectedEdges[W] with SparseTopology[W]
+  def inputNeurons: IndexedSeq[Int]
+  def outputNeurons: IndexedSeq[Int]
+  def inputsAndWeights(neuron: Int, state: IndexedSeq[N]): Vector[(N, W)] =
+    network.in(neuron).map { case (innode, weight) => (state(innode), weight) }
+
+  def stateWithInputs(inputValues: Seq[N]): IndexedSeq[N] = {
+    val mutableState = state.toBuffer
+    (inputValues zip inputNeurons) foreach { case (v, i) => mutableState(i) = v }
+    mutableState.toIndexedSeq
+  }
+  def state: IndexedSeq[N]
 }
 
 trait Feedforward[N] {
   def query(inputValues: Seq[N]): Seq[N] = ???
 }
 
-trait Recurrent[N] {
+trait Recurrent[N, W] {
   /**
    * Activating the network means computing the output values for all neurons simultaneously.
    * There is no order effect. The activation is done steps times. For the first activation, the
    * input neurones are initialised to the inputValues, and the other neurones to initialNeuronState
    */
-  def activate(steps: Int, inputValues: Seq[N]): Seq[N] = ???
-  def activateUntilStable(maxsteps: Int, inputValues: Seq[N]): Seq[N] = ???
+  def activate(steps: Int, inputValues: Seq[N]): Seq[N] = {
+    val finalState = activateRec(steps, stateWithInputs(inputValues))
+    outputNeurons map { finalState(_) }
+  }
+
+  @tailrec private def activateRec(steps: Int, state: IndexedSeq[N]): IndexedSeq[N] =
+    if (steps <= 0) state
+    else activateRec(steps - 1, activateOnce(state))
+
+  /** @return the number of steps, the average change over all node states during the last step, and the final state of the output neurons */
+  def activateUntilStable(maxsteps: Int, stabilityThreshold: Double, inputValues: Seq[N]): (Int, Double, Seq[N]) = {
+    val (steps, avgchange, finalState) = activateUntilStableRec(maxsteps, stabilityThreshold, stateWithInputs(inputValues))
+    (steps, avgchange, outputNeurons.map({ finalState(_) }))
+  }
+
+  @tailrec private def activateUntilStableRec(maxsteps: Int, stabilityThreshold: Double, state: IndexedSeq[N], steps: Int = 0, avgchange: Double = 0.0): (Int, Double, IndexedSeq[N]) =
+    if (steps >= maxsteps) (steps, avgchange, state)
+    else {
+      val nextstate = activateOnce(state)
+      val avgchange = nextstate.zip(state).foldLeft[Double](0.0) { (sum, twostates) => sum + change(twostates._1, twostates._2) } / state.length
+      if (avgchange < stabilityThreshold) (steps, avgchange, nextstate)
+      else activateUntilStableRec(maxsteps, stabilityThreshold, nextstate, steps + 1, avgchange)
+    }
+
+  def activateOnce(state: IndexedSeq[N]): IndexedSeq[N] =
+    state.zipWithIndex.map {
+      case (stateval, neuron) => {
+        val iaw = inputsAndWeights(neuron, state)
+        if (iaw.length == 0) stateval
+        else activate(neuron, iaw)
+      }
+    }
 
   /**
    * To propagate the inputValues means initialising the input neurons to the input values,
@@ -49,23 +89,32 @@ trait Recurrent[N] {
    * the number of successive steps taken before returning the values of the output neurons.
    */
   def propagate(steps: Int, inputValues: Seq[N]): Seq[N] = ???
-  def propagateUntilStable(maxsteps: Int, inputValues: Seq[N]): Seq[N] = ???
+  def propagateUntilStable(maxsteps: Int, stabilityThreshold: Double, inputValues: Seq[N]): Seq[N] = ???
 
-  def initialNeuronState: N
+  def activate(neuron: Int, inputs: Traversable[(N, W)]): N // activate a single neuron
+  def state: IndexedSeq[N]
+  def inputNeurons: IndexedSeq[Int]
+  def outputNeurons: IndexedSeq[Int]
+  def inputsAndWeights(neuron: Int, state: IndexedSeq[N]): Vector[(N, W)]
+  def stateWithInputs(inputValues: Seq[N]): IndexedSeq[N]
+  def change(newstate: N, oldstate: N): Double
+}
+
+trait AbsoluteDifferenceChange {
+  def change(newstate: Double, oldstate: Double): Double = abs(newstate - oldstate)
 }
 
 trait HomogeneousActivationFunction[N, W] {
-  def activate(neuron: Int): N = activationFunction(inputs(neuron))
+  def activate(neuron: Int, inputs: Traversable[(N, W)]): N = activationFunction(inputs)
 
-  def activationFunction(inputsAndWeights: Traversable[(N, W)]): N
-  def inputs(neuron: Int): Vector[(N, W)]
+  //def activationFunction(inputsAndWeights: Traversable[(N, W)]): N
+  def activationFunction: Traversable[(N, W)] => N
 }
 
 trait HeterogeneousActivationFunction[N, W] {
-  def activate(neuron: Int): N = activationFunction(neuron)(inputs(neuron))
+  def activate(neuron: Int, inputs: Traversable[(N, W)]): N = activationFunction(neuron)(inputs)
 
   def activationFunction: IndexedSeq[Traversable[(N, W)] => N]
-  def inputs(neuron: Int): Vector[(N, W)]
 }
 
 // trait CPPN <: NeuralNetwork[Double] with HeterogeneousActivationFunction[Double] {
@@ -77,12 +126,19 @@ object NeuralNetwork {
     outputnodes: Seq[Int],
     bias: Boolean,
     edges: Seq[(Int, Int, Double)],
-    activationfunction: Traversable[(N, W)] => N): NeuralNetwork[N, W] with Feedforward[N] = ???
+    activationfunction: Traversable[(N, W)] => N): NeuralNetwork[N, W] with Feedforward[N] with HomogeneousActivationFunction[N, W] = ???
 }
 
 object ActivationFunction {
-  def tanh(inputsAndWeights: Traversable[(Double, Double)]): Double = math.tanh(weightedSum(inputsAndWeights))
-  def logistic(inputsAndWeights: Traversable[(Double, Double)]): Double = 1.0 / (1 + math.exp(-weightedSum(inputsAndWeights)))
+  def tanh: Traversable[(Double, Double)] => Double = inputsAndWeights => math.tanh(weightedSum(inputsAndWeights))
+  def logistic: Traversable[(Double, Double)] => Double = inputsAndWeights => 1.0 / (1 + math.exp(-weightedSum(inputsAndWeights)))
+  def heaviside(h0: Double): Traversable[(Double, Double)] => Double =
+    inputsAndWeights => {
+      val x = weightedSum(inputsAndWeights)
+      if (x < 0) 0
+      else if (x > 0) 1
+      else h0
+    }
 
   def weightedSum(inputsAndWeights: Traversable[(Double, Double)]): Double =
     inputsAndWeights.foldLeft(0.0) { case (sum, (input, weight)) => sum + (input * weight) }

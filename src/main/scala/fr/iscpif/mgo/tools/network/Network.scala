@@ -39,5 +39,15 @@ object Network {
       val mapin = SparseTopology.mapinFrom(_edges)
       val mapout = SparseTopology.mapoutFrom(_edges)
     }
+
+  def directedSparse[E](
+    nbOfNodes: Int,
+    _edges: Traversable[(Int, Int, E)]): Network[Unit, E] with DirectedEdges[E] with SparseTopology[E] =
+    new Network[Unit, E] with DirectedEdges[E] with SparseTopology[E] {
+      val nodes: Vector[Unit] = Vector.fill(nbOfNodes)((): Unit)
+      val mapin = SparseTopology.mapinFrom(_edges)
+      val mapout = SparseTopology.mapoutFrom(_edges)
+    }
+
 }
 
