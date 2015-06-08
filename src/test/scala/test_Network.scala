@@ -41,7 +41,7 @@ object NetworkSpecification extends Properties("Network") {
       nodes <- Gen.choose(0, size)
       probaLink <- Gen.choose(0.0, 1.0)
       random <- Gen.containerOfN[Vector, Double](nodes * nodes, Gen.choose(0.0, 1.0))
-    } yield (0 until nodes).combinations(2).toVector.zip(random).filter { case (_, r) => r < probaLink }.map { case (pairnodes, r) => (pairnodes(0), pairnodes(1)) }
+    } yield (0 until nodes).flatMap { u => (0 until nodes).map { v => (u, v) } }.toVector.zip(random).filter { case (_, r) => r < probaLink }.map { case (pairnodes, r) => (pairnodes._1, pairnodes._2) }
 
   property("SparseTopology") =
     forAll(sparseDirectedTopology) {

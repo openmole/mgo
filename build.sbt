@@ -32,7 +32,7 @@ resolvers ++= Seq(
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.3" % "test"
 
-testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
+testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "2")
 
 publishMavenStyle := true
 

@@ -18,10 +18,10 @@
 package fr.iscpif.mgo.tools.network
 
 trait DirectedEdges[E] {
-  def outedges(u: Int): Seq[(Int, Int, E)] = out(u) map { case (v, d) => (u, v, d) }
-  def inedges(u: Int): Seq[(Int, Int, E)] = in(u) map { case (v, d) => (v, u, d) }
-  def outneighbours(u: Int): Seq[Int] = out(u) map { _._1 }
-  def inneighbours(u: Int): Seq[Int] = in(u) map { _._1 }
+  def outedges(u: Int): Vector[(Int, Int, E)] = out(u) map { case (v, d) => (u, v, d) }
+  def inedges(u: Int): Vector[(Int, Int, E)] = in(u) map { case (v, d) => (v, u, d) }
+  def outneighbours(u: Int): Vector[Int] = out(u) map { _._1 }
+  def inneighbours(u: Int): Vector[Int] = in(u) map { _._1 }
 
   def in(u: Int): Vector[(Int, E)]
   def out(u: Int): Vector[(Int, E)]

@@ -18,8 +18,8 @@
 package fr.iscpif.mgo.tools.network
 
 trait UndirectedEdges[E] {
-  def edges(u: Int): Seq[(Int, Int, E)] = out(u) map { case (v, d) => (u, v, d) }
-  def neighbours(u: Int): Seq[Int] = out(u) map { _._1 }
+  def edges(u: Int): Vector[(Int, Int, E)] = out(u) map { case (v, d) => (u, v, d) }
+  def neighbours(u: Int): Vector[Int] = out(u) map { _._1 }
 
   def out(u: Int): Vector[(Int, E)]
 }
