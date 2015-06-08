@@ -125,27 +125,109 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
       (Vector(1.0, 0.0), Vector(1.0)),
       (Vector(1.0, 1.0), Vector(0.0)))
 
+  /** a class containing a neural network topology which realises the associated input/output values*/
+  case class NeuralNetworkTestSetting[N, W](
+    network: Network[Unit, W] with DirectedEdges[W],
+    inputNeurons: IndexedSeq[Int],
+    outputNeurons: IndexedSeq[Int],
+    activationFunction: Either[Traversable[(N, W)] => N, IndexedSeq[Traversable[(N, W)] => N]],
+    inputsAndOutputs: Seq[(Seq[Double], Seq[Double])])
+
+  val xorSettings: List[NeuralNetworkTestSetting[Double, Double]] =
+    List(
+      NeuralNetworkTestSetting(
+        network = Network.directedSparse(
+          5,
+          Vector(
+            (0, 2, 1.0),
+            (0, 3, -1.0),
+            (1, 2, -1.0),
+            (1, 3, 1.0),
+            (2, 4, 1.0),
+            (3, 4, 1.0))),
+        inputNeurons = Vector[Int](0, 1),
+        outputNeurons = Vector[Int](4),
+        activationFunction = Left(ActivationFunction.heaviside(0)),
+        inputsAndOutputs = Vector(
+          (Vector(0.0, 0.0), Vector(0.0)),
+          (Vector(0.0, 1.0), Vector(1.0)),
+          (Vector(1.0, 0.0), Vector(1.0)),
+          (Vector(1.0, 1.0), Vector(0.0)))),
+      NeuralNetworkTestSetting(
+        network = Network.directedSparse(
+          4,
+          Vector(
+            (0, 2, 1.0),
+            (0, 3, -2.0),
+            (1, 2, 1.0),
+            (1, 3, -2.0),
+            (2, 3, 4.0))),
+        inputNeurons = Vector[Int](0, 1),
+        outputNeurons = Vector[Int](3),
+        activationFunction = Right(Vector(
+          ActivationFunction.zero,
+          ActivationFunction.zero,
+          ActivationFunction.heaviside(0),
+          ActivationFunction.heaviside(0))),
+        inputsAndOutputs = Vector(
+          (Vector(0.0, 0.0), Vector(0.0)),
+          (Vector(0.0, 1.0), Vector(1.0)),
+          (Vector(1.0, 0.0), Vector(1.0)),
+          (Vector(1.0, 1.0), Vector(0.0))))
+    )
+
   property("Feedforward query XOR") = false
 
-  property("Recurrent activate XOR steps >= 2") = forAll(Gen.choose(2, 100)) { steps =>
-    val recurrent = new Recurrent[Double, Double] with AbsoluteDifferenceChange with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
-      def state: IndexedSeq[Double] = xorNetwork.nodes.map { _ => 0.0 }
-      def inputNeurons: IndexedSeq[Int] = Vector[Int](0, 1)
-      def outputNeurons: IndexedSeq[Int] = Vector[Int](4)
-      val network = xorNetwork
-      val activationFunction = ActivationFunction.heaviside(0)
-    }
-    all(xorInputOutput.map { case (inputValues, outputValues) => (recurrent.activate(steps, inputValues) ?= outputValues.toVector) :| s"inputs = $inputValues; steps = $steps" }: _*)
+  property("Recurrent activate XOR steps >= 2") = forAll(Gen.oneOf(xorSettings.indices), Gen.choose(2, 100)) { (xorset, steps) =>
+    val setting = xorSettings(xorset)
+    val recurrent: Recurrent[Double, Double] with NeuralNetwork[Double, Double] =
+      setting.activationFunction match {
+        case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
+          def state: IndexedSeq[Double] = setting.network.nodes.map { _ => 0.0 }
+          def inputNeurons: IndexedSeq[Int] = setting.inputNeurons
+          def outputNeurons: IndexedSeq[Int] = setting.outputNeurons
+          val network: Network[Unit, Double] with DirectedEdges[Double] = setting.network
+          val activationFunction: Traversable[(Double, Double)] => Double = af
+          def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
+        }
+        case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HeterogeneousActivationFunction[Double, Double] {
+          def state: IndexedSeq[Double] = setting.network.nodes.map { _ => 0.0 }
+          def inputNeurons: IndexedSeq[Int] = setting.inputNeurons
+          def outputNeurons: IndexedSeq[Int] = setting.outputNeurons
+          val network: Network[Unit, Double] with DirectedEdges[Double] = setting.network
+          val activationFunction: IndexedSeq[Traversable[(Double, Double)] => Double] = af
+          def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
+        }
+      }
+    all(xorInputOutput.map {
+      case (inputValues, outputValues) => (recurrent.activate(steps, inputValues) ?= outputValues.toVector) :|
+        s"inputs = $inputValues" :|
+        s"expected output = $outputValues" :|
+        s"steps = $steps"
+    }: _*)
   }
 
-  property("Recurrent activate until stable XOR") = forAll(Gen.choose(3, 20), Gen.choose(1.0, 0.00000001)) { (maxsteps, stabilityThreshold) =>
-    val recurrent = new Recurrent[Double, Double] with AbsoluteDifferenceChange with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
-      def state: IndexedSeq[Double] = xorNetwork.nodes.map { _ => 0.0 }
-      def inputNeurons: IndexedSeq[Int] = Vector[Int](0, 1)
-      def outputNeurons: IndexedSeq[Int] = Vector[Int](4)
-      val network = xorNetwork
-      val activationFunction = ActivationFunction.heaviside(0)
-    }
+  property("Recurrent activate until stable XOR") = forAll(Gen.oneOf(xorSettings.indices), Gen.choose(3, 20), Gen.choose(0.000001, 0.1)) { (xorset, maxsteps, stabilityThreshold) =>
+    val setting = xorSettings(xorset)
+    val recurrent: Recurrent[Double, Double] with NeuralNetwork[Double, Double] =
+      setting.activationFunction match {
+        case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
+          def state: IndexedSeq[Double] = setting.network.nodes.map { _ => 0.0 }
+          def inputNeurons: IndexedSeq[Int] = setting.inputNeurons
+          def outputNeurons: IndexedSeq[Int] = setting.outputNeurons
+          val network: Network[Unit, Double] with DirectedEdges[Double] = setting.network
+          val activationFunction: Traversable[(Double, Double)] => Double = af
+          def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
+        }
+        case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HeterogeneousActivationFunction[Double, Double] {
+          def state: IndexedSeq[Double] = setting.network.nodes.map { _ => 0.0 }
+          def inputNeurons: IndexedSeq[Int] = setting.inputNeurons
+          def outputNeurons: IndexedSeq[Int] = setting.outputNeurons
+          val network: Network[Unit, Double] with DirectedEdges[Double] = setting.network
+          val activationFunction: IndexedSeq[Traversable[(Double, Double)] => Double] = af
+          def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
+        }
+      }
     all(xorInputOutput.map {
       case (inputValues, outputValues) => {
         val (steps, change, newOutputValues) = recurrent.activateUntilStable(maxsteps, stabilityThreshold, inputValues)
@@ -188,19 +270,19 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
       }
     }
 
-  property("NeuralNetwork feedforward 0.0 inputs/outputs with tanh activation function") =
-    forAll(perceptronWithWeights) {
-      (p) =>
-        {
-          val inputnodes = p._1
-          val outputnodes = p._2
-          val edges = p._3
-          (inputnodes.size > 0 && outputnodes.size > 0) ==> {
-            val outputvalues = NeuralNetwork.feedforwardNetwork(inputnodes, outputnodes, false, edges, ActivationFunction.tanh).query(inputnodes.map { _ => 0.0 })
-            all(outputvalues.map(Compare.doubles(_, 0.0)): _*)
-          }
-        }
-    }
+  property("NeuralNetwork feedforward 0.0 inputs/outputs with tanh activation function") = false
+  // forAll(perceptronWithWeights) {
+  //   (p) =>
+  //     {
+  //       val inputnodes = p._1
+  //       val outputnodes = p._2
+  //       val edges = p._3
+  //       (inputnodes.size > 0 && outputnodes.size > 0) ==> {
+  //         val outputvalues = NeuralNetwork.feedforwardNetwork(inputnodes, outputnodes, false, edges, ActivationFunction.tanh).query(inputnodes.map { _ => 0.0 })
+  //         all(outputvalues.map(Compare.doubles(_, 0.0)): _*)
+  //       }
+  //     }
+  // }
 
   // property("NeuralNetwork feedforward negative or positive inputs/outputs with tanh activation function") =
   //   forAll(perceptronWithWeights) {

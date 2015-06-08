@@ -23,6 +23,6 @@ trait DirectedEdges[E] {
   def outneighbours(u: Int): Seq[Int] = out(u) map { _._1 }
   def inneighbours(u: Int): Seq[Int] = in(u) map { _._1 }
 
-  def in(u: Int): Seq[(Int, E)]
-  def out(u: Int): Seq[(Int, E)]
+  def in(u: Int): Vector[(Int, E)]
+  def out(u: Int): Vector[(Int, E)]
 }

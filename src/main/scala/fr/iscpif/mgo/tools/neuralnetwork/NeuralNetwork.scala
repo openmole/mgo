@@ -26,7 +26,7 @@ import scala.annotation.tailrec
  * @tparam E the weights type
  */
 trait NeuralNetwork[N, W] {
-  def network: Network[Unit, W] with DirectedEdges[W] with SparseTopology[W]
+  def network: Network[Unit, W] with DirectedEdges[W]
   def inputNeurons: IndexedSeq[Int]
   def outputNeurons: IndexedSeq[Int]
   def inputsAndWeights(neuron: Int, state: IndexedSeq[N]): Vector[(N, W)] =
@@ -100,8 +100,8 @@ trait Recurrent[N, W] {
   def change(newstate: N, oldstate: N): Double
 }
 
-trait AbsoluteDifferenceChange {
-  def change(newstate: Double, oldstate: Double): Double = abs(newstate - oldstate)
+object ChangeFunction {
+  def absoluteDifference(newstate: Double, oldstate: Double): Double = abs(newstate - oldstate)
 }
 
 trait HomogeneousActivationFunction[N, W] {
@@ -122,14 +122,56 @@ trait HeterogeneousActivationFunction[N, W] {
 
 object NeuralNetwork {
   def feedforwardNetwork[N, W](
-    inputnodes: Seq[Int],
-    outputnodes: Seq[Int],
-    bias: Boolean,
-    edges: Seq[(Int, Int, Double)],
-    activationfunction: Traversable[(N, W)] => N): NeuralNetwork[N, W] with Feedforward[N] with HomogeneousActivationFunction[N, W] = ???
+    _nodes: Int,
+    _inputnodes: Int,
+    _outputnodes: Int,
+    _edges: Seq[(Int, Int, Double)],
+    _activationfunction: Traversable[(N, W)] => N): NeuralNetwork[N, W] with Feedforward[N] with HomogeneousActivationFunction[N, W] = ???
+
+  def recurrentNetwork[N, W](
+    _nodes: Int,
+    _inputnodes: IndexedSeq[Int],
+    _outputnodes: IndexedSeq[Int],
+    _edges: Seq[(Int, Int, W)],
+    _activationfunction: Traversable[(N, W)] => N,
+    _change: (N, N) => Double,
+    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Recurrent[N, W] with HomogeneousActivationFunction[N, W] =
+    new NeuralNetwork[N, W] with Recurrent[N, W] with HomogeneousActivationFunction[N, W] {
+      require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
+      require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
+      require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
+      val network = Network.directedSparse(_nodes, _edges)
+      val state: IndexedSeq[N] = _state
+      val inputNeurons: IndexedSeq[Int] = _inputnodes
+      val outputNeurons: IndexedSeq[Int] = _outputnodes
+      val activationFunction = _activationfunction
+      def change(newstate: N, oldstate: N): Double = _change(newstate, oldstate)
+    }
+
+  def recurrentNetwork[N, W](
+    _nodes: Int,
+    _inputnodes: IndexedSeq[Int],
+    _outputnodes: IndexedSeq[Int],
+    _edges: Seq[(Int, Int, W)],
+    _activationfunction: IndexedSeq[Traversable[(N, W)] => N],
+    _change: (N, N) => Double,
+    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Recurrent[N, W] with HeterogeneousActivationFunction[N, W] =
+    new NeuralNetwork[N, W] with Recurrent[N, W] with HeterogeneousActivationFunction[N, W] {
+      require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
+      require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
+      require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
+      val network = Network.directedSparse(_nodes, _edges)
+      val state: IndexedSeq[N] = _state
+      val inputNeurons: IndexedSeq[Int] = _inputnodes
+      val outputNeurons: IndexedSeq[Int] = _outputnodes
+      val activationFunction = _activationfunction
+      def change(newstate: N, oldstate: N): Double = _change(newstate, oldstate)
+    }
+
 }
 
 object ActivationFunction {
+  def zero: Traversable[(Double, Double)] => Double = _ => 0.0
   def tanh: Traversable[(Double, Double)] => Double = inputsAndWeights => math.tanh(weightedSum(inputsAndWeights))
   def logistic: Traversable[(Double, Double)] => Double = inputsAndWeights => 1.0 / (1 + math.exp(-weightedSum(inputsAndWeights)))
   def heaviside(h0: Double): Traversable[(Double, Double)] => Double =

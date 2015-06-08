@@ -21,10 +21,10 @@ trait UndirectedEdges[E] {
   def edges(u: Int): Seq[(Int, Int, E)] = out(u) map { case (v, d) => (u, v, d) }
   def neighbours(u: Int): Seq[Int] = out(u) map { _._1 }
 
-  def out(u: Int): Seq[(Int, E)]
+  def out(u: Int): Vector[(Int, E)]
 }
 
 object UndirectedEdges {
   /** Takes a sequence of edges and returns a sequence by adding a (n2,n1,e) for all (n1,n2,e) */
-  def makeSymetric[E](s: Seq[(Int, Int, E)]) = (s.toSet ++ s.map { case (n1, n2, e) => (n2, n1, e) }).toSeq
+  def makeSymetric[E](s: Seq[(Int, Int, E)]): Vector[(Int, Int, E)] = (s.toSet ++ s.map { case (n1, n2, e) => (n2, n1, e) }).toVector
 }

@@ -32,22 +32,22 @@ object NetworkSpecification extends Properties("Network") {
   type NodeDataType = String
   type EdgeDataType = Char
 
-  val sparseDirectedTopology: Gen[Seq[(Int, Int)]] = Gen.sized { size =>
+  val sparseDirectedTopology: Gen[Vector[(Int, Int)]] = Gen.sized { size =>
     sparseDirectedTopology(size)
   }
 
-  def sparseDirectedTopology(size: Int): Gen[Seq[(Int, Int)]] =
+  def sparseDirectedTopology(size: Int): Gen[Vector[(Int, Int)]] =
     for {
       nodes <- Gen.choose(0, size)
       probaLink <- Gen.choose(0.0, 1.0)
       random <- Gen.containerOfN[Vector, Double](nodes * nodes, Gen.choose(0.0, 1.0))
-    } yield (0 until nodes).combinations(2).toSeq.zip(random).filter { case (_, r) => r < probaLink }.map { case (pairnodes, r) => (pairnodes(0), pairnodes(1)) }
+    } yield (0 until nodes).combinations(2).toVector.zip(random).filter { case (_, r) => r < probaLink }.map { case (pairnodes, r) => (pairnodes(0), pairnodes(1)) }
 
   property("SparseTopology") =
     forAll(sparseDirectedTopology) {
-      (t: Seq[(Int, Int)]) =>
+      (t: Vector[(Int, Int)]) =>
         forAll(Gen.containerOfN[Vector, EdgeDataType](t.size, arbitrary[EdgeDataType])) {
-          (s: Seq[EdgeDataType]) =>
+          (s: Vector[EdgeDataType]) =>
             {
               val edges = (t zip s) map { case ((n1, n2), e) => (n1, n2, e) }
               val topo = new SparseTopology[Char] {
@@ -102,9 +102,9 @@ object NetworkSpecification extends Properties("Network") {
 
   property("DirectedEdges") =
     forAll(sparseDirectedTopology) {
-      (t: Seq[(Int, Int)]) =>
+      (t: Vector[(Int, Int)]) =>
         forAll(Gen.containerOfN[Vector, EdgeDataType](t.size, arbitrary[EdgeDataType])) {
-          (s: Seq[EdgeDataType]) =>
+          (s: Vector[EdgeDataType]) =>
             {
               val edges = (t zip s) map { case ((n1, n2), e) => (n1, n2, e) }
               val topo = new DirectedEdges[EdgeDataType] {
@@ -119,14 +119,14 @@ object NetworkSpecification extends Properties("Network") {
         }
     }
 
-  val sparseUndirectedTopology: Gen[Seq[(Int, Int)]] = Gen.sized { size =>
+  val sparseUndirectedTopology: Gen[Vector[(Int, Int)]] = Gen.sized { size =>
     for {
       nodes <- Gen.choose(0, size)
       probaLink <- Gen.choose(0.0, 1.0)
       randomFilter <- Gen.containerOfN[Vector, Double](nodes * (nodes - 1) / 2, Gen.choose(0.0, 1.0))
       randomSwitch <- Gen.containerOfN[Vector, Double](nodes * (nodes - 1) / 2, Gen.choose(0.0, 1.0))
     } yield (0 until nodes)
-      .map { i => (i + 1 until nodes).map { (i, _) } }.flatten.toSeq
+      .map { i => (i + 1 until nodes).map { (i, _) } }.flatten.toVector
       .zip(randomFilter zip randomSwitch)
       .filter { case (_, (rf, _)) => rf < probaLink }
       .map { case ((n1, n2), (_, rs)) => if (rs < 0.5) (n1, n2) else (n2, n1) }
@@ -134,9 +134,9 @@ object NetworkSpecification extends Properties("Network") {
 
   property("UndirectedEdges") =
     forAll(sparseUndirectedTopology) {
-      (t: Seq[(Int, Int)]) =>
+      (t: Vector[(Int, Int)]) =>
         forAll(Gen.containerOfN[Vector, EdgeDataType](t.size, arbitrary[EdgeDataType])) {
-          (s: Seq[EdgeDataType]) =>
+          (s: Vector[EdgeDataType]) =>
             {
               val testedges = UndirectedEdges.makeSymetric((t zip s) map { case ((n1, n2), e) => (n1, n2, e) })
               val topo = new UndirectedEdges[EdgeDataType] {
