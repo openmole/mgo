@@ -202,16 +202,46 @@ trait HeterogeneousActivationFunction[N, W] {
   def activationFunction: IndexedSeq[Traversable[(N, W)] => N]
 }
 
-// trait CPPN <: NeuralNetwork[Double] with HeterogeneousActivationFunction[Double] {
-// }
-
 object NeuralNetwork {
+
+  /**Create a neural network without cycles. This function makes no check on the topology of the graph (e.g. absence of cycles).*/
   def feedforwardNetwork[N, W](
     _nodes: Int,
-    _inputnodes: Int,
-    _outputnodes: Int,
-    _edges: Seq[(Int, Int, Double)],
-    _activationfunction: Traversable[(N, W)] => N): NeuralNetwork[N, W] with Feedforward[N, W] with HomogeneousActivationFunction[N, W] = ???
+    _inputnodes: IndexedSeq[Int],
+    _outputnodes: IndexedSeq[Int],
+    _edges: Seq[(Int, Int, W)],
+    _activationfunction: Traversable[(N, W)] => N,
+    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Feedforward[N, W] with HomogeneousActivationFunction[N, W] = {
+    require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
+    new NeuralNetwork[N, W] with Feedforward[N, W] with HomogeneousActivationFunction[N, W] {
+      val network = Network.directedSparse(_nodes, _edges)
+      val state: Vector[N] = _state.toVector
+      val inputNeurons: Vector[Int] = _inputnodes.toVector
+      val outputNeurons: Vector[Int] = _outputnodes.toVector
+      val activationFunction = _activationfunction
+    }
+  }
+
+  def feedforwardNetwork[N, W](
+    _nodes: Int,
+    _inputnodes: IndexedSeq[Int],
+    _outputnodes: IndexedSeq[Int],
+    _edges: Seq[(Int, Int, W)],
+    _activationfunction: IndexedSeq[Traversable[(N, W)] => N],
+    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Feedforward[N, W] with HeterogeneousActivationFunction[N, W] = {
+    require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
+    new NeuralNetwork[N, W] with Feedforward[N, W] with HeterogeneousActivationFunction[N, W] {
+      val network = Network.directedSparse(_nodes, _edges)
+      val state: Vector[N] = _state.toVector
+      val inputNeurons: Vector[Int] = _inputnodes.toVector
+      val outputNeurons: Vector[Int] = _outputnodes.toVector
+      val activationFunction = _activationfunction
+    }
+  }
 
   def recurrentNetwork[N, W](
     _nodes: Int,
@@ -220,11 +250,11 @@ object NeuralNetwork {
     _edges: Seq[(Int, Int, W)],
     _activationfunction: Traversable[(N, W)] => N,
     _change: (N, N) => Double,
-    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Recurrent[N, W] with HomogeneousActivationFunction[N, W] =
+    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Recurrent[N, W] with HomogeneousActivationFunction[N, W] = {
+    require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
     new NeuralNetwork[N, W] with Recurrent[N, W] with HomogeneousActivationFunction[N, W] {
-      require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
-      require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
-      require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
       val network = Network.directedSparse(_nodes, _edges)
       val state: Vector[N] = _state.toVector
       val inputNeurons: Vector[Int] = _inputnodes.toVector
@@ -232,6 +262,7 @@ object NeuralNetwork {
       val activationFunction = _activationfunction
       def change(newstate: N, oldstate: N): Double = _change(newstate, oldstate)
     }
+  }
 
   def recurrentNetwork[N, W](
     _nodes: Int,
@@ -240,11 +271,11 @@ object NeuralNetwork {
     _edges: Seq[(Int, Int, W)],
     _activationfunction: IndexedSeq[Traversable[(N, W)] => N],
     _change: (N, N) => Double,
-    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Recurrent[N, W] with HeterogeneousActivationFunction[N, W] =
+    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Recurrent[N, W] with HeterogeneousActivationFunction[N, W] = {
+    require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
     new NeuralNetwork[N, W] with Recurrent[N, W] with HeterogeneousActivationFunction[N, W] {
-      require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
-      require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
-      require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
       val network = Network.directedSparse(_nodes, _edges)
       val state: Vector[N] = _state.toVector
       val inputNeurons: Vector[Int] = _inputnodes.toVector
@@ -252,7 +283,7 @@ object NeuralNetwork {
       val activationFunction = _activationfunction
       def change(newstate: N, oldstate: N): Double = _change(newstate, oldstate)
     }
-
+  }
 }
 
 object ActivationFunction {

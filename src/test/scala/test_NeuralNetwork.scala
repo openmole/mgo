@@ -106,25 +106,6 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
           }
       }
 
-  // val xorNetwork: Network[Unit, Double] with DirectedEdges[Double] with SparseTopology[Double] =
-  //   Network.directedSparse(
-  //     5,
-  //     Vector(
-  //       (0, 2, 1.0),
-  //       (0, 3, -1.0),
-  //       (1, 2, -1.0),
-  //       (1, 3, 1.0),
-  //       (2, 4, 1.0),
-  //       (3, 4, 1.0)
-  //     ))
-
-  // val xorInputOutput: Seq[(Seq[Double], Seq[Double])] =
-  //   Vector(
-  //     (Vector(0.0, 0.0), Vector(0.0)),
-  //     (Vector(0.0, 1.0), Vector(1.0)),
-  //     (Vector(1.0, 0.0), Vector(1.0)),
-  //     (Vector(1.0, 1.0), Vector(0.0)))
-
   /** a class containing a neural network topology which realises the associated input/output values*/
   case class NeuralNetworkTestSetting[N, W](
     network: Network[Unit, W] with DirectedEdges[W],
