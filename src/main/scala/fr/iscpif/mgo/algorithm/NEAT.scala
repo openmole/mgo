@@ -54,13 +54,12 @@
  *
  * - weight mutation (gaussian)
  * - structural mutation
- * - add connection (weight = 0?)
- * - add node
- * - split existing connection
- * - existing connection is disabled
- * - create 2 new connection
- * - connection leading into the new node has weight 1
- * - connection leading out of the new onde has weight equal to the weight of the old connection.
+ * -- add connection (weight = 0?)
+ * -- add node: split existing connection
+ * --- existing connection is disabled
+ * --- create 2 new connection
+ * ---- connection leading into the new node has weight 1
+ * ---- connection leading out of the new onde has weight equal to the weight of the old connection.
  *
  * Adding a mutation increments the global innovation number.
  *
@@ -68,7 +67,7 @@
  *
  * # Evaluation
  *
- * - the index of species represent each species by a random genome of the corresponding species of the past generation.
+ * - the index of species represents each species by a random genome of the corresponding species of the past generation.
  * - each genome is attributed to a species in the index of species if its delta is < delta_t
  * - delta = c1 * E / N + c2 * D / N + c3*avg(W)
  * - when a genome does not belong to any species, a new species is created with it as its representative
@@ -83,11 +82,11 @@
  *
  * - keep only the 20% fittest individuals of each species.
  *
- * - if the fitness of the entire population does not improve for more than 20 generations, only the tow two species are allowed to reproduce.
+ * - if the fitness of the entire population does not improve for more than 20 generations, only the two best species are allowed to reproduce.
  *
  * # Speciation
  *
- * - there is a index of species, represented by a random genome of the past generation.
+ * - there is an index of species, represented by a random genome of the past generation.
  *
  * Dynamic thresholding
  *
@@ -121,4 +120,10 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait NEAT <: Problem
+trait NEAT <: Problem {
+
+}
+
+object NEAT {
+  def apply(): NEAT = ???
+}

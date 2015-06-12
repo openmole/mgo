@@ -29,7 +29,7 @@ trait HitMapArchive <: Archive with Niche {
 
   def initialArchive(implicit rng: Random) = Map[NICHE, Int]()
 
-  override def archive(archive: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): A =
+  def archive(archive: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): A =
     combine(archive, toArchive(offspring))
 
   def toArchive(population: Population[G, P, F]): A =

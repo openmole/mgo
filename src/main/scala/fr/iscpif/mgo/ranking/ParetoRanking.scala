@@ -43,7 +43,7 @@ object ParetoRanking {
 }
 
 /**
- * Layer to compute the rank according to the number individual that dominate a
+ * Layer to compute the rank according to the number of individuals that dominate a
  * given individual.
  */
 trait ParetoRanking extends Ranking with Dominance with MG {

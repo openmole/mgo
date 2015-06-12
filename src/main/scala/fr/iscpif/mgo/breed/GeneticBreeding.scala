@@ -35,22 +35,26 @@ trait GeneticBreeding <: Breeding with G with F with P with Selection with Cross
    * @param size the size of the breeded set
    * @return the breeded genomes
    */
-  def breed(population: Population[G, P, F], a: A, size: Int)(implicit rng: Random): Seq[G] = {
+  def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Seq[G] = {
     val breeded: Iterator[G] =
       if (population.isEmpty) Iterator.continually(randomGenome)
       else
         for {
-          Seq(i1, i2) <- selection(population, a).grouped(2)
-          breed <- breed(i1, i2, population, a)
+          Seq(i1, i2) <- selection(population, archive).grouped(2)
+          breed <- breed(i1, i2, population, archive)
         } yield breed
 
-    Iterator.continually {
+    val offsprings = Iterator.continually {
       if (population.isEmpty || rng.nextDouble >= cloneProbability) breeded.next()
-      else selection(population, a).next().genome
+      else selection(population, archive).next().genome
     }.take(size).toIndexedSeq
+
+    postBreeding(population, offsprings, archive)
   }
 
-  def breed(i1: Individual[G, P, F], i2: Individual[G, P, F], population: Population[G, P, F], a: A)(implicit rng: Random) =
-    crossover(i1.genome, i2.genome, population, a).map { mutate(_, population, a) }
+  def breed(i1: Individual[G, P, F], i2: Individual[G, P, F], population: Population[G, P, F], archive: A)(implicit rng: Random) =
+    crossover(i1.genome, i2.genome, population, archive).map { mutate(_, population, archive) }
+
+  def postBreeding(population: Population[G, P, F], offsprings: Seq[G], archive: A)(implicit rng: Random): Seq[G] = offsprings
 
 }

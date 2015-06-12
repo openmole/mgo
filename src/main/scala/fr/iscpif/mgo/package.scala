@@ -56,11 +56,13 @@ package object mgo {
   type ArchiveIndividuals = archive.ArchiveIndividuals
   type CMAESArchive = archive.CMAESArchive
   type HitMapArchive = archive.HitMapArchive
+  type NEATArchive = archive.NEATArchive
   type NoArchive = archive.NoArchive
   type NoveltyArchive = archive.NoveltyArchive
   type Breeding = breed.Breeding
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
+  type NEATBreeding = breed.NEATBreeding
   lazy val BLXCrossover = crossover.BLXCrossover
   type Crossover = crossover.Crossover
   type DynamicGACrossover = crossover.DynamicGACrossover
@@ -109,6 +111,7 @@ package object mgo {
   type GAGenome = genome.GAGenome
   type GAGenomeWithRandomValue = genome.GAGenomeWithRandomValue
   type GAGenomeWithSigma = genome.GAGenomeWithSigma
+  type NEATGenome = genome.NEATGenome
   type GA = genome.GA
   type NoGenomeClamping = genome.NoGenomeClamping
   type RandomValue = genome.RandomValue

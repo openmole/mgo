@@ -38,7 +38,7 @@ trait Evolution extends Termination
   case class EvolutionState(
       /** The current population of solution */
       population: Population[G, P, F],
-      /** The current achive */
+      /** The current archive */
       archive: A,
       /** The number of the generation */
       generation: Int,
@@ -54,12 +54,13 @@ trait Evolution extends Termination
    * Run the evolutionary algorithm
    *
    * @param population the initial individuals
+   * @param archive the initial archive
    * @param expression the genome expression
    * @param evaluation the fitness evaluator
    * @return an iterator over the states of the evolution
    */
-  def evolve(population: Population[G, P, F], a: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): Iterator[EvolutionState] =
-    Iterator.iterate(EvolutionState(population, a, 0, initialState, false)) {
+  def evolve(population: Population[G, P, F], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): Iterator[EvolutionState] =
+    Iterator.iterate(EvolutionState(population, archive, 0, initialState, false)) {
       s =>
         val (newIndividuals, newArchive) = step(s.population, s.archive, expression, evaluation)
         val newPop = Population(newIndividuals)
