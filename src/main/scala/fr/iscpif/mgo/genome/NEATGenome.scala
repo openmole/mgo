@@ -15,6 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/**
+ * TODO: Définir ConnectionGene[+I ...] pour que postBreeding puisse retourner Genome[NumberedInnovation], des génomes dont tous les genes sont numérotés.
+ * Ça m'évitera de devoir chequer le type d'innovation à chaque fois que je veux acceder à son number (voir archive)*
+ */
+
 package fr.iscpif.mgo.genome
 
 import scala.util.Random
@@ -24,8 +29,8 @@ import fr.iscpif.mgo._
 /**
  * Genome for NEAT
  */
-trait NEATGenome <: NEATArchive with GeneticBreeding {
-  type G = NEATGenome.Genome
+trait NEATGenome <: GeneticBreeding {
+  type G = NEATGenome.Genome[NEATGenome.Innovation]
 
   def inputNodes: Int
   def outputNodes: Int
@@ -42,12 +47,12 @@ trait NEATGenome <: NEATArchive with GeneticBreeding {
 }
 
 object NEATGenome {
-  case class Genome(
-      connectionGenes: Seq[ConnectionGene],
+  case class Genome[+I <: Innovation](
+      connectionGenes: Seq[ConnectionGene[I]],
       nodes: Seq[Int]) {
-    def setInnovationNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (Genome, Int, Seq[NumberedInnovation]) = {
+    def setInnovationNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (Genome[NumberedInnovation], Int, Seq[NumberedInnovation]) = {
       val (newconnectiongenes, newgin, newroi) =
-        connectionGenes.foldLeft((Seq[ConnectionGene](), globalInnovationNumber, recordOfInnovations)) { (acc, cg) =>
+        connectionGenes.foldLeft((Seq[ConnectionGene[NumberedInnovation]](), globalInnovationNumber, recordOfInnovations)) { (acc, cg) =>
           val (curcgs, curgin, curroi) = acc
           val (newcg, newgin, newroi) = cg.setInnovationNumber(curgin, curroi)
           (curcgs :+ newcg, newgin, newroi)
@@ -56,35 +61,45 @@ object NEATGenome {
     }
   }
 
-  case class ConnectionGene(
+  case class ConnectionGene[+I <: Innovation](
       inNode: Int,
       outNode: Int,
       weight: Double,
       enabled: Boolean,
-      innovation: Innovation) {
-    def setInnovationNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (ConnectionGene, Int, Seq[NumberedInnovation]) =
-      innovation match {
-        case _: NumberedInnovation => (this, globalInnovationNumber, recordOfInnovations)
-        case _: UnnumberedInnovation =>
-          recordOfInnovations.find { innovation.sameAs(_) } match {
-            case Some(oldinnov) => (setInnovationNumber(oldinnov.number), globalInnovationNumber, recordOfInnovations)
-            case None => {
-              val innovWithNumber = innovation.setNumber(globalInnovationNumber + 1)
-              (copy(innovation = innovWithNumber), globalInnovationNumber + 1, recordOfInnovations :+ innovWithNumber)
-            }
-          }
-      }
+      innovation: I,
+      species: Int) {
+    def setInnovationNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (ConnectionGene[NumberedInnovation], Int, Seq[NumberedInnovation]) = {
+      val (newinnov, newgin, newroi) = innovation.setNumber(globalInnovationNumber, recordOfInnovations)
+      (copy(innovation = newinnov), newgin, newroi)
+    }
 
-    def setInnovationNumber(x: Int): ConnectionGene = copy(innovation = innovation.setNumber(x))
+    //def setInnovationNumber(x: Int): ConnectionGene[NumberedInnovation] = copy(innovation = innovation.setNumber(x))
   }
 
+  // val TTT: ConnectionGene[Innovation] = (ConnectionGene(1, 2, 3.0, true, NumberedLinkInnovation(1, 2, 3), 0): ConnectionGene[NumberedInnovation])
+  // val GGG: Genome[Innovation] = 
+
   sealed trait Innovation {
+    def setNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (NumberedInnovation, Int, Seq[NumberedInnovation])
     def setNumber(x: Int): NumberedInnovation
     def unsetNumber: UnnumberedInnovation
     def sameAs(x: Innovation): Boolean
   }
-  sealed trait UnnumberedInnovation extends Innovation
-  sealed trait NumberedInnovation extends Innovation { val number: Int }
+  sealed trait UnnumberedInnovation extends Innovation {
+    def setNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (NumberedInnovation, Int, Seq[NumberedInnovation]) =
+      recordOfInnovations.find { sameAs(_) } match {
+        case Some(oldinnov) => (setNumber(oldinnov.number), globalInnovationNumber, recordOfInnovations)
+        case None => {
+          val innovWithNumber = setNumber(globalInnovationNumber + 1)
+          (innovWithNumber, globalInnovationNumber + 1, recordOfInnovations :+ innovWithNumber)
+        }
+      }
+  }
+  sealed trait NumberedInnovation extends Innovation {
+    val number: Int
+    def setNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (NumberedInnovation, Int, Seq[NumberedInnovation]) =
+      (this, globalInnovationNumber, recordOfInnovations)
+  }
   sealed trait LinkInnovation extends Innovation {
     val innode: Int
     val outnode: Int

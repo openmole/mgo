@@ -18,6 +18,7 @@
 package test
 
 import util.Random
+import collection.immutable.Queue
 
 import org.scalacheck.Properties
 import org.scalacheck.Prop
@@ -81,27 +82,43 @@ object NEATSpecification extends Properties("NEAT") {
   } yield NumberedNodeInnovation(number, innode, outnode, splittedLinkInnovationNumber)
   val unnumberedinnovation = Gen.oneOf(unnumberedlinkinnovation, unnumberednodeinnovation)
   val numberedinnovation = Gen.oneOf(numberedlinkinnovation, numberednodeinnovation)
-  val innovation = Gen.oneOf(numberedinnovation, unnumberedinnovation)
+  val innovation = Gen.oneOf(unnumberedlinkinnovation, numberedlinkinnovation, unnumberednodeinnovation, numberednodeinnovation)
 
-  val connectiongene = for {
+  implicit lazy val arbULI: Arbitrary[UnnumberedLinkInnovation] = Arbitrary(unnumberedlinkinnovation)
+  implicit lazy val arbNLI: Arbitrary[NumberedLinkInnovation] = Arbitrary(numberedlinkinnovation)
+  implicit lazy val arbUNI: Arbitrary[UnnumberedNodeInnovation] = Arbitrary(unnumberednodeinnovation)
+  implicit lazy val arbNNI: Arbitrary[NumberedNodeInnovation] = Arbitrary(numberednodeinnovation)
+
+  implicit lazy val arbUI: Arbitrary[UnnumberedInnovation] = Arbitrary(unnumberedinnovation)
+  implicit lazy val arbNI: Arbitrary[NumberedInnovation] = Arbitrary(numberedinnovation)
+
+  implicit lazy val arbI: Arbitrary[Innovation] = Arbitrary(innovation)
+
+  def connectiongene[I <: Innovation](implicit a: Arbitrary[I]) = for {
     innode <- node
     outnode <- node
     weight <- weight
     enabled <- arbitrary[Boolean]
-    innovation <- innovation
-  } yield ConnectionGene(innode, outnode, weight, enabled, innovation)
+    innovation <- arbitrary[I]
+    species <- arbitrary[Int]
+  } yield ConnectionGene(innode, outnode, weight, enabled, innovation, species)
 
-  def genome = for {
-    connectionGenes <- Gen.containerOf[Vector, ConnectionGene](connectiongene)
+  implicit def arbCG[I <: Innovation](implicit a: Arbitrary[I]): Arbitrary[ConnectionGene[I]] =
+    Arbitrary(connectiongene[I])
+
+  def genome[I <: Innovation](implicit a: Arbitrary[I]) = for {
+    connectionGenes <- Gen.containerOf[Vector, ConnectionGene[I]](connectiongene[I])
   } yield Genome(connectionGenes, connectionGenes.flatMap { cg => Vector(cg.inNode, cg.outNode) }.toSet.toSeq)
 
-  def archive = for {
+  def archive: Gen[Archive] = for {
     roi <- Gen.containerOf[Vector, NumberedInnovation](numberedinnovation)
-    indexOfSpecies <- Gen.containerOf[Vector, Genome](genome)
+    indexOfSpecies <- Gen.containerOf[Vector, Genome[NumberedInnovation]](genome[NumberedInnovation])
+    lastEntirePopulationFitnesses <- Gen.containerOf[Queue, Double](arbitrary[Double])
   } yield Archive(
     globalInnovationNumber = if (roi.length == 0) 0 else roi.map { _.number }.max,
     recordOfInnovations = roi,
-    indexOfSpecies = indexOfSpecies)
+    indexOfSpecies = indexOfSpecies,
+    lastEntirePopulationFitnesses = lastEntirePopulationFitnesses)
 
   /**
    * postBreeding sets the innovation numbers of each new mutation in the offsprings such that
@@ -109,7 +126,7 @@ object NEATSpecification extends Properties("NEAT") {
    * * mutations that are identical to one found in the archive's record of innovations are attributed its number
    */
   property("postBreeding ") =
-    forAll(Gen.containerOf[Seq, Genome](genome)) { offsprings =>
+    forAll(Gen.containerOf[Seq, Genome[Innovation]](genome[Innovation])) { offsprings: Seq[Genome[Innovation]] =>
       forAll(archive) { archive =>
         val resgenomes = new NEATBreeding {
           def crossovers = ???

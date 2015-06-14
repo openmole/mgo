@@ -67,6 +67,7 @@
  *
  * # Evaluation
  *
+ * (species attribution can happen at the breeding stage)
  * - the index of species represents each species by a random genome of the corresponding species of the past generation.
  * - each genome is attributed to a species in the index of species if its delta is < delta_t
  * - delta = c1 * E / N + c2 * D / N + c3*avg(W)

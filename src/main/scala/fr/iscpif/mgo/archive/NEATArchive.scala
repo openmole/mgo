@@ -19,21 +19,34 @@ package fr.iscpif.mgo.archive
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.genome.NEATGenome
-import fr.iscpif.mgo.genome.NEATGenome
 
 import scala.util.Random
+import scala.collection.immutable.Queue
 
 object NEATArchive {
   case class Archive(
     globalInnovationNumber: Int,
     recordOfInnovations: Seq[NEATGenome.NumberedInnovation],
-    indexOfSpecies: Seq[NEATGenome.Genome])
+    indexOfSpecies: Seq[NEATGenome.Genome[NEATGenome.NumberedInnovation]],
+    lastEntirePopulationFitnesses: Seq[Double])
 }
 
 trait NEATArchive extends Archive {
 
   type A = NEATArchive.Archive
 
-  def initialArchive(implicit rng: Random): A = ???
-  def archive(a: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): A = ???
+  def initialArchive(implicit rng: Random): A =
+    NEATArchive.Archive(
+      0,
+      Vector[NEATGenome.NumberedInnovation](),
+      Vector[NEATGenome.Genome[NEATGenome.NumberedInnovation]](),
+      Queue[Double]())
+
+  def archive(a: A, oldIndividuals: Population[NEATGenome.Genome[NEATGenome.Innovation], P, F], offsprings: Population[NEATGenome.Genome[NEATGenome.Innovation], P, F])(implicit rng: Random): A =
+    NEATArchive.Archive(
+      globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation match { case (i: NEATGenome.NumberedInnovation) => i.number; case _ => 0 } }.max,
+      /*recordOfInnovation contains the unique innovations of offsprings*/
+      recordOfInnovations = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation }.distinct,
+      indexOfSpecies = ???,
+      lastEntirePopulationFitnesses = ???)
 }

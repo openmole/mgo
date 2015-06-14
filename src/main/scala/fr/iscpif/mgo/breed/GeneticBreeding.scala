@@ -36,6 +36,7 @@ trait GeneticBreeding <: Breeding with G with F with P with Selection with Cross
    * @return the breeded genomes
    */
   def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Seq[G] = {
+
     val breeded: Iterator[G] =
       if (population.isEmpty) Iterator.continually(randomGenome)
       else
@@ -55,6 +56,6 @@ trait GeneticBreeding <: Breeding with G with F with P with Selection with Cross
   def breed(i1: Individual[G, P, F], i2: Individual[G, P, F], population: Population[G, P, F], archive: A)(implicit rng: Random) =
     crossover(i1.genome, i2.genome, population, archive).map { mutate(_, population, archive) }
 
-  def postBreeding(population: Population[G, P, F], offsprings: Seq[G], archive: A)(implicit rng: Random): Seq[G] = offsprings
+  def postBreeding(population: Population[G, P, F], offsprings: Seq[G], archive: A)(implicit rng: Random): Seq[G]
 
 }

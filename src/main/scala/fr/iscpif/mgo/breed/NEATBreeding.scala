@@ -20,19 +20,21 @@ package fr.iscpif.mgo.breed
 import fr.iscpif.mgo._
 import util.Random
 import fr.iscpif.mgo.genome.RandomGenome
+import fr.iscpif.mgo.genome.NEATGenome
+import fr.iscpif.mgo.archive.NEATArchive
 
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait NEATBreeding <: GeneticBreeding with NEATArchive with NEATGenome {
+trait NEATBreeding <: GeneticBreeding {
 
   /**
    * Sets the innovation numbers of each new mutation in the offsprings such that
    * * unique mutations are attributed a unique number greater than the archive's global innovation number,
    * * mutations that are identical to one found it the archive's record of innovations are attributed its number
    */
-  override def postBreeding(population: Population[G, P, F], offsprings: Seq[G], archive: A)(implicit rng: Random): Seq[G] = {
-    val (newgenomes, newgin, newroi) = offsprings.foldLeft((Seq[G](), archive.globalInnovationNumber, archive.recordOfInnovations)) { (acc, genome) =>
+  override def postBreeding(population: Population[NEATGenome.Genome[NEATGenome.Innovation], P, F], offsprings: Seq[NEATGenome.Genome[NEATGenome.Innovation]], archive: NEATArchive.Archive)(implicit rng: Random): Seq[NEATGenome.Genome[NEATGenome.NumberedInnovation]] = {
+    val (newgenomes, newgin, newroi) = offsprings.foldLeft((Seq[NEATGenome.Genome[NEATGenome.NumberedInnovation]](), archive.globalInnovationNumber, archive.recordOfInnovations)) { (acc, genome) =>
       val (curgenomes, curgin, curroi) = acc
       val (newgenome, newgin, newroi) = genome.setInnovationNumber(curgin, curroi)
       (curgenomes :+ newgenome, newgin, newroi)
