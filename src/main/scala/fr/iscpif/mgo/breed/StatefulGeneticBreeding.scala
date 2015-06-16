@@ -21,64 +21,65 @@ import fr.iscpif.mgo._
 import util.Random
 import fr.iscpif.mgo.genome.RandomGenome
 
-// /**
-//  * Stateful genetic breeding is used when the production of a new offspring depends on previous offsprings. Also allows post treatment of the offsprings
-//  * all together.
-//  */
-// trait StatefulGeneticBreeding <: Breeding with G with F with P {
+/**
+ * Stateful genetic breeding is used when the production of a new offspring depends on previous offsprings. Also allows post treatment of the offsprings
+ * all together.
+ */
+trait StatefulGeneticBreeding <: Breeding with G with F with P {
 
-//   /** An alternative genome type (e.g. incomplete genome). Used when crossover and mutation produce a genome type that is subsequently altered at the postbreeding stage */
-//   type IG >: G
-//   /** A state that is passed to the selection, crossover and mutation methods and updated by each to convey the progression of the breeding. */
-//   type BreedingState
+  /** An alternative genome type (e.g. incomplete genome). Used when crossover and mutation produce a genome type that is subsequently altered at the postbreeding stage */
+  type IG >: G
+  /** A state that is passed to the selection, crossover and mutation methods and updated by each to convey the progression of the breeding. */
+  type BreedingState
 
-//   def cloneProbability: Double = 0.0
+  def cloneProbability: Double = 0.0
 
-//   /**
-//    * Breed genomes from a population
-//    *
-//    * @param population the population from which genomes are breeded
-//    * @param size the size of the breeded set
-//    * @return the breeded genomes
-//    */
-//   def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Seq[G] = {
+  /**
+   * Breed genomes from a population
+   *
+   * @param population the population from which genomes are breeded
+   * @param size the size of the breeded set
+   * @return the breeded genomes
+   */
+  def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Seq[G] = {
 
-//     val ibs = initialBreedingState(population, archive)
+    val ibs = initialBreedingState(population, archive)
 
-//     val breeding: Iterator[(IG, BreedingState)] =
-//       Iterator.iterate((initialGenome(ibs), ibs)) {
-//         case (_, s) =>
-//           val breeded: IG =
-//             if (population.isEmpty) initialGenome(s)
-//             else if (rng.nextDouble < cloneProbability) selection(population, archive, s).next().genome
-//             else {
-//               val Seq(i1, i2): Seq[Individual[G, P, F]] = selection(population, archive, s).take(2).toSeq
-//               breed(i1, i2, population, archive, s)
-//             }
-//           (breeded, updatedState(s, breeded))
-//       }
+    val breeding: Iterator[(Seq[IG], BreedingState)] =
+      Iterator.iterate((Seq.empty[IG], ibs)) {
+        case (offsprings, s) =>
+          val breeded: IG =
+            if (population.isEmpty) initialGenome(s)
+            else if (rng.nextDouble < cloneProbability) selection(population, archive, s).next().genome
+            else {
+              val Seq(g1, g2): Seq[G] = selection(population, archive, s).map { _.genome }.take(2).toSeq
+              mutate(
+                crossover(g1, g2, population, archive, s),
+                population,
+                archive,
+                s)
+            }
+          (offsprings :+ breeded, updatedState(s, breeded))
+      }
 
-//     val (offsprings, breedingstates) = breeding.take(size).toIndexedSeq.unzip
+    val (offsprings, breedingstate) = breeding.drop(size - 1).next()
 
-//     postBreeding(population, offsprings, archive, breedingstates.last)
-//   }
+    postBreeding(population, offsprings, archive, breedingstate)
+  }
 
-//   def breed(i1: Individual[G, P, F], i2: Individual[G, P, F], population: Population[G, P, F], archive: A, s: BreedingState)(implicit rng: Random): Seq[IG] =
-//     crossover(i1.genome, i2.genome, population, archive, s).map { mutate(_, population, archive, s) }
+  def initialGenome(s: BreedingState): IG
 
-//   def initialGenome(s: BreedingState): IG
+  def initialBreedingState(population: Population[G, P, F], archive: A): BreedingState
 
-//   def initialBreedingState(population: Population[G, P, F], archive: A): BreedingState
+  /**Select an individual among the population.*/
+  def selection(population: Population[G, P, F], archive: A, s: BreedingState)(implicit rng: Random): Iterator[Individual[G, P, F]]
 
-//   /**Select an individual among the population.*/
-//   def selection(population: Population[G, P, F], archive: A, s: BreedingState)(implicit rng: Random): Iterator[Individual[G, P, F]]
+  def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A, s: BreedingState)(implicit rng: Random): IG
 
-//   def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A, s: BreedingState)(implicit rng: Random): Seq[G]
+  def mutate(genome: IG, population: Population[G, P, F], archive: A, s: BreedingState)(implicit rng: Random): IG
 
-//   def mutate(genome: G, population: Population[G, P, F], archive: A, s: BreedingState)(implicit rng: Random): G
+  def updatedState(s: BreedingState, newoffspring: IG): BreedingState
 
-//   def updatedState(s: BreedingState, newoffspring: IG): BreedingState
+  def postBreeding(population: Population[G, P, F], offsprings: Seq[IG], archive: A, s: BreedingState)(implicit rng: Random): Seq[G]
 
-//   def postBreeding(population: Population[G, P, F], offsprings: Seq[IG], archive: A, s: BreedingState)(implicit rng: Random): Seq[G]
-
-// }
+}

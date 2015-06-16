@@ -45,17 +45,13 @@ trait GeneticBreeding <: Breeding with G with F with P with Selection with Cross
           breed <- breed(i1, i2, population, archive)
         } yield breed
 
-    val offsprings = Iterator.continually {
+    Iterator.continually {
       if (population.isEmpty || rng.nextDouble >= cloneProbability) breeded.next()
       else selection(population, archive).next().genome
     }.take(size).toIndexedSeq
-
-    postBreeding(population, offsprings, archive)
   }
 
   def breed(i1: Individual[G, P, F], i2: Individual[G, P, F], population: Population[G, P, F], archive: A)(implicit rng: Random) =
     crossover(i1.genome, i2.genome, population, archive).map { mutate(_, population, archive) }
-
-  def postBreeding(population: Population[G, P, F], offsprings: Seq[G], archive: A)(implicit rng: Random): Seq[G]
 
 }

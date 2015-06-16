@@ -42,7 +42,7 @@ trait NEATArchive extends Archive {
       Vector[NEATGenome.Genome[NEATGenome.NumberedInnovation]](),
       Queue[Double]())
 
-  def archive(a: A, oldIndividuals: Population[NEATGenome.Genome[NEATGenome.Innovation], P, F], offsprings: Population[NEATGenome.Genome[NEATGenome.Innovation], P, F])(implicit rng: Random): A =
+  def archive(a: A, oldIndividuals: Population[NEATGenome.Genome[NEATGenome.NumberedInnovation], P, F], offsprings: Population[NEATGenome.Genome[NEATGenome.NumberedInnovation], P, F])(implicit rng: Random): A =
     NEATArchive.Archive(
       globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation match { case (i: NEATGenome.NumberedInnovation) => i.number; case _ => 0 } }.max,
       /*recordOfInnovation contains the unique innovations of offsprings*/

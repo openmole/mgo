@@ -111,14 +111,18 @@ object NEATSpecification extends Properties("NEAT") {
   } yield Genome(connectionGenes, connectionGenes.flatMap { cg => Vector(cg.inNode, cg.outNode) }.toSet.toSeq)
 
   def archive: Gen[Archive] = for {
-    roi <- Gen.containerOf[Vector, NumberedInnovation](numberedinnovation)
+    roi <- Gen.containerOf[Vector, UnnumberedInnovation](unnumberedinnovation)
     indexOfSpecies <- Gen.containerOf[Vector, Genome[NumberedInnovation]](genome[NumberedInnovation])
     lastEntirePopulationFitnesses <- Gen.containerOf[Queue, Double](arbitrary[Double])
-  } yield Archive(
-    globalInnovationNumber = if (roi.length == 0) 0 else roi.map { _.number }.max,
-    recordOfInnovations = roi,
-    indexOfSpecies = indexOfSpecies,
-    lastEntirePopulationFitnesses = lastEntirePopulationFitnesses)
+  } yield {
+    val roiunique = roi.distinct
+    val roiwithnumbers = (roiunique zip (1 to roiunique.length)).map { case (innov, number) => innov.setNumber(number) }
+    Archive(
+      globalInnovationNumber = if (roiwithnumbers.length == 0) 0 else roiwithnumbers.map { _.number }.max,
+      recordOfInnovations = roiwithnumbers,
+      indexOfSpecies = indexOfSpecies,
+      lastEntirePopulationFitnesses = lastEntirePopulationFitnesses)
+  }
 
   /**
    * postBreeding sets the innovation numbers of each new mutation in the offsprings such that
@@ -128,29 +132,53 @@ object NEATSpecification extends Properties("NEAT") {
   property("postBreeding ") =
     forAll(Gen.containerOf[Seq, Genome[Innovation]](genome[Innovation])) { offsprings: Seq[Genome[Innovation]] =>
       forAll(archive) { archive =>
-        val resgenomes = new NEATBreeding {
-          def crossovers = ???
-          def mutations = ???
+        val resgenomes: Seq[Genome[NumberedInnovation]] = new NEATBreeding {
           def inputNodes: Int = ???
           def outputNodes: Int = ???
-          def randomGenome(implicit rng: scala.util.Random) = ???
-          def selection(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[Individual[G, P, F]] = ???
-        }.postBreeding(Population.empty, offsprings, archive)
+        }.postBreeding(Population.empty, offsprings, archive, ())
         val newinnovations = offsprings.zip(resgenomes)
           .flatMap { case (o, r) => (o.connectionGenes.map { _.innovation }) zip (r.connectionGenes.map { _.innovation }) }
-          .filter {
-            case (origi: UnnumberedInnovation, resi) => true
+          .filter { //filter new innovations
+            case (origi: UnnumberedInnovation, _) => true
             case _ => false
           }
-          .map { case (origi, resi) => resi }
-        all(
-          (newinnovations.forall { case (x: NumberedInnovation) => true; case _ => false }) :| s"All new innovations are numbered",
-          (newinnovations.filter { case (x: NumberedInnovation) => x.number <= archive.globalInnovationNumber }
-            .forall { archive.recordOfInnovations.contains(_) }) :| s"All new innovation which number are less or equal to the global innovation number are identical to one in the record of innovations",
-          (newinnovations.forall { case (i1: NumberedInnovation) => newinnovations.forall { case (i2: NumberedInnovation) => if (i1.sameAs(i2)) i1.number == i2.number else i1.number != i2.number } }) :| s"different innovations have different innovation numbers, and identical innovation have the same innovation number"
+          .map { case (_, resi) => resi }
+        Prop(
+          newinnovations.forall { i =>
+            if (i.number <= archive.globalInnovationNumber) (archive.recordOfInnovations.contains(i))
+            else true
+          }
         ) :|
-          s"new innovation numbers = ${newinnovations.map { case (x: NumberedInnovation) => x.number }}" :|
+          s"All new innovation which number are less or equal to the global innovation number are identical to one in the record of innovations" &&
+          Prop(newinnovations.flatMap { i1 =>
+            newinnovations.map { i2 =>
+              if (i1.sameAs(i2)) ((i1.number == i2.number) /*:|
+                  s"$i1 and $i2 are the same and their numbers should be the same"*/ )
+              else true
+            }
+          }.foldLeft(true)(_ && _)) :|
+          s"identical innovation should have the same innovation number" &&
+          Prop(newinnovations.flatMap { i1 =>
+            newinnovations.map { i2 =>
+              if (i1.sameAs(i2)) true
+              else (i1.number != i2.number)
+            }
+          }.foldLeft(true)(_ && _)) :|
+          s"different innovations should have different innovation numbers" :|
+          // Prop(
+          //   newinnovations.combinations(2)
+          //   .filter { case Seq(i1, i2) => (!i1.sameAs(i2)) && (i1.number != i2.number) }
+          //   .toVector) :| &&
+          s"new innovation numbers = ${newinnovations.map { _.number }}" :|
           s"global innovation index = ${archive.globalInnovationNumber}"
+
+        // all(
+        //   (newinnovations.filter { _.number <= archive.globalInnovationNumber }
+        //     .forall { archive.recordOfInnovations.contains(_) }) :| s"OLD All new innovation which number are less or equal to the global innovation number are identical to one in the record of innovations",
+        //   (newinnovations.forall { case (i1: NumberedInnovation) => newinnovations.forall { case (i2: NumberedInnovation) => if (i1.sameAs(i2)) i1.number == i2.number else i1.number != i2.number } }) :| s"OLD different innovations have different innovation numbers, and identical innovation have the same innovation number"
+        // ) :|
+        //   s"new innovation numbers = ${newinnovations.map { case (x: NumberedInnovation) => x.number }}" :|
+        //   s"global innovation index = ${archive.globalInnovationNumber}"
 
       }
     }

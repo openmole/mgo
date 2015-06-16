@@ -25,37 +25,63 @@ package fr.iscpif.mgo.genome
 import scala.util.Random
 import monocle.Lens
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.breed._
+import collection.immutable.IntMap
 
 /**
  * Genome for NEAT
  */
-trait NEATGenome <: GeneticBreeding {
-  type G = NEATGenome.Genome[NEATGenome.Innovation]
+trait NEATGenome {
+  type G = NEATGenome.Genome[NEATGenome.NumberedInnovation]
 
   def inputNodes: Int
   def outputNodes: Int
 
-  lazy val minimalGenome: G = ??? //check innovation number?
-  // NEATGenome.Genome(
-  //   (for {
-  //     u <- 1 to inputNodes
-  //     v <- inputNodes + 1 to inputNodes + outputNodes
-  //   } yield NEATGenome.ConnectionGene(u, v, 0, true, None)) toVector,
-  //   ((1 to inputNodes).toIterator.map { NEATGenome.InputNode(_) })
-  //     ++ ((inputNodes + 1 to inputNodes + outputNodes).toIterator.map { NEATGenome.OutputNode(_) }) toArray)
-
+  lazy val minimalGenome: G =
+    NEATGenome.Genome(
+      connectionGenes = {
+        val unnumberedgenes = (for {
+          u <- 1 to inputNodes
+          v <- inputNodes + 1 to inputNodes + outputNodes
+        } yield NEATGenome.ConnectionGene[NEATGenome.UnnumberedInnovation](
+          inNode = u,
+          outNode = v,
+          weight = 0,
+          enabled = true,
+          innovation = NEATGenome.UnnumberedLinkInnovation(u, v))).toVector
+        unnumberedgenes.zipWithIndex.map { case (cg, i) => cg.setInnovationNumber(i + 1) }
+      },
+      nodes =
+        IntMap(
+          (((1 to inputNodes).toIterator.map { (_ -> NEATGenome.InputNode()) })
+            ++ ((inputNodes + 1 to inputNodes + outputNodes).toIterator.map { (_ -> NEATGenome.OutputNode()) })).toSeq: _*),
+      species = Some(0)
+    )
 }
 
 object NEATGenome {
   case class Genome[+I <: Innovation](
       connectionGenes: Seq[ConnectionGene[I]],
-      nodes: Seq[Int]) {
+      nodes: IntMap[Node],
+      species: Option[Int]) {
+    /**
+     * Sets the innovation number of unnumbered connectionGenes innovations and sorts the connectionGenes according to their innovation number.
+     * The mutation operations adding links and nodes already ensures that connection genes are unique
+     */
     def setInnovationNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (Genome[NumberedInnovation], Int, Seq[NumberedInnovation]) = {
       val (newconnectiongenes, newgin, newroi) =
         connectionGenes.foldLeft((Seq[ConnectionGene[NumberedInnovation]](), globalInnovationNumber, recordOfInnovations)) { (acc, cg) =>
           val (curcgs, curgin, curroi) = acc
           val (newcg, newgin, newroi) = cg.setInnovationNumber(curgin, curroi)
-          (curcgs :+ newcg, newgin, newroi)
+          (
+            {
+              //Insert the new gene in place according to its innovation number. It can be less than the maximum innovation number if it was found in the recordOfInnovations.
+              val (pre, suf) = curcgs.span { (_: ConnectionGene[NumberedInnovation]).innovation.number < newcg.innovation.number }
+              pre ++ (newcg +: suf)
+            },
+            newgin,
+            newroi
+          )
         }
       (copy(connectionGenes = newconnectiongenes), newgin, newroi)
     }
@@ -66,14 +92,13 @@ object NEATGenome {
       outNode: Int,
       weight: Double,
       enabled: Boolean,
-      innovation: I,
-      species: Int) {
+      innovation: I) {
     def setInnovationNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[NumberedInnovation]): (ConnectionGene[NumberedInnovation], Int, Seq[NumberedInnovation]) = {
       val (newinnov, newgin, newroi) = innovation.setNumber(globalInnovationNumber, recordOfInnovations)
       (copy(innovation = newinnov), newgin, newroi)
     }
 
-    //def setInnovationNumber(x: Int): ConnectionGene[NumberedInnovation] = copy(innovation = innovation.setNumber(x))
+    def setInnovationNumber(x: Int): ConnectionGene[NumberedInnovation] = copy(innovation = innovation.setNumber(x))
   }
 
   // val TTT: ConnectionGene[Innovation] = (ConnectionGene(1, 2, 3.0, true, NumberedLinkInnovation(1, 2, 3), 0): ConnectionGene[NumberedInnovation])
@@ -128,10 +153,10 @@ object NEATGenome {
   case class UnnumberedNodeInnovation(innode: Int, outnode: Int, splittedLinkInnovationNumber: Int) extends NodeInnovation with UnnumberedInnovation
   case class NumberedNodeInnovation(number: Int, innode: Int, outnode: Int, splittedLinkInnovationNumber: Int) extends NodeInnovation with NumberedInnovation
 
-  sealed abstract class Node(id: Int)
-  case class InputNode(id: Int) extends Node(id)
-  case class OutputNode(id: Int) extends Node(id)
-  case class HiddenNode(id: Int) extends Node(id)
-  case class BiasNode(id: Int) extends Node(id)
+  sealed abstract trait Node { val level: Double }
+  case class InputNode(level: Double = 0) extends Node
+  case class OutputNode(level: Double = 1) extends Node
+  case class HiddenNode(level: Double) extends Node
+  case class BiasNode(level: Double = 0) extends Node
 
 }
