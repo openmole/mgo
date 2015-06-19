@@ -29,8 +29,7 @@ trait NEATAnyTopolgy extends NEATNetworkTopology with NEATBreeding {
   def mutateAddLink(
     genome: NEATGenome.Genome[NEATGenome.NumberedInnovation],
     population: Population[G, P, F],
-    archive: A,
-    s: BreedingState)(implicit rng: Random): NEATGenome.Genome[NEATGenome.Innovation] = {
+    archive: A)(implicit rng: Random): NEATGenome.Genome[NEATGenome.Innovation] = {
     // allow destination nodes to be input nodes?
     // allow recursion?
     // look for nodes that are not already connected
@@ -41,7 +40,10 @@ trait NEATAnyTopolgy extends NEATNetworkTopology with NEATBreeding {
           .mapValues { (_: Seq[(Int, Int)]).map { _._2 } }.toSeq: _*)
 
     val pair: Option[(Int, Int)] =
-      rng.shuffle(genome.nodes.keysIterator)
+      (if (rng.nextDouble() < mutationAddLinkBiasProb)
+        rng.shuffle(biasNodesIndices.iterator)
+      else
+        rng.shuffle(genome.nodes.keysIterator))
         .flatMap { u => rng.shuffle(genome.nodes.keysIterator).map { v => (u, v) } }
         .find {
           case (u: Int, v: Int) =>
@@ -62,7 +64,7 @@ trait NEATAnyTopolgy extends NEATNetworkTopology with NEATBreeding {
           connectionGenes =
             genome.connectionGenes :+ newgene,
           nodes = genome.nodes,
-          species = None)
+          species = genome.species)
       }
     }
   }

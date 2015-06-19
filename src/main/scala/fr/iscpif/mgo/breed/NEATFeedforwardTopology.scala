@@ -24,23 +24,24 @@ import fr.iscpif.mgo.genome.NEATGenome
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 
-trait NEATFeedforwardTopolgy extends NEATNetworkTopology with NEATBreeding {
+trait NEATFeedforwardTopology extends NEATNetworkTopology with NEATBreeding with NEATGenome {
 
   def mutateAddLink(
     genome: NEATGenome.Genome[NEATGenome.NumberedInnovation],
     population: Population[G, P, F],
-    archive: A,
-    s: BreedingState)(implicit rng: Random): NEATGenome.Genome[NEATGenome.Innovation] = {
-    // allow destination nodes to be input nodes?
-    // allow recursion?
+    archive: A)(implicit rng: Random): NEATGenome.Genome[NEATGenome.Innovation] = {
     // look for nodes that are not already connected
     val connections =
       IntMap[Seq[Int]](
         genome.connectionGenes.map { cg => (cg.inNode -> cg.outNode) }
           .groupBy { (_: (Int, Int))._1 }
           .mapValues { (_: Seq[(Int, Int)]).map { _._2 } }.toSeq: _*)
+    // Have a change to force the in node to be a bias node
     val pair: Option[(Int, Int)] =
-      rng.shuffle(genome.nodes.keysIterator)
+      (if (rng.nextDouble() < mutationAddLinkBiasProb)
+        rng.shuffle(biasNodesIndices.iterator)
+      else
+        rng.shuffle(genome.nodes.keysIterator))
         .flatMap { u => rng.shuffle(genome.nodes.keysIterator).map { v => (u, v) } }
         .find {
           case (u: Int, v: Int) =>
@@ -60,7 +61,7 @@ trait NEATFeedforwardTopolgy extends NEATNetworkTopology with NEATBreeding {
           connectionGenes =
             genome.connectionGenes :+ newgene,
           nodes = genome.nodes,
-          species = None)
+          species = genome.species)
       }
     }
   }

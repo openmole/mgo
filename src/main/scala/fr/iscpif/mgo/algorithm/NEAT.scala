@@ -15,6 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+/*TODO: Elitism, archive update*/
+
 /**
  * - Init Pop minimally
  * - Evaluate
@@ -72,6 +74,8 @@
  * - each genome is attributed to a species in the index of species if its delta is < delta_t
  * - delta = c1 * E / N + c2 * D / N + c3*avg(W)
  * - when a genome does not belong to any species, a new species is created with it as its representative
+ *
+ * (When updating the archive)
  * - the index of species is updated by selecting a random genome in each species
  *
  * - the fitness of each genome is computed (the corresponding network must be created and evaluated)
@@ -121,10 +125,6 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait NEAT <: Problem {
+trait NEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchive with NoPhenotype {
 
-}
-
-object NEAT {
-  def apply(): NEAT = ???
 }

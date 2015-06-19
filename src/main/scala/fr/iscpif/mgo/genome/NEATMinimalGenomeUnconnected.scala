@@ -15,17 +15,21 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.tools.network
+package fr.iscpif.mgo.genome
 
-trait DenseTopology[E] {
-  def in(u: Int): Vector[(Int, E)] = (matrix.zipWithIndex) map { case (row, v) => (v, row(u)) }
-  def out(u: Int): Vector[(Int, E)] = (matrix(u).zipWithIndex) map { case (d, v) => (v, d) }
-  def edge(u: Int, v: Int): Option[E] = Some(matrix(u)(v))
-  def iteredges: Iterator[(Int, Int, E)] =
-    matrix.iterator.zipWithIndex.flatMap {
-      case (row, u) =>
-        row.iterator.zipWithIndex.map { case (e, v) => (u, v, e) }
-    }
+import scala.util.Random
+import collection.immutable.IntMap
 
-  def matrix: Vector[Vector[E]]
+trait NEATMinimalGenomeUnconnected <: MinimalGenome with NEATGenome {
+  lazy val minimalGenome: G =
+    NEATGenome.Genome(
+      connectionGenes = Seq[NEATGenome.ConnectionGene[NEATGenome.NumberedInnovation]](),
+      nodes =
+        IntMap(
+          ((inputNodesIndices.map { (_ -> NEATGenome.InputNode()) })
+            ++ (biasNodesIndices.map { (_ -> NEATGenome.BiasNode()) })
+            ++ (outputNodesIndices.map { (_ -> NEATGenome.OutputNode()) })).toSeq: _*),
+      species = 0
+    )
+
 }

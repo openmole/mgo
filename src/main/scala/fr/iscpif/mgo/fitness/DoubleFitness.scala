@@ -9,23 +9,17 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * GNU Affero General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.tools.network
+package fr.iscpif.mgo.fitness
 
-trait DenseTopology[E] {
-  def in(u: Int): Vector[(Int, E)] = (matrix.zipWithIndex) map { case (row, v) => (v, row(u)) }
-  def out(u: Int): Vector[(Int, E)] = (matrix(u).zipWithIndex) map { case (d, v) => (v, d) }
-  def edge(u: Int, v: Int): Option[E] = Some(matrix(u)(v))
-  def iteredges: Iterator[(Int, Int, E)] =
-    matrix.iterator.zipWithIndex.flatMap {
-      case (row, u) =>
-        row.iterator.zipWithIndex.map { case (e, v) => (u, v, e) }
-    }
-
-  def matrix: Vector[Vector[E]]
+/**
+ * The fitness is a vector a of Doubles, one Double for each objective.
+ */
+trait DoubleFitness <: F {
+  type F = Double
 }

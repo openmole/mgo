@@ -23,11 +23,10 @@ import fr.iscpif.mgo.genome.RandomGenome
 import fr.iscpif.mgo.genome.NEATGenome
 import fr.iscpif.mgo.archive.NEATArchive
 
-trait NEATNetworkTopology <: StatefulGeneticBreeding {
+trait NEATNetworkTopology <: NEATGenome with P with DoubleFitness with A {
 
   def mutateAddLink(
     genome: NEATGenome.Genome[NEATGenome.NumberedInnovation],
     population: Population[G, P, F],
-    archive: A,
-    s: BreedingState)(implicit rng: Random): NEATGenome.Genome[NEATGenome.Innovation]
+    archive: A)(implicit rng: Random): NEATGenome.Genome[NEATGenome.Innovation]
 }

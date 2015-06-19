@@ -22,16 +22,17 @@ import fr.iscpif.mgo.genome.NEATGenome
 
 import scala.util.Random
 import scala.collection.immutable.Queue
+import collection.immutable.IntMap
 
 object NEATArchive {
   case class Archive(
     globalInnovationNumber: Int,
     recordOfInnovations: Seq[NEATGenome.NumberedInnovation],
-    indexOfSpecies: Seq[NEATGenome.Genome[NEATGenome.NumberedInnovation]],
-    lastEntirePopulationFitnesses: Seq[Double])
+    indexOfSpecies: IntMap[NEATGenome.Genome[NEATGenome.NumberedInnovation]],
+    lastEntirePopulationFitnesses: Queue[Double])
 }
 
-trait NEATArchive extends Archive {
+trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
 
   type A = NEATArchive.Archive
 
@@ -39,14 +40,19 @@ trait NEATArchive extends Archive {
     NEATArchive.Archive(
       0,
       Vector[NEATGenome.NumberedInnovation](),
-      Vector[NEATGenome.Genome[NEATGenome.NumberedInnovation]](),
+      IntMap[G](),
       Queue[Double]())
 
-  def archive(a: A, oldIndividuals: Population[NEATGenome.Genome[NEATGenome.NumberedInnovation], P, F], offsprings: Population[NEATGenome.Genome[NEATGenome.NumberedInnovation], P, F])(implicit rng: Random): A =
+  def archive(a: A, oldIndividuals: Population[G, P, F], offsprings: Population[G, P, F])(implicit rng: Random): A =
     NEATArchive.Archive(
-      globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation match { case (i: NEATGenome.NumberedInnovation) => i.number; case _ => 0 } }.max,
-      /*recordOfInnovation contains the unique innovations of offsprings*/
+      globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation.number }.max,
+      /* recordOfInnovation contains the unique innovations of offsprings*/
       recordOfInnovations = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation }.distinct,
-      indexOfSpecies = ???,
-      lastEntirePopulationFitnesses = ???)
+      /** The index of species represents each species by a random genome of the corresponding species of the past generation.*/
+      indexOfSpecies = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }.map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) },
+      lastEntirePopulationFitnesses =
+        a.lastEntirePopulationFitnesses.enqueue(offsprings.content.foldLeft(0.0) { (sum: Double, b: PopulationElement[G, P, F]) =>
+          sum + (b.fitness)
+        } / offsprings.content.length.toDouble)
+    )
 }

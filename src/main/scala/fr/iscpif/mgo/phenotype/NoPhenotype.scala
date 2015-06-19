@@ -15,17 +15,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.tools.network
+package fr.iscpif.mgo.phenotype
 
-trait DenseTopology[E] {
-  def in(u: Int): Vector[(Int, E)] = (matrix.zipWithIndex) map { case (row, v) => (v, row(u)) }
-  def out(u: Int): Vector[(Int, E)] = (matrix(u).zipWithIndex) map { case (d, v) => (v, d) }
-  def edge(u: Int, v: Int): Option[E] = Some(matrix(u)(v))
-  def iteredges: Iterator[(Int, Int, E)] =
-    matrix.iterator.zipWithIndex.flatMap {
-      case (row, u) =>
-        row.iterator.zipWithIndex.map { case (e, v) => (u, v, e) }
-    }
+import fr.iscpif.mgo._
 
-  def matrix: Vector[Vector[E]]
+import util.Random
+
+trait NoPhenotype <: P with G {
+  type P = G
+  def express(g: G, rng: Random): P = g
 }

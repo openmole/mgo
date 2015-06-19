@@ -64,7 +64,7 @@ trait StatefulGeneticBreeding <: Breeding with G with F with P {
 
     val (offsprings, breedingstate) = breeding.drop(size - 1).next()
 
-    postBreeding(population, offsprings, archive, breedingstate)
+    postBreeding(offsprings, population, archive, breedingstate)
   }
 
   def initialGenome(s: BreedingState): IG
@@ -80,6 +80,6 @@ trait StatefulGeneticBreeding <: Breeding with G with F with P {
 
   def updatedState(s: BreedingState, newoffspring: IG): BreedingState
 
-  def postBreeding(population: Population[G, P, F], offsprings: Seq[IG], archive: A, s: BreedingState)(implicit rng: Random): Seq[G]
+  def postBreeding(offsprings: Seq[IG], population: Population[G, P, F], archive: A, s: BreedingState)(implicit rng: Random): Seq[G]
 
 }

@@ -15,11 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/**
- * TODO: Définir ConnectionGene[+I ...] pour que postBreeding puisse retourner Genome[NumberedInnovation], des génomes dont tous les genes sont numérotés.
- * Ça m'évitera de devoir chequer le type d'innovation à chaque fois que je veux acceder à son number (voir archive)*
- */
-
 package fr.iscpif.mgo.genome
 
 import scala.util.Random
@@ -36,34 +31,19 @@ trait NEATGenome {
 
   def inputNodes: Int
   def outputNodes: Int
+  def biasNodes: Int
 
-  lazy val minimalGenome: G =
-    NEATGenome.Genome(
-      connectionGenes = {
-        val unnumberedgenes = (for {
-          u <- 1 to inputNodes
-          v <- inputNodes + 1 to inputNodes + outputNodes
-        } yield NEATGenome.ConnectionGene[NEATGenome.UnnumberedInnovation](
-          inNode = u,
-          outNode = v,
-          weight = 0,
-          enabled = true,
-          innovation = NEATGenome.UnnumberedLinkInnovation(u, v))).toVector
-        unnumberedgenes.zipWithIndex.map { case (cg, i) => cg.setInnovationNumber(i + 1) }
-      },
-      nodes =
-        IntMap(
-          (((1 to inputNodes).toIterator.map { (_ -> NEATGenome.InputNode()) })
-            ++ ((inputNodes + 1 to inputNodes + outputNodes).toIterator.map { (_ -> NEATGenome.OutputNode()) })).toSeq: _*),
-      species = Some(0)
-    )
+  def inputNodesIndices: Range = (1 to inputNodes)
+  def biasNodesIndices: Range = (inputNodes + 1 to inputNodes + biasNodes)
+  def outputNodesIndices: Range = (inputNodes + biasNodes + 1 to inputNodes + biasNodes + outputNodes)
+
 }
 
 object NEATGenome {
   case class Genome[+I <: Innovation](
       connectionGenes: Seq[ConnectionGene[I]],
       nodes: IntMap[Node],
-      species: Option[Int]) {
+      species: Int) {
     /**
      * Sets the innovation number of unnumbered connectionGenes innovations and sorts the connectionGenes according to their innovation number.
      * The mutation operations adding links and nodes already ensures that connection genes are unique
