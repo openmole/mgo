@@ -21,10 +21,11 @@ import fr.iscpif.mgo._
 import util.Random
 import fr.iscpif.mgo.genome.RandomGenome
 import fr.iscpif.mgo.genome.NEATGenome
+import fr.iscpif.mgo.genome.NEATGenome._
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 
-trait NEATAnyTopolgy extends NEATNetworkTopology with NEATBreeding {
+trait NEATAnyTopolgy extends NEATBreeding with NEATGenome {
 
   def mutateAddLink(
     genome: NEATGenome.Genome[NEATGenome.NumberedInnovation],
@@ -64,7 +65,8 @@ trait NEATAnyTopolgy extends NEATNetworkTopology with NEATBreeding {
           connectionGenes =
             genome.connectionGenes :+ newgene,
           nodes = genome.nodes,
-          species = genome.species)
+          species = genome.species,
+          lastNodeId = genome.lastNodeId)
       }
     }
   }

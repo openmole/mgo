@@ -32,9 +32,9 @@ trait NEATProblem extends Problem with NoPhenotype with NEATGenome with DoubleFi
     val nodesMap = phenotype.nodes.keys.toSeq.sorted.zipWithIndex.toMap
     evaluateNet(
       nodesMap.size,
-      (inputNodesIndices ++ biasNodesIndices).toIndexedSeq.map { nodesMap(_) },
-      outputNodesIndices.toIndexedSeq.map { nodesMap(_) },
-      phenotype.connectionGenes.map { cg => (nodesMap(cg.inNode), nodesMap(cg.outNode), cg.weight) },
+      (inputNodesIndices ++ biasNodesIndices).toIndexedSeq /*.map { nodesMap(_) }*/ ,
+      outputNodesIndices.toIndexedSeq /*.map { nodesMap(_) }*/ ,
+      phenotype.connectionGenes.filter { _.enabled }.map { cg => (nodesMap(cg.inNode), nodesMap(cg.outNode), cg.weight) },
       activationFunction _,
       IndexedSeq.fill(nodesMap.size)(neuronInitValue)
     )(rng)

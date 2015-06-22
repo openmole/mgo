@@ -52,7 +52,15 @@ object NEATSpecification extends Properties("NEAT") {
   val weight = Gen.sized { size => Gen.choose[Double](-size, size) }
   val fitness = Gen.sized { size => Gen.choose[Double](-size, size) }
 
-  val emptyPopulation = Gen.const(Population.empty)
+  implicit def arbInputNode: Arbitrary[InputNode] = Arbitrary(for { l <- Gen.choose(0.0, 1.0) } yield InputNode(l))
+  implicit def arbOutputNode: Arbitrary[OutputNode] = Arbitrary(for { l <- Gen.choose(0.0, 1.0) } yield OutputNode(l))
+  implicit def arbHiddenNode: Arbitrary[HiddenNode] = Arbitrary(for { l <- Gen.choose(0.0, 1.0) } yield HiddenNode(l))
+  implicit def arbNode: Arbitrary[Node] =
+    Arbitrary(
+      Gen.oneOf(
+        arbInputNode.arbitrary,
+        arbOutputNode.arbitrary,
+        arbHiddenNode.arbitrary))
 
   val unnumberedlinkinnovation = for {
     innode <- node
@@ -99,25 +107,22 @@ object NEATSpecification extends Properties("NEAT") {
   implicit def arbCG[I <: Innovation](implicit a: Arbitrary[I]): Arbitrary[ConnectionGene[I]] =
     Arbitrary(connectiongene[I])
 
-  implicit def arbInputNode: Arbitrary[InputNode] = Arbitrary(for { l <- Gen.choose(0.0, 1.0) } yield InputNode(l))
-  implicit def arbOutputNode: Arbitrary[OutputNode] = Arbitrary(for { l <- Gen.choose(0.0, 1.0) } yield OutputNode(l))
-  implicit def arbHiddenNode: Arbitrary[HiddenNode] = Arbitrary(for { l <- Gen.choose(0.0, 1.0) } yield HiddenNode(l))
-  implicit def arbNode: Arbitrary[Node] =
-    Arbitrary(
-      Gen.oneOf(
-        arbInputNode.arbitrary,
-        arbOutputNode.arbitrary,
-        arbHiddenNode.arbitrary))
-
   def genome[I <: Innovation](implicit a: Arbitrary[I]) = for {
     connectionGenes <- Gen.containerOf[Vector, ConnectionGene[I]](connectiongene[I])
     nodes <- Gen.containerOfN[Vector, Node](
       connectionGenes.flatMap { cg => Vector(cg.inNode, cg.outNode) }.toSet.size,
       arbNode.arbitrary)
     species <- Gen.posNum[Int]
-  } yield Genome(connectionGenes, IntMap(connectionGenes.flatMap { cg => Vector(cg.inNode, cg.outNode) }.toSet.toSeq.zip(nodes): _*), species)
+  } yield Genome(
+    connectionGenes,
+    IntMap(connectionGenes.flatMap { cg => Vector(cg.inNode, cg.outNode) }.toSet.toSeq.zip(nodes): _*),
+    species,
+    connectionGenes.flatMap { cg => Vector(cg.inNode, cg.outNode) }.max)
 
-  def archive: Gen[Archive] = for {
+  implicit def arbGenomeInnovation: Arbitrary[Genome[Innovation]] = Arbitrary(genome[Innovation])
+  implicit def arbGenomeNumberedInnovation: Arbitrary[Genome[NumberedInnovation]] = Arbitrary(genome[NumberedInnovation])
+
+  val archive: Gen[Archive] = for {
     roi <- Gen.containerOf[Vector, UnnumberedInnovation](unnumberedinnovation)
     speciesInIndex <- Gen.containerOf[Vector, Genome[NumberedInnovation]](genome[NumberedInnovation])
     speciesIndexes <- Gen.containerOfN[Vector, Int](speciesInIndex.size, Gen.posNum[Int])
@@ -132,7 +137,7 @@ object NEATSpecification extends Properties("NEAT") {
       lastEntirePopulationFitnesses = lastEntirePopulationFitnesses)
   }
 
-  def archive(offsprings: Population[Genome[NumberedInnovation], Unit, Double]): Gen[Archive] = for {
+  def archiveFromPop(offsprings: Population[Genome[NumberedInnovation], Unit, Double]): Gen[Archive] = for {
     oldarchive <- archive
   } yield new NEATArchive {
     type P = Unit
@@ -152,14 +157,15 @@ object NEATSpecification extends Properties("NEAT") {
   } yield Population.fromIndividuals(indivs)
 
   def arbPop: Arbitrary[Population[Genome[NumberedInnovation], Unit, Double]] = Arbitrary(population)
+
   /**
-   * postBreeding sets the innovation numbers of each new mutation in the offsprings such that
+   * sets the innovation numbers of each new mutation in the offsprings such that
    * * unique mutations are attributed a unique number greater than the archive's global innovation number,
    * * mutations that are identical to one found in the archive's record of innovations are attributed its number
    */
-  // property("postBreeding ") =
+  // property("setInnovationNumbers ") =
   //   forAll(Gen.containerOf[Seq, Genome[Innovation]](genome[Innovation])) { offsprings: Seq[Genome[Innovation]] =>
-  //     forAll(archive(offsprings)) { archive =>
+  //     forAll(archiveFromPop(offsprings)) { archive =>
   //       val resgenomes: Seq[Genome[NumberedInnovation]] = new NEATBreeding {
   //         def inputNodes: Int = ???
   //         def outputNodes: Int = ???
@@ -170,7 +176,7 @@ object NEATSpecification extends Properties("NEAT") {
   //           genome: Genome[NumberedInnovation],
   //           population: Population[G, P, F],
   //           archive: A)(implicit rng: Random): Genome[Innovation] = ???
-  //       }.postBreeding(offsprings, Population.empty, archive)
+  //       }.setInnovationNumbers(offsprings, archive)
   //       val newinnovations = offsprings.zip(resgenomes)
   //         .flatMap { case (o, r) => (o.connectionGenes.map { _.innovation }) zip (r.connectionGenes.map { _.innovation }) }
   //         .filter { //filter new innovations
@@ -188,7 +194,7 @@ object NEATSpecification extends Properties("NEAT") {
   //         Prop(newinnovations.flatMap { i1 =>
   //           newinnovations.map { i2 =>
   //             if (i1.sameAs(i2)) ((i1.number == i2.number) /*:|
-  //                 s"$i1 and $i2 are the same and their numbers should be the same"*/ )
+  //                   s"$i1 and $i2 are the same and their numbers should be the same"*/ )
   //             else true
   //           }
   //         }.foldLeft(true)(_ && _)) :|
@@ -200,55 +206,179 @@ object NEATSpecification extends Properties("NEAT") {
   //           }
   //         }.foldLeft(true)(_ && _)) :|
   //         s"different innovations should have different innovation numbers" :|
-  //         // Prop(
-  //         //   newinnovations.combinations(2)
-  //         //   .filter { case Seq(i1, i2) => (!i1.sameAs(i2)) && (i1.number != i2.number) }
-  //         //   .toVector) :| &&
   //         s"new innovation numbers = ${newinnovations.map { _.number }}" :|
   //         s"global innovation index = ${archive.globalInnovationNumber}"
-
-  //       // all(
-  //       //   (newinnovations.filter { _.number <= archive.globalInnovationNumber }
-  //       //     .forall { archive.recordOfInnovations.contains(_) }) :| s"OLD All new innovation which number are less or equal to the global innovation number are identical to one in the record of innovations",
-  //       //   (newinnovations.forall { case (i1: NumberedInnovation) => newinnovations.forall { case (i2: NumberedInnovation) => if (i1.sameAs(i2)) i1.number == i2.number else i1.number != i2.number } }) :| s"OLD different innovations have different innovation numbers, and identical innovation have the same innovation number"
-  //       // ) :|
-  //       //   s"new innovation numbers = ${newinnovations.map { case (x: NumberedInnovation) => x.number }}" :|
-  //       //   s"global innovation index = ${archive.globalInnovationNumber}"
-
   //     }
   //   }
+  property("setInnovationNumbers ") = {
+    val testcases: Seq[(Seq[Genome[Innovation]], Archive, Seq[Int])] = Vector(
+      //1
+      (
+        // the unnumbered innovation is different, should get a new number
+        Vector(
+          Genome(
+            connectionGenes = Vector(
+              ConnectionGene(0, 0, 0, false, UnnumberedLinkInnovation(5, 7))
+            ),
+            nodes = IntMap.empty,
+            species = 0,
+            lastNodeId = 0
+          )
+        ),
+          Archive(5, Vector(NumberedLinkInnovation(0, 3, 3)), IntMap.empty, Queue.empty),
+          Vector(6) // expected link innovation
+      ),
+      (
+        // the unnumbered innovation is found in the archive, should get the archive's number
+        Vector(
+          Genome(
+            connectionGenes = Vector(
+              ConnectionGene(0, 0, 0, false, UnnumberedLinkInnovation(0, 1))
+            ),
+            nodes = IntMap.empty,
+            species = 0,
+            lastNodeId = 0
+          )
+        ),
+          Archive(5, Vector(NumberedLinkInnovation(3, 0, 1)), IntMap.empty, Queue.empty),
+          Vector(3) // expected link innovation
+      ),
+      (
+        //two innovations
+        Vector(
+          Genome(
+            connectionGenes = Vector(
+              ConnectionGene(0, 0, 0, false, UnnumberedLinkInnovation(0, 1)),
+              ConnectionGene(0, 0, 0, false, UnnumberedNodeInnovation(0, 2, 4))
+            ),
+            nodes = IntMap.empty,
+            species = 0,
+            lastNodeId = 0
+          )
+        ),
+          Archive(5, Vector(NumberedLinkInnovation(0, 1, 3)), IntMap.empty, Queue.empty),
+          Vector(6, 7) // expected link innovation
+
+      ),
+      (
+        //two genomes
+        Vector(
+          Genome(
+            connectionGenes = Vector(
+              ConnectionGene(0, 0, 0, false, UnnumberedLinkInnovation(0, 1))
+            ),
+            nodes = IntMap.empty,
+            species = 0,
+            lastNodeId = 0
+          ),
+          Genome(
+            connectionGenes = Vector(
+              ConnectionGene(0, 0, 0, false, UnnumberedNodeInnovation(0, 2, 4))
+            ),
+            nodes = IntMap.empty,
+            species = 0,
+            lastNodeId = 0
+          )
+        ),
+          Archive(5, Vector(NumberedLinkInnovation(0, 1, 3)), IntMap.empty, Queue.empty),
+          Vector(6, 7) // expected link innovation
+
+      ),
+      (
+        //after addition of a new node
+        Vector(
+          Genome(
+            connectionGenes = Vector(
+              ConnectionGene(0, 1, 0.5, false, NumberedLinkInnovation(0, 0, 1)),
+              ConnectionGene(0, 2, 1.0, true, UnnumberedNodeInnovation(0, 2, 0)),
+              ConnectionGene(2, 1, 0.5, true, UnnumberedNodeInnovation(2, 1, 0))
+
+            ),
+            nodes = IntMap(0 -> InputNode(), 1 -> OutputNode(), 2 -> HiddenNode(0.5)),
+            species = 0,
+            lastNodeId = 2
+          )
+        ),
+          Archive(0, Vector.empty, IntMap.empty, Queue.empty),
+          Vector(1, 2) // expected link innovation
+
+      )
+    )
+    all(
+      testcases.map {
+        case (offsprings, archive, newnumbersexpected) =>
+          val resgenomes: Seq[Genome[NumberedInnovation]] = new NEATBreeding {
+            def crossoverInheritDisabledProb: Double = ???
+            def genDistDisjointCoeff: Double = ???
+            def genDistExcessCoeff: Double = ???
+            def genDistWeightDiffCoeff: Double = ???
+            def mutationAddLinkBiasProb: Double = ???
+            def mutationAddLinkProb: Double = 0
+            def mutationAddNodeProb: Double = 0
+            def mutationDisableProb: Double = ???
+            def mutationEnableProb: Double = ???
+            def mutationWeightProb0: Double = ???
+            def mutationWeightSigma: Double = ???
+            def speciesCompatibilityThreshold: Double = ???
+            def inputNodes: Int = ???
+            def biasNodes: Int = ???
+            def outputNodes: Int = ???
+            def lambda = ???
+            def initialWeight = ???
+            def minimalGenome = ???
+            def mutateAddLink(
+              genome: Genome[NumberedInnovation],
+              population: Population[G, P, F],
+              archive: A)(implicit rng: Random): Genome[Innovation] = ???
+          }.setInnovationNumbers(offsprings, archive)
+          val newinnovresult = offsprings.zip(resgenomes)
+            .flatMap { case (o, r) => (o.connectionGenes.map { _.innovation }) zip (r.connectionGenes.map { _.innovation }) }
+            .filter { //filter new innovations
+              case (origi: UnnumberedInnovation, _) => true
+              case _ => false
+            }
+            .map { case (_, resi) => resi }
+          Prop((newinnovresult zip newnumbersexpected).forall { case (a, b) => a.number == b }) :|
+            s"offsprings: $offsprings" :|
+            s"archive: $archive" :|
+            s"newnumbersexpected: $newnumbersexpected" :|
+            s"newnumberresult: $newinnovresult"
+      }: _*)
+  }
 
   trait Xorparameters {
-    def mutationAddNodeProb: Double = 0.2
-    def mutationAddLinkProb: Double = 0.2
+    def mutationAddNodeProb: Double = 0.03
+    def mutationAddLinkProb: Double = 0.05
     def mutationWeightSigma: Double = 1
     def mutationWeightProb0: Double = 0.5
-    def mutationDisableProb: Double = 0.2
-    def mutationEnableProb: Double = 0.2
+    def mutationDisableProb: Double = 0.0
+    def mutationEnableProb: Double = 0.0
     def genDistDisjointCoeff: Double = 1.0
     def genDistExcessCoeff: Double = 1.0
     def genDistWeightDiffCoeff: Double = 0.4
     def speciesCompatibilityThreshold: Double = 3.0
     def crossoverInheritDisabledProb: Double = 0.75
     def mutationAddLinkBiasProb: Double = 0.1
+    def proportionKeep: Double = 0.2
 
     val inputNodes = 2
     val biasNodes = 1
     val outputNodes = 1
 
-    val lambda = 5
+    val lambda = 50
 
     val maximumObjective: Double = 4.0
+    val steps = 50
   }
 
-  val xortestset: Seq[(Seq[Double], Seq[Double])] =
-    Vector(
-      (Vector(0.0, 0.0, 1.0), Vector(0.0)),
-      (Vector(0.0, 1.0, 1.0), Vector(1.0)),
-      (Vector(1.0, 0.0, 1.0), Vector(1.0)),
-      (Vector(1.0, 1.0, 1.0), Vector(0.0)))
-
   val xorneat1 = new NEAT with NEATMinimalGenomeConnectedIO with NEATFeedforwardTopology with MaximumObjectiveReachedTermination with Xorparameters {
+    val xortestset: Seq[(Seq[Double], Seq[Double])] =
+      Vector(
+        (Vector(0.0, 0.0, 1.0), Vector(0.0)),
+        (Vector(0.0, 1.0, 1.0), Vector(1.0)),
+        (Vector(1.0, 0.0, 1.0), Vector(1.0)),
+        (Vector(1.0, 1.0, 1.0), Vector(0.0)))
+
     def evaluateNet(
       _nodes: Int,
       _inputnodes: IndexedSeq[Int],
@@ -263,26 +393,38 @@ object NEATSpecification extends Properties("NEAT") {
         _edges,
         _activationfunction,
         _state)
-      rng.shuffle(xortestset).map {
+      //if (_edges.exists { case (u, v, _) => u == v }) throw new RuntimeException(s"LOOP! ${_edges}")
+      val shuffledxor = rng.shuffle(xortestset)
+      val res = shuffledxor.map {
         case (input, output) =>
           (nn.query(input) zip output).map { case (i, o) => abs(i - o) }.sum
-      }.sum - 4
+      }.sum
+      4 - res
     }
 
     def activationFunction(inputsAndWeights: Traversable[(Double, Double)]): Double = ActivationFunction.tanh(inputsAndWeights)
     def neuronInitValue: Double = 0.5
   }
 
-  property("XORtest") = Prop({
+  // property("Individuals in the same species are withing distance speciesCompatibilityThreshold of one another") = false
+  // property("The number of offsprings of a species is equal to (species fitness / sum of species fitnesses) * population size") = false
+  // property("Only the fittest offsprings survive") = false
 
-    val res =
-      xorneat1.evolve.untilConverged {
-        s => println(s.generation)
+  property("Neat learns XOR") =
+    within(1) {
+      Prop {
+
+        val res =
+          xorneat1.evolve.untilConverged { s =>
+            println(s"Generation ${s.generation}, bestFitness = ${if (s.population.isEmpty) 0 else s.population.map { elt => elt.fitness }.max}")
+            s.population.content.foreach { elt =>
+              println(s"${elt.genome}")
+            }
+          }
+
+        true
       }
-
-    true
-  }
-  )
+    }
 
   // val xorneat2 = new NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with Xorparameters {
 

@@ -19,14 +19,14 @@ package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
 import scala.util.Random
-import math.round
+import math.{ round, max }
 import collection.immutable.Map
 
 /**
  * Cake layer to eliminated elements of a population
  */
 trait NEATElitism <: Elitism with DoubleFitness with NEATGenome with NEATArchive {
-  def proportionKeep: Double = 0.2
+  def proportionKeep: Double // = 0.2
 
   /**
    * Keep only the 20% fittest individuals of each species. If the fitness of the entire population does not
@@ -53,6 +53,9 @@ trait NEATElitism <: Elitism with DoubleFitness with NEATGenome with NEATArchive
     }
   }
 
-  def keepBest(offsprings: Seq[PopulationElement[G, P, F]]): Seq[PopulationElement[G, P, F]] =
-    offsprings.sortBy { elt: PopulationElement[G, P, F] => -(elt.fitness) }.take(round(proportionKeep * offsprings.length).toInt)
+  def keepBest(offsprings: Seq[PopulationElement[G, P, F]]): Seq[PopulationElement[G, P, F]] = {
+    //keep only a portion of the offsprings, but take at least one.
+    val keep = offsprings.sortBy { elt: PopulationElement[G, P, F] => -(elt.fitness) }.take(max(1, round(proportionKeep * offsprings.length).toInt))
+    keep
+  }
 }

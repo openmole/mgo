@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+//TODO Je dois m'arranger pour que les noeuds soient uniques (pas de risque de confondre 2 noeuds différents dans 2 génomes différents)? (record of nodes?)
+// En gros, l'idée est comme pour les numéros d'innovations, à tous les noeuds créés sont attribués des numéros uniques, sauf ceux qui apparaissent dans le record of innovation ou créés durant la même génération au même endroit (entre deux noeuds identiques)
+
 package fr.iscpif.mgo.breed
 
 import fr.iscpif.mgo._
@@ -30,7 +33,7 @@ import math.{ max, abs, round }
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with NEATNetworkTopology with Lambda with DoubleFitness with MinimalGenome {
+trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with DoubleFitness with MinimalGenome {
 
   def mutationAddNodeProb: Double // = 0.2
   def mutationAddLinkProb: Double // = 0.2
@@ -100,6 +103,21 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with NEATNetwork
     }.toIterator
   }
 
+  // //returns new node values if and two new nodes numbers if already present
+  // def dontOverride(
+  //   cg: ConnectionGene[NumberedInnovation], 
+  //   nodes: IntMap[Node],
+  //   lastNode: Int): (Int, Int) = {
+  //   val n1 = 
+  //     if (nodes.contains(cg.inNode)) lastNode + 1
+  //     else cg.inNode
+  //   val lastNode2 = max(lastNode, n1)
+  //   val n2 =
+  //     if (nodes.contains(cg.outNode)) lastNode2 + 1
+  //     else cg.outNode
+  //   (n1, n2)
+  // }
+
   def crossover(
     i1: Individual[Genome[NumberedInnovation], P, Double], //Genome[NumberedInnovation],
     i2: Individual[Genome[NumberedInnovation], P, Double], //Genome[NumberedInnovation],
@@ -113,6 +131,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with NEATNetwork
     // - excess or disjoint genes from the fittest parent are included.
     // - if the parents fitnesses are the same, inherit from the smallest genome or randomly
     val fittest = if (i1.fitness == i2.fitness) 0 else if (i1.fitness > i2.fitness) 1 else 2
+
     val newconnectiongenes =
       aligned.foldLeft(Seq[ConnectionGene[NumberedInnovation]]()) { (acc, pair) =>
         pair match {
@@ -143,8 +162,9 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with NEATNetwork
 
           case (None, None, _) => acc
         }
-      }
-    // For all nodes in the connection genes, include one randomly from each parent. Also include one for each input, output, and bias node that are not connected.
+      }.toVector
+
+    // Include at least one node from each parent. Also include one for each input, output, and bias node that are not connected.
     val newnodesidx =
       (newconnectiongenes.flatMap { cg => Seq(cg.inNode, cg.outNode) } ++
         (inputNodesIndices ++ biasNodesIndices ++ outputNodesIndices)
@@ -157,12 +177,21 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with NEATNetwork
           else if (rng.nextBoolean()) i1.genome.nodes(i) else i2.genome.nodes(i)
         })
     }: _*)
+
+    //if (newconnectiongenes.exists(cg1 => newconnectiongenes.exists(cg2 => (cg1.outNode == cg2.inNode) && (cg2.outNode == cg1.inNode)))) throw new RuntimeException(s"LOOOOOOP (crossover) $newconnectiongenes $newnodes\n$i1\n$i2")
+    if (newconnectiongenes.exists(cg1 => {
+      if (newnodes(cg1.inNode).level >= newnodes(cg1.outNode).level) {
+        println(cg1)
+        true
+      } else false
+    })) throw new RuntimeException(s"Backwards!! $newconnectiongenes $newnodes\n$i1\n$i2")
     Genome[NumberedInnovation](
       connectionGenes = newconnectiongenes,
       nodes = newnodes,
       // Give the offspring its parents species. Species will be reattributed at the postBreeding 
       // stage anyway. This will just be used as a hint to speed up species attribution
-      species = i1.genome.species)
+      species = i1.genome.species,
+      lastNodeId = newnodes.lastKey)
   }
 
   object AlignmentInfo extends Enumeration {
@@ -197,15 +226,26 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with NEATNetwork
     archive: A)(implicit rng: Random): Genome[Innovation] = {
     val r = rng.nextDouble
     if (r < mutationAddNodeProb) {
-      mutateAddNode(genome, population, archive)
+      val res = mutateAddNode(genome, population, archive)
+      //if (res.connectionGenes.exists(cg1 => res.connectionGenes.exists(cg2 => (cg1.outNode == cg2.inNode) && (cg2.outNode == cg1.inNode)))) throw new RuntimeException(s"LOOOOOOP $res (add link)")
+      res
     } else if (r < mutationAddNodeProb + mutationAddLinkProb) {
-      mutateAddLink(genome, population, archive)
-    } else
+      val res = mutateAddLink(genome, population, archive)
+      //if (res.connectionGenes.exists(cg1 => res.connectionGenes.exists(cg2 => (cg1.outNode == cg2.inNode) && (cg2.outNode == cg1.inNode)))) throw new RuntimeException(s"LOOOOOOP $res (add link)")
+      res
+    } else {
       // successively mutate weights and mutate enable bits on the genome
-      { mutateWeights(_: Genome[Innovation], population, archive) }.andThen {
+      val res = { mutateWeights(_: Genome[Innovation], population, archive) }.andThen {
         mutateEnabled(_: Genome[Innovation], population, archive)
       }(genome)
+      res
+    }
   }
+
+  def mutateAddLink(
+    genome: NEATGenome.Genome[NEATGenome.NumberedInnovation],
+    population: Population[G, P, F],
+    archive: A)(implicit rng: Random): NEATGenome.Genome[NEATGenome.Innovation]
 
   def mutateAddNode(
     genome: Genome[NumberedInnovation],
@@ -214,29 +254,31 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with NEATNetwork
     //pick a connection gene, disable it and add 2 new connection genes
     val picked: Int = rng.nextInt(genome.connectionGenes.length)
     val pickedcg = genome.connectionGenes(picked)
-    val newnodeid: Int = genome.nodes.size
+    val newnodeid: Int = genome.lastNodeId + 1
     val newcg1: ConnectionGene[UnnumberedInnovation] =
       ConnectionGene(
         inNode = pickedcg.inNode,
         outNode = newnodeid,
         weight = 1,
         enabled = true,
-        innovation = UnnumberedNodeInnovation(pickedcg.inNode, pickedcg.outNode, pickedcg.innovation.number))
+        innovation = UnnumberedNodeInnovation(pickedcg.inNode, newnodeid, pickedcg.innovation.number))
     val newcg2: ConnectionGene[UnnumberedInnovation] =
       ConnectionGene(
         inNode = newnodeid,
         outNode = pickedcg.outNode,
         weight = pickedcg.weight,
         enabled = true,
-        innovation = UnnumberedNodeInnovation(pickedcg.inNode, pickedcg.outNode, pickedcg.innovation.number))
+        innovation = UnnumberedNodeInnovation(newnodeid, pickedcg.outNode, pickedcg.innovation.number))
+    val newconnectiongenes = (genome.connectionGenes.updated(
+      picked,
+      pickedcg.copy(enabled = false)
+    ) ++ Vector(newcg1, newcg2))
+    val newnodes = genome.nodes + (newnodeid -> HiddenNode(level = (genome.nodes(pickedcg.inNode).level + genome.nodes(pickedcg.outNode).level) / 2.0))
     Genome[Innovation](
-      connectionGenes =
-        (genome.connectionGenes.updated(
-          picked,
-          pickedcg.copy(enabled = false)
-        ) ++ Vector(newcg1, newcg2)),
-      nodes = genome.nodes + (newnodeid -> HiddenNode(level = (genome.nodes(pickedcg.inNode).level + genome.nodes(pickedcg.outNode).level) / 2.0)),
-      species = genome.species)
+      connectionGenes = newconnectiongenes,
+      nodes = newnodes,
+      species = genome.species,
+      lastNodeId = newnodeid)
   }
 
   def mutateWeights(

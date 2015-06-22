@@ -21,10 +21,11 @@ import fr.iscpif.mgo._
 import util.Random
 import fr.iscpif.mgo.genome.RandomGenome
 import fr.iscpif.mgo.genome.NEATGenome
+import fr.iscpif.mgo.genome.NEATGenome._
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 
-trait NEATFeedforwardTopology extends NEATNetworkTopology with NEATBreeding with NEATGenome {
+trait NEATFeedforwardTopology extends NEATBreeding with NEATGenome {
 
   def mutateAddLink(
     genome: NEATGenome.Genome[NEATGenome.NumberedInnovation],
@@ -45,7 +46,8 @@ trait NEATFeedforwardTopology extends NEATNetworkTopology with NEATBreeding with
         .flatMap { u => rng.shuffle(genome.nodes.keysIterator).map { v => (u, v) } }
         .find {
           case (u: Int, v: Int) =>
-            (!connections(u).contains(v)) && (genome.nodes(u).level < genome.nodes(v).level)
+            (!(connections.contains(u) && connections(u).contains(v))) &&
+              (genome.nodes(u).level < genome.nodes(v).level)
         }
     pair match {
       case None => genome
@@ -61,7 +63,8 @@ trait NEATFeedforwardTopology extends NEATNetworkTopology with NEATBreeding with
           connectionGenes =
             genome.connectionGenes :+ newgene,
           nodes = genome.nodes,
-          species = genome.species)
+          species = genome.species,
+          lastNodeId = genome.lastNodeId)
       }
     }
   }

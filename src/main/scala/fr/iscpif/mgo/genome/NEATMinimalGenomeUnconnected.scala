@@ -29,7 +29,8 @@ trait NEATMinimalGenomeUnconnected <: MinimalGenome with NEATGenome {
           ((inputNodesIndices.map { (_ -> NEATGenome.InputNode()) })
             ++ (biasNodesIndices.map { (_ -> NEATGenome.BiasNode()) })
             ++ (outputNodesIndices.map { (_ -> NEATGenome.OutputNode()) })).toSeq: _*),
-      species = 0
+      species = 0,
+      lastNodeId = inputNodes + biasNodes + outputNodes - 1
     )
 
 }

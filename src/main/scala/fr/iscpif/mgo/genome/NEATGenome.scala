@@ -33,9 +33,9 @@ trait NEATGenome {
   def outputNodes: Int
   def biasNodes: Int
 
-  def inputNodesIndices: Range = (1 to inputNodes)
-  def biasNodesIndices: Range = (inputNodes + 1 to inputNodes + biasNodes)
-  def outputNodesIndices: Range = (inputNodes + biasNodes + 1 to inputNodes + biasNodes + outputNodes)
+  def inputNodesIndices: Range = (0 until inputNodes)
+  def biasNodesIndices: Range = (inputNodes until inputNodes + biasNodes)
+  def outputNodesIndices: Range = (inputNodes + biasNodes until inputNodes + biasNodes + outputNodes)
 
 }
 
@@ -43,7 +43,8 @@ object NEATGenome {
   case class Genome[+I <: Innovation](
       connectionGenes: Seq[ConnectionGene[I]],
       nodes: IntMap[Node],
-      species: Int) {
+      species: Int,
+      lastNodeId: Int) {
     /**
      * Sets the innovation number of unnumbered connectionGenes innovations and sorts the connectionGenes according to their innovation number.
      * The mutation operations adding links and nodes already ensures that connection genes are unique
@@ -65,6 +66,9 @@ object NEATGenome {
         }
       (copy(connectionGenes = newconnectiongenes), newgin, newroi)
     }
+
+    override def toString(): String = s"Species $species; ${connectionGenes.toString}; $nodes"
+
   }
 
   case class ConnectionGene[+I <: Innovation](
@@ -79,6 +83,8 @@ object NEATGenome {
     }
 
     def setInnovationNumber(x: Int): ConnectionGene[NumberedInnovation] = copy(innovation = innovation.setNumber(x))
+
+    override def toString(): String = f"$inNode%d${if (enabled) "-" else "X"}%s>$outNode%d($weight%.2f);$innovation%s"
   }
 
   // val TTT: ConnectionGene[Innovation] = (ConnectionGene(1, 2, 3.0, true, NumberedLinkInnovation(1, 2, 3), 0): ConnectionGene[NumberedInnovation])

@@ -25,8 +25,8 @@ trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
     NEATGenome.Genome(
       connectionGenes = {
         val unnumberedgenes = (for {
-          u <- 1 to inputNodes
-          v <- inputNodes + 1 to inputNodes + outputNodes
+          u <- inputNodesIndices
+          v <- outputNodesIndices
         } yield NEATGenome.ConnectionGene[NEATGenome.UnnumberedInnovation](
           inNode = u,
           outNode = v,
@@ -40,6 +40,7 @@ trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
           ((inputNodesIndices.map { (_ -> NEATGenome.InputNode()) })
             ++ (biasNodesIndices.map { (_ -> NEATGenome.BiasNode()) })
             ++ (outputNodesIndices.map { (_ -> NEATGenome.OutputNode()) })).toSeq: _*),
-      species = 0
+      species = 0,
+      lastNodeId = inputNodes + biasNodes + outputNodes - 1
     )
 }

@@ -48,7 +48,7 @@ trait MaximumObjectiveReachedTermination extends Termination with DoubleFitness 
    * been detected and the new termination state
    */
   def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE) = {
-    val bestFitness: Double = population.map { _.fitness }.max
+    val bestFitness: Double = if (population.isEmpty) Double.NegativeInfinity else population.map { _.fitness }.max
     (bestFitness >= maximumObjective, bestFitness)
   }
 
