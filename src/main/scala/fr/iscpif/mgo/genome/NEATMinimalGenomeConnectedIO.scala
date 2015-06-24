@@ -17,29 +17,27 @@
 
 package fr.iscpif.mgo.genome
 
-import scala.util.Random
 import collection.immutable.IntMap
 
 trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
   lazy val minimalGenome: G =
     NEATGenome.Genome(
-      connectionGenes = {
-        val unnumberedgenes = (for {
-          u <- inputNodesIndices
-          v <- outputNodesIndices
-        } yield NEATGenome.ConnectionGene[NEATGenome.UnnumberedInnovation](
-          inNode = u,
-          outNode = v,
-          weight = 0,
-          enabled = true,
-          innovation = NEATGenome.UnnumberedLinkInnovation(u, v))).toVector
-        unnumberedgenes.zipWithIndex.map { case (cg, i) => cg.setInnovationNumber(i + 1) }
-      },
+      connectionGenes =
+        inputNodesIndices.flatMap { u => outputNodesIndices.map { (u, _) } }
+          .zipWithIndex.map {
+            case ((u, v), i) =>
+              NEATGenome.ConnectionGene(
+                inNode = u,
+                outNode = v,
+                weight = 0,
+                enabled = true,
+                innovation = i)
+          },
       nodes =
         IntMap(
-          ((inputNodesIndices.map { (_ -> NEATGenome.InputNode()) })
-            ++ (biasNodesIndices.map { (_ -> NEATGenome.BiasNode()) })
-            ++ (outputNodesIndices.map { (_ -> NEATGenome.OutputNode()) })).toSeq: _*),
+          inputNodesIndices.map { _ -> NEATGenome.InputNode() }
+            ++ biasNodesIndices.map { _ -> NEATGenome.BiasNode() }
+            ++ outputNodesIndices.map { _ -> NEATGenome.OutputNode() }.toSeq: _*),
       species = 0,
       lastNodeId = inputNodes + biasNodes + outputNodes - 1
     )

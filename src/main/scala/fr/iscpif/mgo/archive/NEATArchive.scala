@@ -26,9 +26,11 @@ import collection.immutable.IntMap
 
 object NEATArchive {
   case class Archive(
-    globalInnovationNumber: Int,
-    recordOfInnovations: Seq[NEATGenome.NumberedInnovation],
-    indexOfSpecies: IntMap[NEATGenome.Genome[NEATGenome.NumberedInnovation]],
+    // to maintain a record of innovation throughout generations would require to make the whole Evolution stateful
+    // so that innovations created at the breeding stage can be added. Let's just record the innovations for the 
+    // current generation at the breeding stage only (like in Stanley's original paper).
+    //recordOfInnovations: Seq[NEATGenome.Innovation],
+    indexOfSpecies: IntMap[NEATGenome.Genome],
     lastEntirePopulationFitnesses: Queue[Double])
 }
 
@@ -38,16 +40,17 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
 
   def initialArchive(implicit rng: Random): A =
     NEATArchive.Archive(
-      0,
-      Vector[NEATGenome.NumberedInnovation](),
+      //0,
+      //0,
+      //Vector[NEATGenome.Innovation](),
       IntMap[G](),
       Queue[Double]())
 
   def archive(a: A, oldIndividuals: Population[G, P, F], offsprings: Population[G, P, F])(implicit rng: Random): A =
     NEATArchive.Archive(
-      globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation.number }.max,
+      //globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation.number }.max,
       /* recordOfInnovation contains the unique innovations of offsprings*/
-      recordOfInnovations = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation }.distinct,
+      //recordOfInnovations = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation }.distinct,
       /** The index of species represents each species by a random genome of the corresponding species of the past generation.*/
       indexOfSpecies = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }.map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) },
       lastEntirePopulationFitnesses =

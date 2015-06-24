@@ -27,17 +27,13 @@ import collection.immutable.IntMap
 
 trait NEATFeedforwardTopology extends NEATBreeding with NEATGenome {
 
-  def mutateAddLink(
-    genome: NEATGenome.Genome[NEATGenome.NumberedInnovation],
-    population: Population[G, P, F],
-    archive: A)(implicit rng: Random): NEATGenome.Genome[NEATGenome.Innovation] = {
-    // look for nodes that are not already connected
+  def pickNodesAddLink(genome: Genome)(implicit rng: Random): Option[(Int, Int)] = {
     val connections =
       IntMap[Seq[Int]](
-        genome.connectionGenes.map { cg => (cg.inNode -> cg.outNode) }
+        genome.connectionGenes.map { cg => cg.inNode -> cg.outNode }
           .groupBy { (_: (Int, Int))._1 }
           .mapValues { (_: Seq[(Int, Int)]).map { _._2 } }.toSeq: _*)
-    // Have a change to force the in node to be a bias node
+    // Have a chance to force the in node to be a bias node
     val pair: Option[(Int, Int)] =
       (if (rng.nextDouble() < mutationAddLinkBiasProb)
         rng.shuffle(biasNodesIndices.iterator)
@@ -49,24 +45,7 @@ trait NEATFeedforwardTopology extends NEATBreeding with NEATGenome {
             (!(connections.contains(u) && connections(u).contains(v))) &&
               (genome.nodes(u).level < genome.nodes(v).level)
         }
-    pair match {
-      case None => genome
-      case Some((u, v)) => {
-        val newgene =
-          NEATGenome.ConnectionGene(
-            inNode = u,
-            outNode = v,
-            weight = initialWeight,
-            enabled = true,
-            innovation = NEATGenome.UnnumberedLinkInnovation(u, v))
-        NEATGenome.Genome[NEATGenome.Innovation](
-          connectionGenes =
-            genome.connectionGenes :+ newgene,
-          nodes = genome.nodes,
-          species = genome.species,
-          lastNodeId = genome.lastNodeId)
-      }
-    }
-  }
 
+    pair
+  }
 }

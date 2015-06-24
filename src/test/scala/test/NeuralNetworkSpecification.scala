@@ -17,18 +17,11 @@
 
 package test
 
-import org.scalacheck.Properties
-import org.scalacheck.Prop
-import org.scalacheck.Prop._
-import org.scalacheck.Prop.propBoolean
-import org.scalacheck.Gen
-import org.scalacheck.Arbitrary
-import org.scalacheck.Arbitrary.arbitrary
-
 import fr.iscpif.mgo.tools.network._
 import fr.iscpif.mgo.tools.neuralnetwork._
-
-import math.tanh
+import org.scalacheck.Arbitrary.arbitrary
+import org.scalacheck.Prop._
+import org.scalacheck.{Gen, Properties}
 
 // NeuralNetwork(inputs: Int, outputs: Int, bias: Boolean, edges: Seq[(innode,outnode)]).query(inputs): Seq[outputvalues]
 
@@ -36,7 +29,7 @@ import math.tanh
 
 object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
   def layers(l: Seq[Int]) =
-    Vector.tabulate(l.size)(i => (l.take(i).sum) until (l.take(i + 1).sum))
+    Vector.tabulate(l.size)(i => l.take(i).sum until l.take(i + 1).sum)
 
   def linkLayers(l1: Seq[Int], l2: Seq[Int]): Seq[(Int, Int)] =
     for {
@@ -57,7 +50,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
       outputs <- Gen.choose(0, size)
       hiddenlayers <- Gen.choose(0, 5)
       hidden <- Gen.containerOfN[Vector, Int](hiddenlayers, Gen.choose(0, size))
-    } yield (perceptronTopology(inputs, outputs, hidden))
+    } yield perceptronTopology(inputs, outputs, hidden)
   }
 
   def perceptronWithWeights(inputs: Int, outputs: Int, hidden: Seq[Int]) = Gen.sized { size =>

@@ -28,7 +28,7 @@ object Generate {
   val smallInt = Gen.choose(-10, 10)
   val reasonableInt = Gen.choose(-10000, 10000)
   def shuffle[T](s: Seq[T], prefix: Seq[T] = Vector()): Gen[Seq[T]] =
-    if (s.length == 0) Gen.const(prefix.toSeq)
+    if (s.isEmpty) Gen.const(prefix.toSeq)
     else
       Gen.choose(0, s.length - 1)
         .flatMap { i => shuffle(s.take(i) ++ s.takeRight(s.length - i - 1), prefix :+ s(i)) }
