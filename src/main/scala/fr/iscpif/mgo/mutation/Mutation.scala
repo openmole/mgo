@@ -40,6 +40,7 @@ trait Mutation <: G with P with F with A {
    * @return the mutated genome
    */
   def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G =
-    mutations.random(rng)(genome, population, archive, rng)
+    if(mutations.isEmpty) genome
+    else mutations.random(rng)(genome, population, archive, rng)
 
 }
