@@ -6,6 +6,8 @@ scalaVersion := "2.11.5"
 
 scalacOptions in (Compile,doc) := Seq("-groups", "-implicits", "-diagrams","-diagrams-max-classes","20")
 
+scalacOptions += "-feature"
+
 crossScalaVersions := Seq("2.10.4", "2.11.4")
 
 resolvers ++= Seq(
@@ -28,9 +30,9 @@ resolvers ++= Seq(
   "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
 )
 
-libraryDependencies ++= Seq(
-  "org.scalacheck" %% "scalacheck" % "1.11.3" % "test"
-)
+libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.3" % "test"
+
+testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
 publishMavenStyle := true
 

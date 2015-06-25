@@ -56,11 +56,13 @@ package object mgo {
   type ArchiveIndividuals = archive.ArchiveIndividuals
   type CMAESArchive = archive.CMAESArchive
   type HitMapArchive = archive.HitMapArchive
+  type NEATArchive = archive.NEATArchive
   type NoArchive = archive.NoArchive
   type NoveltyArchive = archive.NoveltyArchive
   type Breeding = breed.Breeding
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
+  type NEATBreeding = breed.NEATBreeding
   lazy val BLXCrossover = crossover.BLXCrossover
   type Crossover = crossover.Crossover
   type DynamicGACrossover = crossover.DynamicGACrossover
@@ -93,6 +95,7 @@ package object mgo {
   type ConservativeFIFOAggregatedElitism = elitism.ConservativeFIFOAggregatedElitism
   type DiversityAggregatedElitism = elitism.DiversityAggregatedElitism
   type Elitism = elitism.Elitism
+  type NEATElitism = elitism.NEATElitism
   type KeepOffspringElitism = elitism.KeepOffspringElitism
   type IndividualFilter = elitism.IndividualFilter
   type NonDominatedElitism = elitism.NonDominatedElitism
@@ -101,6 +104,7 @@ package object mgo {
   type RankElitism = elitism.RankElitism
   type Aggregation = fitness.Aggregation
   type F = fitness.F
+  type DoubleFitness = fitness.DoubleFitness
   type MaxAggregation = fitness.MaxAggregation
   type MG = fitness.MG
   type MGFitness = fitness.MGFitness
@@ -109,6 +113,8 @@ package object mgo {
   type GAGenome = genome.GAGenome
   type GAGenomeWithRandomValue = genome.GAGenomeWithRandomValue
   type GAGenomeWithSigma = genome.GAGenomeWithSigma
+  type NEATGenome = genome.NEATGenome
+  type MinimalGenome = genome.MinimalGenome
   type GA = genome.GA
   type NoGenomeClamping = genome.NoGenomeClamping
   type RandomValue = genome.RandomValue
@@ -131,8 +137,10 @@ package object mgo {
   type P = phenotype.P
   type Evaluation = phenotype.Evaluation
   type DoubleSeqPhenotype = phenotype.DoubleSeqPhenotype
+  type NoPhenotype = phenotype.NoPhenotype
   type Problem = problem.Problem
   type GAProblem = problem.GAProblem
+  type NEATProblem = problem.NEATProblem
   type NoFitness = problem.NoFitness
   type Scaling = problem.Scaling
   type HierarchicalRanking = ranking.HierarchicalRanking
