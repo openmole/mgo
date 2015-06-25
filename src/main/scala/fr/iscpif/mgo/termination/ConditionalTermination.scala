@@ -18,26 +18,25 @@
 package fr.iscpif.mgo.termination
 
 import fr.iscpif.mgo._
-import genome.G
+import fr.iscpif.mgo.Population
+import fr.iscpif.mgo.genome
 
 import scala.util.Random
 
 /**
  * Layer to compute the stopping condition of the evolutionary algorithm
  */
-trait MaximumObjectiveReachedTermination extends Termination with DoubleFitness {
+trait ConditionalTermination extends Termination {
 
   /** Type of the state maintained to study the evolution of the algorithm */
-  type STATE = F
-
-  def maximumObjective: Double
+  type STATE = Boolean
 
   /**
    * Compute the initial state
    *
    * @return the initial state
    */
-  def initialState = Double.NegativeInfinity
+  def initialState = false
 
   /**
    * Test if the algorithm has converged.
@@ -48,8 +47,10 @@ trait MaximumObjectiveReachedTermination extends Termination with DoubleFitness 
    * been detected and the new termination state
    */
   def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE) = {
-    val bestFitness: Double = if (population.isEmpty) Double.NegativeInfinity else population.map { _.fitness }.max
-    (bestFitness >= maximumObjective, bestFitness)
+    val res = terminated(population)
+    (res, res)
   }
+
+  def terminated(population: Population[G, P, F]): Boolean
 
 }
