@@ -29,7 +29,7 @@ trait HitMapArchive <: Archive with Niche {
 
   def initialArchive(implicit rng: Random) = Map[NICHE, Int]()
 
-  override def archive(archive: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): A =
+  def archive(archive: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): A =
     combine(archive, toArchive(offspring))
 
   def toArchive(population: Population[G, P, F]): A =
@@ -41,14 +41,4 @@ trait HitMapArchive <: Archive with Niche {
     if (a contains a2key) a + ((a2key, a(a2key) + a2value))
     else a + ((a2key, a2value))
   })
-
-  def diff(original: A, modified: A)(implicit rng: Random): A = {
-    modified.foldLeft(initialArchive)((m, kv) => {
-      val key = kv._1
-      val value = kv._2
-      if (original contains key) m + ((key, value - original(key)))
-      else m + ((key, value))
-    })
-  }
-
 }

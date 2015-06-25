@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 13/05/2014 Guillaume Chérel
+ * Copyright (C) 2015 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -15,21 +15,25 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.tools
 
-import fr.iscpif.mgo._
+/**
+ * trait defining stateful computations
+ * @tparam S the state type
+ * @tparam R the result type
+ */
+case class StateMonad[R, S](
+    runstate: S => (R, S)) { stmon =>
 
-trait PSE <: NoFitness
-  with HitMapArchive
-  with PhenotypeGridNiche
-  with GeneticBreeding
-  with BinaryTournamentSelection
-  with DynamicGACrossover
-  with DynamicGAMutation
-  with GAGenomeWithSigma
-  with TournamentOnHitCount
-  with HierarchicalRanking
-  with RandomNicheElitism
-  with CounterTermination
-  with ClampedGenome
-  with ProportionalNumberOfRound
+  def bind[T](f: R => StateMonad[T, S]): StateMonad[T, S] =
+    new StateMonad[T, S]({
+      s =>
+        val (a, newState) = runstate(s)
+        val StateMonad(g) = f(a)
+        g(newState)
+    })
+}
+
+object StateMonad {
+  def pure[R, S](r: R): StateMonad[R, S] = StateMonad[R, S]({ s => (r, s) })
+}

@@ -38,7 +38,7 @@ trait DynamicCrossover <: Crossover {
   override def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[G] = {
     val crossover: Crossover =
       if (rng.nextDouble < crossoverExploration) crossovers.random
-      else mutltinomial(crossoverStats(population))
+      else multinomial(crossoverStats(population))
     crossover(g1, g2, population, archive, rng)
   }
 

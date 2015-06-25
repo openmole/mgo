@@ -28,7 +28,7 @@ object TestNSGAII extends App {
       def steps = 1000
       def mu = 200
       def lambda = 200
-      def genomeSize = 10
+      def genomeSize = 1
     }
 
   implicit val rng = newRNG(42)

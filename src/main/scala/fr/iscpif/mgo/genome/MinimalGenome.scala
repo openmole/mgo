@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 13/05/2014 Guillaume Chérel
+ * Copyright (C) 2015 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -9,27 +9,14 @@
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.algorithm
+package fr.iscpif.mgo.genome
 
-import fr.iscpif.mgo._
-
-trait PSE <: NoFitness
-  with HitMapArchive
-  with PhenotypeGridNiche
-  with GeneticBreeding
-  with BinaryTournamentSelection
-  with DynamicGACrossover
-  with DynamicGAMutation
-  with GAGenomeWithSigma
-  with TournamentOnHitCount
-  with HierarchicalRanking
-  with RandomNicheElitism
-  with CounterTermination
-  with ClampedGenome
-  with ProportionalNumberOfRound
+trait MinimalGenome <: G {
+  def minimalGenome(): G
+}

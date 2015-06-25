@@ -36,7 +36,7 @@ trait Mutation <: G with P with F with A {
    * @param genome genome to mutate
    * @param population the last computed population
    * @param archive the last archive
-   * @param rng a random number geneartor
+   * @param rng a random number generator
    * @return the mutated genome
    */
   def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G =
