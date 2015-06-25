@@ -21,7 +21,7 @@ import fr.iscpif.mgo.tools.network._
 import fr.iscpif.mgo.tools.neuralnetwork._
 import org.scalacheck.Arbitrary.arbitrary
 import org.scalacheck.Prop._
-import org.scalacheck.{Gen, Properties}
+import org.scalacheck.{ Gen, Properties }
 
 // NeuralNetwork(inputs: Int, outputs: Int, bias: Boolean, edges: Seq[(innode,outnode)]).query(inputs): Seq[outputvalues]
 

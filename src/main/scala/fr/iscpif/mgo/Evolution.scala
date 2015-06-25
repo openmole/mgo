@@ -90,17 +90,12 @@ trait Evolution extends Termination
    *
    */
   def step(population: Population[G, P, F], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): (Population[G, P, F], A) = {
-    println("A")
     val offspringGenomes = breed(population, archive, lambda)
-    println("B")
     val rngs = (0 until offspringGenomes.size).map(_ => buildRNG(rng.nextLong))
-    println("C")
 
     val offspring = Population.fromIndividuals((offspringGenomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq)
-    println("D")
 
     val newArchive = self.archive(archive, population, offspring)
-    println("E")
 
     //Elitism strategy
     (elitism(population, offspring.toList, newArchive), newArchive)

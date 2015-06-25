@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*TODO: Elitism, archive update*/
-
 /**
  * - Init Pop minimally
  * - Evaluate
@@ -125,6 +123,4 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait NEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchive with NoPhenotype {
-
-}
+trait NEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchive with NoPhenotype

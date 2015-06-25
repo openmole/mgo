@@ -566,9 +566,10 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     val alignment = alignGenomes(g1.connectionGenes, g2.connectionGenes)
     val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(alignment)
     val longestGenomeSize = max(g1.connectionGenes.length, g2.connectionGenes.length)
-    (genDistDisjointCoeff * excess / longestGenomeSize) +
+    val res = (genDistDisjointCoeff * excess / longestGenomeSize) +
       (genDistExcessCoeff * disjoint / longestGenomeSize) +
       (genDistWeightDiffCoeff * weightdiff / matchingGenes)
+    res
   }
 
   def distanceFactors(alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)]): (Int, Int, Double, Int) =

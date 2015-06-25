@@ -55,7 +55,7 @@ trait Feedforward[N, W] {
   @tailrec private def queryRec(state: Vector[N], currentNeurons: Vector[Int]): Vector[N] = {
     val nextNeurons = currentNeurons.toSet.flatMap { n: Int => outNeighbours(n) }.toVector
 
-    println(currentNeurons, nextNeurons)
+    //println(currentNeurons, nextNeurons)
     //if (currentNeurons == nextNeurons) throw new RuntimeException(state.indices.map { outNeighbours(_) }.toString)
     if (nextNeurons.length == 0) state
     else {
