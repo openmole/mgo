@@ -40,7 +40,7 @@ trait Crossover <: G with P with F with A {
    *  @return the result of the crossover
    */
   def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[G] =
-    if(crossovers.isEmpty) Seq(g1, g2)
+    if (crossovers.isEmpty) Seq(g1, g2)
     else crossovers.random(rng)(g1, g2, population, archive, rng)
 
 }
