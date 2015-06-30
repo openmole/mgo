@@ -28,6 +28,9 @@ import collection.immutable.Map
 trait NEATElitism <: Elitism with DoubleFitness with NEATGenome with NEATArchive {
   def proportionKeep: Double // = 0.2
 
+  def speciesKeptIfStagnate: Int
+  def stagnationTimeThreshold: Int // if 0, stagnation is considered never reached,
+
   /**
    * Keep only the 20% fittest individuals of each species. If the fitness of the entire population does not
    * improve for more than 20 generations, only the two best species are allowed to reproduce.
@@ -36,18 +39,16 @@ trait NEATElitism <: Elitism with DoubleFitness with NEATGenome with NEATArchive
     val indivsBySpecies: Map[Int, Seq[PopulationElement[G, P, F]]] =
       offsprings.content.groupBy { elt => elt.genome.species }
     //If the fitness of the entire population does not improve for more than 20 generations
-    val lastfitnesses = archive.lastEntirePopulationFitnesses.takeRight(19)
-    if ((lastfitnesses.length >= 20) &&
-      lastfitnesses.foldLeft(
-        (true, lastfitnesses.head)
-      ) { (acc, curf) =>
-          val (notbetter, prevfitness) = acc
-          (notbetter && (prevfitness >= curf), curf)
-        }._1) {
+    val lastfitnesses = archive.lastEntirePopulationFitnesses.takeRight(stagnationTimeThreshold)
+    if ((lastfitnesses.length >= stagnationTimeThreshold) && (stagnationTimeThreshold > 0) &&
+      //check for no improvement for the last generations
+      !(lastfitnesses.dropRight(1) zip lastfitnesses.drop(1)).exists { case (f1, f2) => f2 > f1 }) {
+
       // Only allow the 2 best species to reproduce
       val speciesFitnesses: Seq[(Int, Double)] = indivsBySpecies.iterator.map { case (sp, indivs) => (sp, indivs.map { _.fitness }.sum / indivs.size) }.toSeq
-      val twoBest = speciesFitnesses.sortBy { case (sp, f) => -f }.take(2).map { _._1 }
-      twoBest.flatMap { sp => keepBest(indivsBySpecies(sp)) }
+      val bestspecies = speciesFitnesses.sortBy { case (sp, f) => -f }.take(speciesKeptIfStagnate).map { _._1 }
+      bestspecies.flatMap { sp => keepBest(indivsBySpecies(sp)) }
+
     } else {
       indivsBySpecies.toSeq.flatMap { case (sp, indivs) => keepBest(indivs) }
     }

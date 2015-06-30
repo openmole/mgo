@@ -23,6 +23,9 @@ trait DirectedEdges[E] {
   def outneighbours(u: Int): Vector[Int] = out(u) map { _._1 }
   def inneighbours(u: Int): Vector[Int] = in(u) map { _._1 }
 
+  val dotGraphType: String = "digraph"
+  val dotEdgeOperator: String = "->"
+
   def in(u: Int): Vector[(Int, E)]
   def out(u: Int): Vector[(Int, E)]
 }

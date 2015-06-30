@@ -156,9 +156,9 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
   property("Feedforward query XOR") =
     forAll(Gen.oneOf(xorSettings.indices)) { xorset =>
       val setting = xorSettings(xorset)
-      val feedforward: Feedforward[Double, Double] with NeuralNetwork[Double, Double] =
+      val feedforward: Feedforward[Double, Double] with NeuralNetwork[Unit, Double, Double] =
         setting.activationFunction match {
-          case Left(af) => new Feedforward[Double, Double] with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
+          case Left(af) => new Feedforward[Double, Double] with NeuralNetwork[Unit, Double, Double] with HomogeneousActivationFunction[Double, Double] {
             def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
             def inputNeurons: Vector[Int] = setting.inputNeurons
             def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -166,7 +166,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
             val activationFunction: Traversable[(Double, Double)] => Double = af
             def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
           }
-          case Right(af) => new Feedforward[Double, Double] with NeuralNetwork[Double, Double] with HeterogeneousActivationFunction[Double, Double] {
+          case Right(af) => new Feedforward[Double, Double] with NeuralNetwork[Unit, Double, Double] with HeterogeneousActivationFunction[Double, Double] {
             def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
             def inputNeurons: Vector[Int] = setting.inputNeurons
             def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -187,9 +187,9 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
       val setting = xorSettings(xorset)
       forAll(Gen.choose(setting.requiredSteps, setting.requiredSteps + 100)) { steps =>
         val setting = xorSettings(xorset)
-        val recurrent: Recurrent[Double, Double] with NeuralNetwork[Double, Double] =
+        val recurrent: Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] =
           setting.activationFunction match {
-            case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
+            case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] with HomogeneousActivationFunction[Double, Double] {
               def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
               def inputNeurons: Vector[Int] = setting.inputNeurons
               def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -197,7 +197,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
               val activationFunction: Traversable[(Double, Double)] => Double = af
               def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
             }
-            case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HeterogeneousActivationFunction[Double, Double] {
+            case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] with HeterogeneousActivationFunction[Double, Double] {
               def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
               def inputNeurons: Vector[Int] = setting.inputNeurons
               def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -220,9 +220,9 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
       val setting = xorSettings(xorset)
       forAll(Gen.choose(setting.requiredSteps + 1, setting.requiredSteps + 1 + 20), Gen.choose(0.000001, 0.1)) { (maxsteps, stabilityThreshold) =>
         val setting = xorSettings(xorset)
-        val recurrent: Recurrent[Double, Double] with NeuralNetwork[Double, Double] =
+        val recurrent: Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] =
           setting.activationFunction match {
-            case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
+            case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] with HomogeneousActivationFunction[Double, Double] {
               def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
               def inputNeurons: Vector[Int] = setting.inputNeurons
               def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -230,7 +230,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
               val activationFunction: Traversable[(Double, Double)] => Double = af
               def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
             }
-            case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HeterogeneousActivationFunction[Double, Double] {
+            case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] with HeterogeneousActivationFunction[Double, Double] {
               def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
               def inputNeurons: Vector[Int] = setting.inputNeurons
               def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -263,9 +263,9 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
       val setting = xorSettings(xorset)
       forAll(Gen.choose(setting.requiredSteps, setting.requiredSteps + 100)) { steps =>
         val setting = xorSettings(xorset)
-        val recurrent: Recurrent[Double, Double] with NeuralNetwork[Double, Double] =
+        val recurrent: Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] =
           setting.activationFunction match {
-            case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
+            case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] with HomogeneousActivationFunction[Double, Double] {
               def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
               def inputNeurons: Vector[Int] = setting.inputNeurons
               def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -273,7 +273,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
               val activationFunction: Traversable[(Double, Double)] => Double = af
               def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
             }
-            case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HeterogeneousActivationFunction[Double, Double] {
+            case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] with HeterogeneousActivationFunction[Double, Double] {
               def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
               def inputNeurons: Vector[Int] = setting.inputNeurons
               def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -300,9 +300,9 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
       val setting = xorSettings(xorset)
       forAll(Gen.choose(setting.requiredSteps + 1, setting.requiredSteps + 1 + 20), Gen.choose(0.000001, 0.1)) { (maxsteps, stabilityThreshold) =>
         val setting = xorSettings(xorset)
-        val recurrent: Recurrent[Double, Double] with NeuralNetwork[Double, Double] =
+        val recurrent: Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] =
           setting.activationFunction match {
-            case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HomogeneousActivationFunction[Double, Double] {
+            case Left(af) => new Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] with HomogeneousActivationFunction[Double, Double] {
               def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
               def inputNeurons: Vector[Int] = setting.inputNeurons
               def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -310,7 +310,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
               val activationFunction: Traversable[(Double, Double)] => Double = af
               def change(newstate: Double, oldstate: Double): Double = ChangeFunction.absoluteDifference(newstate, oldstate)
             }
-            case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Double, Double] with HeterogeneousActivationFunction[Double, Double] {
+            case Right(af) => new Recurrent[Double, Double] with NeuralNetwork[Unit, Double, Double] with HeterogeneousActivationFunction[Double, Double] {
               def state: Vector[Double] = setting.network.nodes.map { _ => 0.0 }
               def inputNeurons: Vector[Int] = setting.inputNeurons
               def outputNeurons: Vector[Int] = setting.outputNeurons
@@ -340,7 +340,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
 
   def countingLoopNetwork(neurons: Int) =
     NeuralNetwork.recurrentNetwork(
-      _nodes = neurons,
+      _nodes = Vector.fill(neurons)(()),
       _inputnodes = (0 until neurons).toVector,
       _outputnodes = (0 until neurons).toVector,
       _edges = (0 until neurons).flatMap(n => (0 until neurons).map { v => (n, v, 1.0) }).toVector,
@@ -378,7 +378,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
     forAll(Gen.containerOf[Vector, Double](arbitrary[Double])) { tstate =>
       forAll(Gen.someOf(tstate.indices)) { tInputNodes =>
         forAll(Gen.containerOfN[Seq, Double](tInputNodes.length, arbitrary[Double])) { tInputValues =>
-          val nn = new NeuralNetwork[Double, Double] {
+          val nn = new NeuralNetwork[Unit, Double, Double] {
             val inputNeurons: Vector[Int] = tInputNodes.toVector
             val state = tstate
 

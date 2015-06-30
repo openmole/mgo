@@ -54,8 +54,6 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
       /** The index of species represents each species by a random genome of the corresponding species of the past generation.*/
       indexOfSpecies = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }.map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) },
       lastEntirePopulationFitnesses =
-        a.lastEntirePopulationFitnesses.enqueue(offsprings.content.foldLeft(0.0) { (sum: Double, b: PopulationElement[G, P, F]) =>
-          sum + (b.fitness)
-        } / offsprings.content.length.toDouble)
+        a.lastEntirePopulationFitnesses.enqueue(offsprings.content.map { _.fitness }.sum / offsprings.content.size)
     )
 }

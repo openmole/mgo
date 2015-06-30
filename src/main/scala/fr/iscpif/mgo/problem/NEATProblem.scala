@@ -21,32 +21,41 @@ import fr.iscpif.mgo._
 import scala.util.Random
 import monocle.syntax._
 import fr.iscpif.mgo.tools.neuralnetwork._
+import collection.immutable.IntMap
+import fr.iscpif.mgo.genome.NEATGenome.Node
 
 /**
  * Cake to define a problem for a genetic algorithm
  */
 trait NEATProblem extends Problem with NoPhenotype with NEATGenome with DoubleFitness {
 
-  def evaluate(phenotype: P, rng: Random): F = {
+  type NN <: NeuralNetwork[Double, Double, Double]
+
+  def evaluate(phenotype: P, rng: Random): F = evaluateNet(createNet(phenotype)(rng))(rng)
+
+  def createNet(phenotype: P)(implicit rng: Random): NN = {
     // nodes indices in phenotypes may not be contiguous. Translate into contiguous indices
-    val nodesMap = phenotype.nodes.keys.toSeq.sorted.zipWithIndex.toMap
-    evaluateNet(
-      nodesMap.size,
-      (inputNodesIndices ++ biasNodesIndices).toIndexedSeq /*.map { nodesMap(_) }*/ ,
-      outputNodesIndices.toIndexedSeq /*.map { nodesMap(_) }*/ ,
+    val nodes = phenotype.nodes.toVector.sortBy { case (index, node) => index }
+    val nodesMap = IntMap.empty ++ nodes.map { case (index, _) => index }.toSeq.sorted.zipWithIndex
+    createNet(
+      nodes.map { case (originalindex, node) => node.level },
+      (inputNodesIndices ++ biasNodesIndices).map { nodesMap(_) },
+      outputNodesIndices.map { nodesMap(_) },
       phenotype.connectionGenes.filter { _.enabled }.map { cg => (nodesMap(cg.inNode), nodesMap(cg.outNode), cg.weight) },
       activationFunction _,
       IndexedSeq.fill(nodesMap.size)(neuronInitValue)
-    )(rng)
+    )
   }
 
-  def evaluateNet(
-    _nodes: Int,
+  def createNet(
+    _nodes: IndexedSeq[Double],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
     _edges: Seq[(Int, Int, Double)],
     _activationfunction: Traversable[(Double, Double)] => Double,
-    _state: IndexedSeq[Double])(implicit rng: Random): Double
+    _state: IndexedSeq[Double])(implicit rng: Random): NN
+
+  def evaluateNet(n: NN)(implicit rng: Random): Double
 
   def activationFunction(inputsAndWeights: Traversable[(Double, Double)]): Double
   def neuronInitValue: Double

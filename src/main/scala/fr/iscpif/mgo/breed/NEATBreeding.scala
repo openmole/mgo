@@ -25,7 +25,7 @@ import fr.iscpif.mgo.genome.NEATGenome._
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 import collection.immutable.Map
-import math.{ max, abs, round }
+import math.{ max, min, abs, round }
 
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
@@ -51,6 +51,10 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
 
   // = 1
   def mutationWeightProb0: Double
+
+  def mutationWeightDriftTo0: Double
+  def mutationWeightHardMax: Double
+  def mutationWeightHardMin: Double
 
   // = 0.5
   def mutationDisableProb: Double
@@ -464,9 +468,12 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
           cg.copy(weight = mutateWeight(cg.weight))
         })
 
-  def mutateWeight(x: Double)(implicit rng: Random): Double =
-    if (rng.nextDouble < mutationWeightProb0) 0
-    else x + rng.nextGaussian() * mutationWeightSigma
+  def mutateWeight(x: Double)(implicit rng: Random): Double = {
+    val newweight =
+      if (rng.nextDouble < mutationWeightProb0) 0
+      else x + rng.nextGaussian() * mutationWeightSigma - (x * mutationWeightDriftTo0)
+    max(min(mutationWeightHardMax, newweight), mutationWeightHardMin)
+  }
 
   def mutateEnabled(
     g: Genome)(implicit rng: Random): Genome =

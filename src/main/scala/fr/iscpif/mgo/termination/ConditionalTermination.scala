@@ -51,6 +51,6 @@ trait ConditionalTermination extends Termination {
     (res, res)
   }
 
-  def terminated(population: Population[G, P, F]): Boolean
+  def terminated(population: Population[G, P, F])(implicit rng: Random): Boolean
 
 }

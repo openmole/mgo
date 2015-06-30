@@ -122,5 +122,6 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.problem.NEATProblem
 
 trait NEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchive with NoPhenotype
