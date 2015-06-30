@@ -24,6 +24,8 @@ import scala.util.Random
 import scala.collection.immutable.Queue
 import collection.immutable.IntMap
 
+import math.max
+
 object NEATArchive {
   case class Archive(
     // to maintain a record of innovation throughout generations would require to make the whole Evolution stateful
@@ -31,12 +33,18 @@ object NEATArchive {
     // current generation at the breeding stage only (like in Stanley's original paper).
     //recordOfInnovations: Seq[NEATGenome.Innovation],
     indexOfSpecies: IntMap[NEATGenome.Genome],
-    lastEntirePopulationFitnesses: Queue[Double])
+    lastEntirePopulationFitnesses: Queue[Double],
+    speciesCompatibilityThreshold: List[Double])
 }
 
 trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
 
   type A = NEATArchive.Archive
+
+  def numberSpeciesTarget: Int
+  def speciesCompatibilityThreshold: Double
+  def speciesCompatibilityMod: Double
+  def speciesCompatibilityMin: Double
 
   def initialArchive(implicit rng: Random): A =
     NEATArchive.Archive(
@@ -44,18 +52,31 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
       //0,
       //Vector[NEATGenome.Innovation](),
       IntMap[G](),
-      Queue[Double]())
+      Queue[Double](),
+      List[Double](speciesCompatibilityThreshold))
 
-  def archive(a: A, oldIndividuals: Population[G, P, F], offsprings: Population[G, P, F])(implicit rng: Random): A =
+  def archive(a: A, oldIndividuals: Population[G, P, F], offsprings: Population[G, P, F])(implicit rng: Random): A = {
+    val newios: IntMap[NEATGenome.Genome] =
+      IntMap.empty ++ offsprings.toIndividuals.map { _.genome }
+        .groupBy { g => g.species }
+        .map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) }
+    val numberOfSpecies = newios.size
+    val lastsct = a.speciesCompatibilityThreshold.head
+    val newsct =
+      if (numberOfSpecies < numberSpeciesTarget)
+        lastsct - speciesCompatibilityMod
+      else lastsct + speciesCompatibilityMod
     NEATArchive.Archive(
       //globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation.number }.max,
       /* recordOfInnovation contains the unique innovations of offsprings*/
       //recordOfInnovations = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation }.distinct,
-      /** The index of species represents each species by a random genome of the corresponding species of the past generation.*/
-      indexOfSpecies = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }.map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) },
+      /** The index of species represents each species by a random genome of the corresponding species of the past generation. */
+      indexOfSpecies = newios,
       lastEntirePopulationFitnesses =
-        a.lastEntirePopulationFitnesses.enqueue(offsprings.content.foldLeft(0.0) { (sum: Double, b: PopulationElement[G, P, F]) =>
-          sum + (b.fitness)
-        } / offsprings.content.length.toDouble)
+        a.lastEntirePopulationFitnesses.enqueue(offsprings.content.map {
+          _.fitness
+        }.sum / offsprings.content.size),
+      newsct :: a.speciesCompatibilityThreshold
     )
+  }
 }

@@ -28,14 +28,65 @@ trait Network[N, E] {
   def nodes: Vector[N]
   def edge(u: Int, v: Int): Option[E]
   def iteredges: Iterator[(Int, Int, E)]
+
+  /** Either digraph or graph */
+  def dotGraphType: String
+
+  def toDot(graphId: String,
+    nodeAttr: N => Seq[(String, String)],
+    edgeAttr: E => Seq[(String, String)],
+    additionalStatements: String): String =
+    s"""$dotGraphType $graphId {
+${additionalStatements.lines.map { "  " ++ _ }.mkString { "\n" }}
+${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
+${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
+}"""
+
+  def toDotNodes(nodeAttr: N => Seq[(String, String)]): String =
+    iternodes.map {
+      case (i, n) => s"""$i [ ${
+        nodeAttr(n).map {
+          case (k, v) => s"$k = $v"
+        }.mkString(", ")
+      } ]"""
+    }.mkString("\n")
+
+  /** Either -> or -- */
+  def dotEdgeOperator: String
+
+  def toDotEdges(edgeAttr: E => Seq[(String, String)]): String =
+    iteredges.map {
+      case (u, v, e) => s"""$u $dotEdgeOperator $v [ ${
+        edgeAttr(e).map {
+          case (k, v) => s"$k = $v"
+        }.mkString(", ")
+      } ]"""
+    }.mkString("\n")
+
+  def toJSONNodeLink: String =
+    s"""{
+  "nodes":${toJSONNodes.lines.map { "  " ++ _ }.mkString { "\n" }},
+  "links":${toJSONLinks.lines.map { "  " ++ _ }.mkString { "\n" }}
+}"""
+
+  def toJSONNodes: String =
+    "[\n" ++
+      iternodes.map { case (i, n) => s"""  {"id":$i, "data":"$n"}""" }.mkString(",\n") ++
+      "\n]"
+
+  def toJSONLinks: String =
+    "[\n" ++
+      iteredges.map { case (u, v, e) => s"""  {"source":$u, "target": $v, "data": $e}""" }.mkString(",\n") ++
+      "\n]"
+
 }
 
 object Network {
   def directedSparse[N, E](
-    _nodes: Vector[N],
+    _nodes: IndexedSeq[N],
     _edges: Traversable[(Int, Int, E)]): Network[N, E] with DirectedEdges[E] with SparseTopology[E] =
     new Network[N, E] with DirectedEdges[E] with SparseTopology[E] {
-      val nodes = _nodes
+      val nodes = _nodes.toVector
       val mapin = SparseTopology.mapinFrom(_edges)
       val mapout = SparseTopology.mapoutFrom(_edges)
     }

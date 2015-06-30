@@ -286,109 +286,141 @@ object NEATSpecification extends Properties("NEAT") {
   //      }: _*)
   //  }
 
-  trait Xorparameters {
-    def interSpeciesMatingProb: Double = 0.001
-    def mutationAddNodeProb: Double = 0.03
-    def mutationAddLinkProb: Double = 0.05
-    def mutationWeightSigma: Double = 1
-    def mutationWeightProb0: Double = 0.0
-    def mutationDisableProb: Double = 0.0
-    def mutationEnableProb: Double = 0.0
-    def genDistDisjointCoeff: Double = 1.0
-    def genDistExcessCoeff: Double = 1.0
-    def genDistWeightDiffCoeff: Double = 0.4
-    def speciesCompatibilityThreshold: Double = 3.0
-    def crossoverInheritDisabledProb: Double = 0.75
-    def mutationAddLinkBiasProb: Double = 0.1
-    def proportionKeep: Double = 0.2
+  // trait Xorparameters {
+  //   def interSpeciesMatingProb: Double = 0.001
+  //   def mutationAddNodeProb: Double = 0.03
+  //   def mutationAddLinkProb: Double = 0.05
+  //   def mutationWeightSigma: Double = 1
+  //   def mutationWeightProb0: Double = 0.0
+  //   def mutationDisableProb: Double = 0.0
+  //   def mutationEnableProb: Double = 0.0
+  //   def genDistDisjointCoeff: Double = 1.0
+  //   def genDistExcessCoeff: Double = 1.0
+  //   def genDistWeightDiffCoeff: Double = 0.4
+  //   def speciesCompatibilityThreshold: Double = 3.0
+  //   def crossoverInheritDisabledProb: Double = 0.75
+  //   def mutationAddLinkBiasProb: Double = 0.1
+  //   def proportionKeep: Double = 0.2
+  //   def speciesKeptIfStagnate: Int = 2
+  //   def stagnationTimeThreshold: Int = 0
 
-    val inputNodes = 2
-    val biasNodes = 1
-    val outputNodes = 1
+  //   val inputNodes = 2
+  //   val biasNodes = 1
+  //   val outputNodes = 1
 
-    val lambda = 150
+  //   val lambda = 150
 
-    val maximumObjective: Double = 4.0
-    val steps = 50
-  }
-
-  val xorneat1 = new NEAT with NEATMinimalGenomeConnectedIO with NEATFeedforwardTopology with MaximumObjectiveReachedTermination with Xorparameters {
-    val xortestset: Seq[(Seq[Double], Seq[Double])] =
-      Vector(
-        (Vector(0.0, 0.0, 1.0), Vector(0.0)),
-        (Vector(0.0, 1.0, 1.0), Vector(1.0)),
-        (Vector(1.0, 0.0, 1.0), Vector(1.0)),
-        (Vector(1.0, 1.0, 1.0), Vector(0.0)))
-
-    def evaluateNet(
-      _nodes: Int,
-      _inputnodes: IndexedSeq[Int],
-      _outputnodes: IndexedSeq[Int],
-      _edges: Seq[(Int, Int, Double)],
-      _activationfunction: Traversable[(Double, Double)] => Double,
-      _state: IndexedSeq[Double])(implicit rng: Random): Double = {
-      val nn = NeuralNetwork.feedforwardNetwork(
-        _nodes,
-        _inputnodes,
-        _outputnodes,
-        _edges,
-        _activationfunction,
-        _state)
-      //if (_edges.exists { case (u, v, _) => u == v }) throw new RuntimeException(s"LOOP! ${_edges}")
-      val shuffledxor = rng.shuffle(xortestset)
-      val res = shuffledxor.map {
-        case (input, output) =>
-          (nn.outputState(nn.query(input)) zip output).map { case (o, expected) => abs(expected - o) }.sum
-      }.sum
-      4 - res
-    }
-
-    def activationFunction(inputsAndWeights: Traversable[(Double, Double)]): Double = ActivationFunction.tanh(inputsAndWeights)
-    def neuronInitValue: Double = 0.5
-
-    def speciesFitnessesOffsprings(
-      population: Population[G, P, F]): Seq[(Int, Double, Int)] = {
-      val indivsBySpecies: Map[Int, Seq[Individual[G, P, F]]] =
-        population.toIndividuals.groupBy { indiv => indiv.genome.species }
-      val speciesFitnesses: Seq[(Int, Double)] = indivsBySpecies.iterator.map {
-        case (sp, indivs) => (sp, indivs.map {
-          _.fitness
-        }.sum / indivs.size)
-      }.toSeq
-      val sumOfSpeciesFitnesses: Double = speciesFitnesses.map {
-        _._2
-      }.sum
-      val res: Seq[(Int, Double, Int)] = speciesFitnesses.map { case (sp, f) => (sp, f, round(f * lambda / sumOfSpeciesFitnesses).toInt) }
-      res.toVector
-    }
-  }
-
-  // property("Individuals in the same species are withing distance speciesCompatibilityThreshold of one another") = false
-  // property("The number of offsprings of a species is equal to (species fitness / sum of species fitnesses) * population size") = false
-  // property("Only the fittest offsprings survive") = false
-
-  // A new node innovation creates 2 connection genes with different innovation numbers
-
-  property("Neat learns XOR") =
-    Prop {
-      val res =
-        xorneat1.evolve.untilConverged { s =>
-          val fitnesses: Vector[Double] = if (s.population.isEmpty) Vector(0.0) else s.population.map { elt => elt.fitness }.toVector
-          val bestfitness = fitnesses.max
-          val worsefitness = fitnesses.min
-          val averagefitness = fitnesses.sum / fitnesses.length
-          println(s"Generation ${s.generation}, Popsize = ${s.population.content.length}, NumSpecies =${s.archive.indexOfSpecies.size}, best = $bestfitness, avg = $averagefitness , worse = $worsefitness, (species, fitness, size) = ${xorneat1.speciesFitnessesOffsprings(s.population)}")
-          /*s.population.content.foreach { elt =>
-              println(s"${elt.genome}")
-              println(s.archive)
-            }*/
-        }
-
-      true
-    }
-
-  // val xorneat2 = new NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with Xorparameters {
-
+  //   val maximumObjective: Double = 4.0
+  //   val steps = 50
   // }
+
+  // val xorneat1 = new NEAT with NEATMinimalGenomeConnectedIO with NEATFeedforwardTopology with MaximumObjectiveReachedTermination with Xorparameters {
+  //   val xortestset: Seq[(Seq[Double], Seq[Double])] =
+  //     Vector(
+  //       (Vector(0.0, 0.0, 1.0), Vector(0.0)),
+  //       (Vector(0.0, 1.0, 1.0), Vector(1.0)),
+  //       (Vector(1.0, 0.0, 1.0), Vector(1.0)),
+  //       (Vector(1.0, 1.0, 1.0), Vector(0.0)))
+
+  //   def evaluateNet(
+  //     _nodes: Int,
+  //     _inputnodes: IndexedSeq[Int],
+  //     _outputnodes: IndexedSeq[Int],
+  //     _edges: Seq[(Int, Int, Double)],
+  //     _activationfunction: Traversable[(Double, Double)] => Double,
+  //     _state: IndexedSeq[Double])(implicit rng: Random): Double = {
+  //     val nn = NeuralNetwork.feedforwardNetwork(
+  //       _nodes,
+  //       _inputnodes,
+  //       _outputnodes,
+  //       _edges,
+  //       _activationfunction,
+  //       _state)
+  //     //if (_edges.exists { case (u, v, _) => u == v }) throw new RuntimeException(s"LOOP! ${_edges}")
+  //     val shuffledxor = rng.shuffle(xortestset)
+  //     val res = shuffledxor.map {
+  //       case (input, output) =>
+  //         (nn.outputState(nn.query(input)) zip output).map { case (o, expected) => abs(expected - o) }.sum
+  //     }.sum
+  //     4 - res
+  //   }
+
+  //   def createNet(
+  //     _nodes: Int,
+  //     _inputnodes: IndexedSeq[Int],
+  //     _outputnodes: IndexedSeq[Int],
+  //     _edges: Seq[(Int, Int, Double)],
+  //     _activationfunction: Traversable[(Double, Double)] => Double,
+  //     _state: IndexedSeq[Double])(implicit rng: Random): NN =
+  //     NeuralNetwork.feedforwardNetwork(
+  //       _nodes,
+  //       _inputnodes,
+  //       _outputnodes,
+  //       _edges,
+  //       _activationfunction,
+  //       _state)
+
+  //   def evaluateNet(nn: NN)(implicit rng: Random): Double = {
+  //     val diff = getOutputError(nn)
+  //     4 - diff.map { e: Seq[Double] => e.sum }.sum
+  //   }
+
+  //   /** returns expected and actual output difference for each output neuron and for each  */
+  //   def getOutputError(
+  //     nn: NeuralNetwork[Double, Double] with Feedforward[Double, Double])(implicit rng: Random): Seq[Seq[Double]] = {
+  //     val shuffledxor = rng.shuffle(xortestset)
+  //     shuffledxor.map {
+  //       case (input, output) =>
+  //         (nn.outputState(nn.query(input)) zip output).map { case (o, expected) => abs(expected - o) }
+  //     }
+  //   }
+
+  //   def activationFunction(inputsAndWeights: Traversable[(Double, Double)]): Double = ActivationFunction.tanh(inputsAndWeights)
+  //   def neuronInitValue: Double = 0.5
+
+  //   def speciesFitnessesOffsprings(
+  //     population: Population[G, P, F]): Seq[(Int, Double, Int)] = {
+  //     val indivsBySpecies: Map[Int, Seq[Individual[G, P, F]]] =
+  //       population.toIndividuals.groupBy { indiv => indiv.genome.species }
+  //     val speciesFitnesses: Seq[(Int, Double)] = indivsBySpecies.iterator.map {
+  //       case (sp, indivs) => (sp, indivs.map {
+  //         _.fitness
+  //       }.sum / indivs.size)
+  //     }.toSeq
+  //     val sumOfSpeciesFitnesses: Double = speciesFitnesses.map {
+  //       _._2
+  //     }.sum
+  //     val res: Seq[(Int, Double, Int)] = speciesFitnesses.map { case (sp, f) => (sp, f, round(f * lambda / sumOfSpeciesFitnesses).toInt) }
+  //     res.toVector
+  //   }
+  // }
+
+  // // property("Individuals in the same species are withing distance speciesCompatibilityThreshold of one another") = false
+  // // property("The number of offsprings of a species is equal to (species fitness / sum of species fitnesses) * population size") = false
+  // // property("Only the fittest offsprings survive") = false
+
+  // // A new node innovation creates 2 connection genes with different innovation numbers
+
+  // property("Neat learns XOR") =
+  //   Prop {
+  //     val res =
+  //       xorneat1.evolve.untilConverged { s =>
+  //         val fitnesses: Vector[Double] = if (s.population.isEmpty) Vector(0.0) else s.population.map { elt => elt.fitness }.toVector
+  //         val bestfitness = fitnesses.max
+  //         val worsefitness = fitnesses.min
+  //         val averagefitness = fitnesses.sum / fitnesses.length
+  //         println(s"Generation ${s.generation}, Popsize = ${s.population.content.length}, NumSpecies =${s.archive.indexOfSpecies.size}, best = $bestfitness, avg = $averagefitness , worse = $worsefitness, (species, fitness, size) = ${xorneat1.speciesFitnessesOffsprings(s.population)}")
+  //         /*s.population.content.foreach { elt =>
+  //             println(s"${elt.genome}")
+  //             println(s.archive)
+  //           }*/
+  //       }
+
+  //     true
+  //   }
+
+  // // val xorneat2 = new NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with Xorparameters {
+
+  // // }
 
 }

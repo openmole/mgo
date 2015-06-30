@@ -164,5 +164,12 @@ object NetworkSpecification extends Properties("Network") {
         }
       }
     }
+
+  property("JSON node-link") = Prop {
+    println(Network.directedSparse(
+      Vector("a", "b", "c"),
+      Vector((0, 1, 1.0), (1, 2, 2.0), (2, 3, 3.0))).toJSONNodeLink)
+    true
+  }
 }
 

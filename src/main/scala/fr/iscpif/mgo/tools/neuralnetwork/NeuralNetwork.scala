@@ -20,20 +20,20 @@ package fr.iscpif.mgo.tools.neuralnetwork
 import fr.iscpif.mgo.tools.network._
 import math._
 import scala.annotation.tailrec
-import java.lang.IndexOutOfBoundsException
 
 /**
- * @tparam N the neurons output type
- * @tparam E the weights type
+ * @tparam N the type of data stored on each neurons
+ * @tparam S the neurons output type (state)
+ * @tparam W the weights type
  */
-trait NeuralNetwork[N, W] {
-  def network: Network[Unit, W] with DirectedEdges[W]
+trait NeuralNetwork[N, S, W] {
+  def network: Network[N, W] with DirectedEdges[W]
   def inputNeurons: Vector[Int]
   def outputNeurons: Vector[Int]
-  def inputsAndWeights(neuron: Int, state: IndexedSeq[N]): Vector[(N, W)] =
+  def inputsAndWeights(neuron: Int, state: IndexedSeq[S]): Vector[(S, W)] =
     network.in(neuron).map { case (innode, weight) => (state(innode), weight) }
 
-  def updateState(state: Traversable[N], neuronsValues: Traversable[(Int, N)]): Vector[N] = {
+  def updateState(state: Traversable[S], neuronsValues: Traversable[(Int, S)]): Vector[S] = {
     val mutableState = state.toBuffer
     neuronsValues foreach {
       case (i, v) => mutableState(i) = v
@@ -43,25 +43,25 @@ trait NeuralNetwork[N, W] {
 
   def outNeighbours(neuron: Int) = network.outneighbours(neuron)
 
-  def outputState(state: IndexedSeq[N]): Vector[N] = outputNeurons map { state(_) }
+  def outputState(state: IndexedSeq[S]): Vector[S] = outputNeurons map { state(_) }
 
-  def state: IndexedSeq[N]
+  def state: IndexedSeq[S]
 }
 
-trait Feedforward[N, W] {
-  def query(inputValues: Seq[N]): Vector[N] =
+trait Feedforward[S, W] {
+  def query(inputValues: Seq[S]): Vector[S] =
     queryRec(updateState(state, inputNeurons zip inputValues), inputNeurons)
 
-  @tailrec private def queryRec(state: Vector[N], currentNeurons: Vector[Int]): Vector[N] = {
+  @tailrec private def queryRec(state: Vector[S], currentNeurons: Vector[Int]): Vector[S] = {
     val nextNeurons = currentNeurons.toSet.flatMap { n: Int => outNeighbours(n) }.toVector
 
     //println(currentNeurons, nextNeurons)
     //if (currentNeurons == nextNeurons) throw new RuntimeException(state.indices.map { outNeighbours(_) }.toString)
-    if (nextNeurons.length == 0) state
+    if (nextNeurons.isEmpty) state
     else {
       val nextValues = nextNeurons.map { n =>
         val iaw = inputsAndWeights(n, state)
-        if (iaw.length == 0) state(n)
+        if (iaw.isEmpty) state(n)
         else activate(n, iaw)
       }
       val nextState = updateState(state, nextNeurons zip nextValues)
@@ -70,35 +70,35 @@ trait Feedforward[N, W] {
     }
   }
 
-  def activate(neuron: Int, inputs: Traversable[(N, W)]): N // activate a single neuron
-  def state: Vector[N]
+  def activate(neuron: Int, inputs: Traversable[(S, W)]): S // activate a single neuron
+  def state: Vector[S]
   def inputNeurons: Vector[Int]
-  def inputsAndWeights(neuron: Int, state: IndexedSeq[N]): Vector[(N, W)]
-  def updateState(state: Traversable[N], neuronsValues: Traversable[(Int, N)]): Vector[N]
+  def inputsAndWeights(neuron: Int, state: IndexedSeq[S]): Vector[(S, W)]
+  def updateState(state: Traversable[S], neuronsValues: Traversable[(Int, S)]): Vector[S]
   def outNeighbours(neuron: Int): Vector[Int]
 
 }
 
-trait Recurrent[N, W] {
+trait Recurrent[S, W] {
   /**
    * Activating the network means computing the output values for all neurons simultaneously.
    * There is no order effect. The activation is done steps times. For the first activation, the
    * input neurones are initialised to the inputValues, and the other neurones to initialNeuronState
    */
-  def activate(steps: Int, inputValues: Seq[N]): Vector[N] = {
+  def activate(steps: Int, inputValues: Seq[S]): Vector[S] = {
     activateRec(steps, updateState(state, inputNeurons zip inputValues))
   }
 
-  @tailrec private def activateRec(steps: Int, state: Vector[N]): Vector[N] =
+  @tailrec private def activateRec(steps: Int, state: Vector[S]): Vector[S] =
     if (steps <= 0) state
     else activateRec(steps - 1, activateOnce(state))
 
   /** @return the number of steps, the average change over all node states during the last step, and the final state of the output neurons */
-  def activateUntilStable(maxsteps: Int, stabilityThreshold: Double, inputValues: Seq[N]): (Int, Double, Vector[N]) = {
+  def activateUntilStable(maxsteps: Int, stabilityThreshold: Double, inputValues: Seq[S]): (Int, Double, Vector[S]) = {
     activateUntilStableRec(maxsteps, stabilityThreshold, updateState(state, inputNeurons zip inputValues))
   }
 
-  @tailrec private def activateUntilStableRec(maxsteps: Int, stabilityThreshold: Double, state: Vector[N], steps: Int = 0, avgchange: Double = 0.0): (Int, Double, Vector[N]) =
+  @tailrec private def activateUntilStableRec(maxsteps: Int, stabilityThreshold: Double, state: Vector[S], steps: Int = 0, avgchange: Double = 0.0): (Int, Double, Vector[S]) =
     if (steps >= maxsteps) (steps, avgchange, state)
     else {
       val nextstate = activateOnce(state)
@@ -107,13 +107,12 @@ trait Recurrent[N, W] {
       else activateUntilStableRec(maxsteps, stabilityThreshold, nextstate, steps + 1, newavgchange)
     }
 
-  def activateOnce(state: Vector[N]): Vector[N] =
+  def activateOnce(state: Vector[S]): Vector[S] =
     state.zipWithIndex.map {
-      case (stateval, neuron) => {
+      case (stateval, neuron) =>
         val iaw = inputsAndWeights(neuron, state)
-        if (iaw.length == 0) stateval
+        if (iaw.isEmpty) stateval
         else activate(neuron, iaw)
-      }
     }
 
   /**
@@ -121,11 +120,11 @@ trait Recurrent[N, W] {
    * then activating the neurons connected to the input, and successively activating the rest of the network. Steps determines
    * the number of successive steps taken before returning the values of the output neurons.
    */
-  def propagate(steps: Int, inputValues: Seq[N]): Vector[N] = {
+  def propagate(steps: Int, inputValues: Seq[S]): Vector[S] = {
     propagateRec(steps, updateState(state, inputNeurons zip inputValues), inputNeurons)
   }
 
-  @tailrec private def propagateRec(steps: Int, state: Vector[N], currentNeurons: IndexedSeq[Int]): Vector[N] = {
+  @tailrec private def propagateRec(steps: Int, state: Vector[S], currentNeurons: IndexedSeq[Int]): Vector[S] = {
     if (steps <= 0) {
       state
     } else {
@@ -140,22 +139,22 @@ trait Recurrent[N, W] {
   //     propagateOnce())
   // }
 
-  def propagateUntilStable(maxsteps: Int, stabilityThreshold: Double, inputValues: Seq[N]): (Int, Double, Vector[N]) = {
+  def propagateUntilStable(maxsteps: Int, stabilityThreshold: Double, inputValues: Seq[S]): (Int, Double, Vector[S]) = {
     propagateUntilStableRec(maxsteps, stabilityThreshold, updateState(state, inputNeurons zip inputValues), inputNeurons)
   }
 
   def propagateUntilStableRec(
     maxsteps: Int,
     stabilityThreshold: Double,
-    state: Vector[N],
+    state: Vector[S],
     currentNeurons: IndexedSeq[Int],
     step: Int = 0,
-    avgchange: Double = 0.0): (Int, Double, Vector[N]) = {
+    avgchange: Double = 0.0): (Int, Double, Vector[S]) = {
     if (step >= maxsteps) (step, avgchange, state)
     else {
       val (nextState, nextNeurons) = propagateOnce(state, currentNeurons)
       val newavgchange =
-        if (nextNeurons.length == 0) 0
+        if (nextNeurons.isEmpty) 0
         else nextNeurons.foldLeft[Double](0.0) { (sum, neuron) => sum + change(nextState(neuron), state(neuron)) } / nextNeurons.length
       if (newavgchange < stabilityThreshold) (step, newavgchange, nextState)
       else propagateUntilStableRec(
@@ -169,122 +168,122 @@ trait Recurrent[N, W] {
   }
 
   /** returns the nextstate resulting from activating the neurons leading out of those in currentNeurons, as those neurons */
-  def propagateOnce(state: IndexedSeq[N], currentNeurons: IndexedSeq[Int]): (Vector[N], Vector[Int]) = {
+  def propagateOnce(state: IndexedSeq[S], currentNeurons: IndexedSeq[Int]): (Vector[S], Vector[Int]) = {
     val nextNeurons = currentNeurons.toSet.flatMap { n: Int => outNeighbours(n) }.toVector
     val nextValues = nextNeurons.map { n =>
       val iaw = inputsAndWeights(n, state)
-      if (iaw.length == 0) state(n)
+      if (iaw.isEmpty) state(n)
       else activate(n, iaw)
     }
     (updateState(state, nextNeurons zip nextValues), nextNeurons)
   }
 
-  def activate(neuron: Int, inputs: Traversable[(N, W)]): N // activate a single neuron
-  def state: Vector[N]
+  def activate(neuron: Int, inputs: Traversable[(S, W)]): S // activate a single neuron
+  def state: Vector[S]
   def inputNeurons: Vector[Int]
-  def inputsAndWeights(neuron: Int, state: IndexedSeq[N]): Vector[(N, W)]
-  def updateState(state: Traversable[N], neuronsValues: Traversable[(Int, N)]): Vector[N]
+  def inputsAndWeights(neuron: Int, state: IndexedSeq[S]): Vector[(S, W)]
+  def updateState(state: Traversable[S], neuronsValues: Traversable[(Int, S)]): Vector[S]
   def outNeighbours(neuron: Int): Vector[Int]
-  def change(newstate: N, oldstate: N): Double
+  def change(newstate: S, oldstate: S): Double
 }
 
 object ChangeFunction {
   def absoluteDifference(newstate: Double, oldstate: Double): Double = abs(newstate - oldstate)
 }
 
-trait HomogeneousActivationFunction[N, W] {
-  def activate(neuron: Int, inputs: Traversable[(N, W)]): N = activationFunction(inputs)
+trait HomogeneousActivationFunction[S, W] {
+  def activate(neuron: Int, inputs: Traversable[(S, W)]): S = activationFunction(inputs)
 
   //def activationFunction(inputsAndWeights: Traversable[(N, W)]): N
-  def activationFunction: Traversable[(N, W)] => N
+  def activationFunction: Traversable[(S, W)] => S
 }
 
-trait HeterogeneousActivationFunction[N, W] {
-  def activate(neuron: Int, inputs: Traversable[(N, W)]): N = activationFunction(neuron)(inputs)
+trait HeterogeneousActivationFunction[S, W] {
+  def activate(neuron: Int, inputs: Traversable[(S, W)]): S = activationFunction(neuron)(inputs)
 
-  def activationFunction: IndexedSeq[Traversable[(N, W)] => N]
+  def activationFunction: IndexedSeq[Traversable[(S, W)] => S]
 }
 
 object NeuralNetwork {
 
   /**Create a neural network without cycles. This function makes no check on the topology of the graph (e.g. absence of cycles).*/
-  def feedforwardNetwork[N, W](
-    _nodes: Int,
+  def feedforwardNetwork[N, S, W](
+    _nodes: IndexedSeq[N],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
     _edges: Seq[(Int, Int, W)],
-    _activationfunction: Traversable[(N, W)] => N,
-    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Feedforward[N, W] with HomogeneousActivationFunction[N, W] = {
-    require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
-    require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
-    require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
-    new NeuralNetwork[N, W] with Feedforward[N, W] with HomogeneousActivationFunction[N, W] {
+    _activationfunction: Traversable[(S, W)] => S,
+    _state: IndexedSeq[S]): NeuralNetwork[N, S, W] with Feedforward[S, W] with HomogeneousActivationFunction[S, W] = {
+    require(_inputnodes.forall { _ < _nodes.length }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_outputnodes.forall { _ < _nodes.length }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_edges.forall { case (u, v, _) => (u < _nodes.length) && (v < _nodes.length) }, "_edges refer to nodes whose indices are bigger than _nodes")
+    new NeuralNetwork[N, S, W] with Feedforward[S, W] with HomogeneousActivationFunction[S, W] {
       val network = Network.directedSparse(_nodes, _edges)
-      val state: Vector[N] = _state.toVector
+      val state: Vector[S] = _state.toVector
       val inputNeurons: Vector[Int] = _inputnodes.toVector
       val outputNeurons: Vector[Int] = _outputnodes.toVector
       val activationFunction = _activationfunction
     }
   }
 
-  def feedforwardNetwork[N, W](
-    _nodes: Int,
+  def feedforwardNetwork[N, S, W](
+    _nodes: IndexedSeq[N],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
     _edges: Seq[(Int, Int, W)],
-    _activationfunction: IndexedSeq[Traversable[(N, W)] => N],
-    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Feedforward[N, W] with HeterogeneousActivationFunction[N, W] = {
-    require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
-    require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
-    require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
-    new NeuralNetwork[N, W] with Feedforward[N, W] with HeterogeneousActivationFunction[N, W] {
+    _activationfunction: IndexedSeq[Traversable[(S, W)] => S],
+    _state: IndexedSeq[S]): NeuralNetwork[N, S, W] with Feedforward[S, W] with HeterogeneousActivationFunction[S, W] = {
+    require(_inputnodes.forall { _ < _nodes.length }, "_inputnodes refer to nodes whose indices are bigger than _nodes.length")
+    require(_outputnodes.forall { _ < _nodes.length }, "_outputnodes refer to nodes whose indices are bigger than _nodes.length")
+    require(_edges.forall { case (u, v, _) => (u < _nodes.length) && (v < _nodes.length) }, "_edges refer to nodes whose indices are bigger than _nodes.length")
+    new NeuralNetwork[N, S, W] with Feedforward[S, W] with HeterogeneousActivationFunction[S, W] {
       val network = Network.directedSparse(_nodes, _edges)
-      val state: Vector[N] = _state.toVector
+      val state: Vector[S] = _state.toVector
       val inputNeurons: Vector[Int] = _inputnodes.toVector
       val outputNeurons: Vector[Int] = _outputnodes.toVector
       val activationFunction = _activationfunction
     }
   }
 
-  def recurrentNetwork[N, W](
-    _nodes: Int,
+  def recurrentNetwork[N, S, W](
+    _nodes: IndexedSeq[N],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
     _edges: Seq[(Int, Int, W)],
-    _activationfunction: Traversable[(N, W)] => N,
-    _change: (N, N) => Double,
-    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Recurrent[N, W] with HomogeneousActivationFunction[N, W] = {
-    require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
-    require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
-    require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
-    new NeuralNetwork[N, W] with Recurrent[N, W] with HomogeneousActivationFunction[N, W] {
+    _activationfunction: Traversable[(S, W)] => S,
+    _change: (S, S) => Double,
+    _state: IndexedSeq[S]): NeuralNetwork[N, S, W] with Recurrent[S, W] with HomogeneousActivationFunction[S, W] = {
+    require(_inputnodes.forall { _ < _nodes.length }, "_inputnodes refer to nodes whose indices are bigger than _nodes.length")
+    require(_outputnodes.forall { _ < _nodes.length }, "_outputnodes refer to nodes whose indices are bigger than _nodes.length")
+    require(_edges.forall { case (u, v, _) => (u < _nodes.length) && (v < _nodes.length) }, "_edges refer to nodes whose indices are bigger than _nodes.length")
+    new NeuralNetwork[N, S, W] with Recurrent[S, W] with HomogeneousActivationFunction[S, W] {
       val network = Network.directedSparse(_nodes, _edges)
-      val state: Vector[N] = _state.toVector
+      val state: Vector[S] = _state.toVector
       val inputNeurons: Vector[Int] = _inputnodes.toVector
       val outputNeurons: Vector[Int] = _outputnodes.toVector
       val activationFunction = _activationfunction
-      def change(newstate: N, oldstate: N): Double = _change(newstate, oldstate)
+      def change(newstate: S, oldstate: S): Double = _change(newstate, oldstate)
     }
   }
 
-  def recurrentNetwork[N, W](
-    _nodes: Int,
+  def recurrentNetwork[N, S, W](
+    _nodes: IndexedSeq[N],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
     _edges: Seq[(Int, Int, W)],
-    _activationfunction: IndexedSeq[Traversable[(N, W)] => N],
-    _change: (N, N) => Double,
-    _state: IndexedSeq[N]): NeuralNetwork[N, W] with Recurrent[N, W] with HeterogeneousActivationFunction[N, W] = {
-    require(_inputnodes.forall { _ < _nodes }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
-    require(_outputnodes.forall { _ < _nodes }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
-    require(_edges.forall { case (u, v, _) => (u < _nodes) && (v < _nodes) }, "_edges refer to nodes whose indices are bigger than _nodes")
-    new NeuralNetwork[N, W] with Recurrent[N, W] with HeterogeneousActivationFunction[N, W] {
+    _activationfunction: IndexedSeq[Traversable[(S, W)] => S],
+    _change: (S, S) => Double,
+    _state: IndexedSeq[S]): NeuralNetwork[N, S, W] with Recurrent[S, W] with HeterogeneousActivationFunction[S, W] = {
+    require(_inputnodes.forall { _ < _nodes.length }, "_inputnodes refer to nodes whose indices are bigger than _nodes.length")
+    require(_outputnodes.forall { _ < _nodes.length }, "_outputnodes refer to nodes whose indices are bigger than _nodes.length")
+    require(_edges.forall { case (u, v, _) => (u < _nodes.length) && (v < _nodes.length) }, "_edges refer to nodes whose indices are bigger than _nodes.length")
+    new NeuralNetwork[N, S, W] with Recurrent[S, W] with HeterogeneousActivationFunction[S, W] {
       val network = Network.directedSparse(_nodes, _edges)
-      val state: Vector[N] = _state.toVector
+      val state: Vector[S] = _state.toVector
       val inputNeurons: Vector[Int] = _inputnodes.toVector
       val outputNeurons: Vector[Int] = _outputnodes.toVector
       val activationFunction = _activationfunction
-      def change(newstate: N, oldstate: N): Double = _change(newstate, oldstate)
+      def change(newstate: S, oldstate: S): Double = _change(newstate, oldstate)
     }
   }
 }

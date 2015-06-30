@@ -21,6 +21,9 @@ trait UndirectedEdges[E] {
   def edges(u: Int): Vector[(Int, Int, E)] = out(u) map { case (v, d) => (u, v, d) }
   def neighbours(u: Int): Vector[Int] = out(u) map { _._1 }
 
+  val dotGraphType: String = "graph"
+  val dotEdgeOperator: String = "--"
+
   def out(u: Int): Vector[(Int, E)]
 }
 
