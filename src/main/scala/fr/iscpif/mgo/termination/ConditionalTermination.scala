@@ -29,14 +29,16 @@ import scala.util.Random
 trait ConditionalTermination extends Termination {
 
   /** Type of the state maintained to study the evolution of the algorithm */
-  type STATE = Boolean
+  type STATE = (Boolean, Int)
 
   /**
    * Compute the initial state
    *
    * @return the initial state
    */
-  def initialState = false
+  def initialState = (false, 0)
+
+  def maxSteps: Int
 
   /**
    * Test if the algorithm has converged.
@@ -47,8 +49,10 @@ trait ConditionalTermination extends Termination {
    * been detected and the new termination state
    */
   def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE) = {
-    val res = terminated(population)
-    (res, res)
+    val (_, cursteps) = terminationState
+    val conditionReached = terminated(population)
+    val res = conditionReached || (cursteps >= maxSteps)
+    (res, (conditionReached, cursteps + 1))
   }
 
   def terminated(population: Population[G, P, F])(implicit rng: Random): Boolean
