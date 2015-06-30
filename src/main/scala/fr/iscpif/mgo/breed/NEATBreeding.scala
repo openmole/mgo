@@ -70,8 +70,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   // = 1.0
   def genDistWeightDiffCoeff: Double // = 0.4
 
-  def speciesCompatibilityThreshold: Double // = 3.0
-
   def crossoverInheritDisabledProb: Double // = 0.75
 
   def initialWeight(implicit rng: Random): Double = rng.nextGaussian() * mutationWeightSigma
@@ -156,7 +154,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     archive: A): StateMonad[Genome, BreedingState] =
     StateMonad[Genome, BreedingState]({
       case (gin, gnn, roi, ios) =>
-        val (newGenome, newios) = setSpecies(g, ios)
+        val (newGenome, newios) = setSpecies(g, ios, archive.speciesCompatibilityThreshold.head)
         (newGenome, (gin, gnn, roi, newios))
     })
 
@@ -545,26 +543,27 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
 
   def setSpecies(
     genome: Genome,
-    indexOfSpecies: IntMap[G]): (Genome, IntMap[G]) = {
+    indexOfSpecies: IntMap[G],
+    speciesCompatibilityThreshold: Double): (Genome, IntMap[G]) = {
     // Find a genome in the index of species which is sufficiently similar to the current genome.
     // Start by checking if the offspring is compatible with the parent species (currently set in the species member of the offspring)
-    if (genomesDistance(genome, indexOfSpecies(genome.species)) < speciesCompatibilityThreshold)
-      (genome, indexOfSpecies)
-    else
-      indexOfSpecies.find {
-        case (sindex, prototype) => genomesDistance(prototype, genome) < speciesCompatibilityThreshold
-      } match {
-        //If found, attribute the species to the current genome
-        case Some((species, _)) =>
-          (genome.copy(species = species), indexOfSpecies)
-        //Otherwise, create a new species with the current genome as the prototype
-        case None =>
-          val newspecies = indexOfSpecies.lastKey + 1
-          val newgenome = genome.copy(species = newspecies)
-          val newios = indexOfSpecies + ((newspecies, newgenome))
-          (newgenome, newios)
+    //if (genomesDistance(genome, indexOfSpecies(genome.species)) < speciesCompatibilityThreshold)
+    //  (genome, indexOfSpecies)
+    //else
+    indexOfSpecies.find {
+      case (sindex, prototype) => genomesDistance(prototype, genome) < speciesCompatibilityThreshold
+    } match {
+      //If found, attribute the species to the current genome
+      case Some((species, _)) =>
+        (genome.copy(species = species), indexOfSpecies)
+      //Otherwise, create a new species with the current genome as the prototype
+      case None =>
+        val newspecies = indexOfSpecies.lastKey + 1
+        val newgenome = genome.copy(species = newspecies)
+        val newios = indexOfSpecies + ((newspecies, newgenome))
+        (newgenome, newios)
 
-      }
+    }
   }
 
   def genomesDistance(
@@ -572,10 +571,13 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     g2: Genome): Double = {
     val alignment = alignGenomes(g1.connectionGenes, g2.connectionGenes)
     val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(alignment)
-    val longestGenomeSize = max(g1.connectionGenes.length, g2.connectionGenes.length)
+    val longestGenomeSize: Double = max(g1.connectionGenes.length, g2.connectionGenes.length).toDouble
     val res = (genDistDisjointCoeff * excess / longestGenomeSize) +
       (genDistExcessCoeff * disjoint / longestGenomeSize) +
-      (genDistWeightDiffCoeff * weightdiff / matchingGenes)
+      (genDistWeightDiffCoeff * weightdiff / matchingGenes.toDouble)
+    //    println("#" ++ g1.toString)
+    //    println("#" ++ g2.toString)
+    //    println("#" ++ res.toString)
     res
   }
 
