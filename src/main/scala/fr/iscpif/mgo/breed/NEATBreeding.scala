@@ -74,6 +74,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
 
   def initialWeight(implicit rng: Random): Double = rng.nextGaussian() * mutationWeightSigma
 
+  def useSpeciesHint: Boolean
+
   lazy val initialGenome: Genome = minimalGenome
 
   def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Seq[G] = {
@@ -81,9 +83,11 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     val (globalInnovationNumber, globalNodeNumber) = population.foldLeft((0, 0)) {
       case (acc, indiv) =>
         val (gin, gnn) = acc
-        (max(gin, indiv.genome.connectionGenes.map {
+        val newgin = if (indiv.genome.connectionGenes.isEmpty) 0 else max(gin, indiv.genome.connectionGenes.map {
           _.innovation
-        }.max), max(gnn, indiv.genome.lastNodeId))
+        }.max)
+        val newgnn = max(gnn, indiv.genome.lastNodeId)
+        (newgin, newgnn)
     }
 
     if (population.isEmpty) Seq(initialGenome)
@@ -191,16 +195,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     size: Int)(implicit rng: Random): Iterator[(Individual[G, P, F], Individual[G, P, F])] = {
     val indivsBySpecies: Map[Int, Seq[Individual[G, P, F]]] =
       population.toIndividuals.groupBy { indiv => indiv.genome.species }
-    val speciesFitnesses: Seq[(Int, Double)] = indivsBySpecies.iterator.map {
-      case (sp, indivs) => (sp, indivs.map {
-        _.fitness
-      }.sum / indivs.size)
-    }.toSeq
-    val sumOfSpeciesFitnesses: Double = speciesFitnesses.map {
-      _._2
-    }.sum
-    val speciesOffsprings: Seq[(Int, Int)] = speciesFitnesses.map { case (sp, f) => (sp, round(f * size / sumOfSpeciesFitnesses).toInt) }
-    speciesOffsprings.flatMap {
+    speciesOffsprings(indivsBySpecies, size).flatMap {
       case (species, nb) =>
         Iterator.fill(nb) {
           val nparents = indivsBySpecies(species).length
@@ -216,6 +211,11 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
         }
     }.toIterator
   }
+
+  /** Returns tuples (species, number of offsprings) */
+  def speciesOffsprings(
+    indivsBySpecies: Map[Int, Seq[Individual[G, P, F]]],
+    totalOffsprings: Int): Seq[(Int, Int)]
 
   // //returns new node values if and two new nodes numbers if already present
   // def dontOverride(
@@ -338,7 +338,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     genome: Genome,
     state: BreedingState)(implicit rng: Random): (Genome, BreedingState) = {
     val r = rng.nextDouble()
-    if (r < mutationAddNodeProb) {
+    if (!genome.connectionGenes.isEmpty && r < mutationAddNodeProb) {
       mutateAddNode(genome, state)
     } else if (r < mutationAddNodeProb + mutationAddLinkProb) {
       mutateAddLink(genome, state)
@@ -546,24 +546,26 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     indexOfSpecies: IntMap[G],
     speciesCompatibilityThreshold: Double): (Genome, IntMap[G]) = {
     // Find a genome in the index of species which is sufficiently similar to the current genome.
-    // Start by checking if the offspring is compatible with the parent species (currently set in the species member of the offspring)
-    //if (genomesDistance(genome, indexOfSpecies(genome.species)) < speciesCompatibilityThreshold)
-    //  (genome, indexOfSpecies)
-    //else
-    indexOfSpecies.find {
-      case (sindex, prototype) => genomesDistance(prototype, genome) < speciesCompatibilityThreshold
-    } match {
-      //If found, attribute the species to the current genome
-      case Some((species, _)) =>
-        (genome.copy(species = species), indexOfSpecies)
-      //Otherwise, create a new species with the current genome as the prototype
-      case None =>
-        val newspecies = indexOfSpecies.lastKey + 1
-        val newgenome = genome.copy(species = newspecies)
-        val newios = indexOfSpecies + ((newspecies, newgenome))
-        (newgenome, newios)
+    // The following code starts by checking if the offspring is compatible with the parent species (currently set in the species member of the offspring)
+    // There is a problem when used with the adaptive species compatibility threshold: the number of species doesn't decrease since most of the time,
+    // offsprings get attributed their parents species.
+    if (useSpeciesHint && genomesDistance(genome, indexOfSpecies(genome.species)) < speciesCompatibilityThreshold)
+      (genome, indexOfSpecies)
+    else
+      indexOfSpecies.find {
+        case (sindex, prototype) => genomesDistance(prototype, genome) < speciesCompatibilityThreshold
+      } match {
+        //If found, attribute the species to the current genome
+        case Some((species, _)) =>
+          (genome.copy(species = species), indexOfSpecies)
+        //Otherwise, create a new species with the current genome as the prototype
+        case None =>
+          val newspecies = indexOfSpecies.lastKey + 1
+          val newgenome = genome.copy(species = newspecies)
+          val newios = indexOfSpecies + ((newspecies, newgenome))
+          (newgenome, newios)
 
-    }
+      }
   }
 
   def genomesDistance(
@@ -572,13 +574,15 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     val alignment = alignGenomes(g1.connectionGenes, g2.connectionGenes)
     val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(alignment)
     val longestGenomeSize: Double = max(g1.connectionGenes.length, g2.connectionGenes.length).toDouble
-    val res = (genDistDisjointCoeff * excess / longestGenomeSize) +
-      (genDistExcessCoeff * disjoint / longestGenomeSize) +
-      (genDistWeightDiffCoeff * weightdiff / matchingGenes.toDouble)
-    //    println("#" ++ g1.toString)
-    //    println("#" ++ g2.toString)
-    //    println("#" ++ res.toString)
-    res
+    if (longestGenomeSize == 0) 0.0
+    else {
+      val structuralDistance = (genDistDisjointCoeff * excess / longestGenomeSize) +
+        (genDistExcessCoeff * disjoint / longestGenomeSize)
+      if (matchingGenes == 0)
+        structuralDistance
+      else
+        structuralDistance + (genDistWeightDiffCoeff * weightdiff / matchingGenes.toDouble)
+    }
   }
 
   def distanceFactors(alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)]): (Int, Int, Double, Int) =

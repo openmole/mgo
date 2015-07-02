@@ -26,7 +26,7 @@ import collection.immutable.IntMap
 /**
  * Genome for NEAT
  */
-trait NEATGenome {
+trait NEATGenome extends G {
   type G = NEATGenome.Genome
 
   def inputNodes: Int

@@ -56,10 +56,9 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
       List[Double](speciesCompatibilityThreshold))
 
   def archive(a: A, oldIndividuals: Population[G, P, F], offsprings: Population[G, P, F])(implicit rng: Random): A = {
+    val indivsBySpecies: IntMap[Seq[NEATGenome.Genome]] = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }
     val newios: IntMap[NEATGenome.Genome] =
-      IntMap.empty ++ offsprings.toIndividuals.map { _.genome }
-        .groupBy { g => g.species }
-        .map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) }
+      indivsBySpecies.map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) }
     val numberOfSpecies = newios.size
     val lastsct = a.speciesCompatibilityThreshold.head
     val newsct =

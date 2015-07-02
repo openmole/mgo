@@ -124,4 +124,10 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.problem.NEATProblem
 
+/**
+ * Differences with the original neat:
+ * - can start with an unconnected genome
+ * - can choose between using species hint or not
+ * - can mutate weights to 0 to enforce sparsity
+ */
 trait NEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchive with NoPhenotype
