@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.breed
 
 import fr.iscpif.mgo._
+import scala.annotation.tailrec
 import util.Random
 import fr.iscpif.mgo.tools.StateMonad
 import fr.iscpif.mgo.genome.NEATGenome
@@ -317,22 +318,72 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
    * Returns a list of aligned connection genes. The first two elements of each tuple give aligned genes, (or None for unmatching genes) and the third is set to 0 when the genes are
    * aligned, 1 for an excess genes, and 2 for disjoint genes
    */
-  def alignGenomes(
+  //  def alignGenomes(
+  //    cg1: Seq[ConnectionGene],
+  //    cg2: Seq[ConnectionGene]): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
+  //    if (cg1.isEmpty && cg2.isEmpty)
+  //      List.empty
+  //    else if (cg1.isEmpty)
+  //      (None, Some(cg2.head), Disjoint) :: alignGenomes(Seq.empty, cg2.tail)
+  //    else if (cg2.isEmpty)
+  //      (Some(cg1.head), None, Disjoint) :: alignGenomes(cg1.tail, Seq.empty)
+  //    else if (cg1.head.innovation == cg2.head.innovation)
+  //      (Some(cg1.head), Some(cg2.head), Aligned) :: alignGenomes(cg1.tail, cg2.tail)
+  //    else if (cg1.head.innovation < cg2.head.innovation)
+  //      (Some(cg1.head), None, Excess) :: alignGenomes(cg1.tail, cg2)
+  //    else
+  //      (None, Some(cg2.head), Excess) :: alignGenomes(cg1, cg2.tail)
+  //  }
+
+  @tailrec final def alignGenomes(
     cg1: Seq[ConnectionGene],
-    cg2: Seq[ConnectionGene]): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
+    cg2: Seq[ConnectionGene],
+    acc: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = List.empty): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
     if (cg1.isEmpty && cg2.isEmpty)
-      List.empty
+      acc
     else if (cg1.isEmpty)
-      (None, Some(cg2.head), Disjoint) :: alignGenomes(Seq.empty, cg2.tail)
+      alignGenomes(Seq.empty, cg2.tail,
+        (None, Some(cg2.head), Disjoint) :: acc)
     else if (cg2.isEmpty)
-      (Some(cg1.head), None, Disjoint) :: alignGenomes(cg1.tail, Seq.empty)
+      alignGenomes(cg1.tail, Seq.empty,
+        (Some(cg1.head), None, Disjoint) :: acc)
     else if (cg1.head.innovation == cg2.head.innovation)
-      (Some(cg1.head), Some(cg2.head), Aligned) :: alignGenomes(cg1.tail, cg2.tail)
+      alignGenomes(cg1.tail, cg2.tail,
+        (Some(cg1.head), Some(cg2.head), Aligned) :: acc)
     else if (cg1.head.innovation < cg2.head.innovation)
-      (Some(cg1.head), None, Excess) :: alignGenomes(cg1.tail, cg2)
+      alignGenomes(cg1.tail, cg2,
+        (Some(cg1.head), None, Excess) :: acc)
     else
-      (None, Some(cg2.head), Excess) :: alignGenomes(cg1, cg2.tail)
+      alignGenomes(cg1, cg2.tail,
+        (None, Some(cg2.head), Excess) :: acc)
   }
+
+  //  @tailrec final def alignGenomes(
+  //    cg1: List[ConnectionGene],
+  //    cg2: List[ConnectionGene],
+  //    acc: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = List.empty): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
+  //    (cg1, cg2) match {
+  //      case (List.empty, List.empty) => acc
+  //      case (List.empty, cg2head :: cg2tail) =>
+  //    }
+  //    if (cg1.isEmpty && cg2.isEmpty)
+  //      acc
+  //    else if (cg1.isEmpty)
+  //      alignGenomes(Seq.empty, cg2.tail,
+  //        (None, Some(cg2.head), Disjoint) :: acc)
+  //    else if (cg2.isEmpty)
+  //      alignGenomes(cg1.tail, Seq.empty,
+  //        (Some(cg1.head), None, Disjoint) :: acc)
+  //    else if (cg1.head.innovation == cg2.head.innovation)
+  //      alignGenomes(cg1.tail, cg2.tail,
+  //        (Some(cg1.head), Some(cg2.head), Aligned) :: acc)
+  //    else if (cg1.head.innovation < cg2.head.innovation)
+  //      alignGenomes(cg1.tail, cg2,
+  //        (Some(cg1.head), None, Excess) :: acc)
+  //    else
+  //      alignGenomes(cg1, cg2.tail,
+  //        (None, Some(cg2.head), Excess) :: acc)
+  //  }
 
   def mutate(
     genome: Genome,
@@ -585,17 +636,34 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     }
   }
 
-  def distanceFactors(alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)]): (Int, Int, Double, Int) =
+  //  def distanceFactors(alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)]): (Int, Int, Double, Int) =
+  //    alignment match {
+  //      case List() => (0, 0, 0, 0)
+  //      case head :: tail =>
+  //        val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(tail)
+  //        head match {
+  //          case (Some(cg1), Some(cg2), Aligned) => (excess, disjoint, weightdiff + abs(cg1.weight - cg2.weight), matchingGenes + 1)
+  //          case (_, _, Disjoint) => (excess, disjoint + 1, weightdiff, matchingGenes)
+  //          case (_, _, Excess) => (excess + 1, disjoint, weightdiff, matchingGenes)
+  //          case _ => throw new RuntimeException(s"Improper alignment: $head") //this case should never happen
+  //        }
+  //
+  //    }
+
+  @tailrec final def distanceFactors(
+    alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)],
+    acc: (Int, Int, Double, Int) = (0, 0, 0.0, 0)): (Int, Int, Double, Int) =
     alignment match {
-      case List() => (0, 0, 0, 0)
+      case List() => acc
       case head :: tail =>
-        val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(tail)
-        head match {
+        val (excess, disjoint, weightdiff, matchingGenes) = acc //distanceFactors(tail)
+        val newacc = head match {
           case (Some(cg1), Some(cg2), Aligned) => (excess, disjoint, weightdiff + abs(cg1.weight - cg2.weight), matchingGenes + 1)
           case (_, _, Disjoint) => (excess, disjoint + 1, weightdiff, matchingGenes)
           case (_, _, Excess) => (excess + 1, disjoint, weightdiff, matchingGenes)
           case _ => throw new RuntimeException(s"Improper alignment: $head") //this case should never happen
         }
+        distanceFactors(tail, newacc)
 
     }
 
