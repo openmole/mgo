@@ -31,11 +31,11 @@ import scala.collection.immutable.Map
 import scala.math._
 import scala.util.Random
 
-object TestNEATXOR {
+object TestNEATVarSize {
 
   implicit val rng = new Random
 
-  val outputDir = "/tmp/NEATXOR/output/"
+  val outputDir = "/tmp/NEATVarSize/output/"
   val outputFile = outputDir ++ "singlerun.csv"
   def outputBestNetDir = outputDir ++ "singleRunBestNet/"
   def outputBestNetExt = ".gv"
@@ -60,11 +60,9 @@ object TestNEATXOR {
 
   def main(args: Array[String]): Unit = {
 
-    val xorneat = new XORNEAT {}
+    val xorneat = new NEATVarSize {}
 
-    println("Creating " ++ outputDir)
     new File(outputDir).mkdirs()
-    println("Creating " ++ outputBestNetDir)
     new File(outputBestNetDir).mkdirs()
 
     // delete previously generated graph files
@@ -79,7 +77,7 @@ object TestNEATXOR {
       val bestfitness = fitnesses.max
       val worsefitness = fitnesses.min
       val averagefitness = fitnesses.sum / fitnesses.length
-      val compatibilitythreshold = s.archive.speciesCompatibilityThreshold.head
+      val compatibilitythreshold = s.archive.speciesCompatibilityThreshold.tail.head
 
       val bestNet = xorneat.createNet(s.population.maxBy { elt => elt.fitness }.phenotype)
       val nodes = bestNet.network.nodes.length
@@ -94,65 +92,9 @@ object TestNEATXOR {
   }
 }
 
-object TestNEATXORReplications {
+trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
 
-  implicit val rng = new Random
-
-  val replications = 100
-
-  val outputDir = "/tmp/NEATXOR/output"
-  val outputFile = outputDir ++ "replications.csv"
-  val outputBestDir = outputDir ++ "replicationsBestNets/"
-  val outputBestExt = ".gv"
-
-  def main(args: Array[String]): Unit = {
-
-    val xorneat = new XORNEAT {}
-
-    new File(outputDir).mkdirs()
-    new File(outputBestDir).mkdirs()
-
-    // delete previously generated gv files
-    new File(outputBestDir).listFiles().foreach { _.delete() }
-
-    val fileoutput = new PrintWriter(outputFile)
-
-    try {
-      val header = s"Generation\tPopsize\tNumSpecies\tbest\tavg\tworse\tnodes\tedges\t[(species,fitness,size)]"
-      println(header)
-      fileoutput.println(header)
-
-      (1 to replications).foreach { repli =>
-        val finalstate = xorneat.evolve.untilConverged { s => }
-        val fitnesses: Vector[Double] = if (finalstate.population.isEmpty) Vector(0.0) else finalstate.population.map { elt => elt.fitness }.toVector
-        val bestfitness = fitnesses.max
-        val worsefitness = fitnesses.min
-        val averagefitness = fitnesses.sum / fitnesses.length
-        val speciesInfo = xorneat.speciesFitnessesOffsprings(finalstate.population)
-
-        val bestNet = xorneat.createNet(finalstate.population.maxBy { elt => elt.fitness }.phenotype)
-        val nodes = bestNet.network.nodes.length
-        val edges = bestNet.network.iteredges.length
-
-        val line = s"${finalstate.generation}\t${finalstate.population.content.length}\t${finalstate.archive.indexOfSpecies.size}\t$bestfitness\t$averagefitness\t$worsefitness\t$nodes\t$edges\t$speciesInfo}"
-        println(line)
-        fileoutput.println(line)
-
-        val filebestnetoutput = new PrintWriter(outputBestDir ++ "%06d".format(repli) ++ outputBestExt)
-        try {
-          filebestnetoutput.println(xorneat.dotString(bestNet))
-        } finally {
-          filebestnetoutput.close()
-        }
-
-      }
-    } finally {
-      fileoutput.close()
-    }
-  }
-}
-
-trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
+  val rng = new Random()
 
   def interSpeciesMatingProb: Double = 0.001
 
@@ -174,8 +116,8 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
   def genDistWeightDiffCoeff: Double = 0.4
 
   def numberSpeciesTarget: Int = 10
-  def speciesCompatibilityThreshold: Double = 3
-  def speciesCompatibilitySpeed: Double = 0.3
+  def speciesCompatibilityThreshold: Double = 3.0
+  def speciesCompatibilitySpeed: Double = 0
   def speciesCompatibilityAccel: Double = 0.1
   def speciesCompatibilityMin: Double = 0.3
 
@@ -188,20 +130,33 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
 
   def useSpeciesHint = false
 
-  val inputNodes = 2
+  val inputNodes = 50
   val biasNodes = 1
-  val outputNodes = 1
+  val outputNodes = 5
 
   val lambda = 150
 
   type NN = NeuralNetwork[Double, Double, Double] with Feedforward[Double, Double]
 
-  val trainingSet: Seq[(Seq[Double], Seq[Double])] =
-    Vector(
-      (Vector(0.0, 0.0, 1.0), Vector(0.0)),
-      (Vector(0.0, 1.0, 1.0), Vector(1.0)),
-      (Vector(1.0, 0.0, 1.0), Vector(1.0)),
-      (Vector(1.0, 1.0, 1.0), Vector(0.0)))
+  def sector(i: Int, sectorRadius: Int, wholeSize: Int): (Int, Int) = {
+    val left = max(0, i - sectorRadius)
+    val right = min(i + sectorRadius, wholeSize - 1)
+    (left, right)
+  }
+
+  def sampleSize: Int = 500
+  def sectorRadius: Int = 1
+
+  val testset: Seq[(Seq[Double], Seq[Double])] =
+    Vector.fill(sampleSize) {
+      val x = rng.nextDouble()
+      val inputPos = (x * inputNodes).toInt
+      val outputPos = (x * outputNodes).toInt
+      val output = Vector.fill(outputPos)(0.0) ++ Vector(1.0) ++ Vector.fill(outputNodes - 1 - outputPos)(0.0)
+      val (sectorLeft, sectorRight) = sector((x * inputNodes).toInt, sectorRadius, inputNodes)
+      val input = Vector.fill(sectorLeft)(0.0) ++ Vector.fill(sectorRight - sectorLeft + 1)(1.0) ++ Vector.fill(inputNodes - 1 - sectorRight)(0.0)
+      (input, output)
+    }
 
   def createNet(
     _nodes: IndexedSeq[Double],
@@ -219,17 +174,17 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
       _state)
 
   def evaluateNet(nn: NN)(implicit rng: Random): Double = {
-    val score = getScore(nn)
-    score.map { e: Seq[Double] => e.sum / e.length }.sum / score.length
+    val diff = getOutputError(nn)
+    4 - diff.map { e: Seq[Double] => e.sum }.sum
   }
 
   /** returns expected and actual output difference for each output neuron and for each  */
-  def getScore(
+  def getOutputError(
     nn: NeuralNetwork[Double, Double, Double] with Feedforward[Double, Double])(implicit rng: Random): Seq[Seq[Double]] = {
-    val shuffledset = rng.shuffle(trainingSet)
-    shuffledset.map {
+    val shuffledxor = rng.shuffle(testset)
+    shuffledxor.map {
       case (input, output) =>
-        (nn.outputState(nn.query(input)) zip output).map { case (o, expected) => 1.0 - abs(expected - o) }
+        (nn.outputState(nn.query(input)) zip output).map { case (o, expected) => abs(expected - o) }
     }
   }
 
@@ -237,7 +192,7 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
   def terminated(population: Population[G, P, F])(implicit rng: Random): Boolean = {
     val best: P = population.content.maxBy { elt: PopulationElement[G, P, F] => elt.fitness }.phenotype
     val nn = createNet(best)
-    getScore(nn).forall(output => output.forall { 1 - _ < 0.45 })
+    getOutputError(nn).forall(output => output.forall { round(_) == 0 })
   }
 
   val enLocale = new Locale("en")

@@ -23,6 +23,7 @@ import fr.iscpif.mgo.genome.NEATGenome
 import scala.util.Random
 import scala.collection.immutable.Queue
 import collection.immutable.IntMap
+import math._
 
 import math.max
 
@@ -43,7 +44,8 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
 
   def numberSpeciesTarget: Int
   def speciesCompatibilityThreshold: Double
-  def speciesCompatibilityMod: Double
+  def speciesCompatibilitySpeed: Double
+  def speciesCompatibilityAccel: Double
   def speciesCompatibilityMin: Double
 
   def initialArchive(implicit rng: Random): A =
@@ -56,15 +58,37 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
       List[Double](speciesCompatibilityThreshold))
 
   def archive(a: A, oldIndividuals: Population[G, P, F], offsprings: Population[G, P, F])(implicit rng: Random): A = {
+
     val indivsBySpecies: IntMap[Seq[NEATGenome.Genome]] = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }
+
     val newios: IntMap[NEATGenome.Genome] =
       indivsBySpecies.map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) }
-    val numberOfSpecies = newios.size
+
+    val prevNumberOfSpecies = a.indexOfSpecies.size
+    val newNumberOfSpecies = newios.size
+
     val lastsct = a.speciesCompatibilityThreshold.head
+
+    val sctspeed = a.speciesCompatibilityThreshold match {
+      case List() => 0.0
+      case a :: List() => 0.0
+      case a :: (b :: _) => abs(a - b)
+    }
+
+    val newsctspeed: Double =
+      if (newNumberOfSpecies == numberSpeciesTarget) 0
+      else if (abs(newNumberOfSpecies - prevNumberOfSpecies) < 1) sctspeed + speciesCompatibilityAccel
+      else if (abs(newNumberOfSpecies - prevNumberOfSpecies) > 1) sctspeed - speciesCompatibilityAccel
+      else sctspeed
+
     val newsct =
-      if (numberOfSpecies < numberSpeciesTarget)
-        lastsct - speciesCompatibilityMod
-      else lastsct + speciesCompatibilityMod
+      if (newNumberOfSpecies < numberSpeciesTarget)
+        lastsct - newsctspeed
+      else if (newNumberOfSpecies > numberSpeciesTarget)
+        lastsct + newsctspeed
+      else
+        lastsct
+
     NEATArchive.Archive(
       //globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation.number }.max,
       /* recordOfInnovation contains the unique innovations of offsprings*/
