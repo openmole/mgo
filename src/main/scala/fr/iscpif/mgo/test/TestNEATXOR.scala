@@ -210,7 +210,7 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
     _edges: Seq[(Int, Int, Double)],
     _activationfunction: Traversable[(Double, Double)] => Double,
     _state: IndexedSeq[Double])(implicit rng: Random): NN =
-    NeuralNetwork.feedforwardNetwork[Double, Double, Double](
+    NeuralNetwork.feedforwardSparse[Double, Double, Double](
       _nodes,
       _inputnodes,
       _outputnodes,

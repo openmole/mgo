@@ -106,5 +106,4 @@ package object tools {
         case None => a
       }
   }     */
-
 }

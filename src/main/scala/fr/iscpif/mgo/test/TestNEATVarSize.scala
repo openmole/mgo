@@ -23,7 +23,7 @@ import java.util.Locale
 import fr.iscpif.mgo.{ Individual, PopulationElement, Population }
 import fr.iscpif.mgo.algorithm.NEAT
 import fr.iscpif.mgo.breed.{ SpeciesFitnessSharing, NEATFeedforwardTopology }
-import fr.iscpif.mgo.genome.NEATMinimalGenomeUnconnected
+import fr.iscpif.mgo.genome.{ NEATMinimalGenomeUnconnected, NEATMinimalGenomeConnectedIO }
 import fr.iscpif.mgo.termination.ConditionalTermination
 import fr.iscpif.mgo.tools.neuralnetwork.{ ActivationFunction, Feedforward, NeuralNetwork }
 
@@ -92,7 +92,7 @@ object TestNEATVarSize {
   }
 }
 
-trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
+trait NEATVarSize extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
 
   val rng = new Random()
 
@@ -129,9 +129,9 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedfo
 
   def useSpeciesHint = false
 
-  val inputNodes = 50
+  val inputNodes = 784
   val biasNodes = 1
-  val outputNodes = 5
+  val outputNodes = 10
 
   val lambda = 150
 
@@ -164,7 +164,7 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedfo
     _edges: Seq[(Int, Int, Double)],
     _activationfunction: Traversable[(Double, Double)] => Double,
     _state: IndexedSeq[Double])(implicit rng: Random): NN =
-    NeuralNetwork.feedforwardNetwork[Double, Double, Double](
+    NeuralNetwork.feedforwardSparse[Double, Double, Double](
       _nodes,
       _inputnodes,
       _outputnodes,
@@ -173,17 +173,19 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedfo
       _state)
 
   def evaluateNet(nn: NN)(implicit rng: Random): Double = {
-    val diff = getOutputError(nn)
-    4 - diff.map { e: Seq[Double] => e.sum }.sum
+    print(".")
+    val diff = getOutputScore(nn)
+    print(";")
+    diff.map { e: Seq[Double] => e.sum / e.length }.sum / diff.length
   }
 
   /** returns expected and actual output difference for each output neuron and for each  */
-  def getOutputError(
+  def getOutputScore(
     nn: NeuralNetwork[Double, Double, Double] with Feedforward[Double, Double])(implicit rng: Random): Seq[Seq[Double]] = {
     val shuffledxor = rng.shuffle(testset)
     shuffledxor.map {
       case (input, output) =>
-        (nn.outputState(nn.query(input)) zip output).map { case (o, expected) => abs(expected - o) }
+        (nn.outputState(nn.query(input)) zip output).map { case (o, expected) => 1 - abs(expected - o) }
     }
   }
 
@@ -191,7 +193,7 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedfo
   def terminated(population: Population[G, P, F])(implicit rng: Random): Boolean = {
     val best: P = population.content.maxBy { elt: PopulationElement[G, P, F] => elt.fitness }.phenotype
     val nn = createNet(best)
-    getOutputError(nn).forall(output => output.forall { round(_) == 0 })
+    getOutputScore(nn).forall(output => output.forall { _ > 0.5 })
   }
 
   val enLocale = new Locale("en")

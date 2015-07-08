@@ -339,7 +339,7 @@ object NeuralNetworkSpecification extends Properties("NeuralNetwork") {
     }
 
   def countingLoopNetwork(neurons: Int) =
-    NeuralNetwork.recurrentNetwork(
+    NeuralNetwork.recurrentSparse(
       _nodes = Vector.fill(neurons)(()),
       _inputnodes = (0 until neurons).toVector,
       _outputnodes = (0 until neurons).toVector,

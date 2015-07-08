@@ -100,5 +100,12 @@ object Network {
       val mapout = SparseTopology.mapoutFrom(_edges)
     }
 
+  def directedDense[N, E](
+    _nodes: IndexedSeq[N],
+    _edges: Vector[Vector[E]]): Network[N, E] with DirectedEdges[E] with DenseTopology[E] =
+    new Network[N, E] with DirectedEdges[E] with DenseTopology[E] {
+      val nodes = _nodes.toVector
+      val matrix = _edges
+    }
 }
 
