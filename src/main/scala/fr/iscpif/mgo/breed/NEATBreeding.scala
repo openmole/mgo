@@ -160,6 +160,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     StateMonad[Genome, BreedingState]({
       case (gin, gnn, roi, ios) =>
         val (newGenome, newios) = setSpecies(g, ios, archive.speciesCompatibilityThreshold.head)
+        //println(s"indiv attributed to species ${newGenome.species}")
         (newGenome, (gin, gnn, roi, newios))
     })
 
@@ -208,6 +209,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
               val nindivsOtherSpecies = indivsBySpecies(otherSpecies).length
               indivsBySpecies(otherSpecies)(rng.nextInt(nindivsOtherSpecies))
             } else indivsBySpecies(species)(rng.nextInt(nparents))
+          //println(s"sampling species (${p1.genome.species}, ${p2.genome.species})")
           (p1, p2)
         }
     }.toIterator
@@ -389,7 +391,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     genome: Genome,
     state: BreedingState)(implicit rng: Random): (Genome, BreedingState) = {
     val r = rng.nextDouble()
-    if (!genome.connectionGenes.isEmpty && r < mutationAddNodeProb) {
+    if (genome.connectionGenes.nonEmpty && r < mutationAddNodeProb) {
       mutateAddNode(genome, state)
     } else if (r < mutationAddNodeProb + mutationAddLinkProb) {
       mutateAddLink(genome, state)
