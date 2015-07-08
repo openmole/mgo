@@ -117,8 +117,7 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedfo
 
   def numberSpeciesTarget: Int = 10
   def speciesCompatibilityThreshold: Double = 3.0
-  def speciesCompatibilitySpeed: Double = 0
-  def speciesCompatibilityAccel: Double = 0.1
+  def speciesCompatibilityMod: Double = 0.3
   def speciesCompatibilityMin: Double = 0.3
 
   def crossoverInheritDisabledProb: Double = 0.75
