@@ -20,12 +20,15 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo.tools.neuralnetwork.{ ChangeFunction, ActivationFunction, NeuralNetwork }
 import util.Random
 
+import fr.iscpif.mgo.tools.time
+import breeze.linalg.{ DenseMatrix, DenseVector }
+
 object TestNeuralNetworksPerformance {
   val rng = new Random()
 
   def main(args: Array[String]) {
 
-    val inputs = 784
+    val inputs = 200
     val outputs = 10
     val hidden = Vector[Int]()
     val activations = 1 + hidden.length
@@ -43,71 +46,101 @@ object TestNeuralNetworksPerformance {
     val edgesMatrix = edgesMatrixArray.map { _.toVector }.toVector
 
     println("-- Feedforward sparse --")
-    println("Creation")
     val nnfs =
-      time(NeuralNetwork.feedforwardSparse(
-        nodes,
-        inputNodes,
-        outputNodes,
-        edgesWithWeights,
-        activationFunction,
-        nodes.map { _ => baseState }
-      ))
-    println("Query")
-    time(nnfs.outputState(nnfs.query(nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+      time("Creation",
+        NeuralNetwork.feedforwardSparse(
+          nodes,
+          inputNodes,
+          outputNodes,
+          edgesWithWeights,
+          activationFunction,
+          nodes.map { _ => baseState }
+        ))
+    time("Query", nnfs.outputState(nnfs.query(nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Query", nnfs.outputState(nnfs.query(nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Query", nnfs.outputState(nnfs.query(nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Query", nnfs.outputState(nnfs.query(nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Query", nnfs.outputState(nnfs.query(nodes.map { _ => rng.nextDouble() * 2 - 1 })))
 
     println("-- Recurrent sparse --")
-    println("Creation")
     val nnrs =
-      time(NeuralNetwork.recurrentSparse(
-        nodes,
-        inputNodes,
-        outputNodes,
-        edgesWithWeights,
-        activationFunction,
-        changeFunction,
-        nodes.map { _ => baseState }
-      ))
-    println("Activate")
-    time(nnrs.outputState(nnrs.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+      time("Creation",
+        NeuralNetwork.recurrentSparse(
+          nodes,
+          inputNodes,
+          outputNodes,
+          edgesWithWeights,
+          activationFunction,
+          changeFunction,
+          nodes.map { _ => baseState }
+        ))
+    time("Activate", nnrs.outputState(nnrs.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Activate", nnrs.outputState(nnrs.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Activate", nnrs.outputState(nnrs.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Activate", nnrs.outputState(nnrs.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Activate", nnrs.outputState(nnrs.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+
+    time("Activate until stable", nnrs.outputState(nnrs.activateUntilStable(activations, 0.0, nodes.map { _ => rng.nextDouble() * 2 - 1 })._3))
+    time("Activate until stable", nnrs.outputState(nnrs.activateUntilStable(activations, 0.0, nodes.map { _ => rng.nextDouble() * 2 - 1 })._3))
+    time("Activate until stable", nnrs.outputState(nnrs.activateUntilStable(activations, 0.0, nodes.map { _ => rng.nextDouble() * 2 - 1 })._3))
+    time("Activate until stable", nnrs.outputState(nnrs.activateUntilStable(activations, 0.0, nodes.map { _ => rng.nextDouble() * 2 - 1 })._3))
+    time("Activate until stable", nnrs.outputState(nnrs.activateUntilStable(activations, 0.0, nodes.map { _ => rng.nextDouble() * 2 - 1 })._3))
 
     println("-- Recurrent dense --")
-    println("Creation")
     val nnrd =
-      time(NeuralNetwork.recurrentDense(
-        nodes,
-        inputNodes,
-        outputNodes,
-        edgesMatrix,
-        activationFunction,
-        changeFunction,
-        nodes.map { _ => baseState }
-      ))
-    println("Activate")
-    time(nnrd.outputState(nnrd.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+      time("Creation",
+        NeuralNetwork.recurrentDense(
+          nodes,
+          inputNodes,
+          outputNodes,
+          edgesMatrix,
+          activationFunction,
+          changeFunction,
+          nodes.map { _ => baseState }
+        ))
+    time("Activate", nnrd.outputState(nnrd.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Activate", nnrd.outputState(nnrd.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Activate", nnrd.outputState(nnrd.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Activate", nnrd.outputState(nnrd.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
+    time("Activate", nnrd.outputState(nnrd.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
 
-    //    println("-- Feedforward breeze --")
-    //    println("Creation")
+    println("-- Recurrent breeze --")
+    time("load breeze", DenseVector(0.0, 1.0, 2.0) * DenseVector(0.0, 1.0, 2.0).t)
+    val breezeEdges = DenseMatrix(edgesMatrix: _*)
+    time("Activate", {
+      val finalstate = Iterator.iterate(DenseVector[Double](nodes.map { _ => rng.nextDouble() * 2 - 1 }: _*)) { s => breezeEdges * s }.drop(activations).next
+      outputNodes.map { finalstate(_) }
+    })
+    time("Activate", {
+      val finalstate = Iterator.iterate(DenseVector[Double](nodes.map { _ => rng.nextDouble() * 2 - 1 }: _*)) { s => breezeEdges * s }.drop(activations).next
+      outputNodes.map { finalstate(_) }
+    })
+    time("Activate", {
+      val finalstate = Iterator.iterate(DenseVector[Double](nodes.map { _ => rng.nextDouble() * 2 - 1 }: _*)) { s => breezeEdges * s }.drop(activations).next
+      outputNodes.map { finalstate(_) }
+    })
+    time("Activate", {
+      val finalstate = Iterator.iterate(DenseVector[Double](nodes.map { _ => rng.nextDouble() * 2 - 1 }: _*)) { s => breezeEdges * s }.drop(activations).next
+      outputNodes.map { finalstate(_) }
+    })
+    time("Activate", {
+      val finalstate = Iterator.iterate(DenseVector[Double](nodes.map { _ => rng.nextDouble() * 2 - 1 }: _*)) { s => breezeEdges * s }.drop(activations).next
+      outputNodes.map { finalstate(_) }
+    })
+
     //    val nnrb =
-    //      time(NeuralNetwork.feedforwardBreeze(
-    //        nodes,
-    //        inputNodes,
-    //        outputNodes,
-    //        edgesWithWeights,
-    //        activationFunction,
-    //        nodes.map{_ => baseState}
-    //      ))
-    //    println("Query")
-    //    time(nnrb.outputState(nnrb.query(nodes.map{_ => rng.nextDouble() * 2 - 1})))
+    //      time("Creation",
+    //        NeuralNetwork.recurrentBreeze(
+    //          nodes,
+    //          inputNodes,
+    //          outputNodes,
+    //          edgesMatrix,
+    //          activationFunction,
+    //          changeFunction,
+    //          nodes.map { _ => baseState }
+    //        ))
+    //    time("Activate", nnrb.outputState(nnrb.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
 
-  }
-
-  def time[R](block: => R): R = {
-    val t0 = System.nanoTime()
-    val result = block // call-by-name
-    val t1 = System.nanoTime()
-    println(f"Elapsed time: ${(t1 - t0)}%,d ns")
-    result
   }
 
   /** Edges of a layered network. */

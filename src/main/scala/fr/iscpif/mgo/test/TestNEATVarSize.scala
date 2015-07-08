@@ -27,6 +27,8 @@ import fr.iscpif.mgo.genome.{ NEATMinimalGenomeUnconnected, NEATMinimalGenomeCon
 import fr.iscpif.mgo.termination.ConditionalTermination
 import fr.iscpif.mgo.tools.neuralnetwork.{ ActivationFunction, Feedforward, NeuralNetwork }
 
+import fr.iscpif.mgo.tools.time
+
 import scala.collection.immutable.Map
 import scala.math._
 import scala.util.Random
@@ -129,7 +131,7 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedfo
 
   def useSpeciesHint = false
 
-  val inputNodes = 784
+  val inputNodes = 100
   val biasNodes = 1
   val outputNodes = 10
 
@@ -173,17 +175,14 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedfo
       _state)
 
   def evaluateNet(nn: NN)(implicit rng: Random): Double = {
-    print(".")
     val diff = getOutputScore(nn)
-    print(";")
     diff.map { e: Seq[Double] => e.sum / e.length }.sum / diff.length
   }
 
   /** returns expected and actual output difference for each output neuron and for each  */
   def getOutputScore(
     nn: NeuralNetwork[Double, Double, Double] with Feedforward[Double, Double])(implicit rng: Random): Seq[Seq[Double]] = {
-    val shuffledxor = rng.shuffle(testset)
-    shuffledxor.map {
+    testset.map {
       case (input, output) =>
         (nn.outputState(nn.query(input)) zip output).map { case (o, expected) => 1 - abs(expected - o) }
     }

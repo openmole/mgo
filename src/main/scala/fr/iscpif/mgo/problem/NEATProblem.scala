@@ -24,6 +24,8 @@ import fr.iscpif.mgo.tools.neuralnetwork._
 import collection.immutable.IntMap
 import fr.iscpif.mgo.genome.NEATGenome.Node
 
+import fr.iscpif.mgo.tools.time
+
 /**
  * Cake to define a problem for a genetic algorithm
  */

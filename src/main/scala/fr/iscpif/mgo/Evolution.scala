@@ -20,6 +20,8 @@ package fr.iscpif.mgo
 import util.Random
 import org.apache.commons.math3.random.{ RandomAdaptor, Well44497b }
 
+import fr.iscpif.mgo.tools.time
+
 /**
  * Trait evolution provide the feature to define an evolutionary algorithm
  */
