@@ -164,7 +164,7 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
   def mutationWeightHardMax: Double = Double.PositiveInfinity
 
   def mutationWeightSigma: Double = 4
-  def mutationWeightProb0: Double = 0.05
+  def mutationWeightProb0: Double = 0.0
 
   def mutationDisableProb: Double = 0.0
   def mutationEnableProb: Double = 0.0
@@ -174,10 +174,10 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
   def genDistWeightDiffCoeff: Double = 0.4
 
   def numberSpeciesTarget: Int = 10
-  def speciesCompatibilityThreshold: Double = 3
-  def speciesCompatibilitySpeed: Double = 0.3
-  def speciesCompatibilityAccel: Double = 0.1
-  def speciesCompatibilityMin: Double = 0.3
+
+  def speciesCompatibilityThreshold: Double = 3.0
+  def speciesCompatibilityMod: Double = 0.0
+  def speciesCompatibilityMin: Double = 0.0
 
   def crossoverInheritDisabledProb: Double = 0.75
 
@@ -186,7 +186,7 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
   def speciesKeptIfStagnate: Int = 2
   def stagnationTimeThreshold: Int = 0
 
-  def useSpeciesHint = false
+  def useSpeciesHint = true
 
   val inputNodes = 2
   val biasNodes = 1
