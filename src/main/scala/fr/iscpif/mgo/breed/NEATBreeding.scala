@@ -22,7 +22,6 @@ import scala.annotation.tailrec
 import util.Random
 import fr.iscpif.mgo.tools.StateMonad
 import fr.iscpif.mgo.genome.NEATGenome
-import fr.iscpif.mgo.genome.NEATGenome._
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 import collection.immutable.Map
@@ -35,8 +34,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
 
   type BreedingState = (Int, //global innovation number
   Int, //global node number
-  Seq[NEATGenome.Innovation], //record of innovations
-  IntMap[NEATGenome.Genome]) //index of species
+  Seq[Innovation], //record of innovations
+  IntMap[Genome]) //index of species
 
   def interSpeciesMatingProb: Double
 
@@ -291,7 +290,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
       }
     }: _*)
 
-    //if (newconnectiongenes.exists(cg1 => newconnectiongenes.exists(cg2 => (cg1.outNode == cg2.inNode) && (cg2.outNode == cg1.inNode)))) throw new RuntimeException(s"LOOOOOOP (crossover) $newconnectiongenes $newnodes\n$i1\n$i2")
     if (newconnectiongenes.exists(cg1 => {
       if (newnodes(cg1.inNode).level >= newnodes(cg1.outNode).level) {
         println(cg1)
@@ -436,7 +434,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
           }
 
         val newgene =
-          NEATGenome.ConnectionGene(
+          ConnectionGene(
             inNode = u,
             outNode = v,
             weight = initialWeight,
@@ -444,7 +442,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
             innovation = thisInnov.innovnum)
 
         val newgenome =
-          NEATGenome.Genome(
+          Genome(
             connectionGenes =
               genome.connectionGenes :+ newgene,
             nodes = genome.nodes,
@@ -465,28 +463,30 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     val picked: Int = rng.nextInt(genome.connectionGenes.length)
     val pickedcg = genome.connectionGenes(picked)
 
+    val newNode = pickNewHiddenNode((genome.nodes(pickedcg.inNode).level + genome.nodes(pickedcg.outNode).level) / 2.0)
+
     //Look for a NodeInnovation between nodes u and v in the record
     val sameInRoi: Option[NodeInnovation] = roi.collectFirst {
-      case NodeInnovation(a, b, c, pickedcg.inNode, pickedcg.outNode) => NodeInnovation(a, b, c, pickedcg.inNode, pickedcg.outNode)
+      case NodeInnovation(a, b, c, `newNode`, pickedcg.inNode, pickedcg.outNode) => NodeInnovation(a, b, c, newNode, pickedcg.inNode, pickedcg.outNode)
     }
 
     val thisInnov =
       sameInRoi match {
-        case None => NodeInnovation(gin + 1, gin + 2, gnn + 1, pickedcg.inNode, pickedcg.outNode)
+        case None => NodeInnovation(gin + 1, gin + 2, gnn + 1, newNode, pickedcg.inNode, pickedcg.outNode)
         case Some(x) => x
       }
 
     val newcg1: ConnectionGene =
       ConnectionGene(
         inNode = pickedcg.inNode,
-        outNode = thisInnov.newnode,
+        outNode = thisInnov.newnodeId,
         weight = 1,
         enabled = true,
         innovation = thisInnov.innovnum1)
 
     val newcg2: ConnectionGene =
       ConnectionGene(
-        inNode = thisInnov.newnode,
+        inNode = thisInnov.newnodeId,
         outNode = pickedcg.outNode,
         weight = pickedcg.weight,
         enabled = true,
@@ -497,19 +497,21 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
       pickedcg.copy(enabled = false)
     ) ++ Vector(newcg1, newcg2)
 
-    val newnodes = genome.nodes + (thisInnov.newnode -> HiddenNode(level = (genome.nodes(pickedcg.inNode).level + genome.nodes(pickedcg.outNode).level) / 2.0))
+    val newnodes = genome.nodes + (thisInnov.newnodeId -> newNode)
 
     val newgenome = Genome(
       connectionGenes = newconnectiongenes,
       nodes = newnodes,
       species = genome.species,
-      lastNodeId = thisInnov.newnode)
+      lastNodeId = thisInnov.newnodeId)
 
     val newroi =
       roi :+ thisInnov
 
     (newgenome, (gin + 2, gnn + 1, newroi, ios))
   }
+
+  def pickNewHiddenNode(level: Double)(implicit rng: Random): Node
 
   def mutateWeights(
     genome: Genome)(implicit rng: Random): Genome =

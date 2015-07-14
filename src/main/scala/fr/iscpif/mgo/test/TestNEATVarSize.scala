@@ -159,20 +159,20 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedfo
       (input, output)
     }
 
+  def neuronInitValue: Double = 0.5
+
   def createNet(
-    _nodes: IndexedSeq[Double],
+    _nodes: IndexedSeq[Node],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
-    _edges: Seq[(Int, Int, Double)],
-    _activationfunction: Traversable[(Double, Double)] => Double,
-    _state: IndexedSeq[Double])(implicit rng: Random): NN =
+    _edges: Seq[(Int, Int, Double)])(implicit rng: Random): NN =
     NeuralNetwork.feedforwardSparse[Double, Double, Double](
-      _nodes,
+      _nodes.map { _.level },
       _inputnodes,
       _outputnodes,
       _edges,
-      _activationfunction: Traversable[(Double, Double)] => Double,
-      _state)
+      ActivationFunction.tanh,
+      Vector.fill(_nodes.length)(neuronInitValue))
 
   def evaluateNet(nn: NN)(implicit rng: Random): Double = {
     val diff = getOutputScore(nn)
@@ -212,10 +212,7 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedfo
       },
       s"""rankdir=LR
        |{rank=source ${nn.inputNeurons.mkString(" ")}}
-                                                       |{rank=sink ${nn.outputNeurons.mkString(" ")}}""".stripMargin)
-
-  def activationFunction(inputsAndWeights: Traversable[(Double, Double)]): Double = ActivationFunction.tanh(inputsAndWeights)
-  def neuronInitValue: Double = 0.5
+       |{rank=sink ${nn.outputNeurons.mkString(" ")}}""".stripMargin)
 
   def speciesFitnessesOffsprings(
     population: Population[G, P, F]): Seq[(Int, Double, Int)] = {

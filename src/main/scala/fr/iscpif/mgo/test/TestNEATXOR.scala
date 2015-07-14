@@ -23,7 +23,7 @@ import java.util.Locale
 import fr.iscpif.mgo.{ Individual, PopulationElement, Population }
 import fr.iscpif.mgo.algorithm.NEAT
 import fr.iscpif.mgo.breed.{ SpeciesFitnessSharing, NEATFeedforwardTopology }
-import fr.iscpif.mgo.genome.NEATMinimalGenomeUnconnected
+import fr.iscpif.mgo.genome.{ NEATMinimalGenomeUnconnected, NEATMinimalGenomeConnectedIO }
 import fr.iscpif.mgo.termination.ConditionalTermination
 import fr.iscpif.mgo.tools.neuralnetwork.{ ActivationFunction, Feedforward, NeuralNetwork }
 
@@ -152,7 +152,7 @@ object TestNEATXORReplications {
   }
 }
 
-trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
+trait XORNEAT extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
 
   def interSpeciesMatingProb: Double = 0.001
 
@@ -203,20 +203,20 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
       (Vector(1.0, 0.0, 1.0), Vector(1.0)),
       (Vector(1.0, 1.0, 1.0), Vector(0.0)))
 
+  def neuronInitValue: Double = 0.5
+
   def createNet(
-    _nodes: IndexedSeq[Double],
+    _nodes: IndexedSeq[Node],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
-    _edges: Seq[(Int, Int, Double)],
-    _activationfunction: Traversable[(Double, Double)] => Double,
-    _state: IndexedSeq[Double])(implicit rng: Random): NN =
+    _edges: Seq[(Int, Int, Double)])(implicit rng: Random): NN =
     NeuralNetwork.feedforwardSparse[Double, Double, Double](
-      _nodes,
+      _nodes.map { _.level },
       _inputnodes,
       _outputnodes,
       _edges,
-      _activationfunction: Traversable[(Double, Double)] => Double,
-      _state)
+      ActivationFunction.tanh,
+      Vector.fill(_nodes.length)(neuronInitValue))
 
   def evaluateNet(nn: NN)(implicit rng: Random): Double = {
     val score = getScore(nn)
@@ -257,10 +257,7 @@ trait XORNEAT extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwar
       },
       s"""rankdir=LR
        |{rank=source ${nn.inputNeurons.mkString(" ")}}
-                                                       |{rank=sink ${nn.outputNeurons.mkString(" ")}}""".stripMargin)
-
-  def activationFunction(inputsAndWeights: Traversable[(Double, Double)]): Double = ActivationFunction.tanh(inputsAndWeights)
-  def neuronInitValue: Double = 0.5
+       |{rank=sink ${nn.outputNeurons.mkString(" ")}}""".stripMargin)
 
   def speciesFitnessesOffsprings(
     population: Population[G, P, F]): Seq[(Int, Double, Int)] = {

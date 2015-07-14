@@ -37,10 +37,10 @@ trait Network[N, E] {
     edgeAttr: E => Seq[(String, String)],
     additionalStatements: String): String =
     s"""$dotGraphType $graphId {
-${additionalStatements.lines.map { "  " ++ _ }.mkString { "\n" }}
-${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
-${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
-}"""
+       |${additionalStatements.lines.map { "  " ++ _ }.mkString { "\n" }}
+       |${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
+       |${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
+       |}""".stripMargin
 
   def toDotNodes(nodeAttr: N => Seq[(String, String)]): String =
     iternodes.map {

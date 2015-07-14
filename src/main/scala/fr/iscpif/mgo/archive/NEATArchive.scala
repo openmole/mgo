@@ -25,20 +25,18 @@ import scala.collection.immutable.Queue
 import collection.immutable.IntMap
 import math._
 
-object NEATArchive {
+trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
+
   case class Archive(
     // to maintain a record of innovation throughout generations would require to make the whole Evolution stateful
     // so that innovations created at the breeding stage can be added. Let's just record the innovations for the
     // current generation at the breeding stage only (like in Stanley's original paper).
     //recordOfInnovations: Seq[NEATGenome.Innovation],
-    indexOfSpecies: IntMap[NEATGenome.Genome],
+    indexOfSpecies: IntMap[Genome],
     lastEntirePopulationFitnesses: Queue[Double],
     speciesCompatibilityThreshold: List[Double])
-}
 
-trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
-
-  type A = NEATArchive.Archive
+  type A = Archive
 
   def numberSpeciesTarget: Int
   def speciesCompatibilityThreshold: Double
@@ -46,7 +44,7 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
   def speciesCompatibilityMin: Double
 
   def initialArchive(implicit rng: Random): A =
-    NEATArchive.Archive(
+    Archive(
       //0,
       //0,
       //Vector[NEATGenome.Innovation](),
@@ -55,8 +53,8 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
       List[Double](speciesCompatibilityThreshold))
 
   def archive(a: A, oldIndividuals: Population[G, P, F], offsprings: Population[G, P, F])(implicit rng: Random): A = {
-    val indivsBySpecies: IntMap[Seq[NEATGenome.Genome]] = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }
-    val newios: IntMap[NEATGenome.Genome] =
+    val indivsBySpecies: IntMap[Seq[Genome]] = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }
+    val newios: IntMap[Genome] =
       indivsBySpecies.map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) }
     val numberOfSpecies = newios.size
     val lastsct = a.speciesCompatibilityThreshold.head
@@ -64,7 +62,7 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
       if (numberOfSpecies < numberSpeciesTarget)
         lastsct - speciesCompatibilityMod
       else lastsct + speciesCompatibilityMod
-    NEATArchive.Archive(
+    Archive(
       //globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation.number }.max,
       /* recordOfInnovation contains the unique innovations of offsprings*/
       //recordOfInnovations = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation }.distinct,

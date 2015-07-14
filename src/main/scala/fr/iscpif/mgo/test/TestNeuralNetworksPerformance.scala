@@ -105,7 +105,7 @@ object TestNeuralNetworksPerformance {
     time("Activate", nnrd.outputState(nnrd.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
 
     println("-- Recurrent breeze --")
-    time("load breeze", DenseVector(0.0, 1.0, 2.0) * DenseVector(0.0, 1.0, 2.0).t)
+    time("Breeze loads stuff", DenseVector(0.0, 1.0, 2.0) * DenseVector(0.0, 1.0, 2.0).t)
     val breezeEdges = DenseMatrix(edgesMatrix: _*)
     time("Activate", {
       val finalstate = Iterator.iterate(DenseVector[Double](nodes.map { _ => rng.nextDouble() * 2 - 1 }: _*)) { s => breezeEdges * s }.drop(activations).next

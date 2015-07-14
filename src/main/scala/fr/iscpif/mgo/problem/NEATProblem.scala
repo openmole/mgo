@@ -22,7 +22,6 @@ import scala.util.Random
 import monocle.syntax._
 import fr.iscpif.mgo.tools.neuralnetwork._
 import collection.immutable.IntMap
-import fr.iscpif.mgo.genome.NEATGenome.Node
 
 import fr.iscpif.mgo.tools.time
 
@@ -31,7 +30,7 @@ import fr.iscpif.mgo.tools.time
  */
 trait NEATProblem extends Problem with NoPhenotype with NEATGenome with DoubleFitness {
 
-  type NN <: NeuralNetwork[Double, Double, Double]
+  type NN // <: NeuralNetwork[Any, Double, Double]
 
   def evaluate(phenotype: P, rng: Random): F = evaluateNet(createNet(phenotype)(rng))(rng)
 
@@ -40,25 +39,18 @@ trait NEATProblem extends Problem with NoPhenotype with NEATGenome with DoubleFi
     val nodes = phenotype.nodes.toVector.sortBy { case (index, node) => index }
     val nodesMap = IntMap.empty ++ nodes.map { case (index, _) => index }.toSeq.sorted.zipWithIndex
     createNet(
-      nodes.map { case (originalindex, node) => node.level },
+      nodes.map { case (_, node) => node },
       (inputNodesIndices ++ biasNodesIndices).map { nodesMap(_) },
       outputNodesIndices.map { nodesMap(_) },
-      phenotype.connectionGenes.filter { _.enabled }.map { cg => (nodesMap(cg.inNode), nodesMap(cg.outNode), cg.weight) },
-      activationFunction _,
-      IndexedSeq.fill(nodesMap.size)(neuronInitValue)
+      phenotype.connectionGenes.filter { _.enabled }.map { cg => (nodesMap(cg.inNode), nodesMap(cg.outNode), cg.weight) }
     )
   }
 
   def createNet(
-    _nodes: IndexedSeq[Double],
+    _nodes: IndexedSeq[Node],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
-    _edges: Seq[(Int, Int, Double)],
-    _activationfunction: Traversable[(Double, Double)] => Double,
-    _state: IndexedSeq[Double])(implicit rng: Random): NN
+    _edges: Seq[(Int, Int, Double)])(implicit rng: Random): NN
 
   def evaluateNet(n: NN)(implicit rng: Random): Double
-
-  def activationFunction(inputsAndWeights: Traversable[(Double, Double)]): Double
-  def neuronInitValue: Double
 }

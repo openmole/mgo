@@ -340,6 +340,19 @@ object ActivationFunction {
       else if (x > 0) 1
       else h0
     }
+  def gaussian: Traversable[(Double, Double)] => Double = inputsAndWeights => math.exp(weightedSum(inputsAndWeights))
+  def sin: Traversable[(Double, Double)] => Double = inputsAndWeights => math.sin(weightedSum(inputsAndWeights))
+  def cos: Traversable[(Double, Double)] => Double = inputsAndWeights => math.cos(weightedSum(inputsAndWeights))
+  def linear: Traversable[(Double, Double)] => Double = inputsAndWeights => weightedSum(inputsAndWeights)
+  def abs: Traversable[(Double, Double)] => Double = inputsAndWeights => math.abs(weightedSum(inputsAndWeights))
+  def absroot: Traversable[(Double, Double)] => Double = inputsAndWeights => {
+    val x = weightedSum(inputsAndWeights)
+    if (x < 0)
+      -math.sqrt(math.abs(x))
+    else
+      math.sqrt(math.abs(x))
+  }
+  def square: Traversable[(Double, Double)] => Double = inputsAndWeights => math.pow(weightedSum(inputsAndWeights), 2)
 
   def weightedSum(inputsAndWeights: Traversable[(Double, Double)]): Double =
     inputsAndWeights.foldLeft(0.0) { case (sum, (input, weight)) => sum + (input * weight) }
