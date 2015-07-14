@@ -37,6 +37,7 @@ package object mgo {
     def untilConverged(f: S => Unit) = i.drop(1).dropWhile { s => f(s); !s.terminated }.next
   }
 
+  //TODO: unused rng and newRNG functions?
   object rng {
     implicit def rng = newRNG
   }

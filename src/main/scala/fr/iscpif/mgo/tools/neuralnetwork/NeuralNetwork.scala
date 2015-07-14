@@ -207,7 +207,7 @@ trait HeterogeneousActivationFunction[S, W] {
 object NeuralNetwork {
 
   /**Create a neural network without cycles. This function makes no check on the topology of the graph (e.g. absence of cycles).*/
-  def feedforwardNetwork[N, S, W](
+  def feedforwardSparse[N, S, W](
     _nodes: IndexedSeq[N],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
@@ -226,7 +226,7 @@ object NeuralNetwork {
     }
   }
 
-  def feedforwardNetwork[N, S, W](
+  def feedforwardSparse[N, S, W](
     _nodes: IndexedSeq[N],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
@@ -245,7 +245,27 @@ object NeuralNetwork {
     }
   }
 
-  def recurrentNetwork[N, S, W](
+  /**Create a neural network without cycles. This function makes no check on the topology of the graph (e.g. absence of cycles).*/
+  def feedforwardDense[N, S, W](
+    _nodes: IndexedSeq[N],
+    _inputnodes: IndexedSeq[Int],
+    _outputnodes: IndexedSeq[Int],
+    _edges: Vector[Vector[W]],
+    _activationfunction: Traversable[(S, W)] => S,
+    _state: IndexedSeq[S]): NeuralNetwork[N, S, W] with Feedforward[S, W] with HomogeneousActivationFunction[S, W] = {
+    require((_edges.length == _nodes.length) && _edges.forall(row => row.length == _nodes.length), "_edges matrix size doesn't conform to _nodes size")
+    require(_inputnodes.forall { _ < _nodes.length }, "_inputnodes refer to nodes whose indices are bigger than _nodes")
+    require(_outputnodes.forall { _ < _nodes.length }, "_outputnodes refer to nodes whose indices are bigger than _nodes")
+    new NeuralNetwork[N, S, W] with Feedforward[S, W] with HomogeneousActivationFunction[S, W] {
+      val network = Network.directedDense(_nodes, _edges)
+      val state: Vector[S] = _state.toVector
+      val inputNeurons: Vector[Int] = _inputnodes.toVector
+      val outputNeurons: Vector[Int] = _outputnodes.toVector
+      val activationFunction = _activationfunction
+    }
+  }
+
+  def recurrentSparse[N, S, W](
     _nodes: IndexedSeq[N],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
@@ -266,7 +286,7 @@ object NeuralNetwork {
     }
   }
 
-  def recurrentNetwork[N, S, W](
+  def recurrentSparse[N, S, W](
     _nodes: IndexedSeq[N],
     _inputnodes: IndexedSeq[Int],
     _outputnodes: IndexedSeq[Int],
@@ -279,6 +299,27 @@ object NeuralNetwork {
     require(_edges.forall { case (u, v, _) => (u < _nodes.length) && (v < _nodes.length) }, "_edges refer to nodes whose indices are bigger than _nodes.length")
     new NeuralNetwork[N, S, W] with Recurrent[S, W] with HeterogeneousActivationFunction[S, W] {
       val network = Network.directedSparse(_nodes, _edges)
+      val state: Vector[S] = _state.toVector
+      val inputNeurons: Vector[Int] = _inputnodes.toVector
+      val outputNeurons: Vector[Int] = _outputnodes.toVector
+      val activationFunction = _activationfunction
+      def change(newstate: S, oldstate: S): Double = _change(newstate, oldstate)
+    }
+  }
+
+  def recurrentDense[N, S, W](
+    _nodes: IndexedSeq[N],
+    _inputnodes: IndexedSeq[Int],
+    _outputnodes: IndexedSeq[Int],
+    _edges: Vector[Vector[W]],
+    _activationfunction: Traversable[(S, W)] => S,
+    _change: (S, S) => Double,
+    _state: IndexedSeq[S]): NeuralNetwork[N, S, W] with Recurrent[S, W] with HomogeneousActivationFunction[S, W] = {
+    require((_edges.length == _nodes.length) && _edges.forall(row => row.length == _nodes.length), "_edges matrix size doesn't conform to _nodes size")
+    require(_inputnodes.forall { _ < _nodes.length }, "_inputnodes refer to nodes whose indices are bigger than _nodes.length")
+    require(_outputnodes.forall { _ < _nodes.length }, "_outputnodes refer to nodes whose indices are bigger than _nodes.length")
+    new NeuralNetwork[N, S, W] with Recurrent[S, W] with HomogeneousActivationFunction[S, W] {
+      val network = Network.directedDense(_nodes, _edges)
       val state: Vector[S] = _state.toVector
       val inputNeurons: Vector[Int] = _inputnodes.toVector
       val outputNeurons: Vector[Int] = _outputnodes.toVector
@@ -299,6 +340,19 @@ object ActivationFunction {
       else if (x > 0) 1
       else h0
     }
+  def gaussian: Traversable[(Double, Double)] => Double = inputsAndWeights => math.exp(weightedSum(inputsAndWeights))
+  def sin: Traversable[(Double, Double)] => Double = inputsAndWeights => math.sin(weightedSum(inputsAndWeights))
+  def cos: Traversable[(Double, Double)] => Double = inputsAndWeights => math.cos(weightedSum(inputsAndWeights))
+  def linear: Traversable[(Double, Double)] => Double = inputsAndWeights => weightedSum(inputsAndWeights)
+  def abs: Traversable[(Double, Double)] => Double = inputsAndWeights => math.abs(weightedSum(inputsAndWeights))
+  def absroot: Traversable[(Double, Double)] => Double = inputsAndWeights => {
+    val x = weightedSum(inputsAndWeights)
+    if (x < 0)
+      -math.sqrt(math.abs(x))
+    else
+      math.sqrt(math.abs(x))
+  }
+  def square: Traversable[(Double, Double)] => Double = inputsAndWeights => math.pow(weightedSum(inputsAndWeights), 2)
 
   def weightedSum(inputsAndWeights: Traversable[(Double, Double)]): Double =
     inputsAndWeights.foldLeft(0.0) { case (sum, (input, weight)) => sum + (input * weight) }

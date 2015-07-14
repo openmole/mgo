@@ -18,10 +18,10 @@
 package fr.iscpif.mgo.breed
 
 import fr.iscpif.mgo._
+import scala.annotation.tailrec
 import util.Random
 import fr.iscpif.mgo.tools.StateMonad
 import fr.iscpif.mgo.genome.NEATGenome
-import fr.iscpif.mgo.genome.NEATGenome._
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 import collection.immutable.Map
@@ -34,8 +34,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
 
   type BreedingState = (Int, //global innovation number
   Int, //global node number
-  Seq[NEATGenome.Innovation], //record of innovations
-  IntMap[NEATGenome.Genome]) //index of species
+  Seq[Innovation], //record of innovations
+  IntMap[Genome]) //index of species
 
   def interSpeciesMatingProb: Double
 
@@ -74,6 +74,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
 
   def initialWeight(implicit rng: Random): Double = rng.nextGaussian() * mutationWeightSigma
 
+  def useSpeciesHint: Boolean
+
   lazy val initialGenome: Genome = minimalGenome
 
   def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Seq[G] = {
@@ -81,9 +83,11 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     val (globalInnovationNumber, globalNodeNumber) = population.foldLeft((0, 0)) {
       case (acc, indiv) =>
         val (gin, gnn) = acc
-        (max(gin, indiv.genome.connectionGenes.map {
+        val newgin = if (indiv.genome.connectionGenes.isEmpty) 0 else max(gin, indiv.genome.connectionGenes.map {
           _.innovation
-        }.max), max(gnn, indiv.genome.lastNodeId))
+        }.max)
+        val newgnn = max(gnn, indiv.genome.lastNodeId)
+        (newgin, newgnn)
     }
 
     if (population.isEmpty) Seq(initialGenome)
@@ -155,6 +159,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     StateMonad[Genome, BreedingState]({
       case (gin, gnn, roi, ios) =>
         val (newGenome, newios) = setSpecies(g, ios, archive.speciesCompatibilityThreshold.head)
+        //println(s"indiv attributed to species ${newGenome.species}")
         (newGenome, (gin, gnn, roi, newios))
     })
 
@@ -191,16 +196,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     size: Int)(implicit rng: Random): Iterator[(Individual[G, P, F], Individual[G, P, F])] = {
     val indivsBySpecies: Map[Int, Seq[Individual[G, P, F]]] =
       population.toIndividuals.groupBy { indiv => indiv.genome.species }
-    val speciesFitnesses: Seq[(Int, Double)] = indivsBySpecies.iterator.map {
-      case (sp, indivs) => (sp, indivs.map {
-        _.fitness
-      }.sum / indivs.size)
-    }.toSeq
-    val sumOfSpeciesFitnesses: Double = speciesFitnesses.map {
-      _._2
-    }.sum
-    val speciesOffsprings: Seq[(Int, Int)] = speciesFitnesses.map { case (sp, f) => (sp, round(f * size / sumOfSpeciesFitnesses).toInt) }
-    speciesOffsprings.flatMap {
+    speciesOffsprings(indivsBySpecies, size).flatMap {
       case (species, nb) =>
         Iterator.fill(nb) {
           val nparents = indivsBySpecies(species).length
@@ -212,10 +208,16 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
               val nindivsOtherSpecies = indivsBySpecies(otherSpecies).length
               indivsBySpecies(otherSpecies)(rng.nextInt(nindivsOtherSpecies))
             } else indivsBySpecies(species)(rng.nextInt(nparents))
+          //println(s"sampling species (${p1.genome.species}, ${p2.genome.species})")
           (p1, p2)
         }
     }.toIterator
   }
+
+  /** Returns tuples (species, number of offsprings) */
+  def speciesOffsprings(
+    indivsBySpecies: Map[Int, Seq[Individual[G, P, F]]],
+    totalOffsprings: Int): Seq[(Int, Int)]
 
   // //returns new node values if and two new nodes numbers if already present
   // def dontOverride(
@@ -288,7 +290,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
       }
     }: _*)
 
-    //if (newconnectiongenes.exists(cg1 => newconnectiongenes.exists(cg2 => (cg1.outNode == cg2.inNode) && (cg2.outNode == cg1.inNode)))) throw new RuntimeException(s"LOOOOOOP (crossover) $newconnectiongenes $newnodes\n$i1\n$i2")
     if (newconnectiongenes.exists(cg1 => {
       if (newnodes(cg1.inNode).level >= newnodes(cg1.outNode).level) {
         println(cg1)
@@ -317,28 +318,78 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
    * Returns a list of aligned connection genes. The first two elements of each tuple give aligned genes, (or None for unmatching genes) and the third is set to 0 when the genes are
    * aligned, 1 for an excess genes, and 2 for disjoint genes
    */
-  def alignGenomes(
+  //  def alignGenomes(
+  //    cg1: Seq[ConnectionGene],
+  //    cg2: Seq[ConnectionGene]): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
+  //    if (cg1.isEmpty && cg2.isEmpty)
+  //      List.empty
+  //    else if (cg1.isEmpty)
+  //      (None, Some(cg2.head), Disjoint) :: alignGenomes(Seq.empty, cg2.tail)
+  //    else if (cg2.isEmpty)
+  //      (Some(cg1.head), None, Disjoint) :: alignGenomes(cg1.tail, Seq.empty)
+  //    else if (cg1.head.innovation == cg2.head.innovation)
+  //      (Some(cg1.head), Some(cg2.head), Aligned) :: alignGenomes(cg1.tail, cg2.tail)
+  //    else if (cg1.head.innovation < cg2.head.innovation)
+  //      (Some(cg1.head), None, Excess) :: alignGenomes(cg1.tail, cg2)
+  //    else
+  //      (None, Some(cg2.head), Excess) :: alignGenomes(cg1, cg2.tail)
+  //  }
+
+  @tailrec final def alignGenomes(
     cg1: Seq[ConnectionGene],
-    cg2: Seq[ConnectionGene]): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
+    cg2: Seq[ConnectionGene],
+    acc: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = List.empty): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
     if (cg1.isEmpty && cg2.isEmpty)
-      List.empty
+      acc
     else if (cg1.isEmpty)
-      (None, Some(cg2.head), Disjoint) :: alignGenomes(Seq.empty, cg2.tail)
+      alignGenomes(Seq.empty, cg2.tail,
+        (None, Some(cg2.head), Disjoint) :: acc)
     else if (cg2.isEmpty)
-      (Some(cg1.head), None, Disjoint) :: alignGenomes(cg1.tail, Seq.empty)
+      alignGenomes(cg1.tail, Seq.empty,
+        (Some(cg1.head), None, Disjoint) :: acc)
     else if (cg1.head.innovation == cg2.head.innovation)
-      (Some(cg1.head), Some(cg2.head), Aligned) :: alignGenomes(cg1.tail, cg2.tail)
+      alignGenomes(cg1.tail, cg2.tail,
+        (Some(cg1.head), Some(cg2.head), Aligned) :: acc)
     else if (cg1.head.innovation < cg2.head.innovation)
-      (Some(cg1.head), None, Excess) :: alignGenomes(cg1.tail, cg2)
+      alignGenomes(cg1.tail, cg2,
+        (Some(cg1.head), None, Excess) :: acc)
     else
-      (None, Some(cg2.head), Excess) :: alignGenomes(cg1, cg2.tail)
+      alignGenomes(cg1, cg2.tail,
+        (None, Some(cg2.head), Excess) :: acc)
   }
+
+  //  @tailrec final def alignGenomes(
+  //    cg1: List[ConnectionGene],
+  //    cg2: List[ConnectionGene],
+  //    acc: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = List.empty): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
+  //    (cg1, cg2) match {
+  //      case (List.empty, List.empty) => acc
+  //      case (List.empty, cg2head :: cg2tail) =>
+  //    }
+  //    if (cg1.isEmpty && cg2.isEmpty)
+  //      acc
+  //    else if (cg1.isEmpty)
+  //      alignGenomes(Seq.empty, cg2.tail,
+  //        (None, Some(cg2.head), Disjoint) :: acc)
+  //    else if (cg2.isEmpty)
+  //      alignGenomes(cg1.tail, Seq.empty,
+  //        (Some(cg1.head), None, Disjoint) :: acc)
+  //    else if (cg1.head.innovation == cg2.head.innovation)
+  //      alignGenomes(cg1.tail, cg2.tail,
+  //        (Some(cg1.head), Some(cg2.head), Aligned) :: acc)
+  //    else if (cg1.head.innovation < cg2.head.innovation)
+  //      alignGenomes(cg1.tail, cg2,
+  //        (Some(cg1.head), None, Excess) :: acc)
+  //    else
+  //      alignGenomes(cg1, cg2.tail,
+  //        (None, Some(cg2.head), Excess) :: acc)
+  //  }
 
   def mutate(
     genome: Genome,
     state: BreedingState)(implicit rng: Random): (Genome, BreedingState) = {
     val r = rng.nextDouble()
-    if (r < mutationAddNodeProb) {
+    if (genome.connectionGenes.nonEmpty && r < mutationAddNodeProb) {
       mutateAddNode(genome, state)
     } else if (r < mutationAddNodeProb + mutationAddLinkProb) {
       mutateAddLink(genome, state)
@@ -383,7 +434,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
           }
 
         val newgene =
-          NEATGenome.ConnectionGene(
+          ConnectionGene(
             inNode = u,
             outNode = v,
             weight = initialWeight,
@@ -391,7 +442,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
             innovation = thisInnov.innovnum)
 
         val newgenome =
-          NEATGenome.Genome(
+          Genome(
             connectionGenes =
               genome.connectionGenes :+ newgene,
             nodes = genome.nodes,
@@ -412,28 +463,30 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     val picked: Int = rng.nextInt(genome.connectionGenes.length)
     val pickedcg = genome.connectionGenes(picked)
 
+    val newNode = pickNewHiddenNode((genome.nodes(pickedcg.inNode).level + genome.nodes(pickedcg.outNode).level) / 2.0)
+
     //Look for a NodeInnovation between nodes u and v in the record
     val sameInRoi: Option[NodeInnovation] = roi.collectFirst {
-      case NodeInnovation(a, b, c, pickedcg.inNode, pickedcg.outNode) => NodeInnovation(a, b, c, pickedcg.inNode, pickedcg.outNode)
+      case NodeInnovation(a, b, c, `newNode`, pickedcg.inNode, pickedcg.outNode) => NodeInnovation(a, b, c, newNode, pickedcg.inNode, pickedcg.outNode)
     }
 
     val thisInnov =
       sameInRoi match {
-        case None => NodeInnovation(gin + 1, gin + 2, gnn + 1, pickedcg.inNode, pickedcg.outNode)
+        case None => NodeInnovation(gin + 1, gin + 2, gnn + 1, newNode, pickedcg.inNode, pickedcg.outNode)
         case Some(x) => x
       }
 
     val newcg1: ConnectionGene =
       ConnectionGene(
         inNode = pickedcg.inNode,
-        outNode = thisInnov.newnode,
+        outNode = thisInnov.newnodeId,
         weight = 1,
         enabled = true,
         innovation = thisInnov.innovnum1)
 
     val newcg2: ConnectionGene =
       ConnectionGene(
-        inNode = thisInnov.newnode,
+        inNode = thisInnov.newnodeId,
         outNode = pickedcg.outNode,
         weight = pickedcg.weight,
         enabled = true,
@@ -444,19 +497,21 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
       pickedcg.copy(enabled = false)
     ) ++ Vector(newcg1, newcg2)
 
-    val newnodes = genome.nodes + (thisInnov.newnode -> HiddenNode(level = (genome.nodes(pickedcg.inNode).level + genome.nodes(pickedcg.outNode).level) / 2.0))
+    val newnodes = genome.nodes + (thisInnov.newnodeId -> newNode)
 
     val newgenome = Genome(
       connectionGenes = newconnectiongenes,
       nodes = newnodes,
       species = genome.species,
-      lastNodeId = thisInnov.newnode)
+      lastNodeId = thisInnov.newnodeId)
 
     val newroi =
       roi :+ thisInnov
 
     (newgenome, (gin + 2, gnn + 1, newroi, ios))
   }
+
+  def pickNewHiddenNode(level: Double)(implicit rng: Random): Node
 
   def mutateWeights(
     genome: Genome)(implicit rng: Random): Genome =
@@ -546,24 +601,26 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     indexOfSpecies: IntMap[G],
     speciesCompatibilityThreshold: Double): (Genome, IntMap[G]) = {
     // Find a genome in the index of species which is sufficiently similar to the current genome.
-    // Start by checking if the offspring is compatible with the parent species (currently set in the species member of the offspring)
-    //if (genomesDistance(genome, indexOfSpecies(genome.species)) < speciesCompatibilityThreshold)
-    //  (genome, indexOfSpecies)
-    //else
-    indexOfSpecies.find {
-      case (sindex, prototype) => genomesDistance(prototype, genome) < speciesCompatibilityThreshold
-    } match {
-      //If found, attribute the species to the current genome
-      case Some((species, _)) =>
-        (genome.copy(species = species), indexOfSpecies)
-      //Otherwise, create a new species with the current genome as the prototype
-      case None =>
-        val newspecies = indexOfSpecies.lastKey + 1
-        val newgenome = genome.copy(species = newspecies)
-        val newios = indexOfSpecies + ((newspecies, newgenome))
-        (newgenome, newios)
+    // The following code starts by checking if the offspring is compatible with the parent species (currently set in the species member of the offspring)
+    // There is a problem when used with the adaptive species compatibility threshold: the number of species doesn't decrease since most of the time,
+    // offsprings get attributed their parents species.
+    if (useSpeciesHint && genomesDistance(genome, indexOfSpecies(genome.species)) < speciesCompatibilityThreshold)
+      (genome, indexOfSpecies)
+    else
+      indexOfSpecies.find {
+        case (sindex, prototype) => genomesDistance(prototype, genome) < speciesCompatibilityThreshold
+      } match {
+        //If found, attribute the species to the current genome
+        case Some((species, _)) =>
+          (genome.copy(species = species), indexOfSpecies)
+        //Otherwise, create a new species with the current genome as the prototype
+        case None =>
+          val newspecies = indexOfSpecies.lastKey + 1
+          val newgenome = genome.copy(species = newspecies)
+          val newios = indexOfSpecies + ((newspecies, newgenome))
+          (newgenome, newios)
 
-    }
+      }
   }
 
   def genomesDistance(
@@ -572,26 +629,45 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     val alignment = alignGenomes(g1.connectionGenes, g2.connectionGenes)
     val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(alignment)
     val longestGenomeSize: Double = max(g1.connectionGenes.length, g2.connectionGenes.length).toDouble
-    val res = (genDistDisjointCoeff * excess / longestGenomeSize) +
-      (genDistExcessCoeff * disjoint / longestGenomeSize) +
-      (genDistWeightDiffCoeff * weightdiff / matchingGenes.toDouble)
-    //    println("#" ++ g1.toString)
-    //    println("#" ++ g2.toString)
-    //    println("#" ++ res.toString)
-    res
+    if (longestGenomeSize == 0) 0.0
+    else {
+      val structuralDistance = (genDistDisjointCoeff * excess / longestGenomeSize) +
+        (genDistExcessCoeff * disjoint / longestGenomeSize)
+      if (matchingGenes == 0)
+        structuralDistance
+      else
+        structuralDistance + (genDistWeightDiffCoeff * weightdiff / matchingGenes.toDouble)
+    }
   }
 
-  def distanceFactors(alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)]): (Int, Int, Double, Int) =
+  //  def distanceFactors(alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)]): (Int, Int, Double, Int) =
+  //    alignment match {
+  //      case List() => (0, 0, 0, 0)
+  //      case head :: tail =>
+  //        val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(tail)
+  //        head match {
+  //          case (Some(cg1), Some(cg2), Aligned) => (excess, disjoint, weightdiff + abs(cg1.weight - cg2.weight), matchingGenes + 1)
+  //          case (_, _, Disjoint) => (excess, disjoint + 1, weightdiff, matchingGenes)
+  //          case (_, _, Excess) => (excess + 1, disjoint, weightdiff, matchingGenes)
+  //          case _ => throw new RuntimeException(s"Improper alignment: $head") //this case should never happen
+  //        }
+  //
+  //    }
+
+  @tailrec final def distanceFactors(
+    alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)],
+    acc: (Int, Int, Double, Int) = (0, 0, 0.0, 0)): (Int, Int, Double, Int) =
     alignment match {
-      case List() => (0, 0, 0, 0)
+      case List() => acc
       case head :: tail =>
-        val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(tail)
-        head match {
+        val (excess, disjoint, weightdiff, matchingGenes) = acc //distanceFactors(tail)
+        val newacc = head match {
           case (Some(cg1), Some(cg2), Aligned) => (excess, disjoint, weightdiff + abs(cg1.weight - cg2.weight), matchingGenes + 1)
           case (_, _, Disjoint) => (excess, disjoint + 1, weightdiff, matchingGenes)
           case (_, _, Excess) => (excess + 1, disjoint, weightdiff, matchingGenes)
           case _ => throw new RuntimeException(s"Improper alignment: $head") //this case should never happen
         }
+        distanceFactors(tail, newacc)
 
     }
 

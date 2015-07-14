@@ -37,10 +37,10 @@ trait Network[N, E] {
     edgeAttr: E => Seq[(String, String)],
     additionalStatements: String): String =
     s"""$dotGraphType $graphId {
-${additionalStatements.lines.map { "  " ++ _ }.mkString { "\n" }}
-${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
-${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
-}"""
+       |${additionalStatements.lines.map { "  " ++ _ }.mkString { "\n" }}
+       |${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
+       |${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
+       |}""".stripMargin
 
   def toDotNodes(nodeAttr: N => Seq[(String, String)]): String =
     iternodes.map {
@@ -100,5 +100,12 @@ object Network {
       val mapout = SparseTopology.mapoutFrom(_edges)
     }
 
+  def directedDense[N, E](
+    _nodes: IndexedSeq[N],
+    _edges: Vector[Vector[E]]): Network[N, E] with DirectedEdges[E] with DenseTopology[E] =
+    new Network[N, E] with DirectedEdges[E] with DenseTopology[E] {
+      val nodes = _nodes.toVector
+      val matrix = _edges
+    }
 }
 

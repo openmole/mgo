@@ -21,7 +21,6 @@ import fr.iscpif.mgo._
 import util.Random
 import fr.iscpif.mgo.genome.RandomGenome
 import fr.iscpif.mgo.genome.NEATGenome
-import fr.iscpif.mgo.genome.NEATGenome._
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 

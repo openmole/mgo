@@ -21,12 +21,12 @@ import collection.immutable.IntMap
 
 trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
   lazy val minimalGenome: G =
-    NEATGenome.Genome(
+    Genome(
       connectionGenes =
         inputNodesIndices.flatMap { u => outputNodesIndices.map { (u, _) } }
           .zipWithIndex.map {
             case ((u, v), i) =>
-              NEATGenome.ConnectionGene(
+              ConnectionGene(
                 inNode = u,
                 outNode = v,
                 weight = 0,
@@ -35,10 +35,14 @@ trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
           },
       nodes =
         IntMap(
-          inputNodesIndices.map { _ -> NEATGenome.InputNode() }
-            ++ biasNodesIndices.map { _ -> NEATGenome.BiasNode() }
-            ++ outputNodesIndices.map { _ -> NEATGenome.OutputNode() }.toSeq: _*),
+          inputNodesIndices.map { _ -> newInputNode }
+            ++ biasNodesIndices.map { _ -> newBiasNode }
+            ++ outputNodesIndices.map { _ -> newOutputNode }.toSeq: _*),
       species = 0,
       lastNodeId = inputNodes + biasNodes + outputNodes - 1
     )
+
+  def newInputNode: InputNode
+  def newBiasNode: BiasNode
+  def newOutputNode: OutputNode
 }

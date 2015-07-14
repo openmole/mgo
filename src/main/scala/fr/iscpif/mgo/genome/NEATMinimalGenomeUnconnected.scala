@@ -17,20 +17,22 @@
 
 package fr.iscpif.mgo.genome
 
-import scala.util.Random
 import collection.immutable.IntMap
 
 trait NEATMinimalGenomeUnconnected <: MinimalGenome with NEATGenome {
   lazy val minimalGenome: G =
-    NEATGenome.Genome(
-      connectionGenes = Seq[NEATGenome.ConnectionGene](),
+    Genome(
+      connectionGenes = Seq[ConnectionGene](),
       nodes =
         IntMap(
-          inputNodesIndices.map { _ -> NEATGenome.InputNode() }
-            ++ biasNodesIndices.map { _ -> NEATGenome.BiasNode() }
-            ++ outputNodesIndices.map { _ -> NEATGenome.OutputNode() }.toSeq: _*),
+          inputNodesIndices.map { _ -> newInputNode }
+            ++ biasNodesIndices.map { _ -> newBiasNode }
+            ++ outputNodesIndices.map { _ -> newOutputNode }.toSeq: _*),
       species = 0,
       lastNodeId = inputNodes + biasNodes + outputNodes - 1
     )
 
+  def newInputNode: InputNode
+  def newBiasNode: BiasNode
+  def newOutputNode: OutputNode
 }
