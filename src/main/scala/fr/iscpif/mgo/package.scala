@@ -96,6 +96,7 @@ package object mgo {
   type ConservativeFIFOAggregatedElitism = elitism.ConservativeFIFOAggregatedElitism
   type DiversityAggregatedElitism = elitism.DiversityAggregatedElitism
   type Elitism = elitism.Elitism
+  type NaNRemoval = elitism.NaNRemoval
   type NEATElitism = elitism.NEATElitism
   type KeepOffspringElitism = elitism.KeepOffspringElitism
   type IndividualFilter = elitism.IndividualFilter
