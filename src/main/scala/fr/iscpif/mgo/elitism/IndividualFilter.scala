@@ -13,11 +13,15 @@ import fr.iscpif.mgo.genome.G
  */
 trait IndividualFilter extends G with F with P {
 
+  type FILTER = (Population[G, P, F]) => Population[G, P, F]
+  def filters = Seq.empty[FILTER]
+
   /**
    * Filter the individuals
    *
    * @param population the set of evaluated individuals
    * @return the filtrated individuals
    */
-  def filter(population: Population[G, P, F]) = population
+  def filter(population: Population[G, P, F]) =
+    filters.foldLeft(population)((p, f) => f(p))
 }

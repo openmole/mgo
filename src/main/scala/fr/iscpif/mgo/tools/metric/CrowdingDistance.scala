@@ -40,23 +40,22 @@ object CrowdingDistance {
       d: Seq[Double] =>
         val grouped: Map[Double, Seq[Int]] =
           (d.zipWithIndex).groupBy { case (d, _) => d }.mapValues { _.map { case (_, i) => i } }
+
         val sortedDistances = grouped.keys.toSeq.sorted
 
         type Crowding = (Double, Int)
 
         def groupCrowding(group: Seq[Int], c: Double): List[(Double, Int)] = {
-          val randomIndice = rng.nextInt(group.size)
-          (c -> group(randomIndice)) :: group.patch(randomIndice, Seq.empty, 1).toList.map { t => 0.0 -> t }
+          val randomIndex = rng.nextInt(group.size)
+          (c -> group(randomIndex)) :: group.patch(randomIndex, Seq.empty, 1).toList.map { t => 0.0 -> t }
         }
 
         val res: Seq[Crowding] =
           if (sortedDistances.size <= 2)
-            sortedDistances.flatMap(d => groupCrowding(grouped(d), Double.PositiveInfinity))
+            sortedDistances.flatMap {
+              d => groupCrowding(grouped(d), Double.PositiveInfinity)
+            }
           else {
-            //val head = grouped.head._1
-            //val last = grouped.last._1
-            //val diff = last - head
-
             def crowding(distances: List[Double], acc: List[Crowding]): List[Crowding] =
               distances match {
                 case d1 :: d2 :: Nil =>

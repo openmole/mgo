@@ -2,7 +2,7 @@ organization := "fr.iscpif"
 
 name := "mgo"
 
-scalaVersion := "2.11.5"
+scalaVersion := "2.11.7"
 
 scalacOptions in (Compile,doc) := Seq("-groups", "-implicits", "-diagrams","-diagrams-max-classes","20")
 
@@ -16,7 +16,7 @@ resolvers ++= Seq(
 
 libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-core" % "0.4.3"
 
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.4.1"
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5"
 
 val monocleVersion = "1.0.1"
 
