@@ -18,9 +18,11 @@
 package fr.iscpif.mgo.genome
 
 import collection.immutable.IntMap
+import util.Random
+import math._
 
 trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
-  lazy val minimalGenome: G =
+  def minimalGenome(implicit rng: Random): G =
     Genome(
       connectionGenes =
         inputNodesIndices.flatMap { u => outputNodesIndices.map { (u, _) } }
@@ -29,7 +31,7 @@ trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
               ConnectionGene(
                 inNode = u,
                 outNode = v,
-                weight = 0,
+                weight = max(min(mutationWeightHardMax, rng.nextGaussian() * mutationWeightSigma), mutationWeightHardMin),
                 enabled = true,
                 innovation = i)
           },
@@ -45,4 +47,9 @@ trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
   def newInputNode: InputNode
   def newBiasNode: BiasNode
   def newOutputNode: OutputNode
+
+  def mutationWeightHardMin: Double
+  def mutationWeightHardMax: Double
+  def mutationWeightSigma: Double
+
 }

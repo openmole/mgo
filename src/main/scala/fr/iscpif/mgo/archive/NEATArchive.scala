@@ -59,9 +59,11 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
     val numberOfSpecies = newios.size
     val lastsct = a.speciesCompatibilityThreshold.head
     val newsct =
-      if (numberOfSpecies < numberSpeciesTarget)
-        lastsct - speciesCompatibilityMod
-      else lastsct + speciesCompatibilityMod
+      max(
+        speciesCompatibilityMin,
+        if (numberOfSpecies < numberSpeciesTarget)
+          lastsct - speciesCompatibilityMod
+        else lastsct + speciesCompatibilityMod)
     Archive(
       //globalInnovationNumber = offsprings.content.flatMap { _.genome.connectionGenes }.map { _.innovation.number }.max,
       /* recordOfInnovation contains the unique innovations of offsprings*/
