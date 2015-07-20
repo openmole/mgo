@@ -41,4 +41,6 @@ trait Problem extends Evolution {
 
   def evolve(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[EvolutionState] = evolve(population, archive, express _, evaluate _)
 
+  def evolve(population: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): Iterator[EvolutionState] = evolve(population, offspring, express _, evaluate _)
+
 }
