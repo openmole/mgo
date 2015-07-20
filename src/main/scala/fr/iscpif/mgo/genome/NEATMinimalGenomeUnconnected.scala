@@ -18,9 +18,13 @@
 package fr.iscpif.mgo.genome
 
 import collection.immutable.IntMap
+import scala.util.Random
 
 trait NEATMinimalGenomeUnconnected <: MinimalGenome with NEATGenome {
-  lazy val minimalGenome: G =
+
+  def minimalGenome(implicit rng: Random): G = mg
+
+  lazy val mg: G =
     Genome(
       connectionGenes = Seq[ConnectionGene](),
       nodes =

@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo.genome
 
+import util.Random
+
 trait MinimalGenome <: G {
-  def minimalGenome(): G
+  def minimalGenome(implicit rng: Random): G
 }

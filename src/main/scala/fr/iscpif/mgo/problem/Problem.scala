@@ -35,6 +35,10 @@ trait Problem extends Evolution {
    */
   def evaluate(phenotype: P, rng: Random): F
 
-  def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(express, evaluate)
+  def evolve(implicit rng: Random): Iterator[EvolutionState] = evolve(express _, evaluate _)
+
+  def evolve(population: Population[G, P, F])(implicit rng: Random): Iterator[EvolutionState] = evolve(population, express _, evaluate _)
+
+  def evolve(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[EvolutionState] = evolve(population, archive, express _, evaluate _)
 
 }

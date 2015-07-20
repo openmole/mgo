@@ -82,6 +82,18 @@ trait Evolution extends Termination
   }
 
   /**
+   * Run the evolutionary algorithm
+   * @param population the initial individuals
+   * @param expression the genome expression
+   * @param evaluation the fitness evaluator
+   * @return an iterator over the states of the evolution
+   */
+  def evolve(population: Population[G, P, F], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
+    val archive = initialArchive
+    evolve(population, archive, expression, evaluation)
+  }
+
+  /**
    * Evolve one step
    *
    * @param population the current population

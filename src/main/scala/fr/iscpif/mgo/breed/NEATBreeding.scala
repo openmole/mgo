@@ -76,8 +76,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
 
   def useSpeciesHint: Boolean
 
-  lazy val initialGenome: Genome = minimalGenome
-
   def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Seq[G] = {
 
     val (globalInnovationNumber, globalNodeNumber) = population.foldLeft((0, 0)) {
@@ -90,7 +88,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
         (newgin, newgnn)
     }
 
-    if (population.isEmpty) Seq(initialGenome)
+    if (population.isEmpty) Vector.fill(size)(minimalGenome)
     else {
       val parents = selection(population, archive, size).toList
 
