@@ -22,6 +22,8 @@ import fr.iscpif.mgo.genome.MinimalGenome
 import fr.iscpif.mgo.problem.NEATProblem
 import fr.iscpif.mgo.tools.neuralnetwork.ActivationFunction
 
+import fr.iscpif.mgo.genome.NEATGenome._
+
 import util.Random
 
 /**
@@ -38,7 +40,7 @@ trait HyperNEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchi
 
   def pickActivationFunction(implicit rng: Random): ACTIVF = cppnActivationFunctions(rng.nextInt(cppnActivationFunctions.length))
 
-  override def pickNewHiddenNode(level: Double)(implicit rng: Random): Node =
+  override def pickNewHiddenNode(level: Double)(implicit rng: Random): HiddenNode =
     HiddenNode(
       pickActivationFunction,
       level)

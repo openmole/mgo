@@ -32,7 +32,7 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
     // so that innovations created at the breeding stage can be added. Let's just record the innovations for the
     // current generation at the breeding stage only (like in Stanley's original paper).
     //recordOfInnovations: Seq[NEATGenome.Innovation],
-    indexOfSpecies: IntMap[Genome],
+    indexOfSpecies: IntMap[G],
     lastEntirePopulationFitnesses: Queue[Double],
     speciesCompatibilityThreshold: List[Double])
 
@@ -53,8 +53,8 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
       List[Double](speciesCompatibilityThreshold))
 
   def archive(a: A, oldIndividuals: Population[G, P, F], offsprings: Population[G, P, F])(implicit rng: Random): A = {
-    val indivsBySpecies: IntMap[Seq[Genome]] = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }
-    val newios: IntMap[Genome] =
+    val indivsBySpecies: IntMap[Seq[G]] = IntMap.empty ++ offsprings.toIndividuals.map { _.genome }.groupBy { g => g.species }
+    val newios: IntMap[G] =
       indivsBySpecies.map { case (sp, indivs) => (sp, indivs(rng.nextInt(indivs.length))) }
     val numberOfSpecies = newios.size
     val lastsct = a.speciesCompatibilityThreshold.head

@@ -20,6 +20,8 @@ package fr.iscpif.mgo.genome
 import collection.immutable.IntMap
 import scala.util.Random
 
+import NEATGenome._
+
 trait NEATMinimalGenomeUnconnected <: MinimalGenome with NEATGenome {
 
   def minimalGenome(implicit rng: Random): G = mg

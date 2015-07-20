@@ -23,30 +23,11 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.breed._
 import collection.immutable.IntMap
 
-/**
- * Genome for NEAT
- */
-trait NEATGenome extends G {
-  type NODEDATA
-  type G = Genome
+object NEATGenome {
 
-  def inputNodes: Int
-  def outputNodes: Int
-  def biasNodes: Int
-
-  def inputNodesIndices: Range = 0 until inputNodes
-  def biasNodesIndices: Range = inputNodes until inputNodes + biasNodes
-  def outputNodesIndices: Range = inputNodes + biasNodes until inputNodes + biasNodes + outputNodes
-
-  sealed trait Node { val level: Double; val data: NODEDATA }
-  case class InputNode(data: NODEDATA, level: Double = 0) extends Node
-  case class OutputNode(data: NODEDATA, level: Double = 1) extends Node
-  case class HiddenNode(data: NODEDATA, level: Double) extends Node
-  case class BiasNode(data: NODEDATA, level: Double = 0) extends Node
-
-  case class Genome(
+  case class Genome[+NODEDATA](
       connectionGenes: Seq[ConnectionGene],
-      nodes: IntMap[Node],
+      nodes: IntMap[Node[NODEDATA]],
       species: Int,
       lastNodeId: Int) {
 
@@ -63,61 +44,40 @@ trait NEATGenome extends G {
     override def toString: String = f"$inNode%d${if (enabled) "-" else "X"}%s>$outNode%d($weight%.2f);$innovation%s"
   }
 
+  sealed trait Node[+NODEDATA] { val level: Double; val data: NODEDATA }
+  case class InputNode[+NODEDATA](data: NODEDATA, level: Double = 0) extends Node[NODEDATA]
+  case class OutputNode[+NODEDATA](data: NODEDATA, level: Double = 1) extends Node[NODEDATA]
+  case class HiddenNode[+NODEDATA](data: NODEDATA, level: Double) extends Node[NODEDATA]
+  case class BiasNode[+NODEDATA](data: NODEDATA, level: Double = 0) extends Node[NODEDATA]
+
   sealed trait Innovation
-  case class NodeInnovation(innovnum1: Int, innovnum2: Int, newnodeId: Int, newnode: Node, inNode: Int, outNode: Int) extends Innovation
+  case class NodeInnovation[+NODEDATA](innovnum1: Int, innovnum2: Int, newnodeId: Int, newnode: Node[NODEDATA], inNode: Int, outNode: Int) extends Innovation
   case class LinkInnovation(innovnum: Int, inNode: Int, outNode: Int) extends Innovation
 
 }
 
-//object NEATGenome {
+/**
+ * Genome for NEAT
+ */
+trait NEATGenome extends G {
+  type NODEDATA
+  type G = NEATGenome.Genome[NODEDATA]
+  type Node = NEATGenome.Node[NODEDATA]
+  type InputNode = NEATGenome.InputNode[NODEDATA]
+  type OutputNode = NEATGenome.OutputNode[NODEDATA]
+  type HiddenNode = NEATGenome.HiddenNode[NODEDATA]
+  type BiasNode = NEATGenome.BiasNode[NODEDATA]
+  type Innovation = NEATGenome.Innovation
+  type NodeInnovation = NEATGenome.NodeInnovation[NODEDATA]
+  type LinkInnovation = NEATGenome.LinkInnovation
+  type ConnectionGene = NEATGenome.ConnectionGene
 
-// sealed trait Innovation {
-//   def setNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[Innovation]): (Innovation, Int, Seq[Innovation])
-//   def setNumber(x: Int): Innovation
-//   def unsetNumber: UnnumberedInnovation
-//   def sameAs(x: Innovation): Boolean
-// }
-// sealed trait UnnumberedInnovation extends Innovation {
-//   def setNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[Innovation]): (Innovation, Int, Seq[Innovation]) =
-//     recordOfInnovations.find { sameAs(_) } match {
-//       case Some(oldinnov) => (setNumber(oldinnov.number), globalInnovationNumber, recordOfInnovations)
-//       case None => {
-//         val innovWithNumber = setNumber(globalInnovationNumber + 1)
-//         (innovWithNumber, globalInnovationNumber + 1, recordOfInnovations :+ innovWithNumber)
-//       }
-//     }
-// }
-// sealed trait Innovation extends Innovation {
-//   val number: Int
-//   def setNumber(globalInnovationNumber: Int, recordOfInnovations: Seq[Innovation]): (Innovation, Int, Seq[Innovation]) =
-//     (this, globalInnovationNumber, recordOfInnovations)
-// }
-// sealed trait LinkInnovation extends Innovation {
-//   val innode: Int
-//   val outnode: Int
-//   def setNumber(x: Int): NumberedLinkInnovation = NumberedLinkInnovation(x, innode, outnode)
-//   def unsetNumber: UnnumberedLinkInnovation = UnnumberedLinkInnovation(innode, outnode)
-//   def sameAs(x: Innovation): Boolean =
-//     x match {
-//       case x: LinkInnovation => (innode == x.innode) && (outnode == x.outnode)
-//       case _ => false
-//     }
-// }
-// sealed trait NodeInnovation extends Innovation {
-//   val innode: Int
-//   val outnode: Int
-//   val splittedLinkInnovationNumber: Int
-//   def setNumber(x: Int): NumberedNodeInnovation = NumberedNodeInnovation(x, innode, outnode, splittedLinkInnovationNumber)
-//   def unsetNumber: UnnumberedNodeInnovation = UnnumberedNodeInnovation(innode, outnode, splittedLinkInnovationNumber)
-//   def sameAs(x: Innovation): Boolean =
-//     x match {
-//       case x: NodeInnovation => (innode == x.innode) && (outnode == x.outnode) && (splittedLinkInnovationNumber == x.splittedLinkInnovationNumber)
-//       case _ => false
-//     }
-// }
-// case class UnnumberedLinkInnovation(innode: Int, outnode: Int) extends LinkInnovation with UnnumberedInnovation
-// case class NumberedLinkInnovation(number: Int, innode: Int, outnode: Int) extends LinkInnovation with Innovation
-// case class UnnumberedNodeInnovation(innode: Int, outnode: Int, splittedLinkInnovationNumber: Int) extends NodeInnovation with UnnumberedInnovation
-// case class NumberedNodeInnovation(number: Int, innode: Int, outnode: Int, splittedLinkInnovationNumber: Int) extends NodeInnovation with Innovation
+  def inputNodes: Int
+  def outputNodes: Int
+  def biasNodes: Int
 
-//}
+  def inputNodesIndices: Range = 0 until inputNodes
+  def biasNodesIndices: Range = inputNodes until inputNodes + biasNodes
+  def outputNodesIndices: Range = inputNodes + biasNodes until inputNodes + biasNodes + outputNodes
+
+}
