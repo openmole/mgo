@@ -21,7 +21,12 @@ trait SpeciesFitnessSharing extends NEATGenome with DoubleFitness with NEATBreed
     val sumOfSpeciesFitnesses: Double = speciesFitnesses.map {
       _._2
     }.sum
-    speciesFitnesses.map { case (sp, f) => (sp, round(f * totalOffsprings / sumOfSpeciesFitnesses).toInt) }
+
+    if (sumOfSpeciesFitnesses <= 0.0) {
+      val numberOfSpecies = indivsBySpecies.size
+      indivsBySpecies.keysIterator.map { sp => (sp, max(1, totalOffsprings / numberOfSpecies)) }.toVector
+    } else
+      speciesFitnesses.map { case (sp, f) => (sp, round(f * totalOffsprings / sumOfSpeciesFitnesses).toInt) }
   }
 
 }

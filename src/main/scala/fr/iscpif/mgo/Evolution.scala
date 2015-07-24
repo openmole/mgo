@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo
 
+import fr.iscpif.mgo.Population
+
 import util.Random
 import org.apache.commons.math3.random.{ RandomAdaptor, Well44497b }
 
@@ -81,6 +83,30 @@ trait Evolution extends Termination
     evolve(Seq.empty, archive, expression, evaluation)
   }
 
+  /**
+   * Run the evolutionary algorithm
+   * @param population the initial individuals
+   * @param expression the genome expression
+   * @param evaluation the fitness evaluator
+   * @return an iterator over the states of the evolution
+   */
+  def evolve(population: Population[G, P, F], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
+    val archive = initialArchive
+    evolve(population, archive, expression, evaluation)
+  }
+
+  /**
+   * Run the evolutionary algorithm
+   * @param population the initial individuals
+   * @param offspring the initial offsprings
+   * @param expression the genome expression
+   * @param evaluation the fitness evaluator
+   * @return an iterator over the states of the evolution
+   */
+  def evolve(population: Population[G, P, F], offspring: Population[G, P, F], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
+    val archive = self.archive(initialArchive, population, offspring)
+    evolve(population, archive, expression, evaluation)
+  }
   /**
    * Evolve one step
    *

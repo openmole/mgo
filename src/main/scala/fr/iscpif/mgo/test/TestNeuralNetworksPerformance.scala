@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo.tools.neuralnetwork.{ ChangeFunction, ActivationFunction, NeuralNetwork }
+import scala.collection.mutable.ArrayBuffer
 import util.Random
 
 import fr.iscpif.mgo.tools.time
@@ -28,9 +29,9 @@ object TestNeuralNetworksPerformance {
 
   def main(args: Array[String]) {
 
-    val inputs = 200
+    val inputs = 100
     val outputs = 10
-    val hidden = Vector[Int]()
+    val hidden = Vector[Int](10)
     val activations = 1 + hidden.length
 
     val activationFunction = ActivationFunction.logistic
@@ -41,7 +42,7 @@ object TestNeuralNetworksPerformance {
     val (inputNodes, outputNodes, edges) = layeredTopology(inputs, outputs, hidden)
     val edgesWithWeights = edges.map { case (u, v) => (u, v, rng.nextDouble() * 10 - 5) }
 
-    val edgesMatrixArray = Array.fill(nodes.length)(Array.fill(nodes.length)(0.0))
+    val edgesMatrixArray = ArrayBuffer.fill(nodes.length)(ArrayBuffer.fill(nodes.length)(0.0))
     edgesWithWeights.foreach { case (u, v, e) => edgesMatrixArray(u)(v) = e }
     val edgesMatrix = edgesMatrixArray.map { _.toVector }.toVector
 
@@ -127,19 +128,6 @@ object TestNeuralNetworksPerformance {
       val finalstate = Iterator.iterate(DenseVector[Double](nodes.map { _ => rng.nextDouble() * 2 - 1 }: _*)) { s => breezeEdges * s }.drop(activations).next
       outputNodes.map { finalstate(_) }
     })
-
-    //    val nnrb =
-    //      time("Creation",
-    //        NeuralNetwork.recurrentBreeze(
-    //          nodes,
-    //          inputNodes,
-    //          outputNodes,
-    //          edgesMatrix,
-    //          activationFunction,
-    //          changeFunction,
-    //          nodes.map { _ => baseState }
-    //        ))
-    //    time("Activate", nnrb.outputState(nnrb.activate(activations, nodes.map { _ => rng.nextDouble() * 2 - 1 })))
 
   }
 
