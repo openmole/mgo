@@ -94,7 +94,7 @@ object TestNEATVarSize {
   }
 }
 
-trait NEATVarSize extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
+trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
 
   val rng = new Random()
 
@@ -133,7 +133,7 @@ trait NEATVarSize extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedfo
 
   val inputNodes = 100
   val biasNodes = 1
-  val outputNodes = 10
+  val outputNodes = 100
 
   val lambda = 150
 
