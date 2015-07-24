@@ -26,7 +26,7 @@ import collection.immutable.IntMap
 
 trait NEATAnyTopology extends NEATBreeding with NEATGenome {
 
-  def pickNodesAddLink(genome: Genome)(implicit rng: Random): Option[(Int, Int)] = {
+  def pickNodesAddLink(genome: G)(implicit rng: Random): Option[(Int, Int)] = {
     val connections =
       IntMap[Seq[Int]](
         genome.connectionGenes.map { cg => cg.inNode -> cg.outNode }

@@ -124,6 +124,7 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.genome.MinimalGenome
 import fr.iscpif.mgo.problem.NEATProblem
+import fr.iscpif.mgo.genome.NEATGenome._
 import util.Random
 
 /**
@@ -135,7 +136,7 @@ import util.Random
  */
 trait NEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchive with NoPhenotype with MinimalGenome {
   type NODEDATA = Unit
-  def pickNewHiddenNode(level: Double)(implicit rng: Random): Node = HiddenNode((), level)
+  def pickNewHiddenNode(level: Double)(implicit rng: Random): HiddenNode = HiddenNode((), level)
 
   def newInputNode: InputNode = InputNode(())
   def newBiasNode: BiasNode = BiasNode(())

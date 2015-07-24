@@ -22,6 +22,7 @@ import scala.annotation.tailrec
 import util.Random
 import fr.iscpif.mgo.tools.StateMonad
 import fr.iscpif.mgo.genome.NEATGenome
+import fr.iscpif.mgo.genome.NEATGenome._
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 import collection.immutable.Map
@@ -35,7 +36,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   type BreedingState = (Int, //global innovation number
   Int, //global node number
   Seq[Innovation], //record of innovations
-  IntMap[Genome]) //index of species
+  IntMap[G]) //index of species
 
   def interSpeciesMatingProb: Double
 
@@ -93,7 +94,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
       val parents = selection(population, archive, size).toList
 
       val (p1, p2) = parents.head
-      val breedAll: StateMonad[List[Genome], BreedingState] =
+      val breedAll: StateMonad[List[G], BreedingState] =
         parents.tail.foldLeft(doBreed(p1, p2, population, archive)(List.empty)) {
           (acc, parents) =>
             val (p1, p2) = parents
@@ -112,7 +113,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
       // }
 
       //!!!use state monad!!! (state=gin, roi, ios; result=newgenome)
-      // val breeding: Iterator[Genome] =
+      // val breeding: Iterator[G] =
       //   parents.map {
       //     parents =>
       //       val (i1, i2) = parents
@@ -133,8 +134,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   def doCrossover(
     parents: (Individual[G, P, F], Individual[G, P, F]),
     population: Population[G, P, F],
-    archive: A)(implicit rng: Random): StateMonad[Genome, BreedingState] =
-    StateMonad[Genome, BreedingState]({
+    archive: A)(implicit rng: Random): StateMonad[G, BreedingState] =
+    StateMonad[G, BreedingState]({
       state => //this crossover doesn't actually use state
         val (gin, gnn, roi, ios) = state
         val crossed = crossover(parents._1, parents._2)
@@ -142,19 +143,19 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     })
 
   def doMutate(
-    g: Genome,
+    g: G,
     population: Population[G, P, F],
-    archive: A)(implicit rng: Random): StateMonad[Genome, BreedingState] =
-    StateMonad[Genome, BreedingState]({
+    archive: A)(implicit rng: Random): StateMonad[G, BreedingState] =
+    StateMonad[G, BreedingState]({
       state =>
         mutate(g, state)
     })
 
   def doPostBreeding(
-    g: Genome,
+    g: G,
     population: Population[G, P, F],
-    archive: A): StateMonad[Genome, BreedingState] =
-    StateMonad[Genome, BreedingState]({
+    archive: A): StateMonad[G, BreedingState] =
+    StateMonad[G, BreedingState]({
       case (gin, gnn, roi, ios) =>
         val (newGenome, newios) = setSpecies(g, ios, archive.speciesCompatibilityThreshold.head)
         //println(s"indiv attributed to species ${newGenome.species}")
@@ -165,7 +166,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     p1: Individual[G, P, F],
     p2: Individual[G, P, F],
     population: Population[G, P, F],
-    archive: A)(implicit rng: Random): StateMonad[Genome, BreedingState] =
+    archive: A)(implicit rng: Random): StateMonad[G, BreedingState] =
     doWithParents(p1, p2).bind {
       doCrossover(_, population, archive)
     }.bind {
@@ -179,7 +180,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     p2: Individual[G, P, F],
     population: Population[G, P, F],
     archive: A)(
-      curoffsprings: List[Genome])(implicit rng: Random): StateMonad[List[Genome], BreedingState] = {
+      curoffsprings: List[G])(implicit rng: Random): StateMonad[List[G], BreedingState] = {
     StateMonad({
       state =>
         val (thisoffspring, newstate) = doBreedOnce(p1, p2, population, archive).runstate(state)
@@ -233,8 +234,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   // }
 
   def crossover(
-    i1: Individual[Genome, P, Double],
-    i2: Individual[Genome, P, Double])(implicit rng: Random): Genome = {
+    i1: Individual[G, P, Double],
+    i2: Individual[G, P, Double])(implicit rng: Random): G = {
     // - align the 2 parent genomes according to their innovation number
     // - genes that match no other gene in the other genome are disjoint if they occur within the range of the the other genome innovation numbers
     // - they are excess if they occur outside this range.
@@ -384,8 +385,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   //  }
 
   def mutate(
-    genome: Genome,
-    state: BreedingState)(implicit rng: Random): (Genome, BreedingState) = {
+    genome: G,
+    state: BreedingState)(implicit rng: Random): (G, BreedingState) = {
     val r = rng.nextDouble()
     if (genome.connectionGenes.nonEmpty && r < mutationAddNodeProb) {
       mutateAddNode(genome, state)
@@ -394,19 +395,19 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     } else {
       // successively mutate weights and mutate enable bits on the genome
       val result = {
-        mutateWeights(_: Genome)
+        mutateWeights(_: G)
       }.andThen {
-        mutateEnabled(_: Genome)
+        mutateEnabled(_: G)
       }(genome)
       (result, state)
     }
   }
 
-  def pickNodesAddLink(genome: Genome)(implicit rng: Random): Option[(Int, Int)]
+  def pickNodesAddLink(genome: G)(implicit rng: Random): Option[(Int, Int)]
 
   def mutateAddLink(
-    genome: Genome,
-    state: BreedingState)(implicit rng: Random): (Genome, BreedingState) = {
+    genome: G,
+    state: BreedingState)(implicit rng: Random): (G, BreedingState) = {
     val pair = pickNodesAddLink(genome)
 
     pair match {
@@ -454,8 +455,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
 
   /** pick a connection gene, disable it and add 2 new connection genes */
   def mutateAddNode(
-    genome: Genome,
-    state: BreedingState)(implicit rng: Random): (Genome, BreedingState) = {
+    genome: G,
+    state: BreedingState)(implicit rng: Random): (G, BreedingState) = {
     val (gin, gnn, roi, ios) = state
 
     val picked: Int = rng.nextInt(genome.connectionGenes.length)
@@ -509,10 +510,10 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     (newgenome, (gin + 2, gnn + 1, newroi, ios))
   }
 
-  def pickNewHiddenNode(level: Double)(implicit rng: Random): Node
+  def pickNewHiddenNode(level: Double)(implicit rng: Random): HiddenNode
 
   def mutateWeights(
-    genome: Genome)(implicit rng: Random): Genome =
+    genome: G)(implicit rng: Random): G =
     genome.copy(
       connectionGenes =
         genome.connectionGenes.map { (cg: ConnectionGene) =>
@@ -527,7 +528,7 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   }
 
   def mutateEnabled(
-    g: Genome)(implicit rng: Random): Genome =
+    g: G)(implicit rng: Random): G =
     g.copy(
       connectionGenes =
         g.connectionGenes.map { mutateEnabled })
@@ -545,19 +546,19 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
    * * mutations that are identical to one found it the archive's record of innovations are attributed its number
    */
   // def postBreeding(
-  //   offsprings: Seq[Genome],
-  //   population: Population[Genome, P, F],
-  //   archive: NEATArchive.Archive)(implicit rng: Random): Seq[Genome] = {
+  //   offsprings: Seq[G],
+  //   population: Population[G, P, F],
+  //   archive: NEATArchive.Archive)(implicit rng: Random): Seq[G] = {
   //   // Set innovation numbers in all offsprings, and then Attribute a species to each offspring
-  //   { setInnovationNumbers(_: Seq[Genome], archive) }.andThen {
-  //     setSpecies(_: Seq[Genome], archive)
+  //   { setInnovationNumbers(_: Seq[G], archive) }.andThen {
+  //     setSpecies(_: Seq[G], archive)
   //   }(offsprings)
   // }
 
   //  def setInnovationNumbers(
-  //    offsprings: Seq[Genome],
-  //    archive: NEATArchive.Archive): Seq[Genome] = {
-  //    val (newgenomes, newgin, newroi) = offsprings.foldLeft((Seq[Genome](), archive.globalInnovationNumber, archive.recordOfInnovations)) { (acc, genome) =>
+  //    offsprings: Seq[G],
+  //    archive: NEATArchive.Archive): Seq[G] = {
+  //    val (newgenomes, newgin, newroi) = offsprings.foldLeft((Seq[G](), archive.globalInnovationNumber, archive.recordOfInnovations)) { (acc, genome) =>
   //      val (curgenomes, curgin, curroi) = acc
   //      val (newgenome, newgin, newroi) = genome.setInnovationNumber(curgin, curroi)
   //      (curgenomes :+ newgenome, newgin, newroi)
@@ -566,9 +567,9 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   //  }
 
   //  def setSpecies(
-  //    offsprings: Seq[Genome],
-  //    archive: NEATArchive.Archive): Seq[Genome] = {
-  //    val (newgenomes, _) = offsprings.foldLeft((Seq[Genome](), archive.indexOfSpecies)) { (acc, genome) =>
+  //    offsprings: Seq[G],
+  //    archive: NEATArchive.Archive): Seq[G] = {
+  //    val (newgenomes, _) = offsprings.foldLeft((Seq[G](), archive.indexOfSpecies)) { (acc, genome) =>
   //      val (curgenomes, curios) = acc
   //      // Find a genome in the index of species which is sufficiently similar to the current genome.
   //      // Start by checking if the offspring is compatible with the parent species (currently set in the species member of the offspring)
@@ -595,9 +596,9 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   //  }
 
   def setSpecies(
-    genome: Genome,
+    genome: G,
     indexOfSpecies: IntMap[G],
-    speciesCompatibilityThreshold: Double): (Genome, IntMap[G]) = {
+    speciesCompatibilityThreshold: Double): (G, IntMap[G]) = {
     // Find a genome in the index of species which is sufficiently similar to the current genome.
     // The following code starts by checking if the offspring is compatible with the parent species (currently set in the species member of the offspring)
     // There is a problem when used with the adaptive species compatibility threshold: the number of species doesn't decrease since most of the time,
@@ -622,8 +623,8 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
   }
 
   def genomesDistance(
-    g1: Genome,
-    g2: Genome): Double = {
+    g1: G,
+    g2: G): Double = {
     val alignment = alignGenomes(g1.connectionGenes, g2.connectionGenes)
     val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(alignment)
     val longestGenomeSize: Double = max(g1.connectionGenes.length, g2.connectionGenes.length).toDouble

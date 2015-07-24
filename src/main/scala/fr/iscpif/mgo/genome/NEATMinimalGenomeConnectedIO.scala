@@ -21,6 +21,8 @@ import collection.immutable.IntMap
 import util.Random
 import math._
 
+import NEATGenome._
+
 trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
   def minimalGenome(implicit rng: Random): G =
     Genome(
