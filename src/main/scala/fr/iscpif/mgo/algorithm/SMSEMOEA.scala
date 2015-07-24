@@ -23,6 +23,7 @@ trait SMSEMOEA <: Evolution
   with GAGenomeWithSigma
   with MG
   with BinaryTournamentSelection
+  with RandomMating
   with TournamentOnRank
   with HypervolumeRanking
   with RankElitism

@@ -152,7 +152,9 @@ package object mgo {
   type ProfileRanking = ranking.ProfileRanking
   type Ranking = ranking.Ranking
   type BinaryTournamentSelection = selection.BinaryTournamentSelection
+  type Mating = selection.Mating
   type RandomSelection = selection.RandomSelection
+  type RandomMating = selection.RandomMating
   type TournamentOnDiversity = selection.TournamentOnDiversity
   type TournamentOnRank = selection.TournamentOnRank
   type TournamentOnRankAndDiversity = selection.TournamentOnRankAndDiversity

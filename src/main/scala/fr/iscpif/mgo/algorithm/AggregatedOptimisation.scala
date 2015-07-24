@@ -24,6 +24,7 @@ trait AggregatedOptimisation <: Evolution
   with DynamicGAMutation
   with GAGenomeWithSigma
   with BinaryTournamentSelection
+  with RandomMating
   with TournamentOnAggregatedFitness
   with BestAggregatedElitism
   with NoArchive

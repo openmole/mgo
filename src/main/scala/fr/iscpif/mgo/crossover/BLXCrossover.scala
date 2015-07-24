@@ -26,7 +26,8 @@ object BLXCrossover {
 
   def apply(crossover: Crossover with GA)(alpha: Double = 0.5) = {
     import crossover._
-    (g1: G, g2: G, population: Population[G, P, F], archive: A, rng: Random) => {
+    (genomes: Seq[G], population: Population[G, P, F], archive: A, rng: Random) => {
+      val (g1, g2) = (genomes(0), genomes(1))
       val (newG1, newG2) =
         (values.get(g1) zip values.get(g2)).map {
           case (c1, c2) =>

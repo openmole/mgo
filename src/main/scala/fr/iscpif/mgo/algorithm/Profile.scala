@@ -29,6 +29,7 @@ trait Profile <: Evolution
   with BestAggregatedNicheElitism
   with ProfileNiche
   with BinaryTournamentSelection
+  with RandomMating
   with TournamentOnRank
   with HierarchicalRanking
   with StrictDominance

@@ -23,6 +23,7 @@ trait Map <: Evolution
   with MG
   with NoArchive
   with MapSelection
+  with RandomMating
   with GAGenomeWithSigma
   with DynamicGACrossover
   with DynamicGAMutation

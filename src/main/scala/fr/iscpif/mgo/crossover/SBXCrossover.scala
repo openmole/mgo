@@ -45,7 +45,8 @@ object SBXCrossover {
 
   def apply(crossover: Crossover with GA)(distributionIndex: Double = 1.0): crossover.Crossover = {
     import crossover._
-    (g1: G, g2: G, population: Population[G, P, F], archive: A, rng: Random) => {
+    (genomes: Seq[G], population: Population[G, P, F], archive: A, rng: Random) => {
+      val (g1, g2) = (genomes(0), genomes(1))
       val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)(rng)
       assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
       Seq(g1 applyLens values set o1, g2 applyLens values set o2)

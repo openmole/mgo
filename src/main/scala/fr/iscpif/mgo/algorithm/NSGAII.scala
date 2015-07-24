@@ -21,6 +21,7 @@ import fr.iscpif.mgo._
 
 trait NSGAII <: Evolution
   with BinaryTournamentSelection
+  with RandomMating
   with TournamentOnRankAndDiversity
   with NonDominatedElitism
   with DynamicGACrossover

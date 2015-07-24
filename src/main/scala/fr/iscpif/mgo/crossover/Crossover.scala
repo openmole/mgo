@@ -27,20 +27,19 @@ import util.Random
  */
 trait Crossover <: G with P with F with A {
 
-  type Crossover = (G, G, Population[G, P, F], A, Random) => Seq[G]
+  type Crossover = (Seq[G], Population[G, P, F], A, Random) => Seq[G]
   def crossovers: Vector[Crossover]
 
   /**
    * Crossover g1 and g2
    *
-   *  @param g1 a genome
-   *  @param g2 another genome
+   *  @param genomes
    *  @param population last computed population
    *  @param archive last archive
    *  @return the result of the crossover
    */
-  def crossover(g1: G, g2: G, population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[G] =
-    if (crossovers.isEmpty) Seq(g1, g2)
-    else crossovers.random(rng)(g1, g2, population, archive, rng)
+  def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[G] =
+    if (crossovers.isEmpty) genomes
+    else crossovers.random(rng)(genomes, population, archive, rng)
 
 }
