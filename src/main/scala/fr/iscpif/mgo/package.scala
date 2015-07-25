@@ -163,6 +163,7 @@ package object mgo {
   type Selection = selection.Selection
   type TournamentOnAggregatedFitness = selection.TournamentOnAggregatedFitness
   type TournamentOnHitCount = selection.TournamentOnHitCount
+  type ConditionalTermination = termination.ConditionalTermination
   type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
   type CounterTermination = termination.CounterTermination
   type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination

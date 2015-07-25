@@ -83,6 +83,11 @@ trait Evolution extends Termination
     evolve(Seq.empty, archive, expression, evaluation)
   }
 
+  def evolve(genomes: Seq[G], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
+    val population = evaluate(genomes, expression, evaluation)
+    evolve(population, expression, evaluation)
+  }
+
   /**
    * Run the evolutionary algorithm
    * @param population the initial individuals
@@ -119,14 +124,16 @@ trait Evolution extends Termination
    */
   def step(population: Population[G, P, F], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): (Population[G, P, F], A) = {
     val offspringGenomes = breed(population, archive, lambda)
-    val rngs = (0 until offspringGenomes.size).map(_ => buildRNG(rng.nextLong))
-
-    val offspring = Population.fromIndividuals((offspringGenomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq)
-
+    val offspring = evaluate(offspringGenomes, expression, evaluation)
     val newArchive = self.archive(archive, population, offspring)
 
     //Elitism strategy
     (elitism(population, offspring.toList, newArchive), newArchive)
+  }
+
+  def evaluate(genomes: Seq[G], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random) = {
+    val rngs = (0 until genomes.size).map(_ => buildRNG(rng.nextLong))
+    Population.fromIndividuals((genomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq)
   }
 
 }
