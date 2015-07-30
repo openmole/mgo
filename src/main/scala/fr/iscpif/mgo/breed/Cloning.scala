@@ -1,14 +1,8 @@
-package fr.iscpif.mgo.genome
-
-import fr.iscpif.mgo._
-import scala.util.Random
-import scalaz._
-
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 29/07/2015 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as published by
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
  *
@@ -20,6 +14,19 @@ import scalaz._
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-trait RandomGenome <: G with BreedingContext {
-  def randomGenome(implicit rng: Random): State[BREEDINGCONTEXT, Seq[G]]
+package fr.iscpif.mgo.breed
+
+import fr.iscpif.mgo._
+import scalaz._
+
+trait Cloning <: G with P with F with BreedingContext {
+
+  def cloneProbability: Double = 0.0
+
+  def clone(c: Individual[G, P, F]): State[BREEDINGCONTEXT, Seq[G]] =
+    State[BREEDINGCONTEXT, Seq[G]] { s =>
+      (updateContextWithClone(s, c), Seq(c.genome))
+    }
+
+  def updateContextWithClone(context: BREEDINGCONTEXT, clone: Individual[G, P, F]): BREEDINGCONTEXT
 }

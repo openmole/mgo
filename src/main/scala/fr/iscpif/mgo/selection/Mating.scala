@@ -18,8 +18,9 @@ package fr.iscpif.mgo.selection
 
 import fr.iscpif.mgo._
 import scala.util.Random
+import scalaz._
 
-trait Mating extends G with P with F with Archive {
+trait Mating extends G with P with F with Archive with BreedingContext {
 
   /**
    * Select an individual among the population.
@@ -27,6 +28,6 @@ trait Mating extends G with P with F with Archive {
    * param population the population in which selection occurs
    * @return the selected individual
    */
-  def mate(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[Seq[Individual[G, P, F]]]
+  def mate(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[State[BREEDINGCONTEXT, Seq[Individual[G, P, F]]]]
 
 }

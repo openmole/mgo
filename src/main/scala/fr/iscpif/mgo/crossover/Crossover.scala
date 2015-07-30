@@ -21,11 +21,12 @@ import fr.iscpif.mgo._
 import tools._
 import genome.G
 import util.Random
+import scalaz._
 
 /**
  * Implement a crossover operation between 2 genomes
  */
-trait Crossover <: G with P with F with A {
+trait Crossover <: G with P with F with A with BreedingContext {
 
   type Crossover = (Seq[G], Population[G, P, F], A, Random) => Seq[G]
   def crossovers: Vector[Crossover]
@@ -38,8 +39,8 @@ trait Crossover <: G with P with F with A {
    *  @param archive last archive
    *  @return the result of the crossover
    */
-  def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[G] =
-    if (crossovers.isEmpty) genomes
-    else crossovers.random(rng)(genomes, population, archive, rng)
+  def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): State[BREEDINGCONTEXT, Seq[G]] = ???
+  //if (crossovers.isEmpty) genomes
+  //else crossovers.random(rng)(genomes, population, archive, rng)
 
 }

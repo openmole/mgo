@@ -26,6 +26,17 @@ libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-generic" % mo
 
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
 
+val scalazVersion = "7.1.3"
+
+libraryDependencies ++= Seq(
+  "org.scalaz" %% "scalaz-core" % scalazVersion,
+  "org.scalaz" %% "scalaz-effect" % scalazVersion,
+  "org.scalaz" %% "scalaz-typelevel" % scalazVersion,
+  "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
+)
+
+initialCommands in console += "import scalaz._, Scalaz._"
+
 resolvers ++= Seq(
   "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
 )

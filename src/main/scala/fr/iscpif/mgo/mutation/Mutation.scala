@@ -21,11 +21,12 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools._
 import genome.G
 import util.Random
+import scalaz._
 
 /**
  * Layer of the cake for the mutation operation.
  */
-trait Mutation <: G with P with F with A {
+trait Mutation <: G with P with F with A with BreedingContext {
 
   type Mutation = (G, Population[G, P, F], A, Random) => G
   def mutations: Vector[Mutation]
@@ -39,8 +40,8 @@ trait Mutation <: G with P with F with A {
    * @param rng a random number generator
    * @return the mutated genome
    */
-  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G =
-    if (mutations.isEmpty) genome
-    else mutations.random(rng)(genome, population, archive, rng)
+  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): State[BREEDINGCONTEXT, G] = ???
+  //if (mutations.isEmpty) genome
+  //else mutations.random(rng)(genome, population, archive, rng)
 
 }

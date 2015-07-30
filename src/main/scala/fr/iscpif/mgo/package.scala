@@ -61,6 +61,7 @@ package object mgo {
   type NoArchive = archive.NoArchive
   type NoveltyArchive = archive.NoveltyArchive
   type Breeding = breed.Breeding
+  type BreedingContext = breed.BreedingContext
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
   type NEATBreeding = breed.NEATBreeding
