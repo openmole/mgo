@@ -23,15 +23,12 @@ import util.Random
 import fr.iscpif.mgo.genome.RandomGenome
 import fr.iscpif.mgo.tools._
 import scalaz._
-import scalaz.std.vector._
-import scalaz.syntax.monad._
-import scalaz.syntax.bind._
-import scalaz.syntax.traverse._
+import Scalaz._
 
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait GeneticBreeding <: Breeding with G with F with P with Mating with Cloning with Crossover with Mutation with RandomGenome with BreedingContext {
+trait GeneticBreeding <: Breeding with G with F with P with Mating with Cloning with Crossover with Mutation with RandomGenome {
 
   /**
    * Breed genomes from a population
@@ -40,36 +37,47 @@ trait GeneticBreeding <: Breeding with G with F with P with Mating with Cloning 
    * @param size the size of the breeded set
    * @return the breeded genomes
    */
-  def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Seq[G] = {
-    val offsprings: Iterator[State[BREEDINGCONTEXT, Seq[G]]] =
-      if (population.isEmpty) Iterator.continually(randomGenome)
+  def breed[B[_]: Monad](population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Vector[G] = {
+    val offsprings: Iterator[B[Vector[G]]] =
+      if (population.isEmpty) Iterator.continually(randomGenome.pure[B])
       else {
-        val breeded: Iterator[State[BREEDINGCONTEXT, Seq[G]]] =
+        val breeded: Iterator[B[Vector[G]]] =
           // bind each result of mate to a breed action
-          //TODO: reformuler en parents >>= breed(_,population,archive) en utilisant les implicites de scalaz.syntax._
-          mate(population, archive).map(MonadState[State, BREEDINGCONTEXT].bind(_)(breed(_, population, archive)))
+          mate[B](population, archive).map { (_: B[Vector[Individual[G, P, F]]]) >>= { breed[B](_, population, archive) } }
 
-        val cloned: Iterator[State[BREEDINGCONTEXT, Seq[G]]] =
-          Iterator.continually(clone(population.toIndividuals.random))
+        val cloned: Iterator[B[G]] =
+          Iterator.continually(clone[B](population.toIndividuals.random))
 
         // breed or clone
         Iterator.continually {
           if (rng.nextDouble >= cloneProbability)
             breeded.next
           else
-            cloned.next
+            cloned.next.map { Vector(_) }
         }
       }
 
-    Traverse[Vector].sequenceS(offsprings.take(size).toVector).run(initBreedingContext)._2.flatten.toIndexedSeq
+    extractBreedingResult[B](
+      // Get the B in the outer position with sequence, then flatten the inner nested vectors with join
+      (offsprings.take(size).toVector: Vector[B[Vector[G]]]).sequence[B, Vector[G]].map { (_: Vector[Vector[G]]).join })
   }
 
-  def breed(
-    individuals: Seq[Individual[G, P, F]],
+  def breed[B[_]: Monad](
+    individuals: Vector[Individual[G, P, F]],
     population: Population[G, P, F],
-    archive: A)(implicit rng: Random): State[BREEDINGCONTEXT, Seq[G]] =
-    MonadState[State, BREEDINGCONTEXT].bind(
-      crossover(individuals.map { _.genome }, population, archive))(
-        parents => Traverse[Vector].traverseS(parents.toVector) { mutate(_, population, archive) }.map { _.toSeq })
+    archive: A)(implicit rng: Random): B[Vector[G]] =
+    /*implicitly[Monad[B]].bind[Vector[G], Vector[G]](
+      crossover[B](individuals.map { _.genome }, population, archive))(
+        parents => {
+          implicitly[Monad[B]].map {
+            implicitly[Traverse[Vector]].traverse[B, G, G](parents.toVector) { mutate[B](_, population, archive) }
+          } { _.toVector }
+        })
+    */
+    crossover[B](individuals.map { _.genome }, population, archive) >>= { parents =>
+      parents.traverse[B, G] { mutate[B](_, population, archive) }
+    }
 
+  /** extract the content from the breeding monad */
+  def extractBreedingResult[B[_]: Monad](x: B[Vector[G]]): Vector[G]
 }

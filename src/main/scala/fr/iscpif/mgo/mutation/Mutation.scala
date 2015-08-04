@@ -26,7 +26,7 @@ import scalaz._
 /**
  * Layer of the cake for the mutation operation.
  */
-trait Mutation <: G with P with F with A with BreedingContext {
+trait Mutation <: G with P with F with A {
 
   type Mutation = (G, Population[G, P, F], A, Random) => G
   def mutations: Vector[Mutation]
@@ -40,7 +40,7 @@ trait Mutation <: G with P with F with A with BreedingContext {
    * @param rng a random number generator
    * @return the mutated genome
    */
-  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): State[BREEDINGCONTEXT, G] = ???
+  def mutate[B[_]: Monad](genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): B[G] = ???
   //if (mutations.isEmpty) genome
   //else mutations.random(rng)(genome, population, archive, rng)
 

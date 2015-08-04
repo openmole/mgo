@@ -23,10 +23,8 @@ trait Cloning <: G with P with F with BreedingContext {
 
   def cloneProbability: Double = 0.0
 
-  def clone(c: Individual[G, P, F]): State[BREEDINGCONTEXT, Seq[G]] =
-    State[BREEDINGCONTEXT, Seq[G]] { s =>
-      (updateContextWithClone(s, c), Seq(c.genome))
-    }
-
-  def updateContextWithClone(context: BREEDINGCONTEXT, clone: Individual[G, P, F]): BREEDINGCONTEXT
+  def clone[B[_]: Monad](c: Individual[G, P, F]): B[G] = ???
+  /*State[BREEDINGCONTEXT, Seq[G]] { s =>
+      (updateContextWithClone(s, c), c.genome)
+    }*/
 }

@@ -16,6 +16,8 @@
  */
 package fr.iscpif.mgo.breed
 
+import scalaz.Monad
+
 trait BreedingContext {
   type BREEDINGCONTEXT
 

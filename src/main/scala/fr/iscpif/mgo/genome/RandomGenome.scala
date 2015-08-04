@@ -21,5 +21,5 @@ import scalaz._
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 trait RandomGenome <: G with BreedingContext {
-  def randomGenome(implicit rng: Random): State[BREEDINGCONTEXT, Seq[G]]
+  def randomGenome(implicit rng: Random): Vector[G]
 }
