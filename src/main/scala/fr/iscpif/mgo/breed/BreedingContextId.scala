@@ -31,20 +31,15 @@ trait BreedingContextId <: BreedingContext with RandomGenome with Cloning {
 
   type BreedingContext[A] = Id[A]
   //override implicit lazy val monadBreedingContext: Monad[BreedingContext] = implicitly[Monad[BreedingContext]] //Endless recursion
-  //override implicit lazy val monadBreedingContext: Monad[BreedingContext] = implicitly[Monad[Id]] //Monad is invariant in its parameter type
-  override implicit def monadBreedingContext: Monad[BreedingContext] = new Monad[BreedingContext] {
+  override implicit lazy val monadBreedingContext: Monad[BreedingContext] = implicitly[Monad[Id]] //Monad is invariant in its parameter type
+  /*override implicit def monadBreedingContext: Monad[BreedingContext] = new Monad[BreedingContext] {
     def bind[A, B](fa: BreedingContext[A])(f: (A) ⇒ BreedingContext[B]): BreedingContext[B] = implicitly[Monad[Id]].bind[A, B](fa)(f)
 
     def point[A](a: ⇒ A): BreedingContext[A] = implicitly[Monad[Id]].point[A](a)
-  }
+  }*/
 
   /** extract the content from the breeding monad */
-  def unwrapBreedingContext[A](x: BreedingContext[A]): A =
-    (x: Id[A]) //.asInstanceOf[Vector[G]]
-  /*x match {
-      case x: BreedingContext[Vector[G]] => x.asInstanceOf[Id[Vector[G]]]
-      case _ => throw new RuntimeException("No")
-    }*/
+  def unwrapBreedingContext[A](x: BreedingContext[A]): A = x: Id[A]
 
   def randomGenomeInContext(implicit rng: Random): BreedingContext[G] = {
     val rg = randomGenome
