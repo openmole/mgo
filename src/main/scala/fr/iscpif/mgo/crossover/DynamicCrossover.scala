@@ -17,6 +17,7 @@
 
 package fr.iscpif.mgo.crossover
 
+import fr.iscpif.mgo._
 import fr.iscpif.mgo.Population
 import fr.iscpif.mgo.tools._
 import monocle._
@@ -35,7 +36,7 @@ trait DynamicCrossover <: Crossover {
     (0 until crossovers.size).map(i => crossovers(i) -> map.getOrElse(i, 0.0)).toMap
   }
 
-  override def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): Seq[G] = {
+  override def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]] = {
     val crossover: Crossover =
       if (rng.nextDouble < crossoverExploration) crossovers.random
       else multinomial(crossoverStats(population))

@@ -52,7 +52,8 @@ object TestPSE extends App {
     override def lambda = 3
 
     override type P = Seq[Double]
-    override def express(g: Seq[Double], rng: Random): P = Vector(f1(g), f2(g))
+    override def express(g: Seq[Double], rng: Random): P =
+      Vector(f1(g), f2(g))
 
     def gridSize = Vector(0.1, 2)
 

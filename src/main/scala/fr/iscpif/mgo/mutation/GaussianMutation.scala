@@ -20,6 +20,14 @@ package fr.iscpif.mgo.mutation
 import fr.iscpif.mgo._
 import util.Random
 
+import scalaz._
+import Scalaz._
+
+import monocle.Lens
+import monocle.syntax._
+
+import scala.language.higherKinds
+
 /**
  * Mutation of a genome based on gausian distribution arrount the genome with
  * fixed sigma values.
@@ -27,13 +35,23 @@ import util.Random
 object GaussianMutation {
 
   /** sigma values, one for each element in the rest of the genome */
-  def apply(mutation: Mutation with GA)(sigma: Double): mutation.Mutation = {
-    import mutation._
-    (g: G, population: Population[G, P, F], archive: A, rng: Random) => {
-      val newValues = values.get(g) map {
-        _ + (rng.nextGaussian * sigma)
+  //  def apply(mutation: Mutation with GA)(sigma: Double): mutation.Mutation = {
+  //    import mutation._
+  //    (g: G, population: Population[G, P, F], archive: A, rng: Random) => {
+  //      val newValues = values.get(g) map {
+  //        _ + (rng.nextGaussian * sigma)
+  //      }
+  //      values.set(newValues)(g)
+  //    }
+  //  }
+
+  def apply[G, P, F, A, BreedingContext[_]: Monad](sigma: Double)(values: Lens[G, Seq[Double]]): (G, Population[G, P, F], A, Random) => BreedingContext[G] = {
+    (g: G, population: Population[G, P, F], archive: A, rng: Random) =>
+      {
+        val newValues = values.get(g) map {
+          _ + (rng.nextGaussian * sigma)
+        }
+        values.set(newValues)(g).point[BreedingContext]
       }
-      values.set(newValues)(g)
-    }
   }
 }

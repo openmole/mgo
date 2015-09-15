@@ -23,12 +23,14 @@ import genome.G
 import util.Random
 import scalaz._
 
+import scala.language.higherKinds
+
 /**
  * Implement a crossover operation between 2 genomes
  */
-trait Crossover <: G with P with F with A {
+trait Crossover <: G with P with F with A with BreedingContext {
 
-  type Crossover = (Seq[G], Population[G, P, F], A, Random) => Seq[G]
+  type Crossover = (Seq[G], Population[G, P, F], A, Random) => BreedingContext[Vector[G]]
   def crossovers: Vector[Crossover]
 
   /**
@@ -39,8 +41,6 @@ trait Crossover <: G with P with F with A {
    *  @param archive last archive
    *  @return the result of the crossover
    */
-  def crossover[B[_]: Monad](genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): B[Vector[G]] = ???
-  //if (crossovers.isEmpty) genomes
-  //else crossovers.random(rng)(genomes, population, archive, rng)
+  def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]]
 
 }

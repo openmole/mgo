@@ -24,6 +24,14 @@ import org.apache.commons.math3.distribution.CauchyDistribution
 import util.Random
 import scala.math._
 
+import scalaz._
+import Scalaz._
+
+import monocle.Lens
+import monocle.syntax._
+
+import scala.language.higherKinds
+
 /**
  * Mutation of a genome based on gausian distribution arrount the genome with
  * adaptive sigma values.
@@ -35,8 +43,22 @@ import scala.math._
  */
 object AdaptiveCauchyMutation {
 
-  def apply(mutation: Mutation with Sigma with GA with MinimumSigma): mutation.Mutation = {
-    import mutation._
+  //  def apply(mutation: Mutation with Sigma with GA with MinimumSigma): mutation.Mutation = {
+  //    import mutation._
+  //    (genome: G, population: Population[G, P, F], archive: A, rng: Random) => {
+  //      val newSigma = sigma.get(genome).map { s => math.max(minimumSigma, s * exp(rng.nextGaussian)) }
+  //
+  //      val newValues =
+  //        (values.get(genome) zip newSigma) map {
+  //          case (v, s) => new CauchyDistribution(rng, v, s).sample //.nextGaussian * s + v
+  //        }
+  //
+  //      newValues.foreach(v => assert(!v.isNaN))
+  //      (genome &|-> values set newValues) &|-> sigma set newSigma
+  //    }
+  //  }
+
+  def apply[G, P, F, A, BreedingContext[_]: Monad](minimumSigma: Double)(values: Lens[G, Seq[Double]], sigma: Lens[G, Seq[Double]]): (G, Population[G, P, F], A, Random) => BreedingContext[G] =
     (genome: G, population: Population[G, P, F], archive: A, rng: Random) => {
       val newSigma = sigma.get(genome).map { s => math.max(minimumSigma, s * exp(rng.nextGaussian)) }
 
@@ -46,8 +68,7 @@ object AdaptiveCauchyMutation {
         }
 
       newValues.foreach(v => assert(!v.isNaN))
-      (genome &|-> values set newValues) &|-> sigma set newSigma
+      ((genome &|-> values set newValues) &|-> sigma set newSigma).point[BreedingContext]
     }
-  }
 
 }

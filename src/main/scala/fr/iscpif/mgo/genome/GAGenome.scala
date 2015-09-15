@@ -18,7 +18,8 @@
 package fr.iscpif.mgo.genome
 
 import scala.util.Random
-import monocle._
+
+import monocle.Lens
 
 object GAGenome {
   case class Genome(

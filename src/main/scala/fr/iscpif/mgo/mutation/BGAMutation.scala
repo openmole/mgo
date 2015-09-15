@@ -18,28 +18,52 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import monocle.syntax._
 
 import scala.util.Random
 
+import scalaz._
+import Scalaz._
+
+import monocle.Lens
+import monocle.syntax._
+
+import scala.language.higherKinds
+
 object BGAMutation {
 
-  def apply(mutation: Mutation with GA)(
-    mutationRate: Double = 1.0 / mutation.genomeSize,
-    mutationRange: Double = 0.1): mutation.Mutation = {
-    import mutation._
-    (genome: G, population: Population[G, P, F], archive: A, rng: Random) => {
-      val newG = values.get(genome).map {
-        g =>
-          if (rng.nextDouble < mutationRate) {
-            def alphai = if (rng.nextDouble < (1.0 / 16)) 1.0 else 0.0
-            def ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
-            def sign = if (rng.nextBoolean) 1.0 else -1.0
-            g + (sign * mutationRange * ro)
-          } else g
+  //  def apply(mutation: Mutation with GA)(
+  //    mutationRate: Double = 1.0 / mutation.genomeSize,
+  //    mutationRange: Double = 0.1): mutation.Mutation = {
+  //    import mutation._
+  //    (genome: G, population: Population[G, P, F], archive: A, rng: Random) => {
+  //      val newG = values.get(genome).map {
+  //        g =>
+  //          if (rng.nextDouble < mutationRate) {
+  //            def alphai = if (rng.nextDouble < (1.0 / 16)) 1.0 else 0.0
+  //            def ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
+  //            def sign = if (rng.nextBoolean) 1.0 else -1.0
+  //            g + (sign * mutationRange * ro)
+  //          } else g
+  //      }
+  //      genome &|-> values set newG
+  //    }
+  //  }
+
+  def apply[G, P, F, A, BreedingContext[_]: Monad](
+    mutationRate: Double,
+    mutationRange: Double)(values: Lens[G, Seq[Double]]): (G, Population[G, P, F], A, Random) => BreedingContext[G] = {
+    (genome: G, population: Population[G, P, F], archive: A, rng: Random) =>
+      {
+        val newG = values.get(genome).map {
+          g =>
+            if (rng.nextDouble < mutationRate) {
+              def alphai = if (rng.nextDouble < (1.0 / 16)) 1.0 else 0.0
+              def ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
+              def sign = if (rng.nextBoolean) 1.0 else -1.0
+              g + (sign * mutationRange * ro)
+            } else g
+        }
+        (genome &|-> values set newG).point[BreedingContext]
       }
-      genome &|-> values set newG
-    }
   }
 }
-

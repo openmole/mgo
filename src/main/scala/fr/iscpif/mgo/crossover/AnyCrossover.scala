@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 05/08/2015 Guillaume Chérel
+ * Copyright (C) 06/08/2015 Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,26 +14,22 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package fr.iscpif.mgo.breed
+package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
+import tools._
+import genome.G
+import util.Random
 
-import scala.util.Random
 import scalaz._
 import Scalaz._
 
 import scala.language.higherKinds
 
-trait BreedingContext <: G with P with F {
+trait AnyCrossover <: Crossover {
 
-  type BreedingContext[A]
-  implicit def monadBreedingContext: Monad[BreedingContext]
-
-  /** extract the content from the breeding monad */
-  def unwrapBreedingContext[A](x: BreedingContext[A]): A
-
-  def randomGenomeInContext(implicit rng: Random): BreedingContext[G]
-
-  def cloneInContext(c: Individual[G, P, F]): BreedingContext[G]
+  override def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]] =
+    if (crossovers.isEmpty) genomes.toVector.point[BreedingContext]
+    else crossovers.random(rng)(genomes, population, archive, rng)
 
 }

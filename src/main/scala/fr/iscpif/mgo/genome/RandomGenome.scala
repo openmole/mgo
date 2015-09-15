@@ -20,6 +20,7 @@ import scalaz._
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-trait RandomGenome <: G with BreedingContext {
-  def randomGenome(implicit rng: Random): Vector[G]
+
+trait RandomGenome <: G {
+  def randomGenome(implicit rng: Random): G
 }

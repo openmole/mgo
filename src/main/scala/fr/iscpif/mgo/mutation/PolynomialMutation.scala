@@ -21,6 +21,14 @@ import fr.iscpif.mgo._
 import util.Random
 import scala.math._
 
+import scalaz._
+import Scalaz._
+
+import monocle.Lens
+import monocle.syntax._
+
+import scala.language.higherKinds
+
 /**
  * Polynomial mutationolynomial mutation by Deb and Goyal. If is the value of
  * the ith parameter selected for mutation with a probability pm and the result
@@ -31,39 +39,74 @@ import scala.math._
  */
 object PolynomialMutation {
 
-  def apply(mutation: Mutation with GA)(distributionIndex: Double, mutationRate: Double = 0.5): mutation.Mutation = {
-    import mutation._
-    (g: G, population: Population[G, P, F], archive: A, rng: Random) => {
-      val newValues = values.get(g) map {
-        v =>
-          if (rng.nextDouble <= mutationRate) {
-            val yl = 0.0 // lower bound
-            val yu = 1.0 // upper bound
-            val delta1 = (v - yl) / (yu - yl)
-            val delta2 = (yu - v) / (yu - yl)
-            val mut_pow = 1.0 / (distributionIndex + 1.0)
-            val rnd = rng.nextDouble
+  //  def apply(mutation: Mutation with GA)(distributionIndex: Double, mutationRate: Double = 0.5): mutation.Mutation = {
+  //    import mutation._
+  //    (g: G, population: Population[G, P, F], archive: A, rng: Random) => {
+  //      val newValues = values.get(g) map {
+  //        v =>
+  //          if (rng.nextDouble <= mutationRate) {
+  //            val yl = 0.0 // lower bound
+  //            val yu = 1.0 // upper bound
+  //            val delta1 = (v - yl) / (yu - yl)
+  //            val delta2 = (yu - v) / (yu - yl)
+  //            val mut_pow = 1.0 / (distributionIndex + 1.0)
+  //            val rnd = rng.nextDouble
+  //
+  //            val deltaq: Double = (if (rnd <= 0.5) {
+  //              val xy = 1.0 - delta1
+  //              val value = 2.0 * rnd + (1.0 - 2.0 * rnd) * (pow(xy, (distributionIndex + 1.0)))
+  //              pow(value, mut_pow) - 1.0
+  //            } else {
+  //              val xy = 1.0 - delta2
+  //              val value = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (pow(xy, (distributionIndex + 1.0)))
+  //              1.0 - (pow(value, mut_pow))
+  //            })
+  //
+  //            val finalValue = v + deltaq * (yu - yl)
+  //
+  //            if (finalValue < yl) yl
+  //            else if (finalValue > yu) yu
+  //            else finalValue
+  //          }
+  //          v
+  //      }
+  //      values.set(newValues)(g)
+  //    }
+  //  }
 
-            val deltaq: Double = (if (rnd <= 0.5) {
-              val xy = 1.0 - delta1
-              val value = 2.0 * rnd + (1.0 - 2.0 * rnd) * (pow(xy, (distributionIndex + 1.0)))
-              pow(value, mut_pow) - 1.0
-            } else {
-              val xy = 1.0 - delta2
-              val value = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (pow(xy, (distributionIndex + 1.0)))
-              1.0 - (pow(value, mut_pow))
-            })
+  def apply[G, P, F, A, BreedingContext[_]: Monad](distributionIndex: Double, mutationRate: Double = 0.5)(values: Lens[G, Seq[Double]]): (G, Population[G, P, F], A, Random) => BreedingContext[G] = {
+    (g: G, population: Population[G, P, F], archive: A, rng: Random) =>
+      {
+        val newValues = values.get(g) map {
+          v =>
+            if (rng.nextDouble <= mutationRate) {
+              val yl = 0.0 // lower bound
+              val yu = 1.0 // upper bound
+              val delta1 = (v - yl) / (yu - yl)
+              val delta2 = (yu - v) / (yu - yl)
+              val mut_pow = 1.0 / (distributionIndex + 1.0)
+              val rnd = rng.nextDouble
 
-            val finalValue = v + deltaq * (yu - yl)
+              val deltaq: Double = (if (rnd <= 0.5) {
+                val xy = 1.0 - delta1
+                val value = 2.0 * rnd + (1.0 - 2.0 * rnd) * (pow(xy, (distributionIndex + 1.0)))
+                pow(value, mut_pow) - 1.0
+              } else {
+                val xy = 1.0 - delta2
+                val value = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (pow(xy, (distributionIndex + 1.0)))
+                1.0 - (pow(value, mut_pow))
+              })
 
-            if (finalValue < yl) yl
-            else if (finalValue > yu) yu
-            else finalValue
-          }
-          v
+              val finalValue = v + deltaq * (yu - yl)
+
+              if (finalValue < yl) yl
+              else if (finalValue > yu) yu
+              else finalValue
+            }
+            v
+        }
+        values.set(newValues)(g).point[BreedingContext]
       }
-      values.set(newValues)(g)
-    }
   }
 }
 

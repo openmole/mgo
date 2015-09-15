@@ -16,17 +16,18 @@
  */
 package fr.iscpif.mgo.selection
 
-import fr.iscpif.mgo.{ Individual, Population }
+import fr.iscpif.mgo._
+import fr.iscpif.mgo.breed.BreedingContext
 
 import scala.util.Random
+import scalaz._
+import Scalaz._
 
-trait RandomMating <: Mating with Selection {
-  /**
-   * Select an individual among the population.
-   *
-   * param population the population in which selection occurs
-   * @return the selected individual
-   */
-  override def mate(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[Seq[Individual[G, P, F]]] =
-    selection(population, archive).grouped(2)
+import scala.language.higherKinds
+
+trait PairMating <: Mating with Selection with BreedingContext {
+
+  override def mate(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[BreedingContext[Vector[Individual[G, P, F]]]] =
+    selection(population, archive).grouped(2).map { indivs => indivs.toVector.point[BreedingContext] }
+
 }

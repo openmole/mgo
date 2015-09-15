@@ -34,7 +34,7 @@ trait DynamicMutation <: Mutation {
     (0 until mutations.size).map(i => mutations(i) -> map.getOrElse(i, 0.0)).toMap
   }
 
-  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): G = {
+  override def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[G] = {
     val mutation: Mutation =
       if (rng.nextDouble < mutationExploration) mutations.random
       else multinomial(mutationStats(population))

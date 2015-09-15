@@ -20,14 +20,21 @@ package fr.iscpif.mgo.mutation
 import fr.iscpif.mgo._
 import util.Random
 
+import scalaz._
+import Scalaz._
+
+import monocle.Lens
+import monocle.syntax._
+
+import scala.language.higherKinds
+
 /**
  * Mutation that doesn't modify the genome.
  */
 object IdentityMutation {
 
-  def apply(mutation: Mutation with G): mutation.Mutation = {
-    import mutation._
-    (genome: G, population: Population[G, P, F], archive: A, rng: Random) => genome
+  def apply[G, P, F, A, BreedingContext[_]: Monad]: (G, Population[G, P, F], A, Random) => BreedingContext[G] = {
+    (genome: G, population: Population[G, P, F], archive: A, rng: Random) => genome.point[BreedingContext]
   }
 
 }

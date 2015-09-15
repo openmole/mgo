@@ -62,6 +62,7 @@ package object mgo {
   type NoveltyArchive = archive.NoveltyArchive
   type Breeding = breed.Breeding
   type BreedingContext = breed.BreedingContext
+  type BreedingContextId = breed.BreedingContextId
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
   type NEATBreeding = breed.NEATBreeding
@@ -155,7 +156,7 @@ package object mgo {
   type BinaryTournamentSelection = selection.BinaryTournamentSelection
   type Mating = selection.Mating
   type RandomSelection = selection.RandomSelection
-  type RandomMating = selection.RandomMating
+  type RandomMating = selection.PairMating
   type TournamentOnDiversity = selection.TournamentOnDiversity
   type TournamentOnRank = selection.TournamentOnRank
   type TournamentOnRankAndDiversity = selection.TournamentOnRankAndDiversity

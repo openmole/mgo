@@ -18,12 +18,13 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.breed.BreedingContextId
 
-trait DynamicGACrossover <: DynamicCrossover with GA {
+trait DynamicGACrossover <: DynamicCrossover with GA with BreedingContextId {
 
-  def crossovers = Vector(
-    SBXCrossover(this)(0.1),
-    BLXCrossover(this)(0.5)
+  def crossovers = Vector[Crossover](
+    SBXCrossover.apply[G, P, F, A, BreedingContext](0.1)(values),
+    BLXCrossover.apply[G, P, F, A, BreedingContext](0.5)(values)
   )
 
 }

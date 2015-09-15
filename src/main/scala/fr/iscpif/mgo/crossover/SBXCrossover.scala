@@ -18,9 +18,17 @@
 package fr.iscpif.mgo.crossover
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.breed.BreedingContextId
 import fr.iscpif.mgo.tools.Math._
 import util.Random
+
+import scalaz._
+import Scalaz._
+
+import monocle.Lens
 import monocle.syntax._
+
+import scala.language.higherKinds
 
 /**
  * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :
@@ -41,17 +49,28 @@ import monocle.syntax._
  * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
  *
  */
+
 object SBXCrossover {
 
-  def apply(crossover: Crossover with GA)(distributionIndex: Double = 1.0): crossover.Crossover = {
-    import crossover._
+  //  def apply(crossover: Crossover with GA)(distributionIndex: Double = 1.0): crossover.Crossover = {
+  //    import crossover._
+  //    (genomes: Seq[G], population: Population[G, P, F], archive: A, rng: Random) => {
+  //      val (g1, g2) = (genomes(0), genomes(1))
+  //      val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)(rng)
+  //      assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
+  //      //Vector(g1 applyLens values set o1, g2 applyLens values set o2).point[BreedingContext]
+  //      Vector(g1 applyLens values set o1, g2 applyLens values set o2).point[BreedingContext]
+  //    }
+  //  }
+
+  def apply[G, P, F, A, BreedingContext[_]: Monad](distributionIndex: Double = 1.0)(values: Lens[G, Seq[Double]]): (Seq[G], Population[G, P, F], A, Random) => BreedingContext[Vector[G]] =
     (genomes: Seq[G], population: Population[G, P, F], archive: A, rng: Random) => {
       val (g1, g2) = (genomes(0), genomes(1))
       val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)(rng)
       assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-      Seq(g1 applyLens values set o1, g2 applyLens values set o2)
+      //Vector(g1 applyLens values set o1, g2 applyLens values set o2).point[BreedingContext]
+      Vector(g1 applyLens values set o1, g2 applyLens values set o2).point[BreedingContext]
     }
-  }
 
   def crossOver(g1: Seq[Double], g2: Seq[Double], distributionIndex: Double)(implicit rng: Random): (Seq[Double], Seq[Double]) = {
 

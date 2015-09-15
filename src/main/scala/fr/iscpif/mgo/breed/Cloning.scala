@@ -19,11 +19,13 @@ package fr.iscpif.mgo.breed
 import fr.iscpif.mgo._
 import scalaz._
 
+import scala.language.higherKinds
+
 trait Cloning <: G with P with F with BreedingContext {
 
   def cloneProbability: Double = 0.0
 
-  def clone[B[_]: Monad](c: Individual[G, P, F]): B[G] = ???
+  def clone(c: Individual[G, P, F]): G = c.genome
   /*State[BREEDINGCONTEXT, Seq[G]] { s =>
       (updateContextWithClone(s, c), c.genome)
     }*/

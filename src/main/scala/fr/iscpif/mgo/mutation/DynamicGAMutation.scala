@@ -23,9 +23,9 @@ trait DynamicGAMutation <: DynamicMutation with GA with Sigma with MinimumSigma 
 
   def mutations =
     Vector(
-      BGAMutation(this)(mutationRate = 1.0 / genomeSize, mutationRange = 0.1),
-      BGAMutation(this)(mutationRate = 0.5, mutationRange = 0.5),
-      AdaptiveCauchyMutation(this)
+      BGAMutation(mutationRate = 1.0 / genomeSize, mutationRange = 0.1)(values),
+      BGAMutation(mutationRate = 0.5, mutationRange = 0.5)(values),
+      AdaptiveCauchyMutation(minimumSigma)(values, sigma)
     )
 
 }

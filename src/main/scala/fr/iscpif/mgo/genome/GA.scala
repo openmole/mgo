@@ -17,6 +17,7 @@
 
 package fr.iscpif.mgo.genome
 
+import fr.iscpif.mgo._
 import monocle._
 import scala.util.Random
 
