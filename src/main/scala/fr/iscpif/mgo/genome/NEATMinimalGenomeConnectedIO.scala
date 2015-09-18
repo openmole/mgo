@@ -17,17 +17,27 @@
 
 package fr.iscpif.mgo.genome
 
+import fr.iscpif.mgo.breed.NEATBreedingContext
+
 import collection.immutable.IntMap
 import util.Random
 import math._
 
+import scalaz._
+import Scalaz._
+
 import NEATGenome._
 
-trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
-  def minimalGenome(implicit rng: Random): G =
+trait NEATMinimalGenomeConnectedIO <: NEATInitialGenome {
+
+  override def minimalGenome(implicit rng: Random): G =
     Genome(
       connectionGenes =
-        inputNodesIndices.flatMap { u => outputNodesIndices.map { (u, _) } }
+        inputNodesIndices.flatMap { u =>
+          outputNodesIndices.map {
+            (u, _)
+          }
+        }
           .zipWithIndex.map {
             case ((u, v), i) =>
               ConnectionGene(
@@ -39,9 +49,15 @@ trait NEATMinimalGenomeConnectedIO <: MinimalGenome with NEATGenome {
           },
       nodes =
         IntMap(
-          inputNodesIndices.map { _ -> newInputNode }
-            ++ biasNodesIndices.map { _ -> newBiasNode }
-            ++ outputNodesIndices.map { _ -> newOutputNode }.toSeq: _*),
+          inputNodesIndices.map {
+            _ -> newInputNode
+          }
+            ++ biasNodesIndices.map {
+              _ -> newBiasNode
+            }
+            ++ outputNodesIndices.map {
+              _ -> newOutputNode
+            }.toSeq: _*),
       species = 0,
       lastNodeId = inputNodes + biasNodes + outputNodes - 1
     )

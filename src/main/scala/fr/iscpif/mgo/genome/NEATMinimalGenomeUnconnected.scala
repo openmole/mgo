@@ -20,11 +20,14 @@ package fr.iscpif.mgo.genome
 import collection.immutable.IntMap
 import scala.util.Random
 
+import scalaz._
+import Scalaz._
+
 import NEATGenome._
 
-trait NEATMinimalGenomeUnconnected <: MinimalGenome with NEATGenome {
+trait NEATMinimalGenomeUnconnected <: NEATInitialGenome {
 
-  def minimalGenome(implicit rng: Random): G = mg
+  override def minimalGenome(implicit rng: Random): G = mg
 
   lazy val mg: G =
     Genome(

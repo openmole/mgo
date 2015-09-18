@@ -30,9 +30,6 @@ import scala.language.higherKinds
  */
 trait Mutation <: G with P with F with A with BreedingContext {
 
-  type Mutation = (G, Population[G, P, F], A, Random) => BreedingContext[G]
-  def mutations: Vector[Mutation]
-
   /**
    * Mutate a genome
    *
@@ -42,7 +39,7 @@ trait Mutation <: G with P with F with A with BreedingContext {
    * @param rng a random number generator
    * @return the mutated genome
    */
-  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[G] = ???
+  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[G]
   //if (mutations.isEmpty) genome
   //else mutations.random(rng)(genome, population, archive, rng)
 

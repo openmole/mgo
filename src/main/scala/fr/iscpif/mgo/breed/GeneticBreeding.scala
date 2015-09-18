@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.breed
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.genome.InitialGenome
 import fr.iscpif.mgo.selection.Mating
 import util.Random
 import fr.iscpif.mgo.tools._
@@ -29,25 +30,29 @@ import scala.language.higherKinds
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait GeneticBreeding <: Breeding with G with F with P with Mating with Cloning with Crossover with Mutation with BreedingContext {
+trait GeneticBreeding <: Breeding with G with F with P with Lambda with InitialGenome with Mating with Cloning with Crossover with Mutation with BreedingContext {
 
   /**
    * Breed genomes from a population
    *
    * @param population the population from which genomes are breeded
-   * @param size the size of the breeded set
    * @return the breeded genomes
    */
-  def breed(population: Population[G, P, F], archive: A, size: Int)(implicit rng: Random): Vector[G] = {
+  def breed(population: Population[G, P, F], archive: A)(implicit rng: Random): Vector[G] = {
     val offsprings: Iterator[BreedingContext[Vector[G]]] =
-      if (population.isEmpty) Iterator.continually(Vector(randomGenomeInContext).sequence[BreedingContext, G])
+      if (population.isEmpty) Iterator.continually(Vector(initialGenome).sequence[BreedingContext, G])
       else {
         val breeded: Iterator[BreedingContext[Vector[G]]] =
           // bind each result of mate to a breed action
-          mate(population, archive).map { (_: BreedingContext[Vector[Individual[G, P, F]]]) >>= { breed(_, population, archive) } }
+          mate(population, archive)
+            .map {
+              (_: BreedingContext[Vector[Individual[G, P, F]]]) >>= {
+                breed(_, population, archive)
+              }
+            }
 
         val cloned: Iterator[BreedingContext[G]] =
-          Iterator.continually(cloneInContext(population.toIndividuals.random))
+          Iterator.continually(clone(population.toIndividuals.random))
 
         // breed or clone
         Iterator.continually {
@@ -60,22 +65,16 @@ trait GeneticBreeding <: Breeding with G with F with P with Mating with Cloning 
 
     unwrapBreedingContext[Vector[G]](
       // Get the B in the outer position with sequence, then flatten the inner nested vectors with join
-      (offsprings.take(size).toVector: Vector[BreedingContext[Vector[G]]]).sequence[BreedingContext, Vector[G]].map { (_: Vector[Vector[G]]).join })
+      (offsprings.take(lambda).toVector: Vector[BreedingContext[Vector[G]]]).sequence[BreedingContext, Vector[G]].map { (_: Vector[Vector[G]]).join },
+      population,
+      archive)
   }
 
   def breed(
     individuals: Vector[Individual[G, P, F]],
     population: Population[G, P, F],
     archive: A)(implicit rng: Random): BreedingContext[Vector[G]] =
-    /*implicitly[Monad[BreedingContext]].bind[Vector[G], Vector[G]](
-      crossover[BreedingContext](individuals.map { _.genome }, population, archive))(
-        parents => {
-          implicitly[Monad[BreedingContext]].map {
-            implicitly[Traverse[Vector]].traverse[BreedingContext, G, G](parents.toVector) { mutate[BreedingContext](_, population, archive) }
-          } { _.toVector }
-        })
-    */
-    crossover(individuals.map { _.genome }, population, archive) >>= { parents =>
+    crossover(individuals, population, archive) >>= { parents =>
       parents.traverse[BreedingContext, G] { mutate(_, population, archive) }
     }
 }

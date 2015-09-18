@@ -20,6 +20,6 @@ package fr.iscpif.mgo.breed
 import fr.iscpif.mgo._
 import scala.util.Random
 
-trait Breeding <: G with F with P with Archive {
-  def breed(population: Population[G, P, F], a: A, size: Int)(implicit rng: Random): Seq[G]
+trait Breeding <: G with F with P with Archive with Lambda {
+  def breed(population: Population[G, P, F], a: A)(implicit rng: Random): Seq[G]
 }

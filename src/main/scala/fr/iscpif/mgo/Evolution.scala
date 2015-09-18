@@ -123,7 +123,7 @@ trait Evolution extends Termination
    *
    */
   def step(population: Population[G, P, F], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): (Population[G, P, F], A) = {
-    val offspringGenomes = breed(population, archive, lambda)
+    val offspringGenomes = breed(population, archive)
     val offspring = evaluate(offspringGenomes, expression, evaluation)
     val newArchive = self.archive(archive, population, offspring)
 

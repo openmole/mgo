@@ -25,7 +25,7 @@ import monocle.syntax._
 
 import scala.util.Random
 
-trait DynamicCrossover <: Crossover {
+trait DynamicCrossover <: MultipleCrossover {
 
   def crossoverExploration: Double = 0.1
   def fromCrossover: Lens[G, Option[Int]]
@@ -36,11 +36,11 @@ trait DynamicCrossover <: Crossover {
     (0 until crossovers.size).map(i => crossovers(i) -> map.getOrElse(i, 0.0)).toMap
   }
 
-  override def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]] = {
+  override def crossover(indivs: Seq[Individual[G, P, F]], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]] = {
     val crossover: Crossover =
       if (rng.nextDouble < crossoverExploration) crossovers.random
       else multinomial(crossoverStats(population))
-    crossover(genomes, population, archive, rng)
+    crossover(indivs, population, archive, rng)
   }
 
 }

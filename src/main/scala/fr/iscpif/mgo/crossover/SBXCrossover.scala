@@ -52,19 +52,9 @@ import scala.language.higherKinds
 
 object SBXCrossover {
 
-  //  def apply(crossover: Crossover with GA)(distributionIndex: Double = 1.0): crossover.Crossover = {
-  //    import crossover._
-  //    (genomes: Seq[G], population: Population[G, P, F], archive: A, rng: Random) => {
-  //      val (g1, g2) = (genomes(0), genomes(1))
-  //      val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)(rng)
-  //      assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-  //      //Vector(g1 applyLens values set o1, g2 applyLens values set o2).point[BreedingContext]
-  //      Vector(g1 applyLens values set o1, g2 applyLens values set o2).point[BreedingContext]
-  //    }
-  //  }
-
-  def apply[G, P, F, A, BreedingContext[_]: Monad](distributionIndex: Double = 1.0)(values: Lens[G, Seq[Double]]): (Seq[G], Population[G, P, F], A, Random) => BreedingContext[Vector[G]] =
-    (genomes: Seq[G], population: Population[G, P, F], archive: A, rng: Random) => {
+  def apply[G, P, F, A, BreedingContext[_]: Monad](distributionIndex: Double = 1.0)(values: Lens[G, Seq[Double]]) =
+    (indivs: Seq[Individual[G, P, F]], population: Population[G, P, F], archive: A, rng: Random) => {
+      val genomes = indivs.map { _.genome }
       val (g1, g2) = (genomes(0), genomes(1))
       val (o1, o2) = SBXCrossover.crossOver(values.get(g1), values.get(g2), distributionIndex)(rng)
       assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")

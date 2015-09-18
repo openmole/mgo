@@ -24,16 +24,16 @@ import Scalaz._
 
 import scala.language.higherKinds
 
-trait BreedingContext <: G with P with F {
+trait BreedingContext <: G with P with F with A {
 
   type BreedingContext[A]
   implicit def monadBreedingContext: Monad[BreedingContext]
 
   /** extract the content from the breeding monad */
-  def unwrapBreedingContext[A](x: BreedingContext[A]): A
+  def unwrapBreedingContext[Z](x: BreedingContext[Z], population: Population[G, P, F], archive: A): Z
 
-  def randomGenomeInContext(implicit rng: Random): BreedingContext[G]
+  //def initialGenome(implicit rng: Random): BreedingContext[G]
 
-  def cloneInContext(c: Individual[G, P, F]): BreedingContext[G]
+  //def cloneInContext(c: Individual[G, P, F]): BreedingContext[G]
 
 }

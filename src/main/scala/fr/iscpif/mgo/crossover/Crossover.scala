@@ -30,9 +30,6 @@ import scala.language.higherKinds
  */
 trait Crossover <: G with P with F with A with BreedingContext {
 
-  type Crossover = (Seq[G], Population[G, P, F], A, Random) => BreedingContext[Vector[G]]
-  def crossovers: Vector[Crossover]
-
   /**
    * Crossover g1 and g2
    *
@@ -41,6 +38,6 @@ trait Crossover <: G with P with F with A with BreedingContext {
    *  @param archive last archive
    *  @return the result of the crossover
    */
-  def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]]
+  def crossover(genomes: Seq[Individual[G, P, F]], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]]
 
 }

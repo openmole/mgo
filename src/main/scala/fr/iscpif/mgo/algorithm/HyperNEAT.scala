@@ -18,8 +18,11 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.genome.MinimalGenome
+import fr.iscpif.mgo.breed.{ CloningPure, NEATBreedingContext }
+import fr.iscpif.mgo.crossover.NEATCrossover
+import fr.iscpif.mgo.mutation.NEATMutation
 import fr.iscpif.mgo.problem.NEATProblem
+import fr.iscpif.mgo.selection.NEATMating
 import fr.iscpif.mgo.tools.neuralnetwork.ActivationFunction
 
 import fr.iscpif.mgo.genome.NEATGenome._
@@ -31,7 +34,7 @@ import util.Random
  * - Nodes carry activation functions
  * - Neural nets are created from the evolved nets
  */
-trait HyperNEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchive with NoPhenotype with MinimalGenome {
+trait HyperNEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext with NEATMating with NEATCrossover with NEATMutation with NEATElitism with NEATArchive with NoPhenotype with CloningPure {
 
   type ACTIVF = String
   val cppnActivationFunctions: Seq[ACTIVF]
@@ -40,7 +43,7 @@ trait HyperNEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchi
 
   def pickActivationFunction(implicit rng: Random): ACTIVF = cppnActivationFunctions(rng.nextInt(cppnActivationFunctions.length))
 
-  override def pickNewHiddenNode(level: Double)(implicit rng: Random): HiddenNode =
+  def pickNewHiddenNode(level: Double)(implicit rng: Random): HiddenNode =
     HiddenNode(
       pickActivationFunction,
       level)

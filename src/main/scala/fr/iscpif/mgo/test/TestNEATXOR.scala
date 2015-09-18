@@ -22,7 +22,7 @@ import java.util.Locale
 
 import fr.iscpif.mgo.{ Individual, PopulationElement, Population }
 import fr.iscpif.mgo.algorithm.NEAT
-import fr.iscpif.mgo.breed.{ SpeciesFitnessSharing, SpeciesRescaledFitnessSharing, NEATFeedforwardTopology }
+import fr.iscpif.mgo.breed.{ NEATSpeciesFitnessSharing, NEATSpeciesRescaledFitnessSharing, NEATFeedforwardTopology }
 import fr.iscpif.mgo.genome.{ NEATMinimalGenomeUnconnected, NEATMinimalGenomeConnectedIO }
 import fr.iscpif.mgo.termination.ConditionalTermination
 import fr.iscpif.mgo.tools.neuralnetwork.{ ActivationFunction, Feedforward, NeuralNetwork }
@@ -152,7 +152,7 @@ object TestNEATXORReplications {
   }
 }
 
-trait XORNEAT extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
+trait XORNEAT extends NEAT with NEATMinimalGenomeConnectedIO with NEATFeedforwardTopology with ConditionalTermination with NEATSpeciesFitnessSharing {
 
   def interSpeciesMatingProb: Double = 0.001
 

@@ -21,7 +21,7 @@ import java.util.Locale
 
 import fr.iscpif.mgo.{ Individual, PopulationElement, Population }
 import fr.iscpif.mgo.algorithm.{ HyperNEAT, NEAT }
-import fr.iscpif.mgo.breed.{ SpeciesFitnessSharing, NEATFeedforwardTopology }
+import fr.iscpif.mgo.breed.{ NEATSpeciesFitnessSharing, NEATFeedforwardTopology }
 import fr.iscpif.mgo.genome.NEATMinimalGenomeConnectedIO
 import fr.iscpif.mgo.termination.ConditionalTermination
 import fr.iscpif.mgo.tools.neuralnetwork.{ ActivationFunction, Feedforward, NeuralNetwork }
@@ -134,7 +134,7 @@ object TestHyperNEATBoxes {
       }.mkString("\n")
 }
 
-trait HyperNEATBoxes extends HyperNEAT with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing with NEATMinimalGenomeConnectedIO {
+trait HyperNEATBoxes extends HyperNEAT with NEATFeedforwardTopology with ConditionalTermination with NEATSpeciesFitnessSharing with NEATMinimalGenomeConnectedIO {
 
   val rng = new Random()
 

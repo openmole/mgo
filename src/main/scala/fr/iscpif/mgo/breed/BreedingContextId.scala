@@ -16,10 +16,8 @@
  */
 package fr.iscpif.mgo.breed
 
-import java.lang.RuntimeException
-
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.genome.RandomGenome
+import fr.iscpif.mgo.genome.InitialGenome
 
 import scala.util.Random
 import scalaz._
@@ -27,11 +25,10 @@ import Scalaz._
 
 import scala.language.higherKinds
 
-trait BreedingContextId <: BreedingContext with RandomGenome with Cloning {
+trait BreedingContextId <: BreedingContext {
 
   type BreedingContext[A] = Id[A]
-  //override implicit lazy val monadBreedingContext: Monad[BreedingContext] = implicitly[Monad[BreedingContext]] //Endless recursion
-  override implicit lazy val monadBreedingContext: Monad[BreedingContext] = implicitly[Monad[Id]] //Monad is invariant in its parameter type
+  override implicit lazy val monadBreedingContext: Monad[BreedingContext] = implicitly[Monad[Id]]
   /*override implicit def monadBreedingContext: Monad[BreedingContext] = new Monad[BreedingContext] {
     def bind[A, B](fa: BreedingContext[A])(f: (A) ⇒ BreedingContext[B]): BreedingContext[B] = implicitly[Monad[Id]].bind[A, B](fa)(f)
 
@@ -39,13 +36,13 @@ trait BreedingContextId <: BreedingContext with RandomGenome with Cloning {
   }*/
 
   /** extract the content from the breeding monad */
-  def unwrapBreedingContext[A](x: BreedingContext[A]): A = x: Id[A]
+  def unwrapBreedingContext[Z](x: BreedingContext[Z], population: Population[G, P, F], archive: A): Z = x: Id[Z]
 
-  def randomGenomeInContext(implicit rng: Random): BreedingContext[G] = {
-    val rg = randomGenome
-    rg.point[BreedingContext]
-  }
-
-  def cloneInContext(c: Individual[G, P, F]): BreedingContext[G] = clone(c).point[BreedingContext]
+  //  override def initialGenome(implicit rng: Random): BreedingContext[G] = {
+  //    val rg = initialGenome
+  //    rg.point[BreedingContext]
+  //  }
+  //
+  //  def cloneInContext(c: Individual[G, P, F]): BreedingContext[G] = clone(c).point[BreedingContext]
 
 }

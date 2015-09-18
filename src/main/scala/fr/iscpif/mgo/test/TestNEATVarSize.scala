@@ -22,7 +22,7 @@ import java.util.Locale
 
 import fr.iscpif.mgo.{ Individual, PopulationElement, Population }
 import fr.iscpif.mgo.algorithm.NEAT
-import fr.iscpif.mgo.breed.{ SpeciesFitnessSharing, NEATFeedforwardTopology }
+import fr.iscpif.mgo.breed.{ NEATSpeciesFitnessSharing, NEATFeedforwardTopology }
 import fr.iscpif.mgo.genome.{ NEATMinimalGenomeUnconnected, NEATMinimalGenomeConnectedIO }
 import fr.iscpif.mgo.termination.ConditionalTermination
 import fr.iscpif.mgo.tools.neuralnetwork.{ ActivationFunction, Feedforward, NeuralNetwork }
@@ -94,7 +94,7 @@ object TestNEATVarSize {
   }
 }
 
-trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with ConditionalTermination with SpeciesFitnessSharing {
+trait NEATVarSize extends NEAT with NEATMinimalGenomeUnconnected with NEATFeedforwardTopology with ConditionalTermination with NEATSpeciesFitnessSharing {
 
   val rng = new Random()
 

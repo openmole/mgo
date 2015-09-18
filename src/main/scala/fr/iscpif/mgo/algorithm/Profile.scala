@@ -37,3 +37,5 @@ trait Profile <: Evolution
   with ProfileRanking
   with ClampedGenome
   with ProportionalNumberOfRound
+  with CloningPure
+  with RandomInitialGenome

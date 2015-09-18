@@ -28,11 +28,11 @@ import monocle.syntax._
 import scala.util.Random
 
 trait CMAESBreeding <: Breeding with GA with CMAESArchive {
-  def breed(population: Population[G, P, F], a: A, size: Int)(implicit rng: Random): Seq[G] = {
+  def breed(population: Population[G, P, F], a: A)(implicit rng: Random): Seq[G] = {
     // Generate lambda offspring
-    val arz = randn1(genomeSize, size)
+    val arz = randn1(genomeSize, lambda)
 
-    (0 until size).map {
+    (0 until lambda).map {
       k =>
         val v = a.xmean.add(a.BD.multiply(arz.getColumnMatrix(k)).scalarMultiply(a.sigma))
         assert(!v.getColumn(0).exists(_.isNaN), a.C.getData.map(_.mkString(",")).mkString("\n"))

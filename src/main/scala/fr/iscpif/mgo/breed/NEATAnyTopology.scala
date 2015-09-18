@@ -24,7 +24,9 @@ import fr.iscpif.mgo.genome.NEATGenome
 import fr.iscpif.mgo.archive.NEATArchive
 import collection.immutable.IntMap
 
-trait NEATAnyTopology extends NEATBreeding with NEATGenome {
+trait NEATAnyTopology extends NEATGenome {
+
+  def mutationAddLinkBiasProb: Double
 
   def pickNodesAddLink(genome: G)(implicit rng: Random): Option[(Int, Int)] = {
     val connections =

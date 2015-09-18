@@ -66,6 +66,8 @@ package object mgo {
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
   type NEATBreeding = breed.NEATBreeding
+  type Cloning = breed.Cloning
+  type CloningPure = breed.CloningPure
   lazy val BLXCrossover = crossover.BLXCrossover
   type Crossover = crossover.Crossover
   type DynamicGACrossover = crossover.DynamicGACrossover
@@ -118,10 +120,10 @@ package object mgo {
   type GAGenomeWithRandomValue = genome.GAGenomeWithRandomValue
   type GAGenomeWithSigma = genome.GAGenomeWithSigma
   type NEATGenome = genome.NEATGenome
-  type MinimalGenome = genome.MinimalGenome
   type GA = genome.GA
   type NoGenomeClamping = genome.NoGenomeClamping
   type RandomValue = genome.RandomValue
+  type RandomInitialGenome = genome.RandomInitialGenome
   type Sigma = genome.Sigma
   type MapGenomePlotter = map.MapGenomePlotter
   type MapPlotter = map.MapPlotter

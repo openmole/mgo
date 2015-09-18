@@ -24,7 +24,7 @@ import monocle._
 
 import scala.util.Random
 
-trait DynamicMutation <: Mutation {
+trait DynamicMutation <: MultipleMutation {
   def mutationExploration: Double = 0.1
   def fromMutation: Lens[G, Option[Int]]
 

@@ -31,7 +31,10 @@ import math.{ max, min, abs, round }
 /**
  * Layer of the cake for the breeding part of the evolution algorithm
  */
-trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with DoubleFitness with MinimalGenome {
+
+trait NEATBreeding {}
+
+/*trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with DoubleFitness with MinimalGenome {
 
   type BreedingState = (Int, //global innovation number
   Int, //global node number
@@ -104,27 +107,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
       val (bred, _) = breedAll.runstate((globalInnovationNumber, globalNodeNumber, Seq.empty, archive.indexOfSpecies))
       bred.toSeq
 
-      // parents.foldLeft((List.empty, archive.globalInnovationNumber, archive.recordOfInnovations, archive.indexOfSpecies)) {
-      //   (state, parents) =>
-      //     val (offsprings, gin, roi, ios) = acc
-      //     val (p1, p2) = parents
-      //     val (newgenome, (newgin, newroi, newios)) = doBreedOnce(p1, p2).runstate(state)
-      //     (newgenome :: offsprings, newgin, newroi, newios)
-      // }
-
-      //!!!use state monad!!! (state=gin, roi, ios; result=newgenome)
-      // val breeding: Iterator[G] =
-      //   parents.map {
-      //     parents =>
-      //       val (i1, i2) = parents
-      //       val newgen = mutate(
-      //         crossover(i1, i2, population, archive),
-      //         population,
-      //         archive)
-      //       newgen
-      //   }
-
-      //postBreeding(offsprings, population, archive)
     }
   }
 
@@ -218,21 +200,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     indivsBySpecies: Map[Int, Seq[Individual[G, P, F]]],
     totalOffsprings: Int): Seq[(Int, Int)]
 
-  // //returns new node values if and two new nodes numbers if already present
-  // def dontOverride(
-  //   cg: ConnectionGene, 
-  //   nodes: IntMap[Node],
-  //   lastNode: Int): (Int, Int) = {
-  //   val n1 = 
-  //     if (nodes.contains(cg.inNode)) lastNode + 1
-  //     else cg.inNode
-  //   val lastNode2 = max(lastNode, n1)
-  //   val n2 =
-  //     if (nodes.contains(cg.outNode)) lastNode2 + 1
-  //     else cg.outNode
-  //   (n1, n2)
-  // }
-
   def crossover(
     i1: Individual[G, P, Double],
     i2: Individual[G, P, Double])(implicit rng: Random): G = {
@@ -317,23 +284,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
    * Returns a list of aligned connection genes. The first two elements of each tuple give aligned genes, (or None for unmatching genes) and the third is set to 0 when the genes are
    * aligned, 1 for an excess genes, and 2 for disjoint genes
    */
-  //  def alignGenomes(
-  //    cg1: Seq[ConnectionGene],
-  //    cg2: Seq[ConnectionGene]): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
-  //    if (cg1.isEmpty && cg2.isEmpty)
-  //      List.empty
-  //    else if (cg1.isEmpty)
-  //      (None, Some(cg2.head), Disjoint) :: alignGenomes(Seq.empty, cg2.tail)
-  //    else if (cg2.isEmpty)
-  //      (Some(cg1.head), None, Disjoint) :: alignGenomes(cg1.tail, Seq.empty)
-  //    else if (cg1.head.innovation == cg2.head.innovation)
-  //      (Some(cg1.head), Some(cg2.head), Aligned) :: alignGenomes(cg1.tail, cg2.tail)
-  //    else if (cg1.head.innovation < cg2.head.innovation)
-  //      (Some(cg1.head), None, Excess) :: alignGenomes(cg1.tail, cg2)
-  //    else
-  //      (None, Some(cg2.head), Excess) :: alignGenomes(cg1, cg2.tail)
-  //  }
-
   @tailrec final def alignGenomes(
     cg1: Seq[ConnectionGene],
     cg2: Seq[ConnectionGene],
@@ -356,33 +306,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
       alignGenomes(cg1, cg2.tail,
         (None, Some(cg2.head), Excess) :: acc)
   }
-
-  //  @tailrec final def alignGenomes(
-  //    cg1: List[ConnectionGene],
-  //    cg2: List[ConnectionGene],
-  //    acc: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = List.empty): List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)] = {
-  //    (cg1, cg2) match {
-  //      case (List.empty, List.empty) => acc
-  //      case (List.empty, cg2head :: cg2tail) =>
-  //    }
-  //    if (cg1.isEmpty && cg2.isEmpty)
-  //      acc
-  //    else if (cg1.isEmpty)
-  //      alignGenomes(Seq.empty, cg2.tail,
-  //        (None, Some(cg2.head), Disjoint) :: acc)
-  //    else if (cg2.isEmpty)
-  //      alignGenomes(cg1.tail, Seq.empty,
-  //        (Some(cg1.head), None, Disjoint) :: acc)
-  //    else if (cg1.head.innovation == cg2.head.innovation)
-  //      alignGenomes(cg1.tail, cg2.tail,
-  //        (Some(cg1.head), Some(cg2.head), Aligned) :: acc)
-  //    else if (cg1.head.innovation < cg2.head.innovation)
-  //      alignGenomes(cg1.tail, cg2,
-  //        (Some(cg1.head), None, Excess) :: acc)
-  //    else
-  //      alignGenomes(cg1, cg2.tail,
-  //        (None, Some(cg2.head), Excess) :: acc)
-  //  }
 
   def mutate(
     genome: G,
@@ -545,56 +468,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
    * * unique mutations are attributed a unique number greater than the archive's global innovation number,
    * * mutations that are identical to one found it the archive's record of innovations are attributed its number
    */
-  // def postBreeding(
-  //   offsprings: Seq[G],
-  //   population: Population[G, P, F],
-  //   archive: NEATArchive.Archive)(implicit rng: Random): Seq[G] = {
-  //   // Set innovation numbers in all offsprings, and then Attribute a species to each offspring
-  //   { setInnovationNumbers(_: Seq[G], archive) }.andThen {
-  //     setSpecies(_: Seq[G], archive)
-  //   }(offsprings)
-  // }
-
-  //  def setInnovationNumbers(
-  //    offsprings: Seq[G],
-  //    archive: NEATArchive.Archive): Seq[G] = {
-  //    val (newgenomes, newgin, newroi) = offsprings.foldLeft((Seq[G](), archive.globalInnovationNumber, archive.recordOfInnovations)) { (acc, genome) =>
-  //      val (curgenomes, curgin, curroi) = acc
-  //      val (newgenome, newgin, newroi) = genome.setInnovationNumber(curgin, curroi)
-  //      (curgenomes :+ newgenome, newgin, newroi)
-  //    }
-  //    newgenomes
-  //  }
-
-  //  def setSpecies(
-  //    offsprings: Seq[G],
-  //    archive: NEATArchive.Archive): Seq[G] = {
-  //    val (newgenomes, _) = offsprings.foldLeft((Seq[G](), archive.indexOfSpecies)) { (acc, genome) =>
-  //      val (curgenomes, curios) = acc
-  //      // Find a genome in the index of species which is sufficiently similar to the current genome.
-  //      // Start by checking if the offspring is compatible with the parent species (currently set in the species member of the offspring)
-  //      if (genomesDistance(genome, curios(genome.species)) < speciesCompatibilityThreshold)
-  //        (curgenomes :+ genome, curios)
-  //      else
-  //        curios.find {
-  //          case (sindex, prototype) => genomesDistance(prototype, genome) < speciesCompatibilityThreshold
-  //        } match {
-  //          //If found, attribute the species to the current genome
-  //          case Some((species, _)) =>
-  //            (curgenomes :+ genome.copy(species = species),
-  //              curios)
-  //          //Otherwise, create a new species with the current genome as the prototype
-  //          case None => {
-  //            val newspecies = curios.lastKey + 1
-  //            val newgenome = genome.copy(species = newspecies)
-  //            (curgenomes :+ newgenome,
-  //              curios + (newspecies, newgenome))
-  //          }
-  //        }
-  //    }
-  //    newgenomes
-  //  }
-
   def setSpecies(
     genome: G,
     indexOfSpecies: IntMap[G],
@@ -639,20 +512,6 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     }
   }
 
-  //  def distanceFactors(alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)]): (Int, Int, Double, Int) =
-  //    alignment match {
-  //      case List() => (0, 0, 0, 0)
-  //      case head :: tail =>
-  //        val (excess, disjoint, weightdiff, matchingGenes) = distanceFactors(tail)
-  //        head match {
-  //          case (Some(cg1), Some(cg2), Aligned) => (excess, disjoint, weightdiff + abs(cg1.weight - cg2.weight), matchingGenes + 1)
-  //          case (_, _, Disjoint) => (excess, disjoint + 1, weightdiff, matchingGenes)
-  //          case (_, _, Excess) => (excess + 1, disjoint, weightdiff, matchingGenes)
-  //          case _ => throw new RuntimeException(s"Improper alignment: $head") //this case should never happen
-  //        }
-  //
-  //    }
-
   @tailrec final def distanceFactors(
     alignment: List[(Option[ConnectionGene], Option[ConnectionGene], AlignmentInfo)],
     acc: (Int, Int, Double, Int) = (0, 0, 0.0, 0)): (Int, Int, Double, Int) =
@@ -671,3 +530,4 @@ trait NEATBreeding <: Breeding with NEATArchive with NEATGenome with Lambda with
     }
 
 }
+*/ 

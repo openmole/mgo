@@ -26,10 +26,10 @@ import Scalaz._
 
 import scala.language.higherKinds
 
-trait AnyCrossover <: Crossover {
+trait AnyCrossover <: MultipleCrossover {
 
-  override def crossover(genomes: Seq[G], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]] =
-    if (crossovers.isEmpty) genomes.toVector.point[BreedingContext]
-    else crossovers.random(rng)(genomes, population, archive, rng)
+  override def crossover(indivs: Seq[Individual[G, P, F]], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]] =
+    if (crossovers.isEmpty) indivs.map { _.genome }.toVector.point[BreedingContext]
+    else crossovers.random(rng)(indivs, population, archive, rng)
 
 }
