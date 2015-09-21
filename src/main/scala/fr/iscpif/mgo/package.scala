@@ -65,7 +65,6 @@ package object mgo {
   type BreedingContextId = breed.BreedingContextId
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
-  type NEATBreeding = breed.NEATBreeding
   type Cloning = breed.Cloning
   type CloningPure = breed.CloningPure
   lazy val BLXCrossover = crossover.BLXCrossover

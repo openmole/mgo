@@ -138,15 +138,6 @@ import util.Random
  * - On ne normalise pas la distance entre génomes par le génome le plus grand, et on prend la somme des différences des poids plutôt que la moyenne
  */
 
-/*trait NEAT <: NEATProblem with NEATBreeding with NEATElitism with NEATArchive with NoPhenotype with MinimalGenome {
-  type NODEDATA = Unit
-  def pickNewHiddenNode(level: Double)(implicit rng: Random): HiddenNode = HiddenNode((), level)
-
-  def newInputNode: InputNode = InputNode(())
-  def newBiasNode: BiasNode = BiasNode(())
-  def newOutputNode: OutputNode = OutputNode(())
-}*/
-
 trait NEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext with NEATMating with NEATCrossover with NEATMutation with CloningPure with NEATElitism with NEATArchive with NoPhenotype {
   type NODEDATA = Unit
   def pickNewHiddenNode(level: Double)(implicit rng: Random): HiddenNode = HiddenNode((), level)
