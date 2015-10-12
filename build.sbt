@@ -6,7 +6,7 @@ scalaVersion := "2.11.7"
 
 scalacOptions in (Compile,doc) := Seq("-groups", "-implicits", "-diagrams","-diagrams-max-classes","20")
 
-scalacOptions += "-feature"
+//scalacOptions += "-feature"
 
 crossScalaVersions := Seq("2.10.4", "2.11.4")
 

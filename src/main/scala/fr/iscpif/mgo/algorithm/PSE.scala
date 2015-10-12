@@ -34,5 +34,5 @@ trait PSE <: NoFitness
   with CounterTermination
   with ClampedGenome
   with ProportionalNumberOfRound
-  with CloningPure
+  with Cloning
   with RandomInitialGenome

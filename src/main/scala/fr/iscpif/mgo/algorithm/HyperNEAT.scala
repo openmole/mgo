@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.breed.{ CloningPure, NEATBreedingContext }
+import fr.iscpif.mgo.breed.NEATBreedingContext
 import fr.iscpif.mgo.crossover.NEATCrossover
 import fr.iscpif.mgo.mutation.NEATMutation
 import fr.iscpif.mgo.problem.NEATProblem
@@ -34,7 +34,7 @@ import util.Random
  * - Nodes carry activation functions
  * - Neural nets are created from the evolved nets
  */
-trait HyperNEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext with NEATMating with NEATCrossover with NEATMutation with NEATElitism with NEATArchive with NoPhenotype with CloningPure {
+trait HyperNEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext with NEATMating with NEATCrossover with NEATMutation with NEATElitism with NEATArchive with NoPhenotype with Cloning {
 
   type ACTIVF = String
   val cppnActivationFunctions: Seq[ACTIVF]

@@ -19,8 +19,6 @@ package fr.iscpif
 import org.apache.commons.math3.random._
 
 package object mgo {
-  implicit def traversable2Population[G, P, F](elements: Seq[PopulationElement[G, P, F]]) = Population(elements)
-  implicit def population2IndexedSeq[G, P, F, I](pop: Population[G, P, F]) = pop.content
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
     val factor = (boundaryMax - boundaryMin) / (max - min)
@@ -66,7 +64,6 @@ package object mgo {
   type CMAESBreeding = breed.CMAESBreeding
   type GeneticBreeding = breed.GeneticBreeding
   type Cloning = breed.Cloning
-  type CloningPure = breed.CloningPure
   lazy val BLXCrossover = crossover.BLXCrossover
   type Crossover = crossover.Crossover
   type DynamicGACrossover = crossover.DynamicGACrossover

@@ -34,5 +34,5 @@ trait Map <: Evolution
   with GeneticBreeding
   with ClampedGenome
   with MaxAggregation
-  with CloningPure
+  with Cloning
   with RandomInitialGenome

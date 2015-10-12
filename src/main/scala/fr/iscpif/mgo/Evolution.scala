@@ -17,8 +17,6 @@
 
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.Population
-
 import util.Random
 import org.apache.commons.math3.random.{ RandomAdaptor, Well44497b }
 
@@ -80,7 +78,7 @@ trait Evolution extends Termination
    */
   def evolve(expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
     val archive = initialArchive
-    evolve(Seq.empty, archive, expression, evaluation)
+    evolve(Population.empty, archive, expression, evaluation)
   }
 
   def evolve(genomes: Seq[G], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
@@ -128,7 +126,7 @@ trait Evolution extends Termination
     val newArchive = self.archive(archive, population, offspring)
 
     //Elitism strategy
-    (elitism(population, offspring.toList, newArchive), newArchive)
+    (elitism(population, offspring, newArchive), newArchive)
   }
 
   def evaluate(genomes: Seq[G], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random) = {

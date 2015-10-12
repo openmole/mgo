@@ -33,5 +33,5 @@ trait SMSEMOEA <: Evolution
   with NoArchive
   with GeneticBreeding
   with ClampedGenome
-  with CloningPure
+  with Cloning
   with RandomInitialGenome

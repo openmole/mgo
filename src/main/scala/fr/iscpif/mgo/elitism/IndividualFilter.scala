@@ -6,10 +6,11 @@
 package fr.iscpif.mgo.elitism
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.genome.G
+
+import scalaz._
 
 /**
- * Layer of the cake for filtering individuals in the set of evaluted individuals
+ * Layer of the cake for filtering individuals in the set of evaluated individuals
  */
 trait IndividualFilter extends G with F with P {
 
@@ -22,6 +23,5 @@ trait IndividualFilter extends G with F with P {
    * @param population the set of evaluated individuals
    * @return the filtrated individuals
    */
-  def filter(population: Population[G, P, F]) =
-    filters.foldLeft(population)((p, f) => f(p))
+  def filter(population: Population[G, P, F]): Population[G, P, F] = filters.foldLeft(population)((p, f) => f(p))
 }

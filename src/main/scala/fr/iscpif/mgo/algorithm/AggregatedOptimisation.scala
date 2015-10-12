@@ -33,5 +33,5 @@ trait AggregatedOptimisation <: Evolution
   with MGFitness
   with ClampedGenome
   with MaxAggregation
-  with CloningPure
+  with Cloning
   with RandomInitialGenome

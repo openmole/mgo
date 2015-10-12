@@ -35,5 +35,5 @@ trait NSGAII <: Evolution
   with GeneticBreeding
   with MGFitness
   with ClampedGenome
-  with CloningPure
+  with Cloning
   with RandomInitialGenome

@@ -18,12 +18,16 @@
 package fr.iscpif.mgo
 
 object Population {
+
+  implicit def populationToSeq[G, P, F](p: Population[G, P, F]) = p.content
+  implicit def traversableToPopulation[G, P, F](e: Traversable[PopulationElement[G, P, F]]) = Population(e.toIndexedSeq)
+
   /**
    * @tparam G the genome type
    * @tparam F the fitness type
    * @return an empty population
    */
-  def empty[G, P, F]: Population[G, P, F] = IndexedSeq.empty
+  def empty[G, P, F]: Population[G, P, F] = Population(IndexedSeq.empty)
 
   def apply[G, P, F](elements: Seq[PopulationElement[G, P, F]]): Population[G, P, F] =
     new Population[G, P, F] {

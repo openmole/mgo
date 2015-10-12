@@ -122,7 +122,7 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.breed.{ CloningPure, NEATBreedingContext }
+import fr.iscpif.mgo.breed.NEATBreedingContext
 import fr.iscpif.mgo.crossover.NEATCrossover
 import fr.iscpif.mgo.mutation.NEATMutation
 import fr.iscpif.mgo.problem.NEATProblem
@@ -138,7 +138,7 @@ import util.Random
  * - On ne normalise pas la distance entre génomes par le génome le plus grand, et on prend la somme des différences des poids plutôt que la moyenne
  */
 
-trait NEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext with NEATMating with NEATCrossover with NEATMutation with CloningPure with NEATElitism with NEATArchive with NoPhenotype {
+trait NEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext with NEATMating with NEATCrossover with NEATMutation with Cloning with NEATElitism with NEATArchive with NoPhenotype {
   type NODEDATA = Unit
   def pickNewHiddenNode(level: Double)(implicit rng: Random): HiddenNode = HiddenNode((), level)
 
