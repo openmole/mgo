@@ -17,12 +17,30 @@
 
 package fr.iscpif.mgo.archive
 
+import fr.iscpif.mgo
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.elitism.Niche
+import scalaz._
 
-import scala.util.Random
+trait Archive <: Pop { this: Algorithm =>
+  trait Archive <: State[EvolutionState, Unit]
+}
 
-trait Archive extends G with P with F with A {
-  type A
-  def initialArchive(implicit rng: Random): A
-  def archive(a: A, oldIndividuals: Population[G, P, F], offspring: Population[G, P, F])(implicit rng: Random): A
+trait ArchiveDefault <: Archive with Niche { this: Algorithm =>
+
+  def hitMap[A](offspring: Pop)(implicit archive: monocle.Lens[STATE, Map[A, Int]], niche: Niche[A]) = new Archive {
+
+    override def apply(state: EvolutionState) = {
+      (EvolutionState.state composeLens archive).modify { archive =>
+          val offSpringArchive = offspring.content.groupBy(niche).map { case (k, v) => (k -> v.size) }
+
+        offSpringArchive.foldLeft(archive) {
+          case (a, (a2key, a2value)) =>
+            if (a contains a2key) a + ((a2key, a(a2key) + a2value))
+            else a + ((a2key, a2value))
+        }
+      }(state)
+    }
+  }
+
 }

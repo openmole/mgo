@@ -18,22 +18,50 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.breed.BreedingDefault
+import fr.iscpif.mgo.diversity.{DiversityDefault, Diversity}
+import fr.iscpif.mgo.elitism.ElitismDefault
+import fr.iscpif.mgo.mutation.MutationDefault
+import fr.iscpif.mgo.genome._
+import fr.iscpif.mgo.ranking.{RankingDefault, Ranking}
 
-trait NSGAII <: Evolution
-  with BinaryTournamentSelection
-  with RandomMating
-  with TournamentOnRankAndDiversity
-  with NonDominatedElitism
-  with DynamicGACrossover
-  with DynamicGAMutation
-  with GAGenomeWithSigma
-  with FitnessCrowdingDiversity
-  with ParetoRanking
-  with NonStrictDominance
-  with NoArchive
-  with CloneRemoval
-  with GeneticBreeding
-  with MGFitness
-  with ClampedGenome
-  with Cloning
-  with RandomInitialGenome
+import scalaz._
+import Scalaz._
+
+trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with MutationDefault with RankingDefault with DiversityDefault {
+
+  case class Genome(values: GenomeValue[Seq[Double]])
+  type G = Genome
+
+  implicit def equalsG = Equal.equal[G]((g1, g2) => g1.values == g2.values)
+  implicit def genomeValues = monocle.macros.Lenser[G](_.values)
+
+  case class NSGA2State()
+
+  type STATE = NSGA2State
+
+  def lambda: Int
+
+  implicit def fitness: Fitness[Seq[Double]]
+  implicit def ranking = paretoRanking()
+  implicit def diversity = crowdingDistance
+
+  override def breeding(pop: Pop): State[EvolutionState, Vector[G]] = {
+    (onRank and onDiversity) (pop) flatMap { challenged =>
+        val newGenome =
+          for {
+            mated <- tournament(challenged, pop)()
+            g <- gaussianMutation(2.0, mated.genome)
+          } yield { g }
+
+      (0 until lambda).toVector.traverseS[EvolutionState, G](i => newGenome)
+    }
+  }
+
+  override def elitism(population: Pop, offspring: Pop): State[EvolutionState, Pop] =
+    for {
+      p1 <- merge(population, offspring)
+      p2 <- removeClone(p1)
+    } yield p2
+
+}

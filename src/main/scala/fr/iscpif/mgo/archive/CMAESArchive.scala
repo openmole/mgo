@@ -25,7 +25,7 @@ import monocle.syntax._
 
 import scala.util.Random
 
-object CMAESArchive {
+/*object CMAESArchive {
 
   case class FIFO[T](val content: List[T]) {
     def +=(t: T, size: Int): FIFO[T] = copy(content = t :: content.slice(0, size - 1))
@@ -686,4 +686,4 @@ trait CMAESArchive <: Archive with Aggregation with GA with RandomValue with Min
     }
     new Array2DRowRealMatrix(d, false)
   }
-}
+}*/

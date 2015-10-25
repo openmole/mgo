@@ -18,21 +18,41 @@
 package fr.iscpif.mgo.diversity
 
 import fr.iscpif.mgo._
-import genome.G
-import tools.Lazy
-
+import fr.iscpif.mgo.tools.Lazy
+import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
+import fr.iscpif.mgo.tools.metric.{KNearestNeighboursAverageDistance, Hypervolume, CrowdingDistance, ClosedCrowdingDistance}
 import scala.util.Random
+import scalaz._
 
 /**
  * Layer of the cake that compute a diversity metric for a set of values
  */
-trait Diversity <: G with P with F {
-  /**
-   * Compute the diversity metric of the values
-   *
-   * @param values a set of values
-   * @return a diversity sequence in the diversity of the individual i at the
-   * position i
-   */
-  def diversity(values: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Double]]
+trait Diversity <: Pop {
+  /** Compute the diversity metric of the values */
+  trait Diversity extends (Pop => State[Random, Vector[Lazy[Double]]])
+}
+
+
+trait DiversityDefault <: Diversity with Fitness {
+
+ /* def closedCrowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
+    override def apply(values: Pop) =
+      State.state { ClosedCrowdingDistance(values.map(e => mg(e))) }
+  }*/
+
+  def crowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
+    override def apply(values: Pop) =
+      CrowdingDistance(values.map(e => mg(e)))
+  }
+
+  def hypervolumeContribution(referencePoint: ReferencePoint)(implicit mg: Fitness[Seq[Double]]) = new Diversity {
+    override def apply(values: Pop) =
+      State.state { Hypervolume.contributions(values.map(e => mg(e)), referencePoint) }
+  }
+
+  def KNearestNeighbours(k: Int)(implicit mg: Fitness[Seq[Double]]) = new Diversity {
+    override def apply(values: Pop) =
+      State.state { KNearestNeighboursAverageDistance(values.map(e => mg(e)), k) }
+  }
+
 }

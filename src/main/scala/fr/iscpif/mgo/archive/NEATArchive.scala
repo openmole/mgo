@@ -25,7 +25,7 @@ import scala.collection.immutable.Queue
 import collection.immutable.IntMap
 import math._
 
-trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
+/*trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
 
   case class Archive(
     // to maintain a record of innovation throughout generations would require to make the whole Evolution stateful
@@ -77,5 +77,5 @@ trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
       newsct :: a.speciesCompatibilityThreshold
     )
   }
-}
+}*/
 

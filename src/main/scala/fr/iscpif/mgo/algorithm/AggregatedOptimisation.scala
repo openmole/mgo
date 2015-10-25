@@ -19,7 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait AggregatedOptimisation <: Evolution
+/*trait AggregatedOptimisation <: Evolution
   with DynamicGACrossover
   with DynamicGAMutation
   with GAGenomeWithSigma
@@ -34,4 +34,4 @@ trait AggregatedOptimisation <: Evolution
   with ClampedGenome
   with MaxAggregation
   with Cloning
-  with RandomInitialGenome
+  with RandomInitialGenome*/

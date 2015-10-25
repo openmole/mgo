@@ -19,7 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait SMSEMOEA <: Evolution
+/*trait SMSEMOEA <: Evolution
   with GAGenomeWithSigma
   with MG
   with BinaryTournamentSelection
@@ -34,4 +34,4 @@ trait SMSEMOEA <: Evolution
   with GeneticBreeding
   with ClampedGenome
   with Cloning
-  with RandomInitialGenome
+  with RandomInitialGenome*/

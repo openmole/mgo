@@ -20,7 +20,7 @@ package fr.iscpif.mgo.tools.metric
 import fr.iscpif.mgo.tools._
 
 import scala.util.Random
-
+import scalaz._
 /**
  * Crowding distance computation see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
  * A fast elitist non-dominated sorting genetic algorithm for multi-objective
@@ -35,8 +35,8 @@ object CrowdingDistance {
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
-  def apply(data: Seq[Seq[Double]])(implicit rng: Random): Seq[Lazy[Double]] = {
-    data.transpose.map {
+  def apply(data: Vector[Seq[Double]]) = State[Random, Vector[Lazy[Double]]] { rng: Random =>
+    def res = data.transpose.map {
       d: Seq[Double] =>
         val grouped: Map[Double, Seq[Int]] =
           (d.zipWithIndex).groupBy { case (d, _) => d }.mapValues { _.map { case (_, i) => i } }
@@ -64,13 +64,14 @@ object CrowdingDistance {
                 case d1 :: d2 :: d3 :: _ =>
                   val gc = groupCrowding(grouped(d2), d3 - d1)
                   crowding(distances.tail, gc ::: acc)
+                case _ => sys.error("Should never be empty")
               }
 
             crowding(sortedDistances.toList, List.empty)
           }
         res.sortBy { case (_, indice) => indice }.map { case (c, _) => c }
     }.transpose.map { _.sum }.map(Lazy(_))
-
+    (rng, res)
   }
 
 }

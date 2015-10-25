@@ -17,9 +17,9 @@
 
 package fr.iscpif.mgo.distance
 
-import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo._
-
-trait IndividualDistanceFromArchive <: G with P with F with A {
-  def distanceOfIndividualFromArchive(i: Individual[G, P, F], a: A): Lazy[Double]
-}
+//import fr.iscpif.mgo.tools.Lazy
+//import fr.iscpif.mgo._
+//
+//trait IndividualDistanceFromArchive <: G with P with F with A {
+//  def distanceOfIndividualFromArchive(i: Individual[G, P, F], a: A): Lazy[Double]
+//}

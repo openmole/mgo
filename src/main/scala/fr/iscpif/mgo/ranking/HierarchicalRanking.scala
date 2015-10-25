@@ -24,9 +24,9 @@ import scala.util.Random
 
 object HierarchicalRanking {
 
-  def downRank[T](values: Seq[T])(implicit ordering: Ordering[T]) = upRank(values)(ordering.reverse)
+  def downRank[T](values: Vector[T])(implicit ordering: Ordering[T]) = upRank(values)(ordering.reverse)
 
-  def upRank[T](values: Seq[T])(implicit ordering: Ordering[T]) =
+  def upRank[T](values: Vector[T])(implicit ordering: Ordering[T]) =
     values.
       zipWithIndex.
       sortBy { case (v, _) => v }.
@@ -37,9 +37,3 @@ object HierarchicalRanking {
 
 }
 
-trait HierarchicalRanking extends Ranking with MG {
-
-  override def rank(values: Population[G, P, F])(implicit rng: Random): Seq[Lazy[Int]] =
-    HierarchicalRanking.upRank(values.map(v => fitness(v.toIndividual)))
-
-}

@@ -20,10 +20,9 @@ package fr.iscpif.mgo.tools.metric
 import collection.mutable.{ IndexedSeq => MIndexedSeq }
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import fr.iscpif.mgo.Dominance
 import math._
-import fr.iscpif.mgo.dominance.NonStrictDominance
 import fr.iscpif.mgo.tools._
+import fr.iscpif.mgo.dominance._
 
 // A translation/adaptation based on the python source code by Simon Wessing :
 // http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
@@ -40,25 +39,20 @@ import fr.iscpif.mgo.tools._
  */
 object Hypervolume {
 
+  /** value of the reference point for the hypervolume computation */
+  type ReferencePoint = Seq[Double]
+
   /**
    * Compute the hypervolume contribution for each front
    */
-  def contributions(front: Seq[Seq[Double]], referencePoint: Seq[Double]): Seq[Lazy[Double]] = {
+  def contributions(front: Vector[Seq[Double]], referencePoint: Seq[Double]): Vector[Lazy[Double]] = {
 
     lazy val globalHypervolume = Hypervolume(front, referencePoint)
 
     //compute a new collection with automatic removed incremental of frontValues item by item
     front.shadows.map {
       case (e) => Lazy(globalHypervolume - Hypervolume(e, referencePoint))
-    }
-  }
-
-  /**
-   * Reference point for the hypervolume computation
-   */
-  trait ReferencePoint {
-    /** value of the reference point for the hypervolume computation */
-    def referencePoint: Seq[Double]
+    }.toVector
   }
 
   /**
@@ -85,9 +79,9 @@ object Hypervolume {
    * this point to the front
    * @return the hypervolume
    */
-  def apply(front: Seq[Seq[Double]], referencePoint: Seq[Double]): Double = {
+  def apply(front: Seq[Seq[Double]], referencePoint: ReferencePoint): Double = {
     def dominates(point: Seq[Double], other: Seq[Double]): Boolean =
-      NonStrictDominance.isDominated(other, point)
+      nonStrictDominance.isDominated(other, point)
 
     val dimensions = referencePoint.size
 

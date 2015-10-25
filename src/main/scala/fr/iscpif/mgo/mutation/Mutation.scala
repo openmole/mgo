@@ -18,29 +18,22 @@
 package fr.iscpif.mgo.mutation
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools._
-import genome.G
-import util.Random
 import scalaz._
 
 import scala.language.higherKinds
 
-/**
- * Layer of the cake for the mutation operation.
- */
-trait Mutation <: G with P with F with A with BreedingContext {
 
-  /**
-   * Mutate a genome
-   *
-   * @param genome genome to mutate
-   * @param population the last computed population
-   * @param archive the last archive
-   * @param rng a random number generator
-   * @return the mutated genome
-   */
-  def mutate(genome: G, population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[G]
-  //if (mutations.isEmpty) genome
-  //else mutations.random(rng)(genome, population, archive, rng)
+trait Mutation <: Pop { this: Algorithm =>
+  trait Mutation <: State[EvolutionState, G]
+}
+
+trait MutationDefault <: Mutation with Genome { this: Algorithm =>
+
+  def gaussianMutation(sigma: Double, g: G)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
+    override def apply(state: EvolutionState): (EvolutionState, G) = {
+       val newValues = values.modify(g => GenomeValue(g.value.map(_ + (state.random.nextGaussian * sigma))))(g)
+      (state, newValues)
+    }
+  }
 
 }

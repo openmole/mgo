@@ -19,7 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait PSE <: NoFitness
+/*trait PSE <: NoFitness
   with HitMapArchive
   with PhenotypeGridNiche
   with GeneticBreeding
@@ -35,4 +35,4 @@ trait PSE <: NoFitness
   with ClampedGenome
   with ProportionalNumberOfRound
   with Cloning
-  with RandomInitialGenome
+  with RandomInitialGenome*/ 

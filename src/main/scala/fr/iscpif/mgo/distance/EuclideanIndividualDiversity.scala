@@ -17,33 +17,33 @@
 
 package fr.iscpif.mgo.distance
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.tools.Lazy
-import fr.iscpif.mgo.tools.distance.EuclideanDistance
-
-import scala.util.Random
-
-trait EuclideanIndividualDiversity <: GA with EuclideanDistance with IndividualPosition {
-  def genomeDiversity(g: Seq[G]) = {
-    g.map {
-      i1 =>
-        Lazy(
-          g.map {
-            i2 => distance(values.get(i1), values.get(i2))
-          }.sum
-        )
-    }
-  }
-
-  def individualDistance(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Lazy[Double]] =
-    individuals map {
-      i1 =>
-        val i1Pos = individualPosition(i1)
-        Lazy(
-          individuals.map {
-            i2 => distance(i1Pos, individualPosition(i2))
-          }.sum
-        )
-    }
-
-}
+//import fr.iscpif.mgo._
+//import fr.iscpif.mgo.tools.Lazy
+//import fr.iscpif.mgo.tools.distance.EuclideanDistance
+//
+//import scala.util.Random
+//
+//trait EuclideanIndividualDiversity <: GA with EuclideanDistance with IndividualPosition {
+//  def genomeDiversity(g: Seq[G]) = {
+//    g.map {
+//      i1 =>
+//        Lazy(
+//          g.map {
+//            i2 => distance(values.get(i1), values.get(i2))
+//          }.sum
+//        )
+//    }
+//  }
+//
+//  def individualDistance(individuals: Seq[Individual[G, P, F]])(implicit rng: Random): Seq[Lazy[Double]] =
+//    individuals map {
+//      i1 =>
+//        val i1Pos = individualPosition(i1)
+//        Lazy(
+//          individuals.map {
+//            i2 => distance(i1Pos, individualPosition(i2))
+//          }.sum
+//        )
+//    }
+//
+//}

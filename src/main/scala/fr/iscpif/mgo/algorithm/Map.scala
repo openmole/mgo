@@ -19,7 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait Map <: Evolution
+/*trait Map <: Evolution
   with MG
   with NoArchive
   with MapSelection
@@ -35,4 +35,4 @@ trait Map <: Evolution
   with ClampedGenome
   with MaxAggregation
   with Cloning
-  with RandomInitialGenome
+  with RandomInitialGenome*/

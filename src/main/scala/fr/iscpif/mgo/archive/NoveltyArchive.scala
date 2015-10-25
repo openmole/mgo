@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 
 import scala.util.Random
 
-trait NoveltyArchive <: Archive with IndividualDistanceFromArchive with ArchiveIndividuals {
+/*trait NoveltyArchive <: Archive with IndividualDistanceFromArchive with ArchiveIndividuals {
 
   def archiveEpsilon: Double
 
@@ -34,3 +34,4 @@ trait NoveltyArchive <: Archive with IndividualDistanceFromArchive with ArchiveI
     else a
   }
 }
+*/ 

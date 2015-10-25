@@ -17,41 +17,24 @@
 
 package fr.iscpif.mgo
 
-object Population {
+import scala.util.Random
+import scalaz._
 
-  implicit def populationToSeq[G, P, F](p: Population[G, P, F]) = p.content
-  implicit def traversableToPopulation[G, P, F](e: Traversable[PopulationElement[G, P, F]]) = Population(e.toIndexedSeq)
+object Population {
+  implicit def populationToSeq[G, P](p: Population[G, P]) = p.content
+  implicit def traversableToPopulation[G, P](e: Traversable[Individual[G, P]]) = Population[G, P](e.toVector)
 
   /**
    * @tparam G the genome type
-   * @tparam F the fitness type
+   * @tparam P the phenotype type
    * @return an empty population
    */
-  def empty[G, P, F]: Population[G, P, F] = Population(IndexedSeq.empty)
+  def empty[G, P]: Population[G, P] = Population(Vector.empty)
 
-  def apply[G, P, F](elements: Seq[PopulationElement[G, P, F]]): Population[G, P, F] =
-    new Population[G, P, F] {
-      lazy val content = elements
+  def apply[G, P](elements: Vector[Individual[G, P]]): Population[G, P] =
+    new Population[G, P] {
+      val content = elements
     }
-
-  def fromIndividuals[G, P, F](individuals: Seq[Individual[G, P, F]]): Population[G, P, F] = Population(individuals.map { PopulationElement(_) })
-
-}
-
-object PopulationElement {
-  /**
-   * Build a population element from an individual.
-   *
-   * @tparam G the genome type
-   * @tparam F the fitness type
-   * @param i an individual
-   * @return a population element
-   */
-  def apply[G, P, F](i: Individual[G, P, F]) =
-    new PopulationElement[G, P, F](i.genome, i.phenotype, i.fitness, i.age)
-
-  def age[G, P, F](pe: PopulationElement[G, P, F]) =
-    apply[G, P, F](Individual.age(pe.toIndividual))
 
 }
 
@@ -60,36 +43,37 @@ object PopulationElement {
  *
  * @tparam G the genome type
  */
-trait Population[+G, +P, +F] { pop =>
-
+trait Population[+G, +P] { pop =>
   /** the content of the population */
-  def content: Seq[PopulationElement[G, P, F]]
-
-  def age: Population[G, P, F] =
-    new Population[G, P, F] {
-      lazy val content = pop.content.map { PopulationElement.age }
-    }
-
-  /** transform this population in a set of individual */
-  def toIndividuals: Seq[Individual[G, P, F]] = content map { _.toIndividual }
-
+  def content: Vector[Individual[G, P]]
+  def age: Population[G, P] = Population(pop.content.map { Individual.age })
   override def toString = content.toString
 }
 
-/**
- * An element of the population
- *
- * @tparam G the genome type
- * @param genome the genome of the element
- * @param fitness the fitness evaluated for the genome
- */
-case class PopulationElement[+G, +P, +F](
-    genome: G,
-    phenotype: P,
-    fitness: F,
-    age: Long) {
+object Individual {
 
-  def toIndividual = Individual(genome, phenotype, fitness, age)
+  /**
+   * Build an individual given a genome and an evaluation function
+   *
+   * @tparam G the type of the genome
+   * @param g the value of the genome
+   * @param expression the expression of the genome
+   * @return the individual for the genome g
+   */
+  def apply[G, P](
+    g: G,
+    expression: (G => State[Random, P])): State[Random, Individual[G, P]] =
+    for {
+      _phenotype <- expression(g)
+    } yield Individual[G, P](
+      genome = g,
+      phenotype = _phenotype
+    )
 
-  override def toString = s"genome = $genome, phenotype = $phenotype, fitness = $fitness, ages = $age)"
+  def age[G, P, F](i: Individual[G, P]): Individual[G, P] = i.copy(age = i.age + 1)
 }
+
+/**
+ * An individual of the evolution
+ */
+case class Individual[+G, +P](genome: G, phenotype: P, age: Long = 0)

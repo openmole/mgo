@@ -34,7 +34,7 @@ import util.Random
  * - Nodes carry activation functions
  * - Neural nets are created from the evolved nets
  */
-trait HyperNEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext with NEATMating with NEATCrossover with NEATMutation with NEATElitism with NEATArchive with NoPhenotype with Cloning {
+/*trait HyperNEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext with NEATMating with NEATCrossover with NEATMutation with NEATElitism with NEATArchive with NoPhenotype with Cloning {
 
   type ACTIVF = String
   val cppnActivationFunctions: Seq[ACTIVF]
@@ -51,4 +51,4 @@ trait HyperNEAT <: NEATProblem with GeneticBreeding with NEATBreedingContext wit
   def newInputNode: InputNode = InputNode("lin")
   def newBiasNode: BiasNode = BiasNode("lin")
   def newOutputNode: OutputNode = OutputNode("lin")
-}
+}*/

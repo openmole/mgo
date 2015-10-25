@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 2015 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,24 +14,24 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package fr.iscpif.mgo
 
-package fr.iscpif.mgo.selection
+import scala.util.Random
 
-import fr.iscpif.mgo._
-import tools.Lazy
-import util.Random
+/**
+ * Layer to compute the stopping condition of the evolutionary algorithm
+ */
+/*trait Termination extends G with P with F {
 
-trait TournamentOnDiversity <: Tournament with Diversity {
 
-  type Evaluation = Lazy[Double]
-  def evaluation(population: Population[G, P, F], archive: A)(implicit rng: Random) = diversity(population)
 
-  override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
-    val (_, d1) = e1
-    val (_, d2) = e2
-
-    if (d1() < d2()) e2
-    else if (d1() > d2()) e1
-    else if (rng.nextBoolean) e1 else e2
-  }
-}
+  /**
+   * Test if the algorithm has converged.
+   *
+   * @param population the current population
+   * @param terminationState the actual termination state
+   * @return a boolean which is equal to true if a terminal state has
+   * been detected and the new termination state
+   */
+  def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE)
+}*/

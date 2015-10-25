@@ -19,10 +19,10 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait CMAES <: Evolution
+/*trait CMAES <: Evolution
   with KeepOffspringElitism
   with GAGenomeWithRandomValue
   with MaxAggregation
   with CMAESBreeding
   with CMAESArchive
-  with ClampedGenome
+  with ClampedGenome*/

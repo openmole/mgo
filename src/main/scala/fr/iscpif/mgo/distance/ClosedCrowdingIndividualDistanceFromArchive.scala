@@ -23,9 +23,9 @@ import fr.iscpif.mgo.tools.metric.ClosedCrowdingDistance
 
 import scala.util.Random
 
-trait ClosedCrowdingIndividualDistanceFromArchive <: IndividualDistanceFromArchive with IndividualPosition with ArchiveIndividuals {
-
-  def distanceOfIndividualFromArchive(i: Individual[G, P, F], a: A)(implicit rng: Random): Lazy[Double] =
-    ClosedCrowdingDistance.of(0, individualPosition(i) +: a.map(individualPosition))
-
-}
+//trait ClosedCrowdingIndividualDistanceFromArchive <: IndividualDistanceFromArchive with IndividualPosition with ArchiveIndividuals {
+//
+//  def distanceOfIndividualFromArchive(i: Individual[G, P, F], a: A)(implicit rng: Random): Lazy[Double] =
+//    ClosedCrowdingDistance.of(0, individualPosition(i) +: a.map(individualPosition))
+//
+//}

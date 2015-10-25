@@ -8,7 +8,7 @@ scalacOptions in (Compile,doc) := Seq("-groups", "-implicits", "-diagrams","-dia
 
 //scalacOptions += "-feature"
 
-crossScalaVersions := Seq("2.10.4", "2.11.4")
+addCompilerPlugin("org.scalamacros" %% "paradise" % "2.0.1" cross CrossVersion.full)
 
 resolvers ++= Seq(
   "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
@@ -32,8 +32,11 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % scalazVersion,
   "org.scalaz" %% "scalaz-effect" % scalazVersion,
   "org.scalaz" %% "scalaz-typelevel" % scalazVersion,
+  "org.scalaz" %% "scalaz-iteratee" % scalazVersion,
   "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
 )
+
+//libraryDependencies +=  "org.scalaz.stream" %% "scalaz-stream" % "0.8"
 
 initialCommands in console += "import scalaz._, Scalaz._"
 

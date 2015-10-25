@@ -16,9 +16,24 @@
  */
 
 package fr.iscpif
+
 import org.apache.commons.math3.random._
+import scalaz._
 
 package object mgo {
+
+
+  case class GenomeValue[V](val value: V) extends AnyVal
+  case class GenomeSize(val value: Int) extends AnyVal
+  case class GenomeSigma[V](val value: V) extends AnyVal
+
+
+  implicit def unitStateConverter[X](s: X): (X, Unit) = (s, Unit)
+  def PureState[S] = new {
+    def apply[T](f: => T) = State[S, T] { s: S => (s, f)}
+  }
+
+  //type Empty[T] = () => T
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
     val factor = (boundaryMax - boundaryMin) / (max - min)
@@ -43,7 +58,7 @@ package object mgo {
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
   def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
-  type AggregatedOptimisation = algorithm.AggregatedOptimisation
+  /*type AggregatedOptimisation = algorithm.AggregatedOptimisation
   type PSE = algorithm.PSE
   type CMAES = algorithm.CMAES
   type Map = algorithm.Map
@@ -92,14 +107,14 @@ package object mgo {
   type BestAggregatedElitism = elitism.BestAggregatedElitism
   type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
   type BestRankedNicheElitism = elitism.BestRankedNicheElitism
-  type CloneRemoval = elitism.CloneRemoval
+  type CloneRemoval = CloneRemoval
   type ConservativeFIFOAggregatedElitism = elitism.ConservativeFIFOAggregatedElitism
   type DiversityAggregatedElitism = elitism.DiversityAggregatedElitism
   type Elitism = elitism.Elitism
   type NaNRemoval = elitism.NaNRemoval
   type NEATElitism = elitism.NEATElitism
   type KeepOffspringElitism = elitism.KeepOffspringElitism
-  type IndividualFilter = elitism.IndividualFilter
+  type IndividualFilter = IndividualFilter
   type NonDominatedElitism = elitism.NonDominatedElitism
   type NicheElitism = elitism.NicheElitism
   type RandomNicheElitism = elitism.RandomNicheElitism
@@ -169,6 +184,6 @@ package object mgo {
   type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination
   type StabilityTermination = termination.StabilityTermination
   type Termination = termination.Termination
-  type TimedTermination = termination.TimedTermination
+  type TimedTermination = termination.TimedTermination*/
 
 }

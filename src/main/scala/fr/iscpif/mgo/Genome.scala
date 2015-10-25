@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Romain Reuillon
+ * Copyright (C) 2015 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -14,13 +14,20 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+package fr.iscpif.mgo
 
-package fr.iscpif.mgo.elitism
-
-import fr.iscpif.mgo.{ A, Population, Individual }
+import monocle._
 
 import scala.util.Random
+import scalaz.State
 
-trait KeepOffspringElitism <: Elitism {
-  override def computeElitism(oldGeneration: Population[G, P, F], offspring: Population[G, P, F], archive: A)(implicit rng: Random) = offspring
+trait Genome { this: Algorithm =>
+
+  type RandomGenome = State[Random, G]
+
+  trait Scaling <: (G => Seq[Double])
+
+  def clampedValues(values: Lens[G, GenomeValue[Seq[Double]]]) =
+      Lens((g: G) => GenomeValue(values.get(g).value.map(tools.Math.clamp(_, 0.0, 1.0))))(values.set)
+
 }

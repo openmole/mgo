@@ -19,7 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait Profile <: Evolution
+/*trait Profile <: Evolution
   with MG
   with NoArchive
   with GAGenomeWithSigma
@@ -38,4 +38,4 @@ trait Profile <: Evolution
   with ClampedGenome
   with ProportionalNumberOfRound
   with Cloning
-  with RandomInitialGenome
+  with RandomInitialGenome*/ 
