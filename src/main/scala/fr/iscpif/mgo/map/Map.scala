@@ -24,9 +24,7 @@ import fr.iscpif.mgo.tools.{Math, Lazy}
 import fr.iscpif.mgo.tools.Math._
 import fr.iscpif.mgo.{Pop, Population, Individual, Algorithm}
 import monocle._
-import fr.iscpif.mgo.genome._
 
-import scala.util.Random
 
 trait Map <: Pop with Ranking with Niche with Fitness {
 

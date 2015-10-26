@@ -17,7 +17,7 @@
 
 package fr.iscpif.mgo.algorithm
 
-import fr.iscpif.mgo._
+//import fr.iscpif.mgo._
 
 /*trait CMAES <: Evolution
   with KeepOffspringElitism

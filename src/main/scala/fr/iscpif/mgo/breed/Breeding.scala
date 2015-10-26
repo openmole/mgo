@@ -27,11 +27,11 @@ import scalaz._
 trait Breeding { this: Algorithm =>
   trait Selection <: State[EvolutionState, Ind]
 
-  implicit class genomeStateDecorator(newGenome: State[EvolutionState, Vector[G]]) {
+  implicit class genomeStateDecorator(newGenome: State[EvolutionState, List[G]]) {
 
     def flatten(lambda: Int) = {
-      def flatten0(lambda: Int)(state: EvolutionState, acc: List[G] = List()): (EvolutionState, Vector[G]) =
-        if (acc.size >= lambda) (state, acc.toVector)
+      def flatten0(lambda: Int)(state: EvolutionState, acc: List[G] = List()): (EvolutionState, List[G]) =
+        if (acc.size >= lambda) (state, acc)
         else {
           val (newState, add) = newGenome.map {
             _.take(lambda - acc.size)
@@ -41,6 +41,7 @@ trait Breeding { this: Algorithm =>
 
       State { state: EvolutionState => flatten0(lambda)(state) }
     }
+
   }
 
 

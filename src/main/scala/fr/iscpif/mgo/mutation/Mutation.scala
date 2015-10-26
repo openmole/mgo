@@ -24,7 +24,7 @@ import scala.language.higherKinds
 
 
 trait Mutation <: Pop { this: Algorithm =>
-  trait Mutation <: (G => State[EvolutionState, G])
+  type Mutation = (G => State[EvolutionState, G])
 }
 
 trait MutationDefault <: Mutation with Genome { this: Algorithm =>

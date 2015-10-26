@@ -17,13 +17,13 @@
 
 package fr.iscpif.mgo.archive
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.genome.NEATGenome
-
-import scala.util.Random
-import scala.collection.immutable.Queue
-import collection.immutable.IntMap
-import math._
+//import fr.iscpif.mgo._
+//import fr.iscpif.mgo.genome.NEATGenome
+//
+//import scala.util.Random
+//import scala.collection.immutable.Queue
+//import collection.immutable.IntMap
+//import math._
 
 /*trait NEATArchive extends Archive with NEATGenome with DoubleFitness {
 

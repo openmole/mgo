@@ -121,14 +121,14 @@
 
 package fr.iscpif.mgo.algorithm
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.breed.NEATBreedingContext
-import fr.iscpif.mgo.crossover.NEATCrossover
-import fr.iscpif.mgo.mutation.NEATMutation
-import fr.iscpif.mgo.problem.NEATProblem
-import fr.iscpif.mgo.genome.NEATGenome._
-import fr.iscpif.mgo.selection.NEATMating
-import util.Random
+//import fr.iscpif.mgo._
+//import fr.iscpif.mgo.breed.NEATBreedingContext
+//import fr.iscpif.mgo.crossover.NEATCrossover
+//import fr.iscpif.mgo.mutation.NEATMutation
+//import fr.iscpif.mgo.problem.NEATProblem
+//import fr.iscpif.mgo.genome.NEATGenome._
+//import fr.iscpif.mgo.selection.NEATMating
+//import util.Random
 
 /**
  * Differences with the original neat:

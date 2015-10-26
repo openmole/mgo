@@ -17,13 +17,13 @@
 
 package fr.iscpif.mgo.archive
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.mutation.MinimumSigma
-import org.apache.commons.math3.linear.{ EigenDecomposition, MatrixUtils, Array2DRowRealMatrix, RealMatrix }
-import org.apache.commons.math3.util.{ MathUtils, FastMath, MathArrays }
-import monocle.syntax._
-
-import scala.util.Random
+//import fr.iscpif.mgo._
+//import fr.iscpif.mgo.mutation.MinimumSigma
+//import org.apache.commons.math3.linear.{ EigenDecomposition, MatrixUtils, Array2DRowRealMatrix, RealMatrix }
+//import org.apache.commons.math3.util.{ MathUtils, FastMath, MathArrays }
+//import monocle.syntax._
+//
+//import scala.util.Random
 
 /*object CMAESArchive {
 

@@ -19,6 +19,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.breed.BreedingDefault
+import fr.iscpif.mgo.crossover.CrossoverDefault
 import fr.iscpif.mgo.diversity.{DiversityDefault, Diversity}
 import fr.iscpif.mgo.elitism.ElitismDefault
 import fr.iscpif.mgo.mutation.MutationDefault
@@ -28,7 +29,7 @@ import scalaz._
 import Scalaz._
 import scalaz.iteratee.{StepT, IterateeT}
 
-trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with MutationDefault with RankingDefault with DiversityDefault {
+trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with MutationDefault with CrossoverDefault with RankingDefault with DiversityDefault {
 
   case class Genome(values: GenomeValue[Seq[Double]])
   type G = Genome
@@ -42,6 +43,7 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
 
   def lambda: Int
   def mutation: Mutation = gaussianMutation(0.5)
+  def crossover: Crossover = blxCrossover()
 
   implicit def fitness: Fitness[Seq[Double]]
   implicit def ranking = paretoRanking()
@@ -51,11 +53,14 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
     (onRank and onDiversity) (pop) flatMap { challenged =>
         val newGenome =
           for {
-            selected <- tournament(challenged, pop)
-            g <- mutation(selected.genome)
-          } yield { Vector(g, g) }
+            s1 <- tournament(challenged, pop)
+            g1 <- mutation(s1.genome)
+            s2 <- tournament(challenged, pop)
+            g2 <- mutation(s2.genome)
+            c <- crossover(g1, g2)
+          } yield { c.toList }
 
-        newGenome.flatten(lambda)
+        newGenome.flatten(lambda).map(_.toVector)
       }
     }
 
