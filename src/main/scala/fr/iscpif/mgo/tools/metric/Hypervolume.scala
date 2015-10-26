@@ -17,12 +17,13 @@
 
 package fr.iscpif.mgo.tools.metric
 
+import fr.iscpif.mgo.Dominance
+
 import collection.mutable.{ IndexedSeq => MIndexedSeq }
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import math._
 import fr.iscpif.mgo.tools._
-import fr.iscpif.mgo.dominance._
 
 // A translation/adaptation based on the python source code by Simon Wessing :
 // http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
@@ -58,7 +59,7 @@ object Hypervolume {
   /**
    * Compute the nadir of a set of points
    *
-   * @param point a set of points
+   * @param points a set of points
    * @return the nadir point
    */
   def nadir(points: Seq[Seq[Double]]) =
@@ -75,13 +76,13 @@ object Hypervolume {
    * that the reference point is [0, ..., 0].
    *
    * @param front the parato front
-   * @param reference point the reference point for computing the volume from
+   * @param referencePoint point the reference point for computing the volume from
    * this point to the front
    * @return the hypervolume
    */
   def apply(front: Seq[Seq[Double]], referencePoint: ReferencePoint): Double = {
     def dominates(point: Seq[Double], other: Seq[Double]): Boolean =
-      nonStrictDominance.isDominated(other, point)
+      Dominance.nonStrictDominance.isDominated(other, point)
 
     val dimensions = referencePoint.size
 

@@ -15,12 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.mutation
-
-import fr.iscpif.mgo._
-import scalaz._
+package fr.iscpif.mgo
 
 import scala.language.higherKinds
+import scalaz._
 
 
 trait Mutation <: Pop { this: Algorithm =>

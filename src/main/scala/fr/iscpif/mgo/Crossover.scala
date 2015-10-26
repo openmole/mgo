@@ -15,10 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.crossover
+package fr.iscpif.mgo
 
-import fr.iscpif.mgo.Pop
-import fr.iscpif.mgo._
 import scalaz._
 
 trait Crossover <: Pop { this: Algorithm =>

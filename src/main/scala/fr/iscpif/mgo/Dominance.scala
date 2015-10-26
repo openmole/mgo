@@ -16,14 +16,14 @@
  */
 package fr.iscpif.mgo
 
-package object dominance {
+/**
+ * Dominance type between 2 solution
+ */
+trait Dominance {
+  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean
+}
 
-  /**
-   * Dominance type between 2 solution
-   */
-  trait Dominance {
-    def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean
-  }
+object Dominance {
 
   /**
    * A point dominates another if the other is not better on any objective
@@ -54,11 +54,10 @@ package object dominance {
       }
   }
 
-  def StrictEpsilonDominance(epsilons: Seq[Double]) = new Dominance {
+  def strictEpsilonDominance(epsilons: Seq[Double]) = new Dominance {
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
       (p1 zip p2 zip epsilons).forall {
         case (((g1, g2), e)) => g1 > g2 + e
       }
   }
-
 }

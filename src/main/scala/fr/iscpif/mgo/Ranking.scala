@@ -14,17 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package fr.iscpif.mgo.ranking
+package fr.iscpif.mgo
 
-import fr.iscpif.mgo
-import fr.iscpif.mgo.{Fitness, Pop, Algorithm, Population}
-import fr.iscpif.mgo.dominance._
-import fr.iscpif.mgo.tools.{Math, Lazy}
-import fr.iscpif.mgo.tools.Math._
+import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo.tools.metric.Hypervolume
-import scala.Ordering.Implicits._
-
-import scala.util.Random
+import Ordering.Implicits._
 
 trait Ranking <: Pop {
 
@@ -54,7 +48,7 @@ trait RankingDefault <: Ranking with Fitness {
       HierarchicalRanking.upRank(values.map(v => mg(v)))
   }
 
-  def paretoRanking(dominance: Dominance = nonStrictDominance)(implicit mg: Fitness[Seq[Double]]) = new Ranking {
+  def paretoRanking(dominance: Dominance = Dominance.nonStrictDominance)(implicit mg: Fitness[Seq[Double]]) = new Ranking {
     override def apply(values: Pop): Vector[Lazy[Int]] = {
       val fitnesses = values.map(i => mg(i))
 

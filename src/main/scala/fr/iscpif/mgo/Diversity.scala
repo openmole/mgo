@@ -15,12 +15,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.diversity
+package fr.iscpif.mgo
 
-import fr.iscpif.mgo._
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
-import fr.iscpif.mgo.tools.metric.{KNearestNeighboursAverageDistance, Hypervolume, CrowdingDistance, ClosedCrowdingDistance}
+import fr.iscpif.mgo.tools.metric.{CrowdingDistance, Hypervolume, KNearestNeighboursAverageDistance}
+
 import scala.util.Random
 import scalaz._
 

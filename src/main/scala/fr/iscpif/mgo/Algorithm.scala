@@ -16,7 +16,6 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.elitism._
 import monocle.macros._
 
 import scala.util.Random

@@ -14,15 +14,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package fr.iscpif.mgo.map
+package fr.iscpif.mgo
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.elitism.Niche
-import fr.iscpif.mgo.ranking.HierarchicalRanking
-import fr.iscpif.mgo.ranking._
-import fr.iscpif.mgo.tools.{Math, Lazy}
 import fr.iscpif.mgo.tools.Math._
-import fr.iscpif.mgo.{Pop, Population, Individual, Algorithm}
+import fr.iscpif.mgo.tools.{HierarchicalRanking, Lazy, Math}
 import monocle._
 
 

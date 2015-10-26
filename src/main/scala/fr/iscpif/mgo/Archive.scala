@@ -15,11 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.archive
+package fr.iscpif.mgo
 
-import fr.iscpif.mgo
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.elitism.Niche
 import scalaz._
 
 trait Archive <: Pop { this: Algorithm =>
@@ -28,7 +25,7 @@ trait Archive <: Pop { this: Algorithm =>
 
 trait ArchiveDefault <: Archive with Niche { this: Algorithm =>
 
-  def hitMap[A](offspring: Pop)(implicit archive: monocle.Lens[STATE, Map[A, Int]], niche: Niche[A]) = new Archive {
+  def hitMap[A](offspring: Pop)(implicit archive: monocle.Lens[STATE, scala.collection.Map[A, Int]], niche: Niche[A]) = new Archive {
 
     override def apply(state: EvolutionState) = {
       (EvolutionState.state composeLens archive).modify { archive =>

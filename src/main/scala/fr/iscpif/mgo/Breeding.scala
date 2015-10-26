@@ -14,14 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package fr.iscpif.mgo.breed
+package fr.iscpif.mgo
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.diversity.Diversity
-import fr.iscpif.mgo.ranking.Ranking
-import scala.annotation.tailrec
-import scala.util.Random
 import fr.iscpif.mgo.tools._
+
+import scala.annotation.tailrec
 import scalaz._
 
 trait Breeding { this: Algorithm =>

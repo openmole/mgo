@@ -15,15 +15,11 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.elitism
+package fr.iscpif.mgo
 
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.diversity.Diversity
-import fr.iscpif.mgo.ranking.Ranking
 import scala.annotation.tailrec
-import scala.util.Random
+import scalaz.Scalaz._
 import scalaz._
-import Scalaz._
 
 /**
  * Cake layer to eliminated elements of a population

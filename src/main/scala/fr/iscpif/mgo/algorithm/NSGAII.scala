@@ -18,13 +18,6 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.breed.BreedingDefault
-import fr.iscpif.mgo.crossover.CrossoverDefault
-import fr.iscpif.mgo.diversity.{DiversityDefault, Diversity}
-import fr.iscpif.mgo.elitism.ElitismDefault
-import fr.iscpif.mgo.mutation.MutationDefault
-import fr.iscpif.mgo.ranking.{RankingDefault, Ranking}
-
 import scalaz._
 import Scalaz._
 
