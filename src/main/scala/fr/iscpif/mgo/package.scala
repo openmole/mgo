@@ -27,13 +27,10 @@ package object mgo {
   case class GenomeSize(val value: Int) extends AnyVal
   case class GenomeSigma[V](val value: V) extends AnyVal
 
-
   implicit def unitStateConverter[X](s: X): (X, Unit) = (s, Unit)
-  def PureState[S] = new {
-    def apply[T](f: => T) = State[S, T] { s: S => (s, f)}
-  }
 
-  //type Empty[T] = () => T
+
+
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
     val factor = (boundaryMax - boundaryMin) / (max - min)

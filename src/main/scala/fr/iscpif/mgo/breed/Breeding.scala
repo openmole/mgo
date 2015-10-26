@@ -25,8 +25,26 @@ import fr.iscpif.mgo.tools._
 import scalaz._
 
 trait Breeding { this: Algorithm =>
-  trait Selection <: (() => State[EvolutionState, Ind])
-  type Mating = State[EvolutionState, Vector[Ind]]
+  trait Selection <: State[EvolutionState, Ind]
+
+  implicit class genomeStateDecorator(newGenome: State[EvolutionState, Vector[G]]) {
+
+    def flatten(lambda: Int) = {
+      def flatten0(lambda: Int)(state: EvolutionState, acc: List[G] = List()): (EvolutionState, Vector[G]) =
+        if (acc.size >= lambda) (state, acc.toVector)
+        else {
+          val (newState, add) = newGenome.map {
+            _.take(lambda - acc.size)
+          }.run(state)
+          flatten0(lambda)(newState, add.toList ::: acc)
+        }
+
+      State { state: EvolutionState => flatten0(lambda)(state) }
+    }
+  }
+
+
+
 }
 
 trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this: Algorithm =>
@@ -54,21 +72,20 @@ trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this
 
   def tournament[A](challenge: ChallengeResult[A], pop: Pop, rounds: Int = 1) = new Selection {
 
-    override def apply() =  State { state: EvolutionState =>
-        def newChallenger: Int = state.random.nextInt(pop.size)
+    override def apply(state: EvolutionState): (EvolutionState, Ind) = {
+      def newChallenger: Int = state.random.nextInt(pop.size)
 
-        @tailrec def round(champion: Int, rounds: Int): Int =
-          if (rounds <= 0) champion
-          else {
-            val challenger = newChallenger
-            import challenge.ordering._
-            val newChampion = if (challenge.score(challenger) > challenge.score(champion)) challenger else champion
-            round(newChampion, rounds - 1)
-          }
+      @tailrec def round(champion: Int, rounds: Int): Int =
+        if (rounds <= 0) champion
+        else {
+          val challenger = newChallenger
+          import challenge.ordering._
+          val newChampion = if (challenge.score(challenger) > challenge.score(champion)) challenger else champion
+          round(newChampion, rounds - 1)
+        }
 
-        (state, pop(round(newChallenger, rounds)))
-      }
-
+      (state, pop(round(newChallenger, rounds)))
+    }
   }
 
 
@@ -112,19 +129,10 @@ trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this
 
 
   def randomSelection(population: Pop) = new Selection {
-    override def apply() = State { state =>
+    override def apply(state: EvolutionState): (EvolutionState, Ind) = {
       (state, population.content.random(state.random))
     }
   }
-
-  def mateByPair(selection: Selection): Mating = {
-      val select = selection()
-
-      for {
-        s1 <- select
-        s2 <- select
-      } yield { Vector(s1, s2) }
-    }
 
 
 

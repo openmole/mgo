@@ -24,13 +24,13 @@ import scala.language.higherKinds
 
 
 trait Mutation <: Pop { this: Algorithm =>
-  trait Mutation <: State[EvolutionState, G]
+  trait Mutation <: (G => State[EvolutionState, G])
 }
 
 trait MutationDefault <: Mutation with Genome { this: Algorithm =>
 
-  def gaussianMutation(sigma: Double, g: G)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
-    override def apply(state: EvolutionState): (EvolutionState, G) = {
+  def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
+    override def apply(g: G) = State { state: EvolutionState =>
        val newValues = values.modify(g => GenomeValue(g.value.map(_ + (state.random.nextGaussian * sigma))))(g)
       (state, newValues)
     }

@@ -22,11 +22,11 @@ import fr.iscpif.mgo.breed.BreedingDefault
 import fr.iscpif.mgo.diversity.{DiversityDefault, Diversity}
 import fr.iscpif.mgo.elitism.ElitismDefault
 import fr.iscpif.mgo.mutation.MutationDefault
-import fr.iscpif.mgo.genome._
 import fr.iscpif.mgo.ranking.{RankingDefault, Ranking}
 
 import scalaz._
 import Scalaz._
+import scalaz.iteratee.{StepT, IterateeT}
 
 trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with MutationDefault with RankingDefault with DiversityDefault {
 
@@ -41,6 +41,7 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
   type STATE = NSGA2State
 
   def lambda: Int
+  def mutation: Mutation = gaussianMutation(0.5)
 
   implicit def fitness: Fitness[Seq[Double]]
   implicit def ranking = paretoRanking()
@@ -50,13 +51,13 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
     (onRank and onDiversity) (pop) flatMap { challenged =>
         val newGenome =
           for {
-            mated <- tournament(challenged, pop)()
-            g <- gaussianMutation(2.0, mated.genome)
-          } yield { g }
+            selected <- tournament(challenged, pop)
+            g <- mutation(selected.genome)
+          } yield { Vector(g, g) }
 
-      (0 until lambda).toVector.traverseS[EvolutionState, G](i => newGenome)
+        newGenome.flatten(lambda)
+      }
     }
-  }
 
   override def elitism(population: Pop, offspring: Pop): State[EvolutionState, Pop] =
     for {
