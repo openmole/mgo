@@ -16,8 +16,8 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.elitism.{ElitismDefault, Elitism}
-import monocle.macros.{Lenser, Lenses}
+import fr.iscpif.mgo.elitism._
+import monocle.macros._
 
 import scala.util.Random
 import scalaz._
@@ -45,16 +45,18 @@ trait Algorithm extends Pop {
 
   def updateGeneration = State[EvolutionState, Unit] { s => EvolutionState.generation.modify(_ + 1)(s) }
 
+  def mu: Int
+  def randomGenome: State[Random, G]
   def breeding(population: Pop): State[EvolutionState, Vector[G]]
   def elitism(population: Pop, offspring: Pop): State[EvolutionState, Pop]
-  def terminated(population: Pop): State[EvolutionState, Boolean]
+  def termination(population: Pop): State[EvolutionState, Boolean]
 
   def step(population: Pop, express: (G => State[Random, P])): State[EvolutionState, Pop] = {
     def expressMonad(g: G) = State { state: EvolutionState => (state, Individual[G, P](g, express).eval(state.random)) }
 
     for {
-      breed <- breeding(population)
-      offspring <- breed.toVector.traverseS { expressMonad }
+      breed <- if(population.content.isEmpty) EvolutionState.random.lifts(randomGenome.lift).generate(mu).map(_.toVector) else breeding(population)
+      offspring <- breed.traverseS { expressMonad }
       population <- elitism(population, offspring)
       _ <- updateGeneration
     } yield population

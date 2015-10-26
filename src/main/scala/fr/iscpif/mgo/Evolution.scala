@@ -1,123 +1,44 @@
-///*
-// * Copyright (C) 2011 Sebastien Rey
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU Affero General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU Affero General Public License
-// * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-// */
-//
-//package fr.iscpif.mgo
-//
-//import util.Random
-//import org.apache.commons.math3.random.{ RandomAdaptor, Well44497b }
-//
-//import fr.iscpif.mgo.tools.time
-//import scalaz._
-//import Scalaz._
-//
-///**
-// * Trait evolution provide the feature to define an evolutionary algorithm
-// */
-//trait Evolution extends Termination
-//    with Lambda
-//    with G
-//    with F
-//    with P
-//    with Archive
-//    with Breeding
-//    with Elitism { self =>
-//
-//  implicit def evolutionStateIsMonoid(implicit emptyArchive: Empty[A], emptyTerminationState: Empty[STATE]) = new Empty[EvolutionState] {
-//    override def apply(): EvolutionState = EvolutionState(Population.empty, emptyArchive(), 0, emptyTerminationState(), false)
-//  }
-//
-//  def buildRNG(seed: Long) = new Random(new RandomAdaptor(new Well44497b(seed)))
-//
-//  /**
-//   * Run the evolutionary algorithm
-//   *
-//   * @param expression the genome expression
-//   * @param evaluation the fitness evaluator
-//   * @return an iterator over the states of the evolution
-//   */
-//  def step(expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): State[EvolutionState, Population[G, P, F]] =
-//    State[EvolutionState, Population[G, P, F]] { state =>
-//      val (newIndividuals, newArchive) = step(state.population, state.archive, expression, evaluation)
-//      val newPop = Population(newIndividuals)
-//      val (stop, newState) = terminated(newPop, state.terminationState)
-//      EvolutionState(newPop, newArchive, state.generation + 1, newState, stop) -> newPop
-//    }
-//
-//  /**
-//   * Run the evolutionary algorithm
-//   * @param expression the genome expression
-//   * @param evaluation the fitness evaluator
-//   * @return an iterator over the states of the evolution
-//   */
-//  def evolve(expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
-//    List.continually(step(expression, evaluation)).sequence
-//  }
-//  /*
-//  def evolve(genomes: Seq[G], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
-//    val population = evaluate(genomes, expression, evaluation)
-//    evolve(population, expression, evaluation)
-//  }*/
-//
-//  /**
-//   * Run the evolutionary algorithm
-//   * @param population the initial individuals
-//   * @param expression the genome expression
-//   * @param evaluation the fitness evaluator
-//   * @return an iterator over the states of the evolution
-//   */
-//  def evolve(population: Population[G, P, F], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
-//    val archive = initialArchive
-//    evolve(population, archive, expression, evaluation)
-//  }
-//
-//  /**
-//   * Run the evolutionary algorithm
-//   * @param population the initial individuals
-//   * @param offspring the initial offsprings
-//   * @param expression the genome expression
-//   * @param evaluation the fitness evaluator
-//   * @return an iterator over the states of the evolution
-//   */
-//  def evolve(population: Population[G, P, F], offspring: Population[G, P, F], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit prng: Random): Iterator[EvolutionState] = {
-//    val archive = self.archive(initialArchive, population, offspring)
-//    evolve(population, archive, expression, evaluation)
-//  }
-//  /**
-//   * Evolve one step
-//   *
-//   * @param population the current population
-//   * @param archive the current archive
-//   * @param expression expression of the genome
-//   * @param evaluation the fitness evaluator
-//   * @return a new population of evaluated solutions
-//   *
-//   */
-//  def step(population: Population[G, P, F], archive: A, expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random): (Population[G, P, F], A) = {
-//    val offspringGenomes = breed(population, archive)
-//    val offspring = evaluate(offspringGenomes, expression, evaluation)
-//    val newArchive = self.archive(archive, population, offspring)
-//
-//    //Elitism strategy
-//    (elitism(population, offspring, newArchive), newArchive)
-//  }
-//
-//  def evaluate(genomes: Seq[G], expression: (G, Random) => P, evaluation: (P, Random) => F)(implicit rng: Random) = {
-//    val rngs = (0 until genomes.size).map(_ => buildRNG(rng.nextLong))
-//    Population.fromIndividuals((genomes zip rngs).par.map { case (g, rng) => Individual[G, P, F](g, expression, evaluation)(rng) }.seq)
-//  }
-//
-//}
+/*
+ * Copyright (C) 2011 Sebastien Rey
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package fr.iscpif.mgo
+
+import scalaz.iteratee.EnumeratorP
+import util.Random
+import org.apache.commons.math3.random.{ RandomAdaptor, Well44497b }
+import scalaz._
+import Scalaz._
+
+/**
+ * Trait evolution provide the feature to define an evolutionary algorithm
+ */
+trait Evolution <: Pop { self: Algorithm =>
+
+  def buildRNG(seed: Long) = new Random(new RandomAdaptor(new Well44497b(seed)))
+
+    /**
+     * Run the evolutionary algorithm
+     * @param expression the genome expression
+     * @return an iterator over the states of the evolution
+     */
+    def apply(expression: G => State[Random, P], population: Pop) = {
+
+
+    }
+
+
+}

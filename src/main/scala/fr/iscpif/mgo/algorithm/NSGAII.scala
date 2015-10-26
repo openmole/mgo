@@ -42,6 +42,7 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
 
   def mu: Int
   def lambda: Int
+
   def mutation: Mutation = gaussianMutation(0.5)
   def crossover: Crossover = blxCrossover()
 
@@ -59,9 +60,9 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
             (c1, c2) = c
             g1 <- mutation(c1)
             g2 <- mutation(c2)
-          } yield { List(g2, g2) }
+          } yield { Vector(g2, g2) }
 
-        newGenome.flatten(lambda).map(_.toVector)
+        newGenome.generateFlat(lambda)
       }
     }
 
@@ -71,6 +72,6 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
       p2 <- removeClone(p1)
       p3 <- removeNaN(p2)
       p4 <- keepNonDominated(mu, p3)
-    } yield p4
+    } yield p4.age
 
 }

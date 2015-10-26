@@ -22,14 +22,11 @@ import scalaz._
 
 package object mgo {
 
-
   case class GenomeValue[V](val value: V) extends AnyVal
   case class GenomeSize(val value: Int) extends AnyVal
   case class GenomeSigma[V](val value: V) extends AnyVal
 
   implicit def unitStateConverter[X](s: X): (X, Unit) = (s, Unit)
-
-
 
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
@@ -55,132 +52,31 @@ package object mgo {
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
   def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
 
-  /*type AggregatedOptimisation = algorithm.AggregatedOptimisation
-  type PSE = algorithm.PSE
-  type CMAES = algorithm.CMAES
-  type Map = algorithm.Map
-  type NSGAII = algorithm.NSGAII
-  type Profile = algorithm.Profile
-  type SMSEMOEA = algorithm.SMSEMOEA
-  type A = archive.A
-  type Archive = archive.Archive
-  type ArchiveIndividuals = archive.ArchiveIndividuals
-  type CMAESArchive = archive.CMAESArchive
-  type HitMapArchive = archive.HitMapArchive
-  type NEATArchive = archive.NEATArchive
-  type NoArchive = archive.NoArchive
-  type NoveltyArchive = archive.NoveltyArchive
-  type Breeding = breed.Breeding
-  type BreedingContext = breed.BreedingContext
-  type BreedingContextId = breed.BreedingContextId
-  type CMAESBreeding = breed.CMAESBreeding
-  type GeneticBreeding = breed.GeneticBreeding
-  type Cloning = breed.Cloning
-  lazy val BLXCrossover = crossover.BLXCrossover
-  type Crossover = crossover.Crossover
-  type DynamicGACrossover = crossover.DynamicGACrossover
-  lazy val IdentityCrossOver = crossover.IdentityCrossover
-  lazy val SBXCrossover = crossover.SBXCrossover
-  type CrowdingIndividualDistance = distance.CrowdingIndividualDistance
-  type ClosedCrowdingIndividualDistance = distance.ClosedCrowdingIndividualDistance
-  type ClosedCrowdingIndividualDistanceFromArchive = distance.ClosedCrowdingIndividualDistanceFromArchive
-  type EuclideanIndividualDiversity = distance.EuclideanIndividualDiversity
-  type IndividualPosition = distance.IndividualPosition
-  type IndividualDistance = distance.IndividualDistance
-  type PhenotypeIsPosition = distance.PhenotypeIsPosition
-  type IndividualDistanceFromArchive = distance.IndividualDistanceFromArchive
-  type KNearestNeighboursIndividualDistance = distance.KNearestNeighboursIndividualDistance
-  type FitnessCrowdingDiversity = diversity.FitnessCrowdingDiversity
-  type FitnessClosedCrowdingDiversity = diversity.FitnessClosedCrowdingDiversity
-  type KNearestNeighboursDiversity = diversity.FitnessKNearestNeighboursDiversity
-  type Diversity = diversity.Diversity
-  type FitnessHypervolumeDiversity = diversity.FitnessHypervolumeDiversity
-  type NoDiversity = diversity.NoDiversity
-  type Dominance = dominance.Dominance
-  type NonStrictDominance = dominance.NonStrictDominance
-  type NonStrictEpsilonDominance = dominance.NonStrictEpsilonDominance
-  type StrictDominance = dominance.StrictDominance
-  type StrictEpsilonDominance = dominance.StrictEpsilonDominance
-  type BestAggregatedElitism = elitism.BestAggregatedElitism
-  type BestAggregatedNicheElitism = elitism.BestAggregatedNicheElitism
-  type BestRankedNicheElitism = elitism.BestRankedNicheElitism
-  type CloneRemoval = CloneRemoval
-  type ConservativeFIFOAggregatedElitism = elitism.ConservativeFIFOAggregatedElitism
-  type DiversityAggregatedElitism = elitism.DiversityAggregatedElitism
-  type Elitism = elitism.Elitism
-  type NaNRemoval = elitism.NaNRemoval
-  type NEATElitism = elitism.NEATElitism
-  type KeepOffspringElitism = elitism.KeepOffspringElitism
-  type IndividualFilter = IndividualFilter
-  type NonDominatedElitism = elitism.NonDominatedElitism
-  type NicheElitism = elitism.NicheElitism
-  type RandomNicheElitism = elitism.RandomNicheElitism
-  type RankElitism = elitism.RankElitism
-  type Aggregation = fitness.Aggregation
-  type F = fitness.F
-  type DoubleFitness = fitness.DoubleFitness
-  type MaxAggregation = fitness.MaxAggregation
-  type MG = fitness.MG
-  type MGFitness = fitness.MGFitness
-  type ClampedGenome = genome.ClampedGenome
-  type G = genome.G
-  type GAGenome = genome.GAGenome
-  type GAGenomeWithRandomValue = genome.GAGenomeWithRandomValue
-  type GAGenomeWithSigma = genome.GAGenomeWithSigma
-  type NEATGenome = genome.NEATGenome
-  type GA = genome.GA
-  type NoGenomeClamping = genome.NoGenomeClamping
-  type RandomValue = genome.RandomValue
-  type RandomInitialGenome = genome.RandomInitialGenome
-  type Sigma = genome.Sigma
-  type MapGenomePlotter = map.MapGenomePlotter
-  type MapPlotter = map.MapPlotter
-  type ProfileGenomePlotter = map.ProfileGenomePlotter
-  type ProfilePlotter = map.ProfilePlotter
-  lazy val AdaptiveCauchyMutation = mutation.AdaptiveCauchyMutation
-  lazy val BGAMutation = mutation.BGAMutation
-  type DynamicGAMutation = mutation.DynamicGAMutation
-  lazy val GaussianMutation = mutation.GaussianMutation
-  type Mutation = mutation.Mutation
-  lazy val IdentityMutation = mutation.IdentityMutation
-  type GAGenotypeGridNiche = niche.GAGenotypeGridNiche
-  type MapNiche = niche.MapNiche
-  type Niche = niche.Niche
-  type PhenotypeGridNiche = niche.PhenotypeGridNiche
-  type ProfileNiche = niche.ProfileNiche
-  type P = phenotype.P
-  type Evaluation = phenotype.Evaluation
-  type DoubleSeqPhenotype = phenotype.DoubleSeqPhenotype
-  type NoPhenotype = phenotype.NoPhenotype
-  type Problem = problem.Problem
-  type GAProblem = problem.GAProblem
-  type NEATProblem = problem.NEATProblem
-  type NoFitness = problem.NoFitness
-  type Scaling = problem.Scaling
-  type HierarchicalRanking = ranking.HierarchicalRanking
-  type HypervolumeRanking = ranking.HypervolumeRanking
-  type NoRanking = ranking.NoRanking
-  type ParetoRanking = ranking.ParetoRanking
-  type ProfileRanking = ranking.ProfileRanking
-  type Ranking = ranking.Ranking
-  type BinaryTournamentSelection = selection.BinaryTournamentSelection
-  type Mating = selection.Mating
-  type RandomSelection = selection.RandomSelection
-  type RandomMating = selection.PairMating
-  type TournamentOnDiversity = selection.TournamentOnDiversity
-  type TournamentOnRank = selection.TournamentOnRank
-  type TournamentOnRankAndDiversity = selection.TournamentOnRankAndDiversity
-  type MapSelection = selection.MapSelection
-  type ProportionalNumberOfRound = selection.ProportionalNumberOfRound
-  type Selection = selection.Selection
-  type TournamentOnAggregatedFitness = selection.TournamentOnAggregatedFitness
-  type TournamentOnHitCount = selection.TournamentOnHitCount
-  type ConditionalTermination = termination.ConditionalTermination
-  type CrowdingStabilityTermination = termination.CrowdingStabilityTermination
-  type CounterTermination = termination.CounterTermination
-  type HyperVolumeStabilityTermination = termination.HyperVolumeStabilityTermination
-  type StabilityTermination = termination.StabilityTermination
-  type Termination = termination.Termination
-  type TimedTermination = termination.TimedTermination*/
+  implicit class LensDecorator[A, B](lens: monocle.Lens[A, B]) {
+    def toScalaz = scalaz.Lens.lensu[A, B]((a, b) => lens.set(b)(a), lens.get)
+  }
+
+  implicit def monocleToScalazLens[A, B](lens: monocle.Lens[A, B]) = lens.toScalaz
+
+  implicit class ElementStateDecorator[S, G](gen: State[S, G]) {
+    def generate(lambda: Int) = gen.map(Vector(_)).generateFlat(lambda)
+
+  }
+  implicit class ListStateDecorator[S, G](gen: State[S, Vector[G]]) {
+
+    def generateFlat(lambda: Int) = {
+      def flatten0(lambda: Int)(state: S, acc: List[G] = List()): (S, List[G]) =
+        if (acc.size >= lambda) (state, acc)
+        else {
+          val (newState, add) = gen.map {
+            _.take(lambda - acc.size)
+          }.run(state)
+          flatten0(lambda)(newState, add.toList ::: acc)
+        }
+
+      State { state: S => flatten0(lambda)(state) }.map { _.toVector }
+    }
+
+  }
 
 }
