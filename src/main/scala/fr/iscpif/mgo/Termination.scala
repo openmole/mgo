@@ -16,7 +16,13 @@
  */
 package fr.iscpif.mgo
 
-import scala.util.Random
+import scalaz._
+
+trait Termination <: Pop { this: Algorithm =>
+
+  type Termination = State[EvolutionState, Boolean]
+
+}
 
 /**
  * Layer to compute the stopping condition of the evolutionary algorithm

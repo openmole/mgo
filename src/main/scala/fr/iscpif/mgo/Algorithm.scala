@@ -49,7 +49,7 @@ trait Algorithm extends Pop {
 
   def breeding(population: Pop): State[EvolutionState, Vector[G]]
   def elitism(population: Pop, offspring: Pop): State[EvolutionState, Pop]
-  def termination(population: Pop): State[EvolutionState, Boolean]
+  def termination: State[EvolutionState, Boolean]
 
   def step(population: Pop, express: (G => State[Random, P])): State[EvolutionState, Pop] = {
     def expressMonad(g: G) = State { state: EvolutionState => (state, Individual[G, P](g, express).eval(state.random)) }

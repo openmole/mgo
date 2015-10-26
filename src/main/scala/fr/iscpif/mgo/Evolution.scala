@@ -35,10 +35,8 @@ trait Evolution <: Pop { self: Algorithm =>
    * @param expression the genome expression
    * @return an iterator over the states of the evolution
    */
-  def apply(expression: G => State[Random, P], population: Pop) = {
-
-
-  }
+  def apply(population: Pop, expression: G => State[Random, P]) =
+    step(population, expression).dropUntil(termination)
 
 
 }

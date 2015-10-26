@@ -19,6 +19,7 @@ package fr.iscpif
 
 import org.apache.commons.math3.random._
 import scalaz._
+import Scalaz._
 
 package object mgo {
 
@@ -60,8 +61,16 @@ package object mgo {
 
   implicit class ElementStateDecorator[S, G](gen: State[S, G]) {
     def generate(lambda: Int) = gen.map(Vector(_)).generateFlat(lambda)
-
+    def dropUntil(end: State[S, Boolean]) = {
+      def dropUntil0(state: S): (S, G) =  {
+        val (s1, res) = gen.run(state)
+        val (s2, cond) = end.run(s1)
+        if (cond) (s2, res) else dropUntil0(s2)
+      }
+      State[S, G] { state => dropUntil0(state) }
+    }
   }
+
   implicit class ListStateDecorator[S, G](gen: State[S, Vector[G]]) {
 
     def generateFlat(lambda: Int) = {
