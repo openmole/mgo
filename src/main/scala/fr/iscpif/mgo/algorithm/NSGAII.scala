@@ -27,7 +27,6 @@ import fr.iscpif.mgo.ranking.{RankingDefault, Ranking}
 
 import scalaz._
 import Scalaz._
-import scalaz.iteratee.{StepT, IterateeT}
 
 trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with MutationDefault with CrossoverDefault with RankingDefault with DiversityDefault {
 
@@ -41,6 +40,7 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
 
   type STATE = NSGA2State
 
+  def mu: Int
   def lambda: Int
   def mutation: Mutation = gaussianMutation(0.5)
   def crossover: Crossover = blxCrossover()
@@ -54,11 +54,12 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
         val newGenome =
           for {
             s1 <- tournament(challenged, pop)
-            g1 <- mutation(s1.genome)
             s2 <- tournament(challenged, pop)
-            g2 <- mutation(s2.genome)
-            c <- crossover(g1, g2)
-          } yield { c.toList }
+            c <- crossover(s1.genome, s2.genome)
+            (c1, c2) = c
+            g1 <- mutation(c1)
+            g2 <- mutation(c2)
+          } yield { List(g2, g2) }
 
         newGenome.flatten(lambda).map(_.toVector)
       }
@@ -68,6 +69,8 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
     for {
       p1 <- merge(population, offspring)
       p2 <- removeClone(p1)
-    } yield p2
+      p3 <- removeNaN(p2)
+      p4 <- keepNonDominated(mu, p3)
+    } yield p4
 
 }
