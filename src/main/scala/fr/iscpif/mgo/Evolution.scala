@@ -30,15 +30,15 @@ trait Evolution <: Pop { self: Algorithm =>
 
   def buildRNG(seed: Long) = new Random(new RandomAdaptor(new Well44497b(seed)))
 
-    /**
-     * Run the evolutionary algorithm
-     * @param expression the genome expression
-     * @return an iterator over the states of the evolution
-     */
-    def apply(expression: G => State[Random, P], population: Pop) = {
+  /**
+   * Run the evolutionary algorithm
+   * @param expression the genome expression
+   * @return an iterator over the states of the evolution
+   */
+  def apply(expression: G => State[Random, P], population: Pop) = {
 
 
-    }
+  }
 
 
 }

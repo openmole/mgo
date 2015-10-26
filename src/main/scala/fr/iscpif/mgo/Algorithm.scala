@@ -47,6 +47,7 @@ trait Algorithm extends Pop {
 
   def mu: Int
   def randomGenome: State[Random, G]
+
   def breeding(population: Pop): State[EvolutionState, Vector[G]]
   def elitism(population: Pop, offspring: Pop): State[EvolutionState, Pop]
   def termination(population: Pop): State[EvolutionState, Boolean]
@@ -54,8 +55,12 @@ trait Algorithm extends Pop {
   def step(population: Pop, express: (G => State[Random, P])): State[EvolutionState, Pop] = {
     def expressMonad(g: G) = State { state: EvolutionState => (state, Individual[G, P](g, express).eval(state.random)) }
 
+    def randomIfEmpty =
+      if(population.content.isEmpty) EvolutionState.random.lifts(randomGenome).generate(mu).map(_.toVector)
+      else breeding(population)
+
     for {
-      breed <- if(population.content.isEmpty) EvolutionState.random.lifts(randomGenome.lift).generate(mu).map(_.toVector) else breeding(population)
+      breed <- randomIfEmpty
       offspring <- breed.traverseS { expressMonad }
       population <- elitism(population, offspring)
       _ <- updateGeneration
