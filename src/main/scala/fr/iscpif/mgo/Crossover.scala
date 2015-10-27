@@ -17,6 +17,8 @@
 
 package fr.iscpif.mgo
 
+import scala.util.Random
+import tools._
 import scalaz._
 
 trait Crossover <: Pop { this: Algorithm =>
@@ -24,9 +26,9 @@ trait Crossover <: Pop { this: Algorithm =>
 }
 
 
-trait CrossoverDefault <: Crossover { this: Algorithm =>
+trait CrossoverDefault <: Crossover with DynamicOps { this: Algorithm =>
 
-  def blxCrossover(alpha: Double = 0.5)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]])  = new Crossover {
+  def blx(alpha: Double = 0.5)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Crossover {
     def apply(g1: G, g2: G) = State { state: AlgorithmState =>
           val (newG1, newG2) =
             (values.get(g1).value zip values.get(g2).value).map {
@@ -42,21 +44,13 @@ trait CrossoverDefault <: Crossover { this: Algorithm =>
 
   }
 
-  //  def apply[G, P, F, A, BreedingContext[_]: Monad](alpha: Double = 0.5)(values: Lens[G, Seq[Double]]) = {
-  //    (indivs: Seq[Individual[G, P, F]], population: Population[G, P, F], archive: A, rng: Random) =>
-  //      {
-  //        val genomes = indivs.map { _.genome }
-  //        val (g1, g2) = (genomes(0), genomes(1))
-  //        val (newG1, newG2) =
-  //          (values.get(g1) zip values.get(g2)).map {
-  //            case (c1, c2) =>
-  //              val cmin = math.min(c1, c2)
-  //              val cmax = math.max(c1, c2)
-  //              val i = cmax - cmin
-  //              def generate = rng.nextDouble().scale(cmin - alpha * i, cmax + alpha * i)
-  //              (generate, generate)
-  //          }.unzip
-  //        Vector(g1 &|-> values set newG1, g2 &|-> values set newG2).point[BreedingContext]
-  //      }
-  //  }
+  def dynamicCrossover(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Crossover*) = (pop: Pop) => new Crossover {
+     def apply(g1: G, g2: G) =
+       for {
+         crossover <- AlgorithmState.random.lifts(dynamicOperator(genomePart, exploration)(ops: _*)(pop))
+         res <- crossover(g1, g2)
+       } yield res
+  }
+
+
 }

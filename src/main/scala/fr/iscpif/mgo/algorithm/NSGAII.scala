@@ -23,18 +23,21 @@ import Scalaz._
 
 trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with MutationDefault with CrossoverDefault with RankingDefault with DiversityDefault {
 
-  case class Genome(values: GenomeValue[Seq[Double]])
+  case class Genome(values: GenomeValue[Seq[Double]], fromMutation: Option[Int] = None, fromCrossover: Option[Int] = None)
   type G = Genome
 
   implicit def equalsG = Equal.equal[G]((g1, g2) => g1.values == g2.values)
   implicit def genomeValues = monocle.macros.Lenser[G](_.values)
 
+  def fromMutation = monocle.macros.Lenser[G](_.fromMutation)
+  def fromCrossover = monocle.macros.Lenser[G](_.fromCrossover)
+
   case class NSGA2State()
   type STATE = NSGA2State
   def initialState = NSGA2State()
 
-  def mutation: Mutation = gaussianMutation(0.2)
-  def crossover: Crossover = blxCrossover()
+  def mutation = dynamicMutation(fromMutation)(gaussianMutation(0.2))
+  def crossover = dynamicCrossover(fromCrossover)(blx())
 
   implicit def fitness: Fitness[Seq[Double]]
   implicit def ranking = paretoRanking()
@@ -46,10 +49,10 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
           for {
             s1 <- tournament(challenged, pop)
             s2 <- tournament(challenged, pop)
-            c <- crossover(s1.genome, s2.genome)
+            c <- crossover(pop)(s1.genome, s2.genome)
             (c1, c2) = c
-            g1 <- mutation(c1)
-            g2 <- mutation(c2)
+            g1 <- mutation(pop)(c1)
+            g2 <- mutation(pop)(c2)
           } yield { Vector(clamp(g2), clamp(g2)) }
 
         newGenome.generateFlat(lambda)

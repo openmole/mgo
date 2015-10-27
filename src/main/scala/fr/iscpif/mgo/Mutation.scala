@@ -25,13 +25,21 @@ trait Mutation <: Pop { this: Algorithm =>
   type Mutation = (G => State[AlgorithmState, G])
 }
 
-trait MutationDefault <: Mutation with Genome { this: Algorithm =>
+trait MutationDefault <: Mutation with Genome with DynamicOps { this: Algorithm =>
 
   def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
     override def apply(g: G) = State { state: AlgorithmState =>
        val newValues = values.modify(g => GenomeValue(g.value.map(_ + (state.random.nextGaussian * sigma))))(g)
       (state, newValues)
     }
+  }
+
+   def dynamicMutation(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Mutation*) = (pop: Pop) => new Mutation {
+     def apply(g: G) =
+       for {
+         mutation <- AlgorithmState.random.lifts(dynamicOperator(genomePart, exploration)(ops: _*)(pop))
+         res <- mutation(g)
+       } yield res
   }
 
 }

@@ -25,22 +25,3 @@
 //
 //import scala.util.Random
 //
-//trait DynamicCrossover <: MultipleCrossover {
-//
-//  def crossoverExploration: Double = 0.1
-//  def fromCrossover: Lens[G, Option[Int]]
-//
-//  def crossoverStats(p: Population[G, P, F]): collection.Map[Crossover, Double] = {
-//    val working = p.flatMap(_.genome &|-> fromCrossover get)
-//    val map = working.groupBy(identity).mapValues(_.size.toDouble / working.size)
-//    (0 until crossovers.size).map(i => crossovers(i) -> map.getOrElse(i, 0.0)).toMap
-//  }
-//
-//  override def crossover(indivs: Seq[Individual[G, P, F]], population: Population[G, P, F], archive: A)(implicit rng: Random): BreedingContext[Vector[G]] = {
-//    val crossover: Crossover =
-//      if (rng.nextDouble < crossoverExploration) crossovers.random
-//      else multinomial(crossoverStats(population))
-//    crossover(indivs, population, archive, rng)
-//  }
-//
-//}
