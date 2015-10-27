@@ -18,13 +18,13 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import scalaz._
+import scalaz.State
 
-trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with Map {
+trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions {
 
-  case class ProfileState(archive: collection.Map[Int, Int])
+  case class ProfileState()
   type STATE = ProfileState
-  def initialState = ProfileState(collection.Map.empty)
+  def initialState = ProfileState()
 
   implicit val fitness: Fitness[Double]
   implicit val plotter: Plotter[Int]
@@ -32,12 +32,12 @@ trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with Map {
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] = {
 
     onRank(profileRanking).apply(pop) flatMap { challenged =>
-      val tourn = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
+      val fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
 
       val newGenome =
         for {
-          s1 <- tourn
-          s2 <- tourn
+          s1 <- fight
+          s2 <- fight
           c <- crossover(pop)(s1.genome, s2.genome)
           (c1, c2) = c
           g1 <- mutation(pop)(c1)
@@ -51,7 +51,7 @@ trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with Map {
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {
       p1 <- merge(population, offspring)
-      p2 <- nicheElitism(keepBestRanked(1), p1)(profileNiche)
+      p2 <- nicheElitism(keepBestRanked(1), p1)
     } yield p2.age
 
 }

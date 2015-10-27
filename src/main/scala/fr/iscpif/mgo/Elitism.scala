@@ -38,55 +38,55 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
   }
 
   def removeClone(population: Pop)(implicit genomeEquality: Equal[G]) = Elitism { s =>
-      def newPop =
-        groupWhen(population.toList)((i1, i2) => genomeEquality.equal(i1.genome, i2.genome)).map {
-          _.sortBy(_.age).head
-        }
+    def newPop =
+      groupWhen(population.toList)((i1, i2) => genomeEquality.equal(i1.genome, i2.genome)).map {
+        _.sortBy(_.age).head
+      }
 
-      (s, newPop)
-    }
+    (s, newPop)
+  }
 
   def removeNaN(population: Pop)(implicit mg: Fitness[Seq[Double]]) = Elitism { s =>
-      def newPop = population.filterNot(i => mg(i).exists(_.isNaN))
-      (s, newPop)
-    }
+    def newPop = population.filterNot(i => mg(i).exists(_.isNaN))
+    (s, newPop)
+  }
 
 
   def keepNonDominated(mu: Int, population: Pop)(implicit ranking: Ranking, diversity: Diversity) = Elitism { s =>
     def newPopulation: Pop =
-        if (population.content.size < mu) population
-        else {
-          val ranks = ranking(population).map {
-            _ ()
-          }
-
-          def sortedByRank =
-            (ranks zip population.content).
-              groupBy { case (r, _) => r }.
-              toList.
-              sortBy { case (r, _) => r }.
-              map { case (_, v) => v.map { case (_, e) => e } }
-
-          @tailrec def addFronts(fronts: List[Seq[Individual[G, P]]], acc: List[Individual[G, P]]): (Seq[Individual[G, P]], Seq[Individual[G, P]]) = {
-            if (fronts.isEmpty) (Seq.empty, acc)
-            else if (acc.size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head.toList ::: acc)
-            else (fronts.head, acc)
-          }
-
-          val (lastFront, selected) = addFronts(sortedByRank, List.empty)
-
-          if (selected.size < mu) {
-            selected ++
-              (lastFront zip diversity(lastFront).eval(s.random)).
-                sortBy { case (_, d) => d() }.
-                reverse.
-                slice(0, mu - selected.size).
-                map { case (e, _) => e }
-          } else selected
+      if (population.content.size < mu) population
+      else {
+        val ranks = ranking(population).map {
+          _ ()
         }
 
-      (s, newPopulation)
-    }
+        def sortedByRank =
+          (ranks zip population.content).
+            groupBy { case (r, _) => r }.
+            toList.
+            sortBy { case (r, _) => r }.
+            map { case (_, v) => v.map { case (_, e) => e } }
+
+        @tailrec def addFronts(fronts: List[Seq[Individual[G, P]]], acc: List[Individual[G, P]]): (Seq[Individual[G, P]], Seq[Individual[G, P]]) = {
+          if (fronts.isEmpty) (Seq.empty, acc)
+          else if (acc.size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head.toList ::: acc)
+          else (fronts.head, acc)
+        }
+
+        val (lastFront, selected) = addFronts(sortedByRank, List.empty)
+
+        if (selected.size < mu) {
+          selected ++
+            (lastFront zip diversity(lastFront).eval(s.random)).
+              sortBy { case (_, d) => d() }.
+              reverse.
+              slice(0, mu - selected.size).
+              map { case (e, _) => e }
+        } else selected
+      }
+
+    (s, newPopulation)
+  }
 
 
   def keepBest(mu: Int, population: Pop)(implicit ranking: Ranking) = Elitism { s =>

@@ -20,7 +20,7 @@ trait Niche <: Pop {
   trait Niche[+T] <: (Ind => T)
 }
 
-trait NicheDefault <: Niche {
+trait NicheFunctions <: Niche {
 
   def grid(gridSize: Seq[Double], grid: Ind => Seq[Double]) = new Niche[Seq[Int]] {
     def apply(individual: Ind): Seq[Int] =

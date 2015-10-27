@@ -21,7 +21,7 @@ import fr.iscpif.mgo.tools.{HierarchicalRanking, Lazy, Math}
 import monocle._
 import Genome._
 
-trait Map <: Pop with Ranking with Niche with Fitness {
+trait MapFunctions <: Pop with Ranking with Niche with Fitness {
 
   trait Plotter[T] {
     def apply(individual: Ind): T
@@ -86,13 +86,10 @@ trait Map <: Pop with Ranking with Niche with Fitness {
     }
   }
 
-  def profileNiche(implicit plotter: Plotter[Int]) = new Niche[Int] {
-    override def apply(individual: Ind): Int = plotter(individual)
+  implicit def mapNiche[A](implicit plotter: Plotter[A]) = new Niche[A] {
+    override def apply(individual: Ind): A = plotter(individual)
   }
 
-  def mapNiche(implicit plotter: Plotter[(Int,Int)]) = new Niche[(Int, Int)] {
-    override def apply(individual: Ind): (Int, Int) = plotter(individual)
-  }
 
 
 }

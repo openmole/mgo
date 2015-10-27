@@ -25,7 +25,7 @@ trait Breeding { this: Algorithm =>
   trait Selection <: State[AlgorithmState, Ind]
 }
 
-trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity { this: Algorithm =>
+trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with Niche { this: Algorithm =>
 
   case class ChallengeResult[A](challenge: Vector[A])(implicit val ordering: scala.Ordering[A]) {
     def score(i: Int) = challenge(i)
@@ -46,7 +46,6 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity { th
       }
     }
   }
-
 
   def tournament[A](challenge: ChallengeResult[A], pop: Pop, rounds: (Int => Int) = _ => 1) = new Selection {
 
@@ -69,10 +68,10 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity { th
 
   def onRank(implicit ranking: Ranking) = new Challenge[Lazy[Int]] {
     def apply(pop: Pop) = State.state {
-        val ordering = implicitly[scala.Ordering[Lazy[Int]]]
-        new ChallengeResult(ranking(pop))(ordering.reverse)
-      }
+      val ordering = implicitly[scala.Ordering[Lazy[Int]]]
+      new ChallengeResult(ranking(pop))(ordering.reverse)
     }
+  }
 
   def onDiversity(implicit diversity: Diversity) = new Challenge[Lazy[Double]] {
     override def apply(pop: Pop) =  State { state: AlgorithmState =>
@@ -81,30 +80,15 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity { th
     }
   }
 
-
-  /*trait ProportionalNumberOfRound <: NumberOfRound {
-    def selectionPressure = 1.0
-    override def rounds(population: Population[G, P, F], archive: A) =
-      math.round(math.log10(population.size) * selectionPressure).toInt
-  }*/
-
-  /*def onHitCount(implicit ) <: Tournament with HitMapArchive {
-    override type Evaluation = Int
-
-    override def evaluate(population: Population[G, P, F], archive: A)(implicit rng: Random) =
-      population.map(i => hits(archive, niche(i.toIndividual)))
-
-    override def tournament(e1: IndividualEvaluation, e2: IndividualEvaluation)(implicit rng: Random) = {
-      val (_, h1) = e1
-      val (_, h2) = e2
-
-      if (h1 < h2) e1
-      else if (h2 < h1) e2
-      else if (rng.nextBoolean) e1 else e2
+  def onHitCount[P](implicit hitMap: monocle.Lens[STATE, collection.Map[P, Int]], niche: Niche[P]) = new Challenge[Int] {
+    override def apply(pop: Pop) = State { state: AlgorithmState =>
+      val hits = hitMap.get(state.state)
+      val popHits = pop.map(i => hits(niche(i)))
+      val ordering = implicitly[scala.Ordering[Int]]
+      val result = new ChallengeResult(popHits)(ordering.reverse)
+      (state, result)
     }
-
-  }*/
-
+  }
 
   def randomSelection(population: Pop) = new Selection {
     override def apply(state: AlgorithmState): (AlgorithmState, Ind) = {
