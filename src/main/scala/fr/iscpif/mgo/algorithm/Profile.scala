@@ -22,15 +22,13 @@ import scalaz.State
 
 trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions {
 
-  case class ProfileState()
-  type STATE = ProfileState
-  def initialState = ProfileState()
+  type STATE = Unit
+  def initialState = Unit
 
   implicit val fitness: Fitness[Double]
   implicit val plotter: Plotter[Int]
 
-  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] = {
-
+  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onRank(profileRanking).apply(pop) flatMap { challenged =>
       val fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
 
@@ -46,7 +44,6 @@ trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunct
 
       newGenome.generateFlat(lambda)
     }
-  }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {

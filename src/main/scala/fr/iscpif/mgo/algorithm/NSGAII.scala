@@ -22,9 +22,8 @@ import scalaz._
 
 trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
 
-  case class NSGA2State()
-  type STATE = NSGA2State
-  def initialState = NSGA2State()
+  type STATE = Unit
+  def initialState = Unit
 
   implicit def fitness: Fitness[Seq[Double]]
   implicit def ranking = paretoRanking()

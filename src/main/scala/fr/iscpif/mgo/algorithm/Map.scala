@@ -30,8 +30,7 @@ trait Map <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions
   implicit val fitness: Fitness[Double]
   implicit val plotter: Plotter[(Int, Int)]
 
-  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] = {
-
+  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onHitCount.apply(pop) flatMap { challenged =>
       val fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
 
@@ -47,7 +46,6 @@ trait Map <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions
 
       newGenome.generateFlat(lambda)
     }
-  }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {

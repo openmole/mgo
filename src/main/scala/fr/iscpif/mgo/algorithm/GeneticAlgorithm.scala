@@ -51,3 +51,4 @@ trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctio
 
 }
 
+
