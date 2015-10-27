@@ -22,8 +22,7 @@ import fr.iscpif.mgo._
 import scalaz._
 import util.Random
 
-object TestProfileSphere extends App {
-
+object Profile {
   val profile = new Profile {
     def lambda = 100
     def mu = 100
@@ -31,12 +30,35 @@ object TestProfileSphere extends App {
     type P = Double
     val plotter = genomeProfilePlotter(0, 100)
   }
+}
 
+object TestProfileSphere extends App {
+
+  import Profile.profile
   import profile._
 
   def dimensions = 10
-  def problem(g: G): State[Random, P] = State { rng: Random => (rng, sphere(dimensions)(genomeValues.get(g).value)) }
+  def problem(g: G): State[Random, P] = State { rng: Random => (rng, sphere(genomeValues.get(g).value)) }
   def termination: State[AlgorithmState, Boolean] = State { state => (state, state.generation >= 100) }
+
+  val evo = evolution(profile)(randomGenome(dimensions), problem, termination)
+  val res =
+    evo.eval(42).content.map {
+      i => s"${i.genome.values(0)}, ${i.phenotype}"
+    }.mkString("\n")
+
+  println(res)
+
+}
+
+object TestProfileRastrigin extends App {
+
+  import Profile.profile
+  import profile._
+
+  def dimensions = 10
+  def problem(g: G): State[Random, P] = State { rng: Random => (rng, rastrigin(genomeValues.get(g).value)) }
+  def termination: State[AlgorithmState, Boolean] = State { state => (state, state.generation >= 1000) }
 
   val evo = evolution(profile)(randomGenome(dimensions), problem, termination)
   val res =

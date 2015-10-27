@@ -35,7 +35,7 @@ object TestNSGAIISphere extends App {
   import nsgaII._
 
   def dimensions = 10
-  def problem(g: G): State[Random, P] = State { rng: Random => (rng, sphere(dimensions)(genomeValues.get(g).value)) }
+  def problem(g: G): State[Random, P] = State { rng: Random => (rng, sphere(genomeValues.get(g).value)) }
   def termination: State[AlgorithmState, Boolean] = State { state => (state, state.generation >= 100) }
 
   val evo = evolution(nsgaII)(randomGenome(dimensions), problem, termination)

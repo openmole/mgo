@@ -20,7 +20,13 @@ import tools.Math._
 
 package object test {
 
-  def sphere(dimensions: Int) =
+  def sphere =
     (g: Seq[Double]) => g.map(_.scale(-2, 2)).map(x => x * x).sum
+
+  def rastrigin =
+    (g: Seq[Double]) => {
+      val x = g.map(_.scale(-5.12, 5.12))
+      10 * x.size + x.map(x => (x * x) - 10 * math.cos(2 * math.Pi * x)).sum
+    }
 
 }

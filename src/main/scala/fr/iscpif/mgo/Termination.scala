@@ -19,10 +19,9 @@ package fr.iscpif.mgo
 import scalaz._
 
 trait Termination <: Pop { this: Algorithm =>
-
   type Termination = State[AlgorithmState, Boolean]
-
 }
+
 
 /**
  * Layer to compute the stopping condition of the evolutionary algorithm
