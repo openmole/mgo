@@ -21,6 +21,13 @@ import monocle._
 import scala.util.Random
 import scalaz.State
 
+object Genome {
+  case class GenomeValue[V](val value: V) extends AnyVal
+  case class GenomeSigma[V](val value: V) extends AnyVal
+}
+
+import Genome._
+
 trait Genome { this: Algorithm =>
 
   type RandomGenome = State[Random, G]

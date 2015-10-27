@@ -18,16 +18,24 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import util.Random
 import scalaz._
 import Scalaz._
+import Genome._
 
 trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with MutationDefault with CrossoverDefault with RankingDefault with DiversityDefault {
 
-  case class Genome(values: GenomeValue[Seq[Double]], fromMutation: Option[Int] = None, fromCrossover: Option[Int] = None)
+  case class Genome(values: GenomeValue[Seq[Double]], sigma: GenomeSigma[Seq[Double]], fromMutation: Option[Int] = None, fromCrossover: Option[Int] = None)
   type G = Genome
 
   implicit def equalsG = Equal.equal[G]((g1, g2) => g1.values == g2.values)
   implicit def genomeValues = monocle.macros.Lenser[G](_.values)
+  implicit def genomeSigma = monocle.macros.Lenser[G](_.sigma)
+
+  def randomGenome(size: Int) = State { rng: Random =>
+    def genome = Genome(GenomeValue(Seq.fill(size)(rng.nextDouble)), GenomeSigma(Seq.fill(size)(rng.nextDouble)))
+    (rng, genome)
+  }
 
   def fromMutation = monocle.macros.Lenser[G](_.fromMutation)
   def fromCrossover = monocle.macros.Lenser[G](_.fromCrossover)

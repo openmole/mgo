@@ -20,6 +20,7 @@ package fr.iscpif.mgo
 import scala.util.Random
 import tools._
 import scalaz._
+import Genome._
 
 trait Crossover <: Pop { this: Algorithm =>
   type Crossover = ((G, G) => State[AlgorithmState, (G, G)])

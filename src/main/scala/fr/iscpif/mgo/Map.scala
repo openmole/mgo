@@ -19,7 +19,7 @@ package fr.iscpif.mgo
 import fr.iscpif.mgo.tools.Math._
 import fr.iscpif.mgo.tools.{HierarchicalRanking, Lazy, Math}
 import monocle._
-
+import Genome._
 
 trait Map <: Pop with Ranking with Niche with Fitness {
 

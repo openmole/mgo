@@ -36,10 +36,9 @@ object TestNSGAIISphere extends App {
 
   def dimensions = 10
   def problem(g: G): State[Random, P] = State { rng: Random => (rng, sphere(dimensions)(genomeValues.get(g).value)) }
-  def randomGenome: State[Random, G] = State { rng: Random => (rng, Genome(Seq.fill(dimensions)(rng.nextDouble))) }
   def termination: State[AlgorithmState, Boolean] = State { state => (state, state.generation >= 100) }
 
-  val evo = evolution(nsgaII)(randomGenome, problem, termination)
+  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, termination)
   println(evo.eval(42).content.minBy(_.phenotype))
 
 }

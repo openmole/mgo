@@ -19,7 +19,7 @@ package fr.iscpif.mgo
 
 import scala.language.higherKinds
 import scalaz._
-
+import Genome._
 
 trait Mutation <: Pop { this: Algorithm =>
   type Mutation = (G => State[AlgorithmState, G])

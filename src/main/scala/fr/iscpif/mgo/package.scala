@@ -25,12 +25,6 @@ import Scalaz._
 
 package object mgo {
 
-  case class GenomeValue[V](val value: V) extends AnyVal
-  implicit def veToGenomeValue[V](v: V) = GenomeValue(v)
-
-  case class GenomeSize(val value: Int) extends AnyVal
-  case class GenomeSigma[V](val value: V) extends AnyVal
-
   implicit def unitStateConverter[X](s: X): (X, Unit) = (s, Unit)
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
