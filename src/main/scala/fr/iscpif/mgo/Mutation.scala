@@ -22,13 +22,13 @@ import scalaz._
 
 
 trait Mutation <: Pop { this: Algorithm =>
-  type Mutation = (G => State[EvolutionState, G])
+  type Mutation = (G => State[AlgorithmState, G])
 }
 
 trait MutationDefault <: Mutation with Genome { this: Algorithm =>
 
   def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
-    override def apply(g: G) = State { state: EvolutionState =>
+    override def apply(g: G) = State { state: AlgorithmState =>
        val newValues = values.modify(g => GenomeValue(g.value.map(_ + (state.random.nextGaussian * sigma))))(g)
       (state, newValues)
     }

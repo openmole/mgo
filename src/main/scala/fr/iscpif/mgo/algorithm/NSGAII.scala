@@ -30,20 +30,17 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
   implicit def genomeValues = monocle.macros.Lenser[G](_.values)
 
   case class NSGA2State()
-
   type STATE = NSGA2State
+  def initialState = NSGA2State()
 
-  def mu: Int
-  def lambda: Int
-
-  def mutation: Mutation = gaussianMutation(0.5)
+  def mutation: Mutation = gaussianMutation(0.2)
   def crossover: Crossover = blxCrossover()
 
   implicit def fitness: Fitness[Seq[Double]]
   implicit def ranking = paretoRanking()
   implicit def diversity = crowdingDistance
 
-  override def breeding(pop: Pop): State[EvolutionState, Vector[G]] = {
+  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] = {
     (onRank and onDiversity) (pop) flatMap { challenged =>
         val newGenome =
           for {
@@ -53,13 +50,13 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
             (c1, c2) = c
             g1 <- mutation(c1)
             g2 <- mutation(c2)
-          } yield { Vector(g2, g2) }
+          } yield { Vector(clamp(g2), clamp(g2)) }
 
         newGenome.generateFlat(lambda)
       }
     }
 
-  override def elitism(population: Pop, offspring: Pop): State[EvolutionState, Pop] =
+  override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {
       p1 <- merge(population, offspring)
       p2 <- removeClone(p1)

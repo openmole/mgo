@@ -37,36 +37,24 @@ trait Algorithm extends Pop {
   /**
     * Represent a state of the evolution algorithm
     */
-  @Lenses case class EvolutionState(
+  @Lenses case class AlgorithmState(
     state: STATE,
     generation: Int = 0,
     random: Random)
 
-  def updateGeneration = State[EvolutionState, Unit] { s => EvolutionState.generation.modify(_ + 1)(s) }
-
   def mu: Int
-  def randomGenome: State[Random, G]
+  def lambda: Int
 
-  def breeding(population: Pop): State[EvolutionState, Vector[G]]
-  def elitism(population: Pop, offspring: Pop): State[EvolutionState, Pop]
-  def termination: State[EvolutionState, Boolean]
+  def initialState: STATE
+  def algorithmState(random: Random) = AlgorithmState(state = initialState, random = random)
 
-  def step(population: Pop, express: (G => State[Random, P])): State[EvolutionState, Pop] = {
-    def expressMonad(g: G) = State { state: EvolutionState => (state, Individual[G, P](g, express).eval(state.random)) }
+  def updateGeneration = State[AlgorithmState, Unit] { s => AlgorithmState.generation.modify(_ + 1)(s) }
 
-    def randomIfEmpty =
-      if(population.content.isEmpty) EvolutionState.random.lifts(randomGenome).generate(mu).map(_.toVector)
-      else breeding(population)
-
-    for {
-      breed <- randomIfEmpty
-      offspring <- breed.traverseS { expressMonad }
-      population <- elitism(population, offspring)
-      _ <- updateGeneration
-    } yield population
-  }
+  def breeding(population: Pop): State[AlgorithmState, Vector[G]]
+  def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop]
 
 }
+
 
 trait AlgorithmDefault <: Algorithm with ElitismDefault with Genome
 

@@ -20,15 +20,15 @@ package fr.iscpif.mgo
 import scalaz._
 
 trait Archive <: Pop { this: Algorithm =>
-  trait Archive <: State[EvolutionState, Unit]
+  trait Archive <: State[AlgorithmState, Unit]
 }
 
 trait ArchiveDefault <: Archive with Niche { this: Algorithm =>
 
   def hitMap[A](offspring: Pop)(implicit archive: monocle.Lens[STATE, scala.collection.Map[A, Int]], niche: Niche[A]) = new Archive {
 
-    override def apply(state: EvolutionState) = {
-      (EvolutionState.state composeLens archive).modify { archive =>
+    override def apply(state: AlgorithmState) = {
+      (AlgorithmState.state composeLens archive).modify { archive =>
           val offSpringArchive = offspring.content.groupBy(niche).map { case (k, v) => (k -> v.size) }
 
         offSpringArchive.foldLeft(archive) {

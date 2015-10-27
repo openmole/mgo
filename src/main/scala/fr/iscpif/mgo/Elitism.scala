@@ -25,15 +25,15 @@ import scalaz._
  * Cake layer to eliminated elements of a population
  */
 trait Elitism <: Pop  { this: Algorithm =>
-  def Elitism(f: (EvolutionState => (EvolutionState, Pop))) = State(f)
+  def Elitism(f: (AlgorithmState => (AlgorithmState, Pop))) = State(f)
 }
 
 
 trait ElitismDefault <: Elitism with Fitness with Niche with Ranking with Diversity { this: Algorithm =>
 
-  trait KeepInNiche extends (Pop => State[EvolutionState, Pop])
+  trait KeepInNiche extends (Pop => State[AlgorithmState, Pop])
 
-  def merge(population: Pop, offspring: Pop) = State[EvolutionState, Pop] { s =>
+  def merge(population: Pop, offspring: Pop) = State[AlgorithmState, Pop] { s =>
     (s, population ++ offspring)
   }
 
@@ -156,7 +156,7 @@ trait ElitismDefault <: Elitism with Fitness with Niche with Ranking with Divers
   }*/
 
   def keepRandom(nicheSize: Int) = new KeepInNiche {
-    override def apply(population: Pop) = State[EvolutionState, Pop] {
+    override def apply(population: Pop) = State[AlgorithmState, Pop] {
       s => (s, s.random.shuffle(population.content).take(nicheSize))
     }
   }
@@ -172,7 +172,7 @@ trait ElitismDefault <: Elitism with Fitness with Niche with Ranking with Divers
     def composition =
       for {
         pops <- population.content.groupBy(niche).toList.traverseS { case (_, v) => keep(v) }
-        pop <- State[EvolutionState, Pop] { s => (s, pops.flatten) }
+        pop <- State[AlgorithmState, Pop] { s => (s, pops.flatten) }
       } yield pop
     composition.run(s)
   }

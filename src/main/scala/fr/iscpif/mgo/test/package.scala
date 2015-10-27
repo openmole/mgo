@@ -16,28 +16,12 @@
  */
 package fr.iscpif.mgo
 
-import scalaz._
+package object test {
 
-trait Termination <: Pop { this: Algorithm =>
-
-  type Termination = State[AlgorithmState, Boolean]
+  def sphere(dimensions: Int) = (g: Seq[Double]) => {
+    def min = List.fill(dimensions)(-2.0)
+    def max = List.fill(dimensions)(2.0)
+    g.map(x => x * x).sum
+  }
 
 }
-
-/**
- * Layer to compute the stopping condition of the evolutionary algorithm
- */
-/*trait Termination extends G with P with F {
-
-
-
-  /**
-   * Test if the algorithm has converged.
-   *
-   * @param population the current population
-   * @param terminationState the actual termination state
-   * @return a boolean which is equal to true if a terminal state has
-   * been detected and the new termination state
-   */
-  def terminated(population: Population[G, P, F], terminationState: STATE)(implicit rng: Random): (Boolean, STATE)
-}*/

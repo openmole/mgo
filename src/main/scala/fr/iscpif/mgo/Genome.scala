@@ -25,9 +25,7 @@ trait Genome { this: Algorithm =>
 
   type RandomGenome = State[Random, G]
 
-  trait Scaling <: (G => Seq[Double])
-
-  def clampedValues(values: Lens[G, GenomeValue[Seq[Double]]]) =
-      Lens((g: G) => GenomeValue(values.get(g).value.map(tools.Math.clamp(_, 0.0, 1.0))))(values.set)
+  def clamp(g: G)(implicit values: Lens[G, GenomeValue[Seq[Double]]]) =
+    values.modify { v => GenomeValue(v.value.map(tools.Math.clamp(_, 0.0, 1.0))) }(g)
 
 }

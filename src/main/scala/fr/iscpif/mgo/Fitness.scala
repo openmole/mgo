@@ -17,5 +17,5 @@
 package fr.iscpif.mgo
 
 trait Fitness <: Pop {
-  trait Fitness[F] <: (Individual[G, P] => F)
+  type Fitness[F] = (Individual[G, P] => F)
 }

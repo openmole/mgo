@@ -20,14 +20,14 @@ package fr.iscpif.mgo
 import scalaz._
 
 trait Crossover <: Pop { this: Algorithm =>
-  type Crossover = ((G, G) => State[EvolutionState, (G, G)])
+  type Crossover = ((G, G) => State[AlgorithmState, (G, G)])
 }
 
 
 trait CrossoverDefault <: Crossover { this: Algorithm =>
 
   def blxCrossover(alpha: Double = 0.5)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]])  = new Crossover {
-    def apply(g1: G, g2: G) = State { state: EvolutionState =>
+    def apply(g1: G, g2: G) = State { state: AlgorithmState =>
           val (newG1, newG2) =
             (values.get(g1).value zip values.get(g2).value).map {
               case (c1, c2) =>

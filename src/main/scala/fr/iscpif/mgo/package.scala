@@ -18,6 +18,8 @@
 package fr.iscpif
 
 import org.apache.commons.math3.random._
+import scala.annotation.tailrec
+import scala.util.Random
 import scalaz._
 import Scalaz._
 
@@ -29,7 +31,6 @@ package object mgo {
 
   implicit def unitStateConverter[X](s: X): (X, Unit) = (s, Unit)
 
-
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
     val factor = (boundaryMax - boundaryMin) / (max - min)
     (factor * (v - min) + boundaryMin)
@@ -40,36 +41,14 @@ package object mgo {
     def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
   }
 
-  implicit class StateIteratorDecorator[S <: { def terminated: Boolean }](i: Iterator[S]) {
-    def last = i.drop(1).dropWhile { !_.terminated }.next
-    def untilConverged(f: S => Unit) = i.drop(1).dropWhile { s => f(s); !s.terminated }.next
-  }
-
-  //TODO: unused rng and newRNG functions?
-  object rng {
-    implicit def rng = newRNG
-  }
-
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
-  def newRNG = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a)))
+  implicit def longToRandom(seed: Long) = newRNG(seed)
 
   implicit class LensDecorator[A, B](lens: monocle.Lens[A, B]) {
     def toScalaz = scalaz.Lens.lensu[A, B]((a, b) => lens.set(b)(a), lens.get)
   }
 
   implicit def monocleToScalazLens[A, B](lens: monocle.Lens[A, B]) = lens.toScalaz
-
-  implicit class ElementStateDecorator[S, G](gen: State[S, G]) {
-    def generate(lambda: Int) = gen.map(Vector(_)).generateFlat(lambda)
-    def dropUntil(end: State[S, Boolean]) = {
-      def dropUntil0(state: S): (S, G) =  {
-        val (s1, res) = gen.run(state)
-        val (s2, cond) = end.run(s1)
-        if (cond) (s2, res) else dropUntil0(s2)
-      }
-      State[S, G] { state => dropUntil0(state) }
-    }
-  }
 
   implicit class ListStateDecorator[S, G](gen: State[S, Vector[G]]) {
 
@@ -86,6 +65,48 @@ package object mgo {
       State { state: S => flatten0(lambda)(state) }.map { _.toVector }
     }
 
+  }
+
+  implicit class ElementStateDecorator[S, G](gen: State[S, G]) {
+    def generate(lambda: Int) = gen.map(Vector(_)).generateFlat(lambda)
+  }
+
+  def evolution(algorithm: Algorithm)(
+    randomGenome: State[Random, algorithm.G],
+    express: (algorithm.G => State[Random, algorithm.P]),
+    termination: State[algorithm.AlgorithmState, Boolean]) = new {
+
+    import algorithm._
+
+    def step(population: Pop): State[AlgorithmState, Pop] = {
+      def expressMonad(g: G) = State { state: AlgorithmState => (state, Individual[G, P](g, express).eval(state.random)) }
+
+      def randomIfEmpty =
+        if (population.content.isEmpty) AlgorithmState.random.lifts(randomGenome).generate(mu).map(_.toVector)
+        else breeding(population)
+
+      for {
+        breed <- randomIfEmpty
+        offspring <- breed.traverseS { g => expressMonad(g) }
+        population <- elitism(population, offspring)
+        _ <- updateGeneration
+      } yield population
+    }
+
+    def eval(random: Random): Pop = run(random)._2
+
+    def run(random: Random) = {
+      @tailrec def run0(pop: Pop, state: AlgorithmState): (AlgorithmState, Pop) = {
+        val (s1, res) = step(pop).run(state)
+        val (s2, cond) = termination.run(s1)
+        if (cond) (s2, res)
+        else run0(res, s2)
+      }
+
+      val allRun = State[AlgorithmState, Pop] { state => run0(Population.empty, state) }
+
+      allRun.run(algorithmState(random))
+    }
   }
 
 }

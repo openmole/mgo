@@ -22,7 +22,7 @@ import scala.annotation.tailrec
 import scalaz._
 
 trait Breeding { this: Algorithm =>
-  trait Selection <: State[EvolutionState, Ind]
+  trait Selection <: State[AlgorithmState, Ind]
 }
 
 trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this: Algorithm =>
@@ -31,10 +31,10 @@ trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this
     def score(i: Int) = challenge(i)
   }
 
-  trait Challenge[A] <: (Pop => State[EvolutionState, ChallengeResult[A]]) { ch =>
+  trait Challenge[A] <: (Pop => State[AlgorithmState, ChallengeResult[A]]) { ch =>
     def and[B](other: Challenge[B]) = {
       new Challenge[(A, B)] {
-        def apply(pop: Pop): State[EvolutionState, ChallengeResult[(A, B)]] =
+        def apply(pop: Pop): State[AlgorithmState, ChallengeResult[(A, B)]] =
           for {
             c1 <- ch(pop)
             c2 <- other(pop)
@@ -50,7 +50,7 @@ trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this
 
   def tournament[A](challenge: ChallengeResult[A], pop: Pop, rounds: Int = 1) = new Selection {
 
-    override def apply(state: EvolutionState): (EvolutionState, Ind) = {
+    override def apply(state: AlgorithmState): (AlgorithmState, Ind) = {
       def newChallenger: Int = state.random.nextInt(pop.size)
 
       @tailrec def round(champion: Int, rounds: Int): Int =
@@ -75,7 +75,7 @@ trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this
     }
 
   def onDiversity()(implicit diversity: Diversity) = new Challenge[Lazy[Double]] {
-    override def apply(pop: Pop) =  State { state: EvolutionState =>
+    override def apply(pop: Pop) =  State { state: AlgorithmState =>
       val div = diversity(pop).eval(state.random)
       (state, new ChallengeResult(div))
     }
@@ -107,7 +107,7 @@ trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this
 
 
   def randomSelection(population: Pop) = new Selection {
-    override def apply(state: EvolutionState): (EvolutionState, Ind) = {
+    override def apply(state: AlgorithmState): (AlgorithmState, Ind) = {
       (state, population.content.random(state.random))
     }
   }
