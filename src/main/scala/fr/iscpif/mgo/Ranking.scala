@@ -29,7 +29,7 @@ trait Ranking <: Pop {
 
 }
 
-trait RankingDefault <: Ranking with Fitness {
+trait RankingFunctions <: Ranking with Fitness {
 
   implicit def aggregatedRanking(implicit doubleFitness: Fitness[Double]) = new Ranking {
     def apply(values: Pop) = {

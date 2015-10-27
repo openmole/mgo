@@ -29,7 +29,7 @@ trait Elitism <: Pop  { this: Algorithm =>
 }
 
 
-trait ElitismDefault <: Elitism with Fitness with Niche with Ranking with Diversity { this: Algorithm =>
+trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Diversity { this: Algorithm =>
 
   trait KeepInNiche extends (Pop => State[AlgorithmState, Pop])
 

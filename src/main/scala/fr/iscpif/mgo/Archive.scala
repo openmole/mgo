@@ -23,7 +23,7 @@ trait Archive <: Pop { this: Algorithm =>
   trait Archive <: State[AlgorithmState, Unit]
 }
 
-trait ArchiveDefault <: Archive with Niche { this: Algorithm =>
+trait ArchiveFunctions <: Archive with Niche { this: Algorithm =>
 
   def hitMap[A](offspring: Pop)(implicit archive: monocle.Lens[STATE, scala.collection.Map[A, Int]], niche: Niche[A]) = new Archive {
 

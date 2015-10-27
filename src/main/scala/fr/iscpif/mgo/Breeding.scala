@@ -25,7 +25,7 @@ trait Breeding { this: Algorithm =>
   trait Selection <: State[AlgorithmState, Ind]
 }
 
-trait BreedingDefault <: Breeding with Genome with Ranking with Diversity { this: Algorithm =>
+trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity { this: Algorithm =>
 
   case class ChallengeResult[A](challenge: Vector[A])(implicit val ordering: scala.Ordering[A]) {
     def score(i: Int) = challenge(i)

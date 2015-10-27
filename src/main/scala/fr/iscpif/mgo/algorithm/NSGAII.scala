@@ -18,42 +18,13 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import util.Random
 import scalaz._
-import Scalaz._
-import Genome._
-import Mutation._
 
-trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with MutationDefault with CrossoverDefault with RankingDefault with DiversityDefault {
-
-  case class Genome(values: GenomeValue[Seq[Double]], sigma: GenomeSigma, fromMutation: Option[Int] = None, fromCrossover: Option[Int] = None)
-  type G = Genome
-
-  implicit val equalsG = Equal.equal[G]((g1, g2) => g1.values == g2.values)
-  implicit val genomeValues = monocle.macros.Lenser[G](_.values)
-  implicit val genomeSigma = monocle.macros.Lenser[G](_.sigma)
-
-  def randomGenome(size: Int) = State { rng: Random =>
-    def genome = Genome(GenomeValue(Seq.fill(size)(rng.nextDouble)), GenomeSigma(Seq.fill(size)(rng.nextDouble)))
-    (rng, genome)
-  }
-
-  def fromMutation = monocle.macros.Lenser[G](_.fromMutation)
-  def fromCrossover = monocle.macros.Lenser[G](_.fromCrossover)
+trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
 
   case class NSGA2State()
   type STATE = NSGA2State
   def initialState = NSGA2State()
-
-  def mutation =
-    dynamicMutation(fromMutation)(
-      bga(mutationRate = 1.0 / _, mutationRange = 0.1),
-      bga(mutationRate = _ => 0.5, mutationRange = 0.5),
-      adaptiveCauchy()
-    )
-
-  def crossover =
-    dynamicCrossover(fromCrossover)(blx(0.5), sbx(0.1))
 
   implicit def fitness: Fitness[Seq[Double]]
   implicit def ranking = paretoRanking()
@@ -71,9 +42,9 @@ trait NSGAII <: Algorithm with ElitismDefault with BreedingDefault with Mutation
           g2 <- mutation(pop)(c2)
         } yield { Vector(clamp(g2), clamp(g2)) }
 
-        newGenome.generateFlat(lambda)
-      }
+      newGenome.generateFlat(lambda)
     }
+  }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {

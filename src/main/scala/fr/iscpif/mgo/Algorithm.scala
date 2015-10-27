@@ -56,5 +56,3 @@ trait Algorithm extends Pop {
 }
 
 
-trait AlgorithmDefault <: Algorithm with ElitismDefault with Genome
-

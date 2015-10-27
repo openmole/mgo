@@ -33,7 +33,7 @@ trait Diversity <: Pop {
 }
 
 
-trait DiversityDefault <: Diversity with Fitness {
+trait DiversityFunctions <: Diversity with Fitness {
 
  /* def closedCrowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
     override def apply(values: Pop) =

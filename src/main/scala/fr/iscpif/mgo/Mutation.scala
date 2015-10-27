@@ -34,7 +34,7 @@ trait Mutation <: Pop { this: Algorithm =>
   type Mutation = (G => State[AlgorithmState, G])
 }
 
-trait MutationDefault <: Mutation with Genome with DynamicOps { this: Algorithm =>
+trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorithm =>
 
   def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
     override def apply(g: G) = State { state: AlgorithmState =>
