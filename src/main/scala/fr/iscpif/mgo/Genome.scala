@@ -23,7 +23,6 @@ import scalaz.State
 
 object Genome {
   case class GenomeValue[V](val value: V) extends AnyVal
-  case class GenomeSigma[V](val value: V) extends AnyVal
 }
 
 import Genome._

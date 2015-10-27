@@ -66,7 +66,7 @@ trait CrossoverDefault <: Crossover with DynamicOps { this: Algorithm =>
    * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
    *
    */
-  def sbxCrossover(distributionIndex: Double = 2.0)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Crossover {
+  def sbx(distributionIndex: Double = 2.0)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Crossover {
 
     def crossover(g1: Seq[Double], g2: Seq[Double])(rng: Random): (Seq[Double], Seq[Double]) = {
 
