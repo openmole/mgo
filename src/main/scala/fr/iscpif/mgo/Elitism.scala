@@ -155,6 +155,7 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
     }
   }*/
 
+
   def keepRandom(nicheSize: Int) = new KeepInNiche {
     override def apply(population: Pop) = State[AlgorithmState, Pop] {
       s => (s, s.random.shuffle(population.content).take(nicheSize))

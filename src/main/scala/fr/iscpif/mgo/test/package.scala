@@ -16,12 +16,11 @@
  */
 package fr.iscpif.mgo
 
+import tools.Math._
+
 package object test {
 
-  def sphere(dimensions: Int) = (g: Seq[Double]) => {
-    def min = List.fill(dimensions)(-2.0)
-    def max = List.fill(dimensions)(2.0)
-    g.map(x => x * x).sum
-  }
+  def sphere(dimensions: Int) =
+    (g: Seq[Double]) => g.map(_.scale(-2, 2)).map(x => x * x).sum
 
 }

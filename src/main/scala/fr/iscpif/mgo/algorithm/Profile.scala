@@ -18,24 +18,40 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import scalaz._
 
-/*trait Profile <: Evolution
-  with MG
-  with NoArchive
-  with GAGenomeWithSigma
-  with MaxAggregation
-  with DynamicGACrossover
-  with DynamicGAMutation
-  with BestAggregatedNicheElitism
-  with ProfileNiche
-  with BinaryTournamentSelection
-  with RandomMating
-  with TournamentOnRank
-  with HierarchicalRanking
-  with StrictDominance
-  with GeneticBreeding
-  with ProfileRanking
-  with ClampedGenome
-  with ProportionalNumberOfRound
-  with Cloning
-  with RandomInitialGenome*/ 
+trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with Map {
+
+  case class ProfileState(archive: collection.Map[Int, Int])
+  type STATE = ProfileState
+  def initialState = ProfileState(collection.Map.empty)
+
+  implicit val fitness: Fitness[Double]
+  implicit val plotter: Plotter[Int]
+
+  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] = {
+
+    onRank.apply(pop) flatMap { challenged =>
+      val tourn = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
+
+      val newGenome =
+        for {
+          s1 <- tourn
+          s2 <- tourn
+          c <- crossover(pop)(s1.genome, s2.genome)
+          (c1, c2) = c
+          g1 <- mutation(pop)(c1)
+          g2 <- mutation(pop)(c2)
+        } yield { Vector(clamp(g2), clamp(g2)) }
+
+      newGenome.generateFlat(lambda)
+    }
+  }
+
+  override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
+    for {
+      p1 <- merge(population, offspring)
+      p2 <- nicheElitism(keepBestRanked(1), p1)(profileNiche)
+    } yield p2.age
+
+}

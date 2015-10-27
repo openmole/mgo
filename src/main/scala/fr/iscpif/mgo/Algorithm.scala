@@ -35,8 +35,8 @@ trait Algorithm extends Pop {
   type STATE
 
   /**
-    * Represent a state of the evolution algorithm
-    */
+   * Represent a state of the evolution algorithm
+   */
   @Lenses case class AlgorithmState(
     state: STATE,
     generation: Int = 0,
@@ -54,5 +54,4 @@ trait Algorithm extends Pop {
   def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop]
 
 }
-
 

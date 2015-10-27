@@ -86,11 +86,11 @@ trait Map <: Pop with Ranking with Niche with Fitness {
     }
   }
 
-  def profileNiche(nicheSize: Int = 1)(implicit plotter: Plotter[Int]) = new Niche[Int] {
+  def profileNiche(implicit plotter: Plotter[Int]) = new Niche[Int] {
     override def apply(individual: Ind): Int = plotter(individual)
   }
 
-  def mapNiche(nicheSize: Int = 1)(implicit plotter: Plotter[(Int,Int)]) = new Niche[(Int, Int)] {
+  def mapNiche(implicit plotter: Plotter[(Int,Int)]) = new Niche[(Int, Int)] {
     override def apply(individual: Ind): (Int, Int) = plotter(individual)
   }
 

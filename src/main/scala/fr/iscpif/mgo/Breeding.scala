@@ -48,7 +48,7 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity { th
   }
 
 
-  def tournament[A](challenge: ChallengeResult[A], pop: Pop, rounds: Int = 1) = new Selection {
+  def tournament[A](challenge: ChallengeResult[A], pop: Pop, rounds: (Int => Int) = _ => 1) = new Selection {
 
     override def apply(state: AlgorithmState): (AlgorithmState, Ind) = {
       def newChallenger: Int = state.random.nextInt(pop.size)
@@ -62,19 +62,19 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity { th
           round(newChampion, rounds - 1)
         }
 
-      (state, pop(round(newChallenger, rounds)))
+      (state, pop(round(newChallenger, rounds(pop.size))))
     }
   }
 
 
-  def onRank()(implicit ranking: Ranking) = new Challenge[Lazy[Int]] {
+  def onRank(implicit ranking: Ranking) = new Challenge[Lazy[Int]] {
     def apply(pop: Pop) = State.state {
         val ordering = implicitly[scala.Ordering[Lazy[Int]]]
         new ChallengeResult(ranking(pop))(ordering.reverse)
       }
     }
 
-  def onDiversity()(implicit diversity: Diversity) = new Challenge[Lazy[Double]] {
+  def onDiversity(implicit diversity: Diversity) = new Challenge[Lazy[Double]] {
     override def apply(pop: Pop) =  State { state: AlgorithmState =>
       val div = diversity(pop).eval(state.random)
       (state, new ChallengeResult(div))

@@ -29,6 +29,8 @@ import Genome._
 
 trait Genome { this: Algorithm =>
 
+  implicit def genomeValueToV[V](v: GenomeValue[V]) = v.value
+
   type RandomGenome = State[Random, G]
 
   def clamp(g: G)(implicit values: Lens[G, GenomeValue[Seq[Double]]]) =
