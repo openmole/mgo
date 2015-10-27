@@ -31,7 +31,7 @@ trait Ranking <: Pop {
 
 trait RankingFunctions <: Ranking with Fitness {
 
-  implicit def aggregatedRanking(implicit doubleFitness: Fitness[Double]) = new Ranking {
+  implicit def monoObjectiveRanking(implicit doubleFitness: Fitness[Double]) = new Ranking {
     def apply(values: Pop) = {
       val byFitness = values.zipWithIndex.sortBy { case (i, id) => doubleFitness(i) }.map { _._2 }
       byFitness.zipWithIndex.sortBy { case(id, _) => id }.map { case(_, rank) => Lazy(rank) }

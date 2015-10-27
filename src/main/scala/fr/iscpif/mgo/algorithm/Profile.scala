@@ -31,7 +31,7 @@ trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with Map {
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] = {
 
-    onRank.apply(pop) flatMap { challenged =>
+    onRank(profileRanking).apply(pop) flatMap { challenged =>
       val tourn = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
 
       val newGenome =

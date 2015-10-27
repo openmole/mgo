@@ -36,7 +36,7 @@ object TestProfileSphere extends App {
 
   def dimensions = 10
   def problem(g: G): State[Random, P] = State { rng: Random => (rng, sphere(dimensions)(genomeValues.get(g).value)) }
-  def termination: State[AlgorithmState, Boolean] = State { state => (state, state.generation >= 1000) }
+  def termination: State[AlgorithmState, Boolean] = State { state => (state, state.generation >= 100) }
 
   val evo = evolution(profile)(randomGenome(dimensions), problem, termination)
   val res =
