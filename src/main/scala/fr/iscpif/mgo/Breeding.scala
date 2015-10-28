@@ -20,6 +20,7 @@ import fr.iscpif.mgo.tools._
 
 import scala.annotation.tailrec
 import scalaz._
+import Scalaz._
 
 trait Breeding { this: Algorithm =>
   trait Selection <: State[AlgorithmState, Ind]
@@ -95,6 +96,16 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
       (state, population.content.random(state.random))
     }
   }
+
+  def interleaveClones(genomes: Vector[G], clones: State[AlgorithmState, G], ratio: Double): State[AlgorithmState, Vector[G]] = {
+    def interleaveClone(g: G) = State[AlgorithmState, Vector[G]] { state: AlgorithmState =>
+      def res = if(state.random.nextDouble() < ratio) Vector(clones.eval(state), g) else Vector(g)
+      state -> res
+    }
+
+    genomes.traverseS { interleaveClone }.map{ _.flatten }
+  }
+
 
   /*trait NEATMating <: Mating with Lambda with BreedingContext with NEATGenome with P with F {
 

@@ -50,12 +50,12 @@ package object mgo {
 
     def generateFlat(lambda: Int) = {
       def flatten0(lambda: Int)(state: S, acc: List[G] = List()): (S, List[G]) =
-        if (acc.size >= lambda) (state, acc)
+        if (lambda <= 0) (state, acc)
         else {
           val (newState, add) = gen.map {
-            _.take(lambda - acc.size)
+            _.take(lambda)
           }.run(state)
-          flatten0(lambda)(newState, add.toList ::: acc)
+          flatten0(lambda - 1)(newState, add.toList ::: acc)
         }
 
       State { state: S => flatten0(lambda)(state) }.map { _.toVector }

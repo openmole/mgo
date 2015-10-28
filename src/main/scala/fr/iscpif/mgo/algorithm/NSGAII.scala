@@ -29,6 +29,7 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
   implicit def ranking = paretoRanking()
   implicit def diversity = crowdingDistance
   implicit def mergeClones = youngest
+  def cloneRate = 0.0
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     (onRank and onDiversity) (pop) flatMap { challenged =>
@@ -48,7 +49,8 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
           s1 <- fight
           s2 <- fight
           res <- operation(s1.genome, s2.genome)
-        } yield res
+          withClones <- interleaveClones(res, fight.map(_.genome), cloneRate)
+        } yield withClones
 
       newGenome.generateFlat(lambda)
     }

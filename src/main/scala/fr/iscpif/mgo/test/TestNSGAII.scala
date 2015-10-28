@@ -45,23 +45,27 @@ object TestNSGAIISphere extends App {
 }
 
 object TestNSGAIIStochasticSphere extends App {
+  def average(s: Seq[Double]) = s.sum / s.size
 
   val nsgaII = new NSGAII {
     def lambda = 100
     def mu = 100
-    def fitness = Fitness(i => Seq(average(i.phenotype)))
+    def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
     override def mergeClones = cumulatePhenotype(100)
     type P = List[Double]
-    def average(s: P) = s.sum / s.size
+    override def cloneRate = 0.5
+
   }
 
   import nsgaII._
 
-  def dimensions = 10
-  def problem(g: G) = State { rng: Random => (rng, List(sphere(genomeValues.get(g).value))) }
-  def termination = State { state: AlgorithmState => (state, state.generation >= 100) }
+  def dimensions = 4
+  def problem(g: G) = State { rng: Random => (rng, List(sphere(genomeValues.get(g).value) + (rng.nextGaussian() * 0.01))) }
+  def termination = State { state: AlgorithmState => (state, state.generation >= 1000) }
 
   val evo = evolution(nsgaII)(randomGenome(dimensions), problem, termination)
-  println(evo.eval(42).content.minBy(i => average(i.phenotype)))
 
+  import scala.Ordering.Implicits._
+  val oldest = evo.eval(42).content.minBy(i => Seq(-i.phenotype.size, average(i.phenotype)))
+  println(oldest.genome.values.value.map(_.scale(-2, 2)) + " " + average(oldest.phenotype) + " " + oldest.phenotype.size)
 }
