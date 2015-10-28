@@ -26,9 +26,7 @@ import scalaz._
  */
 trait Elitism <: Pop  { this: Algorithm =>
   def Elitism(f: (AlgorithmState => (AlgorithmState, Pop))) = State(f)
-
   trait MergeOperation <: Semigroup[Ind]
-
 }
 
 
@@ -41,17 +39,27 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
   }
 
   def youngest = new MergeOperation {
-    override def append(f1: Ind, f2: => Ind): Ind = List(f1, f2).minBy(_.age)
+    override def append(old: Ind, young: => Ind): Ind = young
   }
 
-  def cumulatePhenotype(implicit sg: Semigroup[P]) = new MergeOperation {
-    override def append(f1: Ind, f2: => Ind): Ind = Individual(f1.genome, sg.append(f1.phenotype, f2.phenotype))
+  object Queue {
+    implicit def listIsQueue[A] = new Queue[List[A]] {
+      override def merge(q1: List[A], q2: List[A], maxSize: Int): List[A] = (q1 ::: q2).take(maxSize)
+    }
+  }
+
+  trait Queue[T] {
+    def merge(q1: T, q2: T, maxSize: Int): T
+  }
+
+  def cumulatePhenotype(size: Int)(implicit q: Queue[P]) = new MergeOperation {
+    override def append(old: Ind, young: => Ind): Ind = old.copy(phenotype = q.merge(old.phenotype, young.phenotype, size))
   }
 
   def mergeClones(population: Pop)(implicit genomeEquality: Equal[G], merge: MergeOperation) = Elitism { s =>
     def newPop =
       groupWhen(population.toList)((i1, i2) => genomeEquality.equal(i1.genome, i2.genome)).
-        map { _.toList.reduce{ (i1, i2) => merge.append(i1, i2) } }
+        map { _.toList.sortBy(_.age).reduceLeft{ (i1, i2) => merge.append(i1, i2) } }
 
     (s, newPop)
   }

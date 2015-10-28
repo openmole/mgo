@@ -21,14 +21,15 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.algorithm._
 
 import scala.util.Random
-import scalaz.State
+import scalaz._
+import Scalaz._
 
 object TestNSGAIISphere extends App {
 
   val nsgaII = new NSGAII {
     def lambda = 100
     def mu = 100
-    val fitness = Fitness(i => Seq(i.phenotype))
+    def fitness = Fitness(i => Seq(i.phenotype))
     type P = Double
   }
 
@@ -40,5 +41,27 @@ object TestNSGAIISphere extends App {
 
   val evo = evolution(nsgaII)(randomGenome(dimensions), problem, termination)
   println(evo.eval(42).content.minBy(_.phenotype))
+
+}
+
+object TestNSGAIIStochasticSphere extends App {
+
+  val nsgaII = new NSGAII {
+    def lambda = 100
+    def mu = 100
+    def fitness = Fitness(i => Seq(average(i.phenotype)))
+    override def mergeClones = cumulatePhenotype(100)
+    type P = List[Double]
+    def average(s: P) = s.sum / s.size
+  }
+
+  import nsgaII._
+
+  def dimensions = 10
+  def problem(g: G) = State { rng: Random => (rng, List(sphere(genomeValues.get(g).value))) }
+  def termination = State { state: AlgorithmState => (state, state.generation >= 100) }
+
+  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, termination)
+  println(evo.eval(42).content.minBy(i => average(i.phenotype)))
 
 }

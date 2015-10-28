@@ -25,26 +25,34 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
   type STATE = Unit
   def initialState = Unit
 
-  implicit val fitness: Fitness[Seq[Double]]
-  implicit val ranking = paretoRanking()
-  implicit val diversity = crowdingDistance
-  implicit val mergeClones = youngest
+  implicit def fitness: Fitness[Seq[Double]]
+  implicit def ranking = paretoRanking()
+  implicit def diversity = crowdingDistance
+  implicit def mergeClones = youngest
 
-  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] = {
+  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     (onRank and onDiversity) (pop) flatMap { challenged =>
-      val newGenome =
+
+      def fight = tournament(challenged, pop)
+
+      def operation(s1: G, s2: G) =
         for {
-          s1 <- tournament(challenged, pop)
-          s2 <- tournament(challenged, pop)
-          c <- crossover(pop)(s1.genome, s2.genome)
+          c <- crossover(pop)(s1, s2)
           (c1, c2) = c
           g1 <- mutation(pop)(c1)
           g2 <- mutation(pop)(c2)
-        } yield { Vector(clamp(g2), clamp(g2)) }
+        } yield Vector(clamp(g1), clamp(g2))
+
+      def newGenome =
+        for {
+          s1 <- fight
+          s2 <- fight
+          res <- operation(s1.genome, s2.genome)
+        } yield res
 
       newGenome.generateFlat(lambda)
     }
-  }
+
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {

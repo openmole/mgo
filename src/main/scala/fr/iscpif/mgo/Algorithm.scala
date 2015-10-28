@@ -25,6 +25,7 @@ import Scalaz._
 trait Pop {
   type G
   type P
+
   type Pop = Population[G, P]
   type Ind = Individual[G, P]
 }

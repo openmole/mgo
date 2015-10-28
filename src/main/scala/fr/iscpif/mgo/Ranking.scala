@@ -50,6 +50,7 @@ trait RankingFunctions <: Ranking with Fitness {
 
   def paretoRanking(dominance: Dominance = Dominance.nonStrictDominance)(implicit mg: Fitness[Seq[Double]]) = new Ranking {
     override def apply(values: Pop): Vector[Lazy[Int]] = {
+      assert(mg != null)
       val fitnesses = values.map(i => mg(i))
 
       fitnesses.zipWithIndex.map {
