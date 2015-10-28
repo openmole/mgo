@@ -29,6 +29,7 @@ trait Map <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions
   implicit val hits = monocle.macros.Lenser[MapState](_.hitMap)
   implicit val fitness: Fitness[Double]
   implicit val plotter: Plotter[(Int, Int)]
+  implicit val mergeClones = youngest
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onHitCount.apply(pop) flatMap { challenged =>
@@ -50,8 +51,10 @@ trait Map <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {
       p1 <- merge(population, offspring)
-      p2 <- nicheElitism(keepBestRanked(1), p1)
-    } yield p2.age
+      p2 <- mergeClones(p1)
+      p3 <- removeNaN(p2)
+      p4 <- nicheElitism(keepBestRanked(1), p3)
+    } yield p4.age
 
 }
 

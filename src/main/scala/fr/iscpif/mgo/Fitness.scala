@@ -16,12 +16,18 @@
  */
 package fr.iscpif.mgo
 
+import fr.iscpif.mgo
+
 trait Fitness <: Pop {
 
-  type Fitness[F] = (Individual[G, P] => F)
+  trait Fitness[F] <: (Individual[G, P] => F)
+
+  def Fitness[F](f: (Individual[G, P] => F)) = new Fitness[F] {
+    override def apply(v1: Individual[G, P]): F = f(v1)
+  }
+
   implicit class IndividualFitnessDecorator(i: Ind) {
     def fitness[F](implicit f: Fitness[F]): F = f(i)
   }
-
 
 }

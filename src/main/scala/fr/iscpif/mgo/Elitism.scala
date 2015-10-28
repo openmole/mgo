@@ -26,6 +26,9 @@ import scalaz._
  */
 trait Elitism <: Pop  { this: Algorithm =>
   def Elitism(f: (AlgorithmState => (AlgorithmState, Pop))) = State(f)
+
+  trait MergeOperation <: Semigroup[Ind]
+
 }
 
 
@@ -37,20 +40,38 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
     (s, population ++ offspring)
   }
 
-  def removeClone(population: Pop)(implicit genomeEquality: Equal[G]) = Elitism { s =>
+  def youngest = new MergeOperation {
+    override def append(f1: Ind, f2: => Ind): Ind = List(f1, f2).minBy(_.age)
+  }
+
+  def cumulatePhenotype(implicit sg: Semigroup[P]) = new MergeOperation {
+    override def append(f1: Ind, f2: => Ind): Ind = Individual(f1.genome, sg.append(f1.phenotype, f2.phenotype))
+  }
+
+  def mergeClones(population: Pop)(implicit genomeEquality: Equal[G], merge: MergeOperation) = Elitism { s =>
     def newPop =
-      groupWhen(population.toList)((i1, i2) => genomeEquality.equal(i1.genome, i2.genome)).map {
-        _.sortBy(_.age).head
-      }
+      groupWhen(population.toList)((i1, i2) => genomeEquality.equal(i1.genome, i2.genome)).
+        map { _.toList.reduce{ (i1, i2) => merge.append(i1, i2) } }
 
     (s, newPop)
   }
 
-  def removeNaN(population: Pop)(implicit mg: Fitness[Seq[Double]]) = Elitism { s =>
-    def newPop = population.filterNot(i => mg(i).exists(_.isNaN))
-    (s, newPop)
+  object IsNaN {
+    implicit def doubleCanBeNaN = new IsNaN[Double] {
+      def apply(a: Double) = a.isNaN
+    }
+
+    implicit def seqOfACanBeNan[A](implicit isNaN: IsNaN[A]) = new IsNaN[Seq[A]] {
+      override def apply(a: Seq[A]): Boolean = a.exists(isNaN)
+    }
   }
 
+  trait IsNaN[A] <: (A => Boolean)
+
+  def removeNaN[A](population: Pop)(implicit fitness: Fitness[A], isNaN: IsNaN[A]) = Elitism { s =>
+    def newPop = population.filterNot(i => isNaN(fitness(i)))
+    (s, newPop)
+  }
 
   def keepNonDominated(mu: Int, population: Pop)(implicit ranking: Ranking, diversity: Diversity) = Elitism { s =>
     def newPopulation: Pop =

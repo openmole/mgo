@@ -96,39 +96,6 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
     }
   }
 
-
-
-
-/*
-  trait MapSelection <: Selection
-  with MapPlotter
-  with Aggregation {
-
-    def neighbourPressure: Int = 8
-    def tournamentSize: Int = 1
-
-    def selection(population: Population[G, P, F], a: A)(implicit rng: Random) = {
-      assert(!population.isEmpty)
-      val matrix = NeighborMatrix(population.toIndividuals, plot _)
-
-      val coodinates =
-        Iterator.continually { (rng.nextInt(matrix.maxX), rng.nextInt(matrix.maxY)) }
-
-      Iterator.continually {
-        def fitnesses =
-          for {
-            (x, y) <- coodinates.take(tournamentSize)
-            (ix, iy) <- matrix.knn(x, y, neighbourPressure) ++ Seq(x -> y)
-            i <- matrix.matrix(ix, iy)
-          } yield i -> aggregate(i.fitness)
-
-        fitnesses.minBy(_._2)._1
-      }
-    }
-
-  }*/
-
-
   /*trait NEATMating <: Mating with Lambda with BreedingContext with NEATGenome with P with F {
 
     override def mate(population: Population[G, P, F], archive: A)(implicit rng: Random): Iterator[BreedingContext[Vector[Individual[G, P, F]]]] =
@@ -169,9 +136,5 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
     def interSpeciesMatingProb: Double
 
   }*/
-
-
-
-
 
 }

@@ -28,7 +28,7 @@ object TestNSGAIISphere extends App {
   val nsgaII = new NSGAII {
     def lambda = 100
     def mu = 100
-    def fitness = (i => Seq(i.phenotype))
+    val fitness = Fitness(i => Seq(i.phenotype))
     type P = Double
   }
 

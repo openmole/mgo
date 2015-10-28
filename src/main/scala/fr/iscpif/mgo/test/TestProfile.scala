@@ -26,7 +26,7 @@ object Profile {
   val profile = new Profile {
     def lambda = 100
     def mu = 100
-    val fitness = (_: Ind).phenotype
+    val fitness = Fitness(_.phenotype)
     type P = Double
     val plotter = genomeProfilePlotter(0, 100)
   }
