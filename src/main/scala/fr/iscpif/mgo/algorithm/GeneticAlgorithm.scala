@@ -24,30 +24,44 @@ import scalaz._
 
 trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctions {
 
-  case class Genome(values: GenomeValue[Seq[Double]], sigma: GenomeSigma, fromMutation: Option[Int] = None, fromCrossover: Option[Int] = None)
+  case class Genome(values: Array[Double], fromMutation: Byte = -1, fromCrossover: Byte = -1)
   type G = Genome
 
-  implicit val equalsG = Equal.equal[G]((g1, g2) => g1.values == g2.values)
-  implicit val genomeValues = monocle.macros.Lenser[G](_.values)
-  implicit val genomeSigma = monocle.macros.Lenser[G](_.sigma)
+  implicit val equalsG = Equal.equal[G]((g1, g2) => g1.values.deep == g2.values.deep)
+  implicit val genomeValues =
+    monocle.Lens[G, GenomeValue[Seq[Double]]](g => GenomeValue(g.values.toSeq))(v => _.copy(values = v.value.toArray))
 
   def randomGenome(size: Int) = State { rng: Random =>
-    def genome = Genome(GenomeValue(Seq.fill(size)(rng.nextDouble)), GenomeSigma(Seq.fill(size)(rng.nextDouble)))
+    def genome = Genome(Array.fill(size)(rng.nextDouble))
     (rng, genome)
   }
 
-  def fromMutation = monocle.macros.Lenser[G](_.fromMutation)
-  def fromCrossover = monocle.macros.Lenser[G](_.fromCrossover)
+  private def byteToOption = monocle.Lens[Byte, Option[Int]](b => if(b < 0) None else Some(b.toInt))(o => _ => o.getOrElse(-1).toByte)
+
+
+  def fromMutation =
+    monocle.macros.Lenser[G](_.fromMutation) composeLens byteToOption
+
+  def fromCrossover =
+    monocle.macros.Lenser[G](_.fromCrossover) composeLens byteToOption
 
   def mutation =
     dynamicMutation(fromMutation)(
-      bga(mutationRate = 1.0 / _, mutationRange = 0.1),
-      bga(mutationRate = _ => 0.5, mutationRange = 0.5),
-      adaptiveCauchy()
+      bga(mutationRate = 1.0 / _, mutationRange = 0.001),
+      bga(mutationRate = 1.0 / _, mutationRange = 0.01),
+      bga(mutationRate = 2.0 / _, mutationRange = 0.1),
+      bga(mutationRate = _ => 0.5, mutationRange = 0.5)
     )
 
   def crossover =
-    dynamicCrossover(fromCrossover)(blx(0.5), sbx(0.1))
+    dynamicCrossover(fromCrossover)(
+      blx(0.1),
+      blx(0.5),
+      blx(2.0),
+      sbx(0.1),
+      sbx(0.5),
+      sbx(2.0)
+    )
 
 }
 

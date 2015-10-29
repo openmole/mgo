@@ -30,6 +30,9 @@ import Genome._
 trait Genome { this: Algorithm =>
 
   implicit def genomeValueToV[V](v: GenomeValue[V]) = v.value
+  implicit class GenomeDecorator[G](g: G) {
+    def genomeValue[V](implicit lens: monocle.Lens[G, GenomeValue[V]]) = lens.get(g).value
+  }
 
   type RandomGenome = State[Random, G]
 

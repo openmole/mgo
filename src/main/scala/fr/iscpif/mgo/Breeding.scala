@@ -99,6 +99,7 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
 
 
   def interleaveClones(genomes: State[AlgorithmState, List[G]], clones: State[AlgorithmState, G], ratio: Double, lambda: Int): State[AlgorithmState, List[G]] = {
+
     @tailrec def interleaveClones0(acc: List[G], pool: List[G], lambda: Int, state: AlgorithmState): (AlgorithmState, List[G]) = {
       if(lambda <= 0) (state, acc)
       else if(state.random.nextDouble() < ratio) {

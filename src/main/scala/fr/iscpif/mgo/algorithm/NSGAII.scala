@@ -20,7 +20,6 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import scalaz._
 import Scalaz._
-import scalaz.iteratee._
 
 trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
 

@@ -44,7 +44,7 @@ object TestNSGAIISphere extends App {
 
 }
 
-object TestNSGAIIStochasticSphere extends App {
+object TestNSGAIIStochastic extends App {
   def average(s: Seq[Double]) = s.sum / s.size
 
   val nsgaII = new NSGAII {
@@ -52,6 +52,7 @@ object TestNSGAIIStochasticSphere extends App {
     def mu = 100
     def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
     override def mergeClones = cumulatePhenotype(100)
+    //def fitness = Fitness(i => Seq(average(i.phenotype)))
     type P = List[Double]
     override def cloneRate = 0.1
   }
@@ -59,12 +60,27 @@ object TestNSGAIIStochasticSphere extends App {
   import nsgaII._
 
   def dimensions = 4
-  def problem(g: G) = State { rng: Random => (rng, List(sphere(genomeValues.get(g).value) + (rng.nextGaussian() * 0.01))) }
+  def function = rastrigin
+
+  def problem(g: G) = State { rng: Random =>
+    val scaled = function.scale(g.genomeValue)
+    val eval = function.compute(scaled)
+    (rng, List(eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval))))
+  }
+
   def termination = State { state: AlgorithmState => (state, state.generation >= 10000) }
 
   val evo = evolution(nsgaII)(randomGenome(dimensions), problem, termination)
 
   import scala.Ordering.Implicits._
-  val oldest = evo.eval(42).content.minBy(i => Seq(-i.phenotype.size, average(i.phenotype)))
-  println(oldest.genome.values.value.map(_.scale(-2, 2)) + " " + average(oldest.phenotype) + " " + oldest.phenotype.size)
+  val (s, res) = evo.run(42)
+
+  val oldest = res.content.minBy(i => Seq(-i.phenotype.size, average(i.phenotype)))
+
+  (ranking.apply(res) zip res.content).foreach(println)
+
+  println(res.content.count(_.phenotype.size == oldest.phenotype.size))
+  println(function.scale(oldest.genome.values) + " " + average(oldest.phenotype) + " " + oldest.phenotype.size)
+
+  //
 }

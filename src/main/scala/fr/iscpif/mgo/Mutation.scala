@@ -133,8 +133,9 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
   def dynamicMutation(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Mutation*) = (pop: Pop) => new Mutation {
      def apply(g: G) =
        for {
-         mutation <- AlgorithmState.random.lifts(dynamicOperator(genomePart, exploration)(ops: _*)(pop))
-         res <- mutation(g)
+         s <- AlgorithmState.random.lifts(dynamicOperator(genomePart, exploration)(ops.zipWithIndex: _*)(pop))
+         (mutation, i) = s
+         res <- mutation(genomePart.set(Some(i))(g))
        } yield res
   }
 

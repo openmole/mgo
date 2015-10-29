@@ -26,7 +26,6 @@ import scalaz._
  */
 trait Elitism <: Pop  { this: Algorithm =>
   def Elitism(f: (AlgorithmState => (AlgorithmState, Pop))) = State(f)
-  trait MergeOperation <: Semigroup[Ind]
 }
 
 
@@ -38,10 +37,6 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
     (s, population ++ offspring)
   }
 
-  def youngest = new MergeOperation {
-    override def append(old: Ind, young: => Ind): Ind = young
-  }
-
   object Queue {
     implicit def listIsQueue[A] = new Queue[List[A]] {
       override def merge(q1: List[A], q2: List[A], maxSize: Int): List[A] = (q1 ::: q2).take(maxSize)
@@ -50,6 +45,12 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
 
   trait Queue[T] {
     def merge(q1: T, q2: T, maxSize: Int): T
+  }
+
+  trait MergeOperation <: Semigroup[Ind]
+
+  def youngest = new MergeOperation {
+    override def append(old: Ind, young: => Ind): Ind = young
   }
 
   def cumulatePhenotype(size: Int)(implicit q: Queue[P]) = new MergeOperation {

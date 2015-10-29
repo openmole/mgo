@@ -21,11 +21,23 @@ import math._
 
 package object test {
 
-  def sphere(g: Seq[Double]) = g.map(_.scale(-2, 2)).map(x => x * x).sum
+  trait Problem[I, O] {
+    def scale(s: I): I
+    def compute(i: I): O
+  }
 
-  def rastrigin(g: Seq[Double]) = {
-    val x = g.map(_.scale(-5.12, 5.12))
-    10 * x.size + x.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
+  implicit class ProblemApplication[I, O](p: Problem[I, O]) {
+    def apply(i: I) = p.compute(p.scale(i))
+  }
+
+  def sphere = new Problem[Seq[Double], Double] {
+    def scale(s: Seq[Double]): Seq[Double] = s.map(_.scale(-2, 2))
+    def compute(i: Seq[Double]): Double = i.map(x => x * x).sum
+  }
+
+  def rastrigin = new Problem[Seq[Double], Double] {
+    def scale(s: Seq[Double]): Seq[Double] = s.map(_.scale(-5.12, 5.12))
+    def compute(i: Seq[Double]): Double = 10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
   }
 
   def himmelblau(x: Double, y: Double) = {
