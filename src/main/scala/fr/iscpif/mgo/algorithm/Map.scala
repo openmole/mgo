@@ -18,17 +18,19 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import scalaz.State
+import scalaz._
 
-trait Map <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions {
+trait Map[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
 
-  case class MapState(hitMap: collection.Map[(Int, Int), Int])
+  case class MapState(hitMap: collection.Map[Point, Int])
   type STATE = MapState
   def initialState = MapState(collection.Map())
 
   implicit val hits = monocle.macros.Lenser[MapState](_.hitMap)
   implicit val fitness: Fitness[Double]
-  implicit val plotter: Plotter[(Int, Int)]
+  implicit val niche: Niche[Point]
+
+  def cloneRate = 0.0
   implicit val mergeClones = youngest
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
@@ -43,9 +45,9 @@ trait Map <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions
           (c1, c2) = c
           g1 <- mutation(pop)(c1)
           g2 <- mutation(pop)(c2)
-        } yield { Vector(clamp(g2), clamp(g2)) }
+        } yield { List(clamp(g2), clamp(g2)) }
 
-      newGenome.generateFlat(lambda)
+      interleaveClones(newGenome, fight.map(_.genome), cloneRate, lambda).map(_.toVector)
     }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =

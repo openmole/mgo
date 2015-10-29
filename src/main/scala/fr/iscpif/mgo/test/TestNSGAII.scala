@@ -52,9 +52,10 @@ object TestNSGAIIStochastic extends App {
     def mu = 100
     def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
     override def mergeClones = cumulatePhenotype(100)
+    override def cloneRate = 0.1
     //def fitness = Fitness(i => Seq(average(i.phenotype)))
     type P = List[Double]
-    override def cloneRate = 0.1
+
   }
 
   import nsgaII._

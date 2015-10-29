@@ -16,6 +16,9 @@
  */
 package fr.iscpif.mgo
 
+import fr.iscpif.mgo.Genome._
+import monocle._
+
 trait Niche <: Pop {
   trait Niche[+T] <: (Ind => T)
 }
@@ -28,5 +31,21 @@ trait NicheFunctions <: Niche {
         case (x, g) => (x / g).toInt
       }.toArray.toSeq
   }
+
+  def genomeProfile(x: Int, nX: Int)(implicit values: Lens[G, GenomeValue[Seq[Double]]]) =
+    new Niche[Int] {
+      override def apply(individual: Ind): Int = {
+        val niche = (values.get(individual.genome).value(x) * nX).toInt
+        if (niche == nX) niche - 1 else niche
+      }
+    }
+
+  def mapGenomePlotter (x: Int, nX: Int, y: Int, nY: Int)(implicit values: Lens[G, GenomeValue[Seq[Double]]]) =
+    new Niche[(Int, Int)] {
+      override def apply(i: Ind) = {
+        val (nicheX, nicheY) = ((values.get(i.genome).value(x) * nX).toInt, (values.get(i.genome).value(y) * nY).toInt)
+        (if (nicheX == nX) nicheX - 1 else nicheX, if (nicheY == nY) nicheY - 1 else nicheY)
+      }
+    }
 
 }

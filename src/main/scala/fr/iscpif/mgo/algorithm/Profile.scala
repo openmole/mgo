@@ -20,14 +20,15 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import scalaz.State
 
-trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunctions {
+trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions {
 
   type STATE = Unit
   def initialState = Unit
 
   implicit val fitness: Fitness[Double]
-  implicit val plotter: Plotter[Int]
+  implicit val niche: Niche[Int]
   implicit val mergeClones = youngest
+  def cloneRate = 0.0
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onRank(profileRanking).apply(pop) flatMap { challenged =>
@@ -41,9 +42,9 @@ trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with MapFunct
           (c1, c2) = c
           g1 <- mutation(pop)(c1)
           g2 <- mutation(pop)(c2)
-        } yield { Vector(clamp(g2), clamp(g2)) }
+        } yield { List(clamp(g2), clamp(g2)) }
 
-      newGenome.generateFlat(lambda)
+      interleaveClones(newGenome, fight.map(_.genome), cloneRate, lambda).map(_.toVector)
     }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
