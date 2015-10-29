@@ -53,15 +53,14 @@ object TestNSGAIIStochasticSphere extends App {
     def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
     override def mergeClones = cumulatePhenotype(100)
     type P = List[Double]
-    override def cloneRate = 0.5
-
+    override def cloneRate = 0.1
   }
 
   import nsgaII._
 
   def dimensions = 4
   def problem(g: G) = State { rng: Random => (rng, List(sphere(genomeValues.get(g).value) + (rng.nextGaussian() * 0.01))) }
-  def termination = State { state: AlgorithmState => (state, state.generation >= 1000) }
+  def termination = State { state: AlgorithmState => (state, state.generation >= 10000) }
 
   val evo = evolution(nsgaII)(randomGenome(dimensions), problem, termination)
 

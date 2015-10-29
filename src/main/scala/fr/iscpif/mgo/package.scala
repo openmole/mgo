@@ -22,6 +22,7 @@ import scala.annotation.tailrec
 import scala.util.Random
 import scalaz._
 import Scalaz._
+import scalaz.iteratee.StepT
 
 package object mgo {
 

@@ -97,13 +97,26 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
     }
   }
 
-  def interleaveClones(genomes: Vector[G], clones: State[AlgorithmState, G], ratio: Double): State[AlgorithmState, Vector[G]] = {
-    def interleaveClone(g: G) = State[AlgorithmState, Vector[G]] { state: AlgorithmState =>
-      def res = if(state.random.nextDouble() < ratio) Vector(clones.eval(state), g) else Vector(g)
-      state -> res
+
+  def interleaveClones(genomes: State[AlgorithmState, List[G]], clones: State[AlgorithmState, G], ratio: Double, lambda: Int): State[AlgorithmState, List[G]] = {
+    @tailrec def interleaveClones0(acc: List[G], pool: List[G], lambda: Int, state: AlgorithmState): (AlgorithmState, List[G]) = {
+      if(lambda <= 0) (state, acc)
+      else if(state.random.nextDouble() < ratio) {
+        val (newState, c) = clones.run(state)
+        interleaveClones0(c :: acc, pool, lambda - 1, newState)
+      } else {
+        pool match {
+          case Nil =>
+            val (newState, gs) = genomes.run(state)
+            if(gs.isEmpty) (newState, acc)
+            else interleaveClones0(gs.head :: acc, gs.toList.tail, lambda - 1, newState)
+          case h :: tail=>
+            interleaveClones0(h:: acc, tail, lambda - 1, state)
+        }
+      }
     }
 
-    genomes.traverseS { interleaveClone }.map{ _.flatten }
+    State { state: AlgorithmState => interleaveClones0(List(), List(), lambda, state) }
   }
 
 

@@ -19,6 +19,8 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 import scalaz._
+import Scalaz._
+import scalaz.iteratee._
 
 trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
 
@@ -42,17 +44,16 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
           (c1, c2) = c
           g1 <- mutation(pop)(c1)
           g2 <- mutation(pop)(c2)
-        } yield Vector(clamp(g1), clamp(g2))
+        } yield List(clamp(g1), clamp(g2))
 
       def newGenome =
         for {
           s1 <- fight
           s2 <- fight
           res <- operation(s1.genome, s2.genome)
-          withClones <- interleaveClones(res, fight.map(_.genome), cloneRate)
-        } yield withClones
+        } yield res
 
-      newGenome.generateFlat(lambda)
+      interleaveClones(newGenome, fight.map(_.genome), cloneRate, lambda).map(_.toVector)
     }
 
 
