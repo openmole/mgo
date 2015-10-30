@@ -25,7 +25,7 @@ import Genome._
 import tools._
 
 object Mutation {
-  case class GenomeSigma(val value: Seq[Double]) extends AnyVal
+  sealed trait Sigma
 }
 
 import Mutation._
@@ -36,9 +36,9 @@ trait Mutation <: Pop { this: Algorithm =>
 
 trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorithm =>
 
-  def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
+  def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) = new Mutation {
     override def apply(g: G) = State { state: AlgorithmState =>
-       val newValues = values.modify(g => GenomeValue(g.value.map(_ + (state.random.nextGaussian * sigma))))(g)
+       val newValues = values.modify(g => g.map(_ + (state.random.nextGaussian * sigma)))(g)
       (state, newValues)
     }
   }
@@ -51,27 +51,27 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
    * Hinterding, and Zbigniew Michalewicz, Senior Member, IEEE) + How to Solve It,
    * Modern Heuristics
    */
-  def adaptiveCauchy(minimumSigma: Double = 1e-30)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]], sigma: monocle.Lens[G, GenomeSigma]) = new Mutation {
+  def adaptiveCauchy(minimumSigma: Double = 1e-30)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], sigma: monocle.Lens[G, Seq[Double] @@ Sigma]) = new Mutation {
 
     override def apply(g: G) = State { state =>
-      val newSigma = sigma.get(g).value.map { s => math.max(minimumSigma, s * math.exp(state.random.nextGaussian)) }
+      val newSigma = sigma.get(g).map { s => math.max(minimumSigma, s * math.exp(state.random.nextGaussian)) }
 
       val newValues =
-        (values.get(g).value zip newSigma) map {
+        (values.get(g) zip newSigma) map {
           case (v, s) => new CauchyDistribution(state.random, v, s).sample //.nextGaussian * s + v
         }
 
       newValues.foreach(v => assert(!v.isNaN))
 
       import monocle.syntax._
-      state -> ((g &|-> values set GenomeValue(newValues)) &|-> sigma set GenomeSigma(newSigma))
+      state -> ((g &|-> values set newValues) &|-> sigma set newSigma)
     }
 
   }
 
-  def bga(mutationRate: Int => Double, mutationRange: Double)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
+  def bga(mutationRate: Int => Double, mutationRange: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) = new Mutation {
     override def apply(g: G) = State { state =>
-      val vs = values.get(g).value
+      val vs = values.get(g)
 
       val newG = vs.map {
         g =>
@@ -83,7 +83,7 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
           } else g
       }
       import monocle.syntax._
-      state -> (g &|-> values set GenomeValue(newG))
+      state -> (g &|-> values set newG)
     }
   }
 
@@ -96,9 +96,9 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
    * Based on the source code of Jmetal library
    * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
    */
-  def polynomial(distributionIndex: Double, mutationRate: Double)(implicit values: monocle.Lens[G, GenomeValue[Seq[Double]]]) = new Mutation {
+  def polynomial(distributionIndex: Double, mutationRate: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) = new Mutation {
     override def apply(g: G) = State { state =>
-      val newValues = values.get(g).value map {
+      val newValues = values.get(g) map {
         v =>
           if (state.random.nextDouble <= mutationRate) {
             val yl = 0.0 // lower bound
@@ -126,7 +126,7 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
           }
           v
       }
-      state -> values.set(GenomeValue(newValues))(g)
+      state -> values.set(newValues)(g)
     }
   }
 

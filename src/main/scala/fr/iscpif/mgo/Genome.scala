@@ -16,27 +16,22 @@
  */
 package fr.iscpif.mgo
 
-import monocle._
-
 import scala.util.Random
-import scalaz.State
+import scalaz._
 
 object Genome {
-  case class GenomeValue[V](val value: V) extends AnyVal
+  sealed trait Value
 }
-
-import Genome._
 
 trait Genome { this: Algorithm =>
 
-  implicit def genomeValueToV[V](v: GenomeValue[V]) = v.value
   implicit class GenomeDecorator[G](g: G) {
-    def genomeValue[V](implicit lens: monocle.Lens[G, GenomeValue[V]]) = lens.get(g).value
+    def genomeValue[V](implicit lens: monocle.Lens[G, V @@ Genome.Value]) = Tag.unwrap(lens.get(g))
   }
 
   type RandomGenome = State[Random, G]
 
-  def clamp(g: G)(implicit values: Lens[G, GenomeValue[Seq[Double]]]) =
-    values.modify { v => GenomeValue(v.value.map(tools.Math.clamp(_, 0.0, 1.0))) }(g)
+  def clamp(g: G)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) =
+    values.modify { v => v.map(tools.Math.clamp(_, 0.0, 1.0)) }(g)
 
 }

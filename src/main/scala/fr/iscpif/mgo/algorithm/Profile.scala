@@ -20,7 +20,7 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import scalaz.State
 
-trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions {
+trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with NicheFunctions {
 
   type STATE = Unit
   def initialState = Unit

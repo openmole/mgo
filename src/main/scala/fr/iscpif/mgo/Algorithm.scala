@@ -21,6 +21,7 @@ import monocle.macros._
 import scala.util.Random
 import scalaz._
 import Scalaz._
+import Termination._
 
 trait Pop {
   type G
@@ -40,8 +41,12 @@ trait Algorithm extends Pop {
    */
   @Lenses case class AlgorithmState(
     state: STATE,
-    generation: Int = 0,
+    generation: Long @@ Generation = 0,
+    startTime: Long @@ Start = System.currentTimeMillis(),
     random: Random)
+
+  implicit def generation = monocle.macros.Lenser[AlgorithmState](_.generation)
+  implicit def startTime = monocle.macros.Lenser[AlgorithmState](_.startTime)
 
   def mu: Int
   def lambda: Int

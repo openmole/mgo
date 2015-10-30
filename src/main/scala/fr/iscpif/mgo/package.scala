@@ -24,7 +24,10 @@ import scalaz._
 import Scalaz._
 import scalaz.iteratee.StepT
 
-package object mgo {
+package object mgo extends Termination {
+
+  implicit def unwrap[@specialized A, T](a: A @@ T): A = Tag.unwrap[A, T](a)
+  implicit def wrap[@specialized A, T](a: A): A @@ T = Tag.apply[A, T](a)
 
   implicit def unitStateConverter[X](s: X): (X, Unit) = (s, Unit)
 

@@ -17,22 +17,20 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import Genome._
-import Mutation._
 import scala.util.Random
 import scalaz._
 
 trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctions with BreedingFunctions {
 
-  case class Genome(values: Array[Double], fromMutation: Byte = -1, fromCrossover: Byte = -1)
-  type G = Genome
+  case class GAGenome(values: Array[Double], fromMutation: Byte = -1, fromCrossover: Byte = -1)
+  type G = GAGenome
 
   implicit val equalsG = Equal.equal[G]((g1, g2) => g1.values.deep == g2.values.deep)
   implicit val genomeValues =
-    monocle.Lens[G, GenomeValue[Seq[Double]]](g => GenomeValue(g.values.toSeq))(v => _.copy(values = v.value.toArray))
+    monocle.Lens[G, Seq[Double] @@ Genome.Value](g => g.values.toSeq)(v => _.copy(values = v.toArray))
 
   def randomGenome(size: Int) = State { rng: Random =>
-    def genome = Genome(Array.fill(size)(rng.nextDouble))
+    def genome = GAGenome(Array.fill(size)(rng.nextDouble))
     (rng, genome)
   }
 

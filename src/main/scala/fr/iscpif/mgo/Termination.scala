@@ -16,12 +16,27 @@
  */
 package fr.iscpif.mgo
 
+import scala.concurrent.duration._
 import scalaz._
 
-trait Termination <: Pop { this: Algorithm =>
-  type Termination = State[AlgorithmState, Boolean]
+object Termination {
+  sealed trait Generation
+  sealed trait Start
 }
 
+import Termination._
+
+trait Termination {
+
+  def afterStep[S](max: Int)(implicit step: monocle.Lens[S, Long @@ Generation]) = State { state: S => (state, step.get(state) >= max) }
+
+  def afterTime[S](max: Duration)(implicit time: monocle.Lens[S, Long @@ Start]) = State {
+    state: S =>
+      val duration = (System.currentTimeMillis - time.get(state)).millis
+      (state, duration >= max)
+  }
+
+}
 
 /**
  * Layer to compute the stopping condition of the evolutionary algorithm
