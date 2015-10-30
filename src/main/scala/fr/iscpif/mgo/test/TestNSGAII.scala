@@ -51,11 +51,10 @@ object TestNSGAIIStochastic extends App {
     def lambda = 100
     def mu = 100
     def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
-    override def mergeClones = cumulatePhenotype(100)
+    override def mergeClones = queue(100)
     override def cloneRate = 0.1
     //def fitness = Fitness(i => Seq(average(i.phenotype)))
     type P = List[Double]
-
   }
 
   import nsgaII._
@@ -83,5 +82,4 @@ object TestNSGAIIStochastic extends App {
   println(res.content.count(_.phenotype.size == oldest.phenotype.size))
   println(function.scale(oldest.genome.values) + " " + average(oldest.phenotype) + " " + oldest.phenotype.size)
 
-  //
 }

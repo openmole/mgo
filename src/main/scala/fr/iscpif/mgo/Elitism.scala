@@ -53,7 +53,7 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
     override def append(old: Ind, young: => Ind): Ind = young
   }
 
-  def cumulatePhenotype(size: Int)(implicit q: Queue[P]) = new MergeOperation {
+  def queue(size: Int)(implicit q: Queue[P]) = new MergeOperation {
     override def append(old: Ind, young: => Ind): Ind = old.copy(phenotype = q.merge(old.phenotype, young.phenotype, size))
   }
 

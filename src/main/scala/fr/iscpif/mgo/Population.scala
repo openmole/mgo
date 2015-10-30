@@ -46,7 +46,6 @@ object Population {
 trait Population[+G, +P] { pop =>
   /** the content of the population */
   def content: Vector[Individual[G, P]]
-  def age: Population[G, P] = Population(pop.content.map { Individual.age })
   override def toString = content.toString
 }
 
@@ -69,8 +68,6 @@ object Individual {
       genome = g,
       phenotype = _phenotype
     )
-
-  def age[G, P, F](i: Individual[G, P]): Individual[G, P] = i.copy(age = i.age + 1)
 }
 
 /**

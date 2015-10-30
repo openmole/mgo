@@ -22,7 +22,7 @@ import Mutation._
 import scala.util.Random
 import scalaz._
 
-trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctions {
+trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctions with BreedingFunctions {
 
   case class Genome(values: Array[Double], fromMutation: Byte = -1, fromCrossover: Byte = -1)
   type G = Genome

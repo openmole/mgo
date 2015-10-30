@@ -34,27 +34,10 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     (onRank and onDiversity) (pop) flatMap { challenged =>
-
       def fight = tournament(challenged, pop)
-
-      def operation(s1: G, s2: G) =
-        for {
-          c <- crossover(pop)(s1, s2)
-          (c1, c2) = c
-          g1 <- mutation(pop)(c1)
-          g2 <- mutation(pop)(c2)
-        } yield List(clamp(g1), clamp(g2))
-
-      def newGenome =
-        for {
-          s1 <- fight
-          s2 <- fight
-          res <- operation(s1.genome, s2.genome)
-        } yield res
-
-      interleaveClones(newGenome, fight.map(_.genome), cloneRate, lambda).map(_.toVector)
+      val newGenomes = breedGenomes(fight, crossover(pop), mutation(pop))
+      interleaveClones(newGenomes.map(_.map(clamp)), fight.map(_.genome), cloneRate, lambda).map(_.toVector)
     }
-
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {
@@ -62,6 +45,6 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
       p2 <- mergeClones(p1)
       p3 <- removeNaN(p2)
       p4 <- keepNonDominated(mu, p3)
-    } yield p4.age
+    } yield age(p4)
 
 }

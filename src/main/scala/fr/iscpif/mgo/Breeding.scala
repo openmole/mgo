@@ -26,7 +26,7 @@ trait Breeding { this: Algorithm =>
   trait Selection <: State[AlgorithmState, Ind]
 }
 
-trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with Niche { this: Algorithm =>
+trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with Niche with Crossover with Mutation { this: Algorithm =>
 
   case class ChallengeResult[A](challenge: Vector[A])(implicit val ordering: scala.Ordering[A]) {
     def score(i: Int) = challenge(i)
@@ -161,5 +161,20 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
     def interSpeciesMatingProb: Double
 
   }*/
+
+
+  def breedGenomes(
+    selection: Selection,
+    crossover: Crossover,
+    mutation: Mutation) = {
+    for {
+      s1 <- selection
+      s2 <- selection
+      c <- crossover(s1.genome, s2.genome)
+      (c1, c2) = c
+      g1 <- mutation(c1)
+      g2 <- mutation(c2)
+    } yield { List(g2, g2) }
+  }
 
 }

@@ -18,6 +18,7 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import scalaz._
 
 /*trait PSE <: NoFitness
   with HitMapArchive
@@ -35,4 +36,32 @@ import fr.iscpif.mgo._
   with ClampedGenome
   with ProportionalNumberOfRound
   with Cloning
-  with RandomInitialGenome*/ 
+  with RandomInitialGenome*/
+
+trait PSE[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
+
+  case class PSEState(hitMap: collection.Map[Point, Int])
+  type STATE = PSEState
+  def initialState = PSEState(collection.Map())
+
+  implicit val hits = monocle.macros.Lenser[PSEState](_.hitMap)
+  implicit val niche: Niche[Point]
+
+  def cloneRate = 0.0
+  implicit val mergeClones = youngest
+
+  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
+    onHitCount.apply(pop) flatMap { challenged =>
+      val fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
+      val newGenomes = breedGenomes(fight, crossover(pop), mutation(pop))
+      interleaveClones(newGenomes.map(_.map(clamp)), fight.map(_.genome), cloneRate, lambda).map(_.toVector)
+    }
+
+  override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
+    for {
+      p1 <- merge(population, offspring)
+      p2 <- mergeClones(p1)
+      p3 <- nicheElitism(keepRandom(1), p2)
+    } yield age(p3)
+
+}

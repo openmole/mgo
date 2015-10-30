@@ -106,4 +106,6 @@ package object mgo {
     }
   }
 
+  def age[G, P](pop: Population[G, P]) = Population(pop.content.map { i => i.copy(age = i.age + 1) })
+
 }
