@@ -67,7 +67,7 @@ object TestNSGAIIStochastic extends App {
     (rng, List(eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval))))
   }
 
-  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(10000))
+  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(100))
 
   import scala.Ordering.Implicits._
   val (s, res) = evo.run(42)

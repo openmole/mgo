@@ -46,6 +46,7 @@ trait PSE[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
 
   implicit val hits = monocle.macros.Lenser[PSEState](_.hitMap)
   implicit val niche: Niche[Point]
+  implicit val pointEqual = Equal.equal[Point](_ == _)
 
   def cloneRate = 0.0
   implicit val mergeClones = youngest

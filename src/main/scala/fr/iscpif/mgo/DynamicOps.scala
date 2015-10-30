@@ -22,16 +22,20 @@ import tools._
 
 trait DynamicOps <: Pop {
   def dynamicOperator[OP](genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: OP*) = (pop: Pop) => State { rng: Random =>
-    def stats(p: Pop): collection.Map[OP, Double] = {
+    def stats(p: Pop) = {
       val working = p.flatMap(i => genomePart get(i.genome))
-      val map = working.groupBy(identity).mapValues(_.size.toDouble / working.size)
-      (0 until ops.size).map(i => ops(i) -> map.getOrElse(i, 0.0)).toMap
+      val count = working.groupBy(identity)
+      (0 until ops.size).map {
+        i =>
+          val size = count.getOrElse(i, Nil).size
+          i -> (size.toDouble / working.size)
+      }
     }
 
-    def selected =
-      if (rng.nextDouble < exploration) ops.random(rng)
-      else multinomial(stats(pop))(rng)
+    def selected: Int =
+      if (rng.nextDouble < exploration) rng.nextInt(ops.size)
+      else multinomial(stats(pop).toList)(rng)
 
-    (rng, selected)
+    (rng, ops(selected))
   }
 }

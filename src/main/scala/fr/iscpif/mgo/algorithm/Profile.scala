@@ -18,7 +18,7 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
-import scalaz.State
+import scalaz._
 
 trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with NicheFunctions {
 
@@ -27,6 +27,7 @@ trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with NicheFun
 
   implicit val fitness: Fitness[Double]
   implicit val niche: Niche[Int]
+  implicit val nicheEqual = Equal.equal[Int](_ == _)
   implicit val mergeClones = youngest
   def cloneRate = 0.0
 

@@ -70,16 +70,16 @@ package object tools {
     if (rng.nextDouble < 0.5) t1 else t2
   }
 
-  def multinomial[T](workingStats: collection.Map[T, Double])(implicit rng: Random) = {
-    lazy val all = workingStats.keys.toSeq
+  def multinomial[T](workingStats: List[(T, Double)])(implicit rng: Random) = {
+    lazy val all = workingStats
     def roulette(weights: List[(T, Double)], selected: Double): T =
       weights match {
-        case Nil => all.random
+        case Nil => all.random._1
         case (i, p) :: t =>
           if (selected <= p) i
           else roulette(t, selected - p)
       }
-    roulette(workingStats.toList, rng.nextDouble)
+    roulette(workingStats, rng.nextDouble)
   }
 
   implicit class ScalaToApacheRng(rng: Random) extends RandomGenerator {

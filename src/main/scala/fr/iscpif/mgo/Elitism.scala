@@ -199,10 +199,10 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
     }
   }
 
-  def nicheElitism(keep: KeepInNiche, population: Pop)(implicit niche: Niche[Any]) = Elitism { s =>
+  def nicheElitism[N](keep: KeepInNiche, population: Pop)(implicit niche: Niche[N], equal: Equal[N]) = Elitism { s =>
     def composition =
       for {
-        pops <- population.content.groupBy(niche).toList.traverseS { case (_, v) => keep(v) }
+        pops <- groupWhen(population.content.toList)(equal.contramap(niche).equal).traverseS { is => keep(is.toList) }
         pop <- State[AlgorithmState, Pop] { s => (s, pops.flatten) }
       } yield pop
     composition.run(s)
