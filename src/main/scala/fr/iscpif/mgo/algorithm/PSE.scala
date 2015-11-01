@@ -63,6 +63,6 @@ trait PSE[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
       p1 <- merge(population, offspring)
       p2 <- mergeClones(p1)
       p3 <- nicheElitism(keepRandom(1), p2)
-    } yield age(p3)
+    } yield p3
 
 }

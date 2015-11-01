@@ -44,6 +44,6 @@ trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with NicheFun
       p2 <- mergeClones(p1)
       p3 <- removeNaN(p2)
       p4 <- nicheElitism(keepBestRanked(1), p3)
-    } yield age(p4)
+    } yield p4
 
 }

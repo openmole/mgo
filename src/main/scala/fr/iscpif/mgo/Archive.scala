@@ -25,11 +25,11 @@ trait Archive <: Pop { this: Algorithm =>
 
 trait ArchiveFunctions <: Archive with Niche { this: Algorithm =>
 
-  def hitMap[A](offspring: Pop)(implicit archive: monocle.Lens[STATE, scala.collection.Map[A, Int]], niche: Niche[A]) = new Archive {
+  def hitMap[A](offspring: Pop)(implicit stateLens: monocle.Lens[AlgorithmState, STATE], archive: monocle.Lens[STATE, scala.collection.Map[A, Int]], niche: Niche[A]) = new Archive {
 
     override def apply(state: AlgorithmState) = {
-      (AlgorithmState.state composeLens archive).modify { archive =>
-          val offSpringArchive = offspring.content.groupBy(niche).map { case (k, v) => (k -> v.size) }
+      (stateLens composeLens archive).modify { archive =>
+          val offSpringArchive = offspring.groupBy(niche).map { case (k, v) => (k -> v.size) }
 
         offSpringArchive.foldLeft(archive) {
           case (a, (a2key, a2value)) =>
@@ -41,3 +41,4 @@ trait ArchiveFunctions <: Archive with Niche { this: Algorithm =>
   }
 
 }
+

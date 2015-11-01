@@ -19,6 +19,7 @@ package fr.iscpif.mgo
 import fr.iscpif.mgo.tools._
 
 import scala.annotation.tailrec
+import scala.util.Random
 import scalaz._
 import Scalaz._
 
@@ -48,10 +49,10 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
     }
   }
 
-  def tournament[A](challenge: ChallengeResult[A], pop: Pop, rounds: (Int => Int) = _ => 1) = new Selection {
+  def tournament[A](challenge: ChallengeResult[A], pop: Pop, rounds: (Int => Int) = _ => 1)(implicit random: monocle.Lens[AlgorithmState, Random]) = new Selection {
 
     override def apply(state: AlgorithmState): (AlgorithmState, Ind) = {
-      def newChallenger: Int = state.random.nextInt(pop.size)
+      def newChallenger: Int = random.get(state).nextInt(pop.size)
 
       @tailrec def round(champion: Int, rounds: Int): Int =
         if (rounds <= 0) champion
@@ -74,35 +75,35 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
     }
   }
 
-  def onDiversity(implicit diversity: Diversity) = new Challenge[Lazy[Double]] {
-    override def apply(pop: Pop) =  State { state: AlgorithmState =>
-      val div = diversity(pop).eval(state.random)
-      (state, new ChallengeResult(div))
-    }
+  def onDiversity(implicit diversity: Diversity, random: monocle.Lens[AlgorithmState, Random]) = new Challenge[Lazy[Double]] {
+    override def apply(pop: Pop) =
+      random.lifts { diversity(pop).map(div => new ChallengeResult(div)) }
   }
 
-  def onHitCount[P](implicit hitMap: monocle.Lens[STATE, collection.Map[P, Int]], niche: Niche[P]) = new Challenge[Int] {
-    override def apply(pop: Pop) = State { state: AlgorithmState =>
-      val hits = hitMap.get(state.state)
-      val popHits = pop.map(i => hits(niche(i)))
-      val ordering = implicitly[scala.Ordering[Int]]
-      val result = new ChallengeResult(popHits)(ordering.reverse)
-      (state, result)
-    }
+  def onHitCount[P](implicit hitMap: monocle.Lens[STATE, collection.Map[P, Int]], niche: Niche[P], stateLens: monocle.Lens[AlgorithmState, STATE]) = new Challenge[Int] {
+
+    override def apply(pop: Pop) =
+      for {
+        hits <- get[AlgorithmState] map (stateLens composeLens hitMap).get
+      } yield {
+        val popHits = pop.map(i => hits(niche(i)))
+        val ordering = implicitly[scala.Ordering[Int]]
+        new ChallengeResult(popHits)(ordering.reverse)
+      }
+
   }
 
-  def randomSelection(population: Pop) = new Selection {
-    override def apply(state: AlgorithmState): (AlgorithmState, Ind) = {
-      (state, population.content.random(state.random))
-    }
+  def randomSelection(population: Pop)(implicit random: monocle.Lens[AlgorithmState, Random]) = new Selection {
+    override def apply(state: AlgorithmState): (AlgorithmState, Ind) =
+      (state, population.random(random.get(state)))
   }
 
 
-  def interleaveClones(genomes: State[AlgorithmState, List[G]], clones: State[AlgorithmState, G], ratio: Double, lambda: Int): State[AlgorithmState, List[G]] = {
+  def interleaveClones(genomes: State[AlgorithmState, List[G]], clones: State[AlgorithmState, G], ratio: Double, lambda: Int)(implicit random: monocle.Lens[AlgorithmState, Random]): State[AlgorithmState, List[G]] = {
 
     @tailrec def interleaveClones0(acc: List[G], pool: List[G], lambda: Int, state: AlgorithmState): (AlgorithmState, List[G]) = {
       if(lambda <= 0) (state, acc)
-      else if(state.random.nextDouble() < ratio) {
+      else if(random.get(state).nextDouble() < ratio) {
         val (newState, c) = clones.run(state)
         interleaveClones0(c :: acc, pool, lambda - 1, newState)
       } else {
@@ -112,7 +113,7 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
             if(gs.isEmpty) (newState, acc)
             else interleaveClones0(gs.head :: acc, gs.toList.tail, lambda - 1, newState)
           case h :: tail=>
-            interleaveClones0(h:: acc, tail, lambda - 1, state)
+            interleaveClones0(h :: acc, tail, lambda - 1, state)
         }
       }
     }

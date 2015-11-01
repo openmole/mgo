@@ -20,7 +20,9 @@ package fr.iscpif.mgo
 import org.apache.commons.math3.distribution.CauchyDistribution
 
 import scala.language.higherKinds
+import scala.util.Random
 import scalaz._
+import Scalaz._
 import Genome._
 import tools._
 
@@ -36,11 +38,11 @@ trait Mutation <: Pop { this: Algorithm =>
 
 trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorithm =>
 
-  def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) = new Mutation {
-    override def apply(g: G) = State { state: AlgorithmState =>
-       val newValues = values.modify(g => g.map(_ + (state.random.nextGaussian * sigma)))(g)
-      (state, newValues)
-    }
+  def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
+    override def apply(g: G) =
+     for {
+       rng <- random lifts get[Random]
+     } yield values.modify(g => g.map(_ + (rng.nextGaussian * sigma)))(g)
   }
 
   /**
@@ -51,40 +53,45 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
    * Hinterding, and Zbigniew Michalewicz, Senior Member, IEEE) + How to Solve It,
    * Modern Heuristics
    */
-  def adaptiveCauchy(minimumSigma: Double = 1e-30)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], sigma: monocle.Lens[G, Seq[Double] @@ Sigma]) = new Mutation {
+  def adaptiveCauchy(minimumSigma: Double = 1e-30)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], sigma: monocle.Lens[G, Seq[Double] @@ Sigma], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
 
-    override def apply(g: G) = State { state =>
-      val newSigma = sigma.get(g).map { s => math.max(minimumSigma, s * math.exp(state.random.nextGaussian)) }
+    override def apply(g: G) =
+      for {
+        rng <- random lifts get[Random ]
+      } yield {
+        val newSigma = sigma.get(g).map { s => math.max(minimumSigma, s * math.exp(rng.nextGaussian)) }
 
-      val newValues =
-        (values.get(g) zip newSigma) map {
-          case (v, s) => new CauchyDistribution(state.random, v, s).sample //.nextGaussian * s + v
-        }
+        val newValues =
+          (values.get(g) zip newSigma) map {
+            case (v, s) => new CauchyDistribution(rng, v, s).sample //.nextGaussian * s + v
+          }
 
-      newValues.foreach(v => assert(!v.isNaN))
+        newValues.foreach(v => assert(!v.isNaN))
 
-      import monocle.syntax._
-      state -> ((g &|-> values set newValues) &|-> sigma set newSigma)
-    }
+        (values.set(newValues) compose sigma.set(newSigma)) (g)
+      }
 
   }
 
-  def bga(mutationRate: Int => Double, mutationRange: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) = new Mutation {
-    override def apply(g: G) = State { state =>
-      val vs = values.get(g)
+  def bga(mutationRate: Int => Double, mutationRange: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
+    override def apply(g: G) =
+      for {
+        rng <- random lifts get[Random ]
+      } yield {
+        val vs = values.get(g)
 
-      val newG = vs.map {
-        g =>
-          if (state.random.nextDouble < mutationRate(vs.size)) {
-            def alphai = if (state.random.nextDouble < (1.0 / 16)) 1.0 else 0.0
-            def ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
-            def sign = if (state.random.nextBoolean) 1.0 else -1.0
-            g + (sign * mutationRange * ro)
-          } else g
+        val newG = vs.map {
+          g =>
+            if (rng.nextDouble < mutationRate(vs.size)) {
+              def alphai = if (rng.nextDouble < (1.0 / 16)) 1.0 else 0.0
+              def ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
+              def sign = if (rng.nextBoolean) 1.0 else -1.0
+              g + (sign * mutationRange * ro)
+            } else g
+        }
+
+        values.set(newG)(g)
       }
-      import monocle.syntax._
-      state -> (g &|-> values set newG)
-    }
   }
 
 
@@ -96,44 +103,48 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
    * Based on the source code of Jmetal library
    * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
    */
-  def polynomial(distributionIndex: Double, mutationRate: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) = new Mutation {
-    override def apply(g: G) = State { state =>
-      val newValues = values.get(g) map {
-        v =>
-          if (state.random.nextDouble <= mutationRate) {
-            val yl = 0.0 // lower bound
-            val yu = 1.0 // upper bound
-            val delta1 = (v - yl) / (yu - yl)
-            val delta2 = (yu - v) / (yu - yl)
-            val mut_pow = 1.0 / (distributionIndex + 1.0)
-            val rnd = state.random.nextDouble
+  def polynomial(distributionIndex: Double, mutationRate: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
+    override def apply(g: G) =
+      for {
+        rng <- random lifts get[Random ]
+      } yield {
+        val newValues = values.get(g) map {
+          v =>
+            if (rng.nextDouble <= mutationRate) {
+              val yl = 0.0 // lower bound
+              val yu = 1.0 // upper bound
+              val delta1 = (v - yl) / (yu - yl)
+              val delta2 = (yu - v) / (yu - yl)
+              val mut_pow = 1.0 / (distributionIndex + 1.0)
+              val rnd = rng.nextDouble
 
-            val deltaq: Double = (if (rnd <= 0.5) {
-              val xy = 1.0 - delta1
-              val value = 2.0 * rnd + (1.0 - 2.0 * rnd) * (math.pow(xy, (distributionIndex + 1.0)))
-              math.pow(value, mut_pow) - 1.0
-            } else {
-              val xy = 1.0 - delta2
-              val value = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (math.pow(xy, (distributionIndex + 1.0)))
-              1.0 - (math.pow(value, mut_pow))
-            })
+              val deltaq: Double = (if (rnd <= 0.5) {
+                val xy = 1.0 - delta1
+                val value = 2.0 * rnd + (1.0 - 2.0 * rnd) * (math.pow(xy, (distributionIndex + 1.0)))
+                math.pow(value, mut_pow) - 1.0
+              } else {
+                val xy = 1.0 - delta2
+                val value = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (math.pow(xy, (distributionIndex + 1.0)))
+                1.0 - (math.pow(value, mut_pow))
+              })
 
-            val finalValue = v + deltaq * (yu - yl)
+              val finalValue = v + deltaq * (yu - yl)
 
-            if (finalValue < yl) yl
-            else if (finalValue > yu) yu
-            else finalValue
-          }
-          v
+              if (finalValue < yl) yl
+              else if (finalValue > yu) yu
+              else finalValue
+            }
+            v
+        }
+
+        values.set(newValues)(g)
       }
-      state -> values.set(newValues)(g)
-    }
   }
 
-  def dynamicMutation(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Mutation*) = (pop: Pop) => new Mutation {
+  def dynamicMutation(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Mutation*)(implicit random: monocle.Lens[AlgorithmState, Random]) = (pop: Pop) => new Mutation {
      def apply(g: G) =
        for {
-         s <- AlgorithmState.random.lifts(dynamicOperator(genomePart, exploration)(ops.zipWithIndex: _*)(pop))
+         s <- random lifts (dynamicOperator(genomePart, exploration)(ops.zipWithIndex: _*)(pop))
          (mutation, i) = s
          res <- mutation(genomePart.set(Some(i))(g))
        } yield res

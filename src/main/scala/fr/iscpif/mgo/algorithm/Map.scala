@@ -27,13 +27,13 @@ trait Map[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
   def initialState = MapState(collection.Map())
 
   implicit val hits = monocle.macros.Lenser[MapState](_.hitMap)
-  implicit val fitness: Fitness[Double]
 
+  implicit val fitness: Fitness[Double]
   implicit val niche: Niche[Point]
   implicit val pointEqual = Equal.equal[Point](_ == _)
 
   def cloneRate = 0.0
-  implicit val mergeClones = youngest
+  implicit val mergeStrategy = youngest
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onHitCount.apply(pop) flatMap { challenged =>
@@ -48,7 +48,7 @@ trait Map[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
       p2 <- mergeClones(p1)
       p3 <- removeNaN(p2)
       p4 <- nicheElitism(keepBestRanked(1), p3)
-    } yield age(p4)
+    } yield p2
 
 }
 

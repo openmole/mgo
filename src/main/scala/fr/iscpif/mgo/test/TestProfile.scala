@@ -42,7 +42,7 @@ object TestProfileSphere extends App {
 
   val evo = evolution(profile)(randomGenome(dimensions), problem, afterStep(100))
   val res =
-    evo.eval(42).content.map {
+    evo.eval(42).map {
       i => s"${i.genome.values(0)}, ${i.phenotype}"
     }.mkString("\n")
 
@@ -60,7 +60,7 @@ object TestProfileRastrigin extends App {
 
   val evo = evolution(profile)(randomGenome(dimensions), problem, afterStep(100))
   val res =
-    evo.eval(42).content.map {
+    evo.eval(42).map {
       i => s"${i.genome.values(0)}, ${i.phenotype}"
     }.mkString("\n")
 

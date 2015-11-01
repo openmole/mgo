@@ -20,6 +20,7 @@ package fr.iscpif.mgo
 import scala.util.Random
 import tools._
 import scalaz._
+import Scalaz._
 import Genome._
 import tools.Math._
 
@@ -30,20 +31,22 @@ trait Crossover <: Pop { this: Algorithm =>
 
 trait CrossoverFunctions <: Crossover with DynamicOps { this: Algorithm =>
 
-  def blx(alpha: Double = 0.5)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) = new Crossover {
-    def apply(g1: G, g2: G) = State { state: AlgorithmState =>
-      val (newG1, newG2) =
-        (values.get(g1) zip values.get(g2)).map {
-          case (c1, c2) =>
-            val cmin = math.min(c1, c2)
-            val cmax = math.max(c1, c2)
-            val i = cmax - cmin
-            def generate = state.random.nextDouble().scale(cmin - alpha * i, cmax + alpha * i)
-            (generate, generate)
-        }.unzip
-      state -> (values.set(newG1)(g1), values.set(newG2)(g2))
-    }
-
+  def blx(alpha: Double = 0.5)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Crossover {
+    def apply(g1: G, g2: G) =
+      for {
+        random <- get[AlgorithmState].map(random.get)
+      } yield {
+        val (newG1, newG2) =
+          (values.get(g1) zip values.get(g2)).map {
+            case (c1, c2) =>
+              val cmin = math.min(c1, c2)
+              val cmax = math.max(c1, c2)
+              val i = cmax - cmin
+              def generate = random.nextDouble().scale(cmin - alpha * i, cmax + alpha * i)
+              (generate, generate)
+          }.unzip
+        (values.set(newG1)(g1), values.set(newG2)(g2))
+      }
   }
 
 
@@ -66,7 +69,7 @@ trait CrossoverFunctions <: Crossover with DynamicOps { this: Algorithm =>
    * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
    *
    */
-  def sbx(distributionIndex: Double = 2.0)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) = new Crossover {
+  def sbx(distributionIndex: Double = 2.0)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Crossover {
 
     def crossover(g1: Seq[Double], g2: Seq[Double])(rng: Random): (Seq[Double], Seq[Double]) = {
 
@@ -94,19 +97,22 @@ trait CrossoverFunctions <: Crossover with DynamicOps { this: Algorithm =>
     }
 
 
-    def apply(g1: G, g2: G) = State { state: AlgorithmState =>
-        val (o1, o2) = crossover(values.get(g1), values.get(g2))(state.random)
+    def apply(g1: G, g2: G) =
+      for {
+        random <- get[AlgorithmState].map(random.get)
+      } yield {
+        val (o1, o2) = crossover(values.get(g1), values.get(g2))(random)
         assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-      (state, (values.set(o1)(g1), values.set(o2)(g2)))
-    }
+        (values.set(o1)(g1), values.set(o2)(g2))
+      }
 
   }
 
 
-  def dynamicCrossover(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Crossover*) = (pop: Pop) => new Crossover {
+  def dynamicCrossover(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Crossover*)(implicit random: monocle.Lens[AlgorithmState, Random]) = (pop: Pop) => new Crossover {
      def apply(g1: G, g2: G) =
        for {
-         s <- AlgorithmState.random.lifts(dynamicOperator(genomePart, exploration)(ops.zipWithIndex: _*)(pop))
+         s <- random.lifts(dynamicOperator(genomePart, exploration)(ops.zipWithIndex: _*)(pop))
          (crossover, i) = s
          List(dyg1, dyg2) = List(g1, g2).map(genomePart.set(Some(i)))
          res <- crossover(dyg1, dyg2)

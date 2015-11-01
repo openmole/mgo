@@ -17,6 +17,7 @@
 
 package fr.iscpif
 
+import fr.iscpif.mgo.Algorithm.CommonState
 import org.apache.commons.math3.random._
 import scala.annotation.tailrec
 import scala.util.Random
@@ -25,6 +26,12 @@ import Scalaz._
 import scalaz.iteratee.StepT
 
 package object mgo extends Termination {
+
+  type Population[G, P] = Vector[Individual[G, P]]
+
+  object Population {
+    def empty = Vector.empty
+  }
 
   implicit def unwrap[@specialized A, T](a: A @@ T): A = Tag.unwrap[A, T](a)
   implicit def wrap[@specialized A, T](a: A): A @@ T = Tag.apply[A, T](a)
@@ -79,15 +86,15 @@ package object mgo extends Termination {
     import algorithm._
 
     def step(population: Pop): State[AlgorithmState, Pop] = {
-      def expressMonad(g: G) = State { state: AlgorithmState => (state, Individual[G, P](g, express).eval(state.random)) }
+      def expressMonad(g: G) = Individual(g, express)
 
       def randomIfEmpty =
-        if (population.content.isEmpty) AlgorithmState.random.lifts(randomGenome).generate(mu).map(_.toVector)
+        if (population.isEmpty) (random lifts randomGenome).generate(mu).map(_.toVector)
         else breeding(population)
 
       for {
         breed <- randomIfEmpty
-        offspring <- breed.traverseS { g => expressMonad(g) }
+        offspring <- breed.traverseS { g => common lifts expressMonad(g) }
         population <- elitism(population, offspring)
         _ <- updateGeneration
       } yield population
@@ -108,7 +115,5 @@ package object mgo extends Termination {
       allRun.run(algorithmState(random))
     }
   }
-
-  def age[G, P](pop: Population[G, P]) = Population(pop.content.map { i => i.copy(age = i.age + 1) })
 
 }

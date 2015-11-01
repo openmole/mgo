@@ -19,35 +19,8 @@ package fr.iscpif.mgo
 
 import scala.util.Random
 import scalaz._
-
-object Population {
-  implicit def populationToSeq[G, P](p: Population[G, P]) = p.content
-  implicit def traversableToPopulation[G, P](e: Traversable[Individual[G, P]]) = Population[G, P](e.toVector)
-
-  /**
-   * @tparam G the genome type
-   * @tparam P the phenotype type
-   * @return an empty population
-   */
-  def empty[G, P]: Population[G, P] = Population(Vector.empty)
-
-  def apply[G, P](elements: Vector[Individual[G, P]]): Population[G, P] =
-    new Population[G, P] {
-      val content = elements
-    }
-
-}
-
-/**
- * A population of solution
- *
- * @tparam G the genome type
- */
-trait Population[+G, +P] { pop =>
-  /** the content of the population */
-  def content: Vector[Individual[G, P]]
-  override def toString = content.toString
-}
+import Scalaz._
+import Algorithm._
 
 object Individual {
 
@@ -59,18 +32,18 @@ object Individual {
    * @param expression the expression of the genome
    * @return the individual for the genome g
    */
-  def apply[G, P](
-    g: G,
-    expression: (G => State[Random, P])): State[Random, Individual[G, P]] =
+  def apply[G, P](g: G, expression: (G => State[Random, P])): State[CommonState, Individual[G, P]] =
     for {
-      _phenotype <- expression(g)
+      generation <- get[CommonState].map(_.generation)
+      _phenotype <- CommonState.random.lifts(expression(g))
     } yield Individual[G, P](
       genome = g,
-      phenotype = _phenotype
+      phenotype = _phenotype,
+      born = generation
     )
 }
 
 /**
  * An individual of the evolution
  */
-case class Individual[+G, +P](genome: G, phenotype: P, age: Long = 0)
+case class Individual[+G, +P](genome: G, phenotype: P, born: Long)

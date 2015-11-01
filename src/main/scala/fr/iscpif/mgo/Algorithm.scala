@@ -16,6 +16,7 @@
  */
 package fr.iscpif.mgo
 
+import fr.iscpif.mgo.Algorithm.CommonState
 import monocle.macros._
 
 import scala.util.Random
@@ -31,30 +32,40 @@ trait Pop {
   type Ind = Individual[G, P]
 }
 
+object Algorithm {
+  /**
+   * Represent a state of the evolution algorithm
+   */
+  @Lenses case class CommonState(
+    generation: Long @@ Generation,
+    startTime: Long @@ Start = System.currentTimeMillis(),
+    random: Random)
+}
+
 trait Algorithm extends Pop {
 
   /** Type of the state maintained to study the evolution of the algorithm */
   type STATE
 
-  /**
-   * Represent a state of the evolution algorithm
-   */
-  @Lenses case class AlgorithmState(
-    state: STATE,
-    generation: Long @@ Generation = 0,
-    startTime: Long @@ Start = System.currentTimeMillis(),
-    random: Random)
+  case class AlgorithmState(
+    common: CommonState,
+    state: STATE)
 
-  implicit def generation = monocle.macros.Lenser[AlgorithmState](_.generation)
-  implicit def startTime = monocle.macros.Lenser[AlgorithmState](_.startTime)
+  implicit def common = monocle.macros.Lenser[AlgorithmState](_.common)
+  implicit def state = monocle.macros.Lenser[AlgorithmState](_.state)
+  implicit def generation = common composeLens CommonState.generation
+  implicit def startTime = common composeLens CommonState.startTime
+  implicit def random = common composeLens CommonState.random
 
   def mu: Int
   def lambda: Int
 
   def initialState: STATE
-  def algorithmState(random: Random) = AlgorithmState(state = initialState, random = random)
 
-  def updateGeneration = State[AlgorithmState, Unit] { s => AlgorithmState.generation.modify(_ + 1)(s) }
+  def algorithmState(random: Random, generation: Long = 0) =
+    AlgorithmState(state = initialState, common = CommonState(random = random, generation = generation))
+
+  def updateGeneration = State[AlgorithmState, Unit] { s => generation.modify(_ + 1)(s) }
 
   def breeding(population: Pop): State[AlgorithmState, Vector[G]]
   def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop]

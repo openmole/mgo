@@ -18,18 +18,11 @@
 package fr.iscpif.mgo
 
 import scala.annotation.tailrec
+import scala.util.Random
 import scalaz.Scalaz._
 import scalaz._
 
-/**
- * Cake layer to eliminated elements of a population
- */
-trait Elitism <: Pop  { this: Algorithm =>
-  def Elitism(f: (AlgorithmState => (AlgorithmState, Pop))) = State(f)
-}
-
-
-trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Diversity { this: Algorithm =>
+trait ElitismFunctions <: Fitness with Niche with Ranking with Diversity { this: Algorithm =>
 
   trait KeepInNiche extends (Pop => State[AlgorithmState, Pop])
 
@@ -54,15 +47,34 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
   }
 
   def queue(size: Int)(implicit q: Queue[P]) = new MergeOperation {
-    override def append(old: Ind, young: => Ind): Ind = old.copy(phenotype = q.merge(old.phenotype, young.phenotype, size))
+    override def append(old: Ind, young: => Ind): Ind = {
+      val res = old.copy(phenotype = q.merge(old.phenotype, young.phenotype, size))
+      res
+    }
   }
 
-  def mergeClones(population: Pop)(implicit genomeEquality: Equal[G], merge: MergeOperation) = Elitism { s =>
-    def newPop =
-      groupWhen(population.toList)((i1, i2) => genomeEquality.equal(i1.genome, i2.genome)).
-        map { _.toList.sortBy(_.age).reduceLeft{ (i1, i2) => merge.append(i1, i2) } }
+  def mergeClones(population: Pop)(implicit genomeEquality: Equal[G], merge: MergeOperation) = {
 
-    (s, newPop)
+    @tailrec def group[I](col: List[I], acc: List[List[I]] = List())(equality: Equal[I]): List[List[I]] =
+      col match {
+        case Nil => acc
+        case h :: t =>
+          val (begin, end) = acc.span { l => !equality.equal(h, l.head) }
+          val newContent = h :: end.headOption.getOrElse(Nil)
+          group(t, begin ::: newContent :: end.drop(1))(equality)
+      }
+
+    def newPop =
+      group(population.toList)(genomeEquality.contramap[Ind](_.genome)).
+        map {
+          _.reduce {
+            (i1, i2) =>
+              if(i1.born < i2.born) merge.append(i1, i2)
+              else merge.append(i2, i1)
+          }
+        }
+
+    State { s: AlgorithmState => s -> newPop.toVector }
   }
 
   object IsNaN {
@@ -77,56 +89,60 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
 
   trait IsNaN[A] <: (A => Boolean)
 
-  def removeNaN[A](population: Pop)(implicit fitness: Fitness[A], isNaN: IsNaN[A]) = Elitism { s =>
-    def newPop = population.filterNot(i => isNaN(fitness(i)))
-    (s, newPop)
-  }
+  def removeNaN[A](population: Pop)(implicit fitness: Fitness[A], isNaN: IsNaN[A]) =
+     State { s: AlgorithmState => s -> population.filterNot(i => isNaN(fitness(i))) }
 
-  def keepNonDominated(mu: Int, population: Pop)(implicit ranking: Ranking, diversity: Diversity) = Elitism { s =>
-    def newPopulation: Pop =
-      if (population.content.size < mu) population
+  def keepNonDominated(mu: Int, population: Pop)(implicit ranking: Ranking, diversity: Diversity, random: monocle.Lens[AlgorithmState, Random]) = {
+    def newPopulation: State[Random, Pop] =
+      if (population.size < mu) State.state { population }
       else {
         val ranks = ranking(population).map {
           _ ()
         }
 
         def sortedByRank =
-          (ranks zip population.content).
+          (ranks zip population).
             groupBy { case (r, _) => r }.
             toList.
             sortBy { case (r, _) => r }.
             map { case (_, v) => v.map { case (_, e) => e } }
 
-        @tailrec def addFronts(fronts: List[Seq[Individual[G, P]]], acc: List[Individual[G, P]]): (Seq[Individual[G, P]], Seq[Individual[G, P]]) = {
-          if (fronts.isEmpty) (Seq.empty, acc)
+        @tailrec def addFronts(fronts: List[Seq[Individual[G, P]]], acc: List[Individual[G, P]]): (Vector[Individual[G, P]], Vector[Individual[G, P]]) = {
+          if (fronts.isEmpty) (Vector.empty, acc.toVector)
           else if (acc.size + fronts.head.size < mu) addFronts(fronts.tail, fronts.head.toList ::: acc)
-          else (fronts.head, acc)
+          else (fronts.head.toVector, acc.toVector)
         }
 
         val (lastFront, selected) = addFronts(sortedByRank, List.empty)
 
-        if (selected.size < mu) {
-          selected ++
-            (lastFront zip diversity(lastFront).eval(s.random)).
+        def mostDiverseOfLastFront =
+          for {
+            div <- diversity(lastFront)
+          } yield {
+            (lastFront zip div).
               sortBy { case (_, d) => d() }.
               reverse.
               slice(0, mu - selected.size).
               map { case (e, _) => e }
-        } else selected
+          }
+
+
+        if (selected.size < mu) for { tail <- mostDiverseOfLastFront } yield selected ++ tail
+        else State.state { selected }
       }
 
-    (s, newPopulation)
+    random lifts newPopulation
   }
 
 
-  def keepBest(mu: Int, population: Pop)(implicit ranking: Ranking) = Elitism { s =>
+  def keepBest(mu: Int, population: Pop)(implicit ranking: Ranking) = {
       def newPopulation: Pop =
         if (population.size < mu) population
         else {
           val ranks = ranking(population).map(_())
-          (population.content zip ranks).sortBy { _._2 }.map(_._1).take(mu)
+          (population zip ranks).sortBy { _._2 }.map(_._1).take(mu)
         }
-      (s, newPopulation)
+      State { s: AlgorithmState => s -> newPopulation }
     }
 
 
@@ -186,27 +202,25 @@ trait ElitismFunctions <: Elitism with Fitness with Niche with Ranking with Dive
   }*/
 
 
-  def keepRandom(nicheSize: Int) = new KeepInNiche {
-    override def apply(population: Pop) = State[AlgorithmState, Pop] {
-      s => (s, s.random.shuffle(population.content).take(nicheSize))
+  def keepRandom(nicheSize: Int)(implicit random: monocle.Lens[AlgorithmState, Random]) = new KeepInNiche {
+    override def apply(population: Pop) = {
+      def keep = State { rng: Random => (rng, rng.shuffle(population).take(nicheSize)) }
+      random lifts keep
     }
   }
 
   def keepBestRanked(mu: Int)(implicit ranking: Ranking) = new KeepInNiche  {
     override def apply(population: Pop) = State.state {
       val ranks = ranking(population).map(_())
-      (population.content zip ranks).sortBy(_._2).unzip._1.take(mu)
+      (population zip ranks).sortBy(_._2).unzip._1.take(mu)
     }
   }
 
-  def nicheElitism[N](keep: KeepInNiche, population: Pop)(implicit niche: Niche[N], equal: Equal[N]) = Elitism { s =>
-    def composition =
-      for {
-        pops <- groupWhen(population.content.toList)(equal.contramap(niche).equal).traverseS { is => keep(is.toList) }
-        pop <- State[AlgorithmState, Pop] { s => (s, pops.flatten) }
-      } yield pop
-    composition.run(s)
-  }
+  def nicheElitism[N](keep: KeepInNiche, population: Pop)(implicit niche: Niche[N], equal: Equal[N]): State[AlgorithmState, Pop] =
+    for {
+      pops <- groupWhen(population.toList)(equal.contramap(niche).equal).traverseS { is => keep(is.to[Vector]) }
+    } yield pops.flatten.toVector
+
 
   /**
     * Based on http://sci2s.ugr.es/publications/ficheros/2005-SC-Lozano.pdf

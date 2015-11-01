@@ -45,6 +45,6 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
       p2 <- mergeClones(p1)
       p3 <- removeNaN(p2)
       p4 <- keepNonDominated(mu, p3)
-    } yield age(p4)
+    } yield p4
 
 }
