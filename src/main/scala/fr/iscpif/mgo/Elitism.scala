@@ -54,16 +54,6 @@ trait ElitismFunctions <: Fitness with Niche with Ranking with Diversity { this:
   }
 
   def mergeClones(population: Pop)(implicit genomeEquality: Equal[G], merge: MergeOperation) = {
-
-    @tailrec def group[I](col: List[I], acc: List[List[I]] = List())(equality: Equal[I]): List[List[I]] =
-      col match {
-        case Nil => acc
-        case h :: t =>
-          val (begin, end) = acc.span { l => !equality.equal(h, l.head) }
-          val newContent = h :: end.headOption.getOrElse(Nil)
-          group(t, begin ::: newContent :: end.drop(1))(equality)
-      }
-
     def newPop =
       group(population.toList)(genomeEquality.contramap[Ind](_.genome)).
         map {
@@ -218,7 +208,7 @@ trait ElitismFunctions <: Fitness with Niche with Ranking with Diversity { this:
 
   def nicheElitism[N](keep: KeepInNiche, population: Pop)(implicit niche: Niche[N], equal: Equal[N]): State[AlgorithmState, Pop] =
     for {
-      pops <- groupWhen(population.toList)(equal.contramap(niche).equal).traverseS { is => keep(is.to[Vector]) }
+      pops <- group(population.toList)(equal.contramap(niche)).traverseS { is => keep(is.to[Vector]) }
     } yield pops.flatten.toVector
 
 

@@ -116,4 +116,13 @@ package object mgo extends Termination {
     }
   }
 
+  @tailrec def group[I](col: List[I], acc: List[List[I]] = List())(equality: Equal[I]): List[List[I]] =
+    col match {
+      case Nil => acc
+      case h :: t =>
+        val (begin, end) = acc.span { l => !equality.equal(h, l.head) }
+        val newContent = h :: end.headOption.getOrElse(Nil)
+        group(t, begin ::: newContent :: end.drop(1))(equality)
+    }
+
 }
