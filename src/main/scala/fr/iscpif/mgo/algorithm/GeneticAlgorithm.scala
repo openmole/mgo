@@ -22,7 +22,7 @@ import scalaz._
 
 trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctions with BreedingFunctions {
 
-  case class GAGenome(values: Seq[Double] @@ Genome.Value, fromMutation: Byte = -1, fromCrossover: Byte = -1)
+  case class GAGenome(values: Seq[Double] @@ Genome.Value, fromOperation: Byte = -1)
   type G = GAGenome
 
   implicit def equalsG = Equal.equal[G]((g1, g2) => g1.values == g2.values)
@@ -36,30 +36,38 @@ trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctio
 
   private def byteToOption = monocle.Lens[Byte, Option[Int]](b => if(b < 0) None else Some(b.toInt))(o => _ => o.getOrElse(-1).toByte)
 
+  def fromOperation =
+    monocle.macros.Lenser[G](_.fromOperation) composeLens byteToOption
 
-  def fromMutation =
-    monocle.macros.Lenser[G](_.fromMutation) composeLens byteToOption
+  def operationExploration = 0.1
 
-  def fromCrossover =
-    monocle.macros.Lenser[G](_.fromCrossover) composeLens byteToOption
+  def operation(pop: Pop): State[Random, (Crossover, Mutation)] =
+    dynamicOperator(fromOperation, operationExploration)(operations)(pop)
 
-  def mutation =
-    dynamicMutation(fromMutation)(
-      bga(mutationRate = 1.0 / _, mutationRange = 0.001),
-      bga(mutationRate = 1.0 / _, mutationRange = 0.01),
-      bga(mutationRate = 2.0 / _, mutationRange = 0.1),
-      bga(mutationRate = _ => 0.5, mutationRange = 0.5)
-    )
 
-  def crossover =
-    dynamicCrossover(fromCrossover)(
-      blx(0.1),
-      blx(0.5),
-      blx(2.0),
-      sbx(0.1),
-      sbx(0.5),
-      sbx(2.0)
-    )
+  def operations =
+    for {
+      c <- crossover
+      m <- mutations
+    } yield (c, m)
+
+
+  def mutations = Vector[Mutation](
+    bga(mutationRate = 1.0 / _, mutationRange = 0.001),
+    bga(mutationRate = 1.0 / _, mutationRange = 0.01),
+    bga(mutationRate = 2.0 / _, mutationRange = 0.1),
+    bga(mutationRate = _ => 0.5, mutationRange = 0.5)
+  )
+
+
+  def crossover = Vector[Crossover](
+    blx(0.1),
+    blx(0.5),
+    blx(2.0),
+    sbx(0.1),
+    sbx(0.5),
+    sbx(2.0)
+  )
 
 }
 

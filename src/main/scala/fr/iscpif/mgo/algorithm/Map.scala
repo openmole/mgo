@@ -38,8 +38,12 @@ trait Map[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onHitCount.apply(pop) flatMap { challenged =>
       val fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
-      val newGenomes = breedGenomes(fight, crossover(pop), mutation(pop))
-      interleaveClones(newGenomes.map(_.map(clamp)), fight.map(_.genome), cloneRate, lambda).map(_.toVector)
+      for {
+        op <- random.lifts(operation(pop))
+        (crossover, mutation) = op
+        newGenomes = breedGenomes(fight, crossover, mutation).map(_.map(clamp))
+        genomes <- interleaveClones(newGenomes, fight.map(_.genome), cloneRate, lambda)
+      } yield genomes.toVector
     }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
