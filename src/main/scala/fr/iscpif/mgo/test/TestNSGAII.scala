@@ -50,24 +50,23 @@ object TestNSGAIIStochastic extends App {
     def lambda = 100
     def mu = 100
     def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
-    override def mergeClones = queue(100)
+    val history = queue(100)
     override def cloneRate = 0.2
-    //def fitness = Fitness(i => Seq(average(i.phenotype)))
-    type P = List[Double]
+    type P = History[Double]
   }
 
   import nsgaII._
 
-  def dimensions = 2
+  def dimensions = 10
   def function = rastrigin
 
   def problem(g: G) = State { rng: Random =>
     val scaled = function.scale(g.genomeValue)
     val eval = function.compute(scaled)
-    (rng, List(eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval))))
+    (rng, eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval)))
   }
 
-  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(10000))
+  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(1000))
 
   import scala.Ordering.Implicits._
   val (s, res) = evo.run(42)

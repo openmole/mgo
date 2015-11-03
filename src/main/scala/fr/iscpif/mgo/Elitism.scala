@@ -22,49 +22,13 @@ import scala.util.Random
 import scalaz.Scalaz._
 import scalaz._
 
+
 trait ElitismFunctions <: Fitness with Niche with Ranking with Diversity { this: Algorithm =>
 
   trait KeepInNiche extends (Pop => State[AlgorithmState, Pop])
 
   def merge(population: Pop, offspring: Pop) = State[AlgorithmState, Pop] { s =>
     (s, population ++ offspring)
-  }
-
-  object Queue {
-    implicit def listIsQueue[A] = new Queue[List[A]] {
-      override def merge(q1: List[A], q2: List[A], maxSize: Int): List[A] = (q1 ::: q2).take(maxSize)
-    }
-  }
-
-  trait Queue[T] {
-    def merge(q1: T, q2: T, maxSize: Int): T
-  }
-
-  trait MergeOperation <: Semigroup[Ind]
-
-  def youngest = new MergeOperation {
-    override def append(old: Ind, young: => Ind): Ind = young
-  }
-
-  def queue(size: Int)(implicit q: Queue[P]) = new MergeOperation {
-    override def append(old: Ind, young: => Ind): Ind = {
-      val res = old.copy(phenotype = q.merge(old.phenotype, young.phenotype, size))
-      res
-    }
-  }
-
-  def mergeClones(population: Pop)(implicit genomeEquality: Equal[G], merge: MergeOperation) = {
-    def newPop =
-      group(population.toList)(genomeEquality.contramap[Ind](_.genome)).
-        map {
-          _.reduce {
-            (i1, i2) =>
-              if(i1.born < i2.born) merge.append(i1, i2)
-              else merge.append(i2, i1)
-          }
-        }
-
-    State { s: AlgorithmState => s -> newPop.toVector }
   }
 
   object IsNaN {

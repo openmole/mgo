@@ -18,5 +18,5 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
 
-trait AllFunctions <: ElitismFunctions with BreedingFunctions with MutationFunctions with CrossoverFunctions with RankingFunctions with DiversityFunctions with ArchiveFunctions { this: Algorithm =>
+trait AllFunctions <: ElitismFunctions with BreedingFunctions with MutationFunctions with CrossoverFunctions with RankingFunctions with DiversityFunctions with ArchiveFunctions  with CloneFunctions { this: Algorithm =>
 }

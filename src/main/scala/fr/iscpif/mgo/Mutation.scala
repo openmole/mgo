@@ -38,6 +38,10 @@ trait Mutation <: Pop { this: Algorithm =>
 
 trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorithm =>
 
+  def identityMutation = new Mutation {
+    override def apply(g: G): State[AlgorithmState, G] = State.state (g)
+  }
+
   def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
     override def apply(g: G) =
      for {

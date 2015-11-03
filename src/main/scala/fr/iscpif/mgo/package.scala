@@ -27,7 +27,7 @@ import scalaz.iteratee.StepT
 
 package object mgo extends Termination {
 
-  type Population[G, P] = Vector[Individual[G, P]]
+  type Population[I] = Vector[I]
 
   object Population {
     def empty = Vector.empty

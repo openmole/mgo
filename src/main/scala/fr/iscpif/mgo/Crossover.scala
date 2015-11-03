@@ -31,6 +31,10 @@ trait Crossover <: Pop { this: Algorithm =>
 
 trait CrossoverFunctions <: Crossover with DynamicOps { this: Algorithm =>
 
+  def identityCrossover = new Crossover {
+    override def apply(g1: G, g2: G): State[AlgorithmState, (G, G)] = State.state((g1, g2))
+  }
+
   def blx(alpha: Double = 0.5)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Crossover {
     def apply(g1: G, g2: G) =
       for {
