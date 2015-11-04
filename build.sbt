@@ -4,9 +4,7 @@ name := "mgo"
 
 scalaVersion := "2.11.7"
 
-scalacOptions in (Compile,doc) := Seq("-groups", "-implicits", "-diagrams","-diagrams-max-classes","20")
-
-//scalacOptions += "-feature"
+//scalacOptions in (Compile,doc) ++= Seq("-diagrams")  //Seq("-groups", /*"-implicits",*/ "-diagrams","-diagrams-max-classes","20")
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.0.1" cross CrossVersion.full)
 
@@ -35,10 +33,6 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-iteratee" % scalazVersion,
   "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
 )
-
-//libraryDependencies +=  "org.scalaz.stream" %% "scalaz-stream" % "0.8"
-
-initialCommands in console += "import scalaz._, Scalaz._"
 
 resolvers ++= Seq(
   "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
