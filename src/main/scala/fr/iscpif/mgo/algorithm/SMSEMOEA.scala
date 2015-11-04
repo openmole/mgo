@@ -18,20 +18,31 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import scalaz._
 
-/*trait SMSEMOEA <: Evolution
-  with GAGenomeWithSigma
-  with MG
-  with BinaryTournamentSelection
-  with RandomMating
-  with TournamentOnRank
-  with HypervolumeRanking
-  with RankElitism
-  with DynamicGACrossover
-  with DynamicGAMutation
-  with FitnessHypervolumeDiversity
-  with NoArchive
-  with GeneticBreeding
-  with ClampedGenome
-  with Cloning
-  with RandomInitialGenome*/
+trait SMSEMOEA <: Algorithm with GeneticAlgorithm with AllFunctions {
+
+  type STATE = Unit
+  def initialState = Unit
+
+  def referencePoint: Seq[Double]
+
+  implicit def fitness: Fitness[Seq[Double]]
+  implicit def ranking = hyperVolumeRanking(referencePoint)
+  implicit def cloneStrategy: CloneStrategy = youngest
+
+  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
+    onRank.apply(pop) flatMap { challenged =>
+      def fight = tournament(challenged, pop)
+      interleaveClones(newGenomes(fight, pop), fight.map(_.genome), lambda)
+    }
+
+  override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
+    for {
+      p1 <- merge(population, offspring)
+      p2 <- applyCloneStrategy(p1)
+      p3 <- removeNaN(p2)
+      p4 <- keepBest(mu, p3)
+    } yield p4
+
+}
