@@ -30,6 +30,10 @@ trait Genome { this: Algorithm =>
     def genomeValue[V](implicit lens: monocle.Lens[G, V @@ Genome.Value]) = Tag.unwrap(lens.get(g))
   }
 
+  implicit class GenomeIndDecorator(ind: Ind) {
+    def genomeValue[V](implicit lens: monocle.Lens[G, V @@ Genome.Value]) = ind.genome.genomeValue
+  }
+
   type RandomGenome = State[Random, G]
 
   def clamp(g: G)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) =

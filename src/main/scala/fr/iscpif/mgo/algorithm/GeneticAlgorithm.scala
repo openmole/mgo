@@ -22,15 +22,16 @@ import scalaz._
 
 trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctions with BreedingFunctions {
 
-  case class GAGenome(values: Seq[Double] @@ Genome.Value, fromOperation: Int = -1)
+  case class GAGenome(values: Array[Double] @@ Genome.Value, fromOperation: Int = -1)
   type G = GAGenome
 
-  implicit def equalsG = Equal.equal[G]((g1, g2) => g1.values == g2.values)
   implicit val genomeValues =
-    monocle.macros.Lenser[G](_.values) //(g => g.values.toSeq)(v => _.copy(values = v.toArray))
+    monocle.Lens[G, Seq[Double] @@ Genome.Value](g => unwrap(g.values).toSeq)(v => _.copy(values = wrap(v.toArray)))
+
+  implicit def equalsG = Equal.equal[G]((g1, g2) => g1.genomeValue == g2.genomeValue)
 
   def randomGenome(size: Int) = State { rng: Random =>
-    def genome = GAGenome(Seq.fill(size)(rng.nextDouble))
+    def genome = GAGenome(wrap(Seq.fill(size)(rng.nextDouble).toArray))
     (rng, genome)
   }
 
