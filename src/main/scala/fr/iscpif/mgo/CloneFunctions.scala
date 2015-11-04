@@ -22,11 +22,11 @@ import scalaz._
 
 trait CloneFunctions { this: Algorithm =>
 
-  def interleaveClones(genomes: State[AlgorithmState, List[G]], clones: State[AlgorithmState, G], ratio: Double, lambda: Int)(implicit random: monocle.Lens[AlgorithmState, Random]): State[AlgorithmState, List[G]] = {
+  def interleaveClones(genomes: State[AlgorithmState, Vector[G]], clones: State[AlgorithmState, G], lambda: Int)(implicit random: monocle.Lens[AlgorithmState, Random], cloneStrategy: CloneStrategy): State[AlgorithmState, Vector[G]] = {
 
     @tailrec def interleaveClones0(acc: List[G], pool: List[G], lambda: Int, state: AlgorithmState): (AlgorithmState, List[G]) = {
       if (lambda <= 0) (state, acc)
-      else if (random.get(state).nextDouble() < ratio) {
+      else if (random.get(state).nextDouble() < cloneStrategy.cloneRate) {
         val (newState, c) = clones.run(state)
         interleaveClones0(c :: acc, pool, lambda - 1, newState)
       } else {
@@ -41,49 +41,58 @@ trait CloneFunctions { this: Algorithm =>
       }
     }
 
-    State { state: AlgorithmState => interleaveClones0(List(), List(), lambda, state) }
+    State { state: AlgorithmState => interleaveClones0(List(), List(), lambda, state) }.map(_.toVector)
   }
 
-  def mergeClones(population: Pop)(implicit genomeEquality: Equal[G], merge: MergePhenotype) = {
+  def applyCloneStrategy(population: Pop)(implicit genomeEquality: Equal[G], cloneStrategy: CloneStrategy) = {
     def newPop =
       group(population.toList)(genomeEquality.contramap[Ind](_.genome)).
         map {
           _.reduce {
             (i1, i2) =>
-              if (i1.born < i2.born) i1.copy(phenotype = merge.append(i1.phenotype, i2.phenotype))
-              else i2.copy(phenotype = merge.append(i2.phenotype, i1.phenotype))
+              val (old, young) = if (i1.born < i2.born) (i1, i2) else (i2, i1)
+              old.copy(phenotype = cloneStrategy.append(old.phenotype, young.phenotype))
           }
         }
 
     State { s: AlgorithmState => s -> newPop.toVector }
   }
 
-  trait MergePhenotype {
+  trait CloneStrategy {
     def append(old: P, young: => P): P
+    def cloneRate: Double
   }
 
-  def youngest = new MergePhenotype {
+  def youngest = new CloneStrategy {
     override def append(old: P, young: => P): P = young
+    def cloneRate = 0.0
   }
 
   sealed trait Age
-  case class History[+C](history: List[C], age: Int @@ Age = 0)
+  case class History[+C](history: List[C], age: Int @@ Age = 1)
 
   implicit def historyHistoryLens[C] = monocle.macros.Lenser[History[C]](_.history)
   implicit def historyAgeLens[C] = monocle.macros.Lenser[History[C]](_.age)
   implicit def historyToList[C](h: History[C]) = h.history
   implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(List(c)) }
 
-  def queue[C](size: Int)(implicit historyLens: monocle.Lens[P, List[C]], ageLens: monocle.Lens[P, Int @@ Age]) = new MergePhenotype {
-    override def append(old: P, young: => P): P = {
-      val oldAge = ageLens.get(old)
-      val youngAge = ageLens.get(young)
+  def queue[C](size: Int, cloneRate: Double = 0.2)(implicit historyLens: monocle.Lens[P, List[C]], ageLens: monocle.Lens[P, Int @@ Age]) = {
+    val _cloneRate = cloneRate
+    new CloneStrategy {
 
-      def oldP = historyLens.get(old).takeRight(oldAge)
-      def youngP = historyLens.get(young).takeRight(youngAge)
+      def cloneRate = _cloneRate
 
-      def newP = historyLens.set((oldP ::: youngP).takeRight(size))(old)
-      ageLens.set(oldAge + youngAge)(newP)
+      override def append(old: P, young: => P): P = {
+        val oldAge = ageLens.get(old)
+        val youngAge = ageLens.get(young)
+
+        def oldP = historyLens.get(old).takeRight(oldAge)
+        def youngP = historyLens.get(young).takeRight(youngAge)
+
+        def newP = historyLens.set((oldP ::: youngP).takeRight(size))(old)
+
+        ageLens.set(oldAge + youngAge)(newP)
+      }
     }
   }
 

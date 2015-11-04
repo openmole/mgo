@@ -57,7 +57,7 @@ package object mgo extends Termination {
 
   implicit def monocleToScalazLens[A, B](lens: monocle.Lens[A, B]) = lens.toScalaz
 
-  implicit class ListStateDecorator[S, G](gen: State[S, Vector[G]]) {
+  implicit class VectorStateDecorator[S, G](gen: State[S, Vector[G]]) {
 
     def generateFlat(lambda: Int) = {
       def flatten0(lambda: Int)(state: S, acc: List[G] = List()): (S, List[G]) =

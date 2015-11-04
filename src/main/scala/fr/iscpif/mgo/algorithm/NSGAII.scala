@@ -29,25 +29,18 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
   implicit def fitness: Fitness[Seq[Double]]
   implicit def ranking = paretoRanking()
   implicit def diversity = crowdingDistance
-  implicit def mergeClones = youngest
-  def cloneRate = 0.0
+  implicit def cloneStrategy: CloneStrategy = youngest
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     (onRank and onDiversity) (pop) flatMap { challenged =>
       def fight = tournament(challenged, pop)
-
-      for {
-        op <- random.lifts(operation(pop))
-        (crossover, mutation) = op
-        newGenomes = breedGenomes(fight, crossover, mutation).map(_.map(clamp))
-        genomes <- interleaveClones(newGenomes, fight.map(_.genome), cloneRate, lambda)
-      } yield genomes.toVector
+      interleaveClones(newGenomes(fight, pop), fight.map(_.genome), lambda)
     }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {
       p1 <- merge(population, offspring)
-      p2 <- mergeClones(p1)
+      p2 <- applyCloneStrategy(p1)
       p3 <- removeNaN(p2)
       p4 <- keepNonDominated(mu, p3)
     } yield p4

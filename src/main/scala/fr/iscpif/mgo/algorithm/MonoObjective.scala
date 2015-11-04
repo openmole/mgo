@@ -32,18 +32,13 @@ trait MonoObjective <: Algorithm with GeneticAlgorithm with AllFunctions {
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onRank.apply(pop) flatMap { challenged =>
       def fight = tournament(challenged, pop)
-      for {
-        op <- random.lifts(operation(pop))
-        (crossover, mutation) = op
-        newGenomes = breedGenomes(fight, crossover, mutation).map(_.map(clamp))
-        genomes <- interleaveClones(newGenomes, fight.map(_.genome), cloneRate, lambda)
-      } yield genomes.toVector
+      newGenomes(fight, pop).map(_.map(clamp).toVector).generateFlat(lambda)
     }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {
       p1 <- merge(population, offspring)
-      p2 <- mergeClones(p1)
+      p2 <- applyCloneStrategy(p1)
       p3 <- removeNaN(p2)
       p4 <- keepBest(mu, p3)
     } yield p4

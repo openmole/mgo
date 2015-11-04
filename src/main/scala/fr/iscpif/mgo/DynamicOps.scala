@@ -21,9 +21,9 @@ import util.Random
 import tools._
 
 trait DynamicOps <: Pop {
-  def dynamicOperator[OP](genomePart: monocle.Lens[G, Option[Int]], exploration: Double)(ops: Vector[OP]) = (pop: Pop) => State { rng: Random =>
+  def dynamicOperator[OP](pop: Pop, genomePart: monocle.Lens[G, Option[Int]], exploration: Double, ops: Vector[OP]) = State { rng: Random =>
     def stats(p: Pop) = {
-      val working = p.flatMap(i => genomePart get(i.genome))
+      val working = p.flatMap(i => genomePart.get(i.genome))
       val count = working.groupBy(identity)
       (0 until ops.size).map {
         i =>

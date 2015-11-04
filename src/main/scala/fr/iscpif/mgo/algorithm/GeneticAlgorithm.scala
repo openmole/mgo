@@ -22,7 +22,7 @@ import scalaz._
 
 trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctions with BreedingFunctions {
 
-  case class GAGenome(values: Seq[Double] @@ Genome.Value, fromOperation: Byte = -1)
+  case class GAGenome(values: Seq[Double] @@ Genome.Value, fromOperation: Int = -1)
   type G = GAGenome
 
   implicit def equalsG = Equal.equal[G]((g1, g2) => g1.values == g2.values)
@@ -34,16 +34,21 @@ trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctio
     (rng, genome)
   }
 
-  private def byteToOption = monocle.Lens[Byte, Option[Int]](b => if(b < 0) None else Some(b.toInt))(o => _ => o.getOrElse(-1).toByte)
+  private def intToOption = monocle.Lens[Int, Option[Int]](b => if(b < 0) None else Some(b))(o => _ => o.getOrElse(-1))
 
   def fromOperation =
-    monocle.macros.Lenser[G](_.fromOperation) composeLens byteToOption
+    monocle.macros.Lenser[G](_.fromOperation) composeLens intToOption
 
   def operationExploration = 0.1
 
-  def operation(pop: Pop): State[Random, (Crossover, Mutation)] =
-    dynamicOperator(fromOperation, operationExploration)(operations)(pop)
-
+  def newGenomes(selection: State[AlgorithmState, Ind], pop: Pop): State[AlgorithmState, Vector[G]] =
+    for {
+      op <- random.lifts(dynamicOperator(pop, fromOperation, operationExploration, operations.zipWithIndex))
+      ((c, m), i) = op
+      s1 <- selection
+      s2 <- selection
+      res <- breed(c, m)(s1, s2)
+    } yield res.map(fromOperation.set(Some(i))).map(clamp).toVector
 
   def operations =
     for {
@@ -58,7 +63,6 @@ trait GeneticAlgorithm <: Algorithm with MutationFunctions with CrossoverFunctio
     bga(mutationRate = 2.0 / _, mutationRange = 0.1),
     bga(mutationRate = _ => 0.5, mutationRange = 0.5)
   )
-
 
   def crossover = Vector[Crossover](
     blx(0.1),

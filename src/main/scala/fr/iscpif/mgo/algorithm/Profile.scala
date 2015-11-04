@@ -33,20 +33,14 @@ trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with NicheFun
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onRank(profileRanking).apply(pop) flatMap { challenged =>
-      val fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
-
-      for {
-        op <- random.lifts(operation(pop))
-        (crossover, mutation) = op
-        newGenomes = breedGenomes(fight, crossover, mutation).map(_.map(clamp))
-        genomes <- interleaveClones(newGenomes, fight.map(_.genome), cloneRate, lambda)
-      } yield genomes.toVector
+      def fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
+      interleaveClones(newGenomes(fight, pop), fight.map(_.genome), lambda)
     }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {
       p1 <- merge(population, offspring)
-      p2 <- mergeClones(p1)
+      p2 <- applyCloneStrategy(p1)
       p3 <- removeNaN(p2)
       p4 <- nicheElitism(keepBestRanked(1), p3)
     } yield p4

@@ -21,6 +21,7 @@ import scalaz._
 
 object Genome {
   sealed trait Value
+  sealed trait From
 }
 
 trait Genome { this: Algorithm =>

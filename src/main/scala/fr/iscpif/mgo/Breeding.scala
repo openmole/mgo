@@ -142,18 +142,15 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
   }*/
 
 
-  def breedGenomes(
-    selection: Selection,
+  def breed(
     crossover: Crossover,
-    mutation: Mutation) = {
+    mutation: Mutation)(s1: Ind, s2: Ind) =
     for {
-      s1 <- selection
-      s2 <- selection
       c <- crossover(s1.genome, s2.genome)
       (c1, c2) = c
       g1 <- mutation(c1)
       g2 <- mutation(c2)
     } yield { List(g2, g2) }
-  }
+
 
 }

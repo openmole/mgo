@@ -116,7 +116,7 @@ trait CrossoverFunctions <: Crossover with DynamicOps { this: Algorithm =>
   def dynamicCrossover(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Crossover*)(implicit random: monocle.Lens[AlgorithmState, Random]) = (pop: Pop) => new Crossover {
      def apply(g1: G, g2: G) =
        for {
-         s <- random.lifts(dynamicOperator(genomePart, exploration)(ops.zipWithIndex.toVector)(pop))
+         s <- random.lifts(dynamicOperator(pop, genomePart, exploration, ops.zipWithIndex.toVector))
          (crossover, i) = s
          List(dyg1, dyg2) = List(g1, g2).map(genomePart.set(Some(i)))
          res <- crossover(dyg1, dyg2)

@@ -31,25 +31,18 @@ trait Map[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
   implicit val fitness: Fitness[Double]
   implicit val niche: Niche[Point]
   implicit val pointEqual = Equal.equal[Point](_ == _)
-
-  def cloneRate = 0.0
-  implicit val mergeStrategy = youngest
+  implicit val cloneStrategy: CloneStrategy = youngest
 
   override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
     onHitCount.apply(pop) flatMap { challenged =>
-      val fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
-      for {
-        op <- random.lifts(operation(pop))
-        (crossover, mutation) = op
-        newGenomes = breedGenomes(fight, crossover, mutation).map(_.map(clamp))
-        genomes <- interleaveClones(newGenomes, fight.map(_.genome), cloneRate, lambda)
-      } yield genomes.toVector
+      def fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
+      interleaveClones(newGenomes(fight, pop), fight.map(_.genome), lambda)
     }
 
   override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
     for {
       p1 <- merge(population, offspring)
-      p2 <- mergeClones(p1)
+      p2 <- applyCloneStrategy(p1)
       p3 <- removeNaN(p2)
       p4 <- nicheElitism(keepBestRanked(1), p3)
     } yield p2

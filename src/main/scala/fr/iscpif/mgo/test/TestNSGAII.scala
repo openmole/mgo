@@ -50,30 +50,30 @@ object TestNSGAIIStochastic extends App {
     def lambda = 100
     def mu = 100
     def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
-    val history = queue(100)
-    override def cloneRate = 0.2
+    override val cloneStrategy = queue(100)
     type P = History[Double]
   }
 
   import nsgaII._
 
-  def dimensions = 10
+  def dimensions = 2
   def function = rastrigin
 
   def problem(g: G) = State { rng: Random =>
     val scaled = function.scale(g.genomeValue)
     val eval = function.compute(scaled)
-    (rng, eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval)))
+    (rng, eval /*+ (rng.nextGaussian() * 0.5 * math.sqrt(eval))*/ )
   }
 
   val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(1000))
 
   import scala.Ordering.Implicits._
-  val (s, res) = evo.run(42)
+  val (s, res) = evo.run(43)
 
   val oldest = res.minBy(i => Seq(-i.phenotype.size, average(i.phenotype)))
 
   println(res.count(_.phenotype.size == oldest.phenotype.size))
+  println(res.groupBy(_.genome.fromOperation).toList.map { case (k, v) => k -> v.size }.sortBy(_._1))
   println(function.scale(oldest.genome.values) + " " + average(oldest.phenotype) + " " + oldest.phenotype.size + " " + oldest.born)
 
 }
