@@ -20,31 +20,12 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import scalaz._
 
-/*trait PSE <: NoFitness
-  with HitMapArchive
-  with PhenotypeGridNiche
-  with GeneticBreeding
-  with BinaryTournamentSelection
-  with RandomMating
-  with DynamicGACrossover
-  with DynamicGAMutation
-  with GAGenomeWithSigma
-  with TournamentOnHitCount
-  with HierarchicalRanking
-  with RandomNicheElitism
-  with CounterTermination
-  with ClampedGenome
-  with ProportionalNumberOfRound
-  with Cloning
-  with RandomInitialGenome*/
-
 trait PSE[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
 
-  case class PSEState(hitMap: collection.Map[Point, Int])
-  type STATE = PSEState
-  def initialState = PSEState(collection.Map())
+  type STATE = collection.Map[Point, Int]
+  def initialState = Map()
 
-  implicit val hits = monocle.macros.Lenser[PSEState](_.hitMap)
+  implicit val hits = identityLens[STATE]
   implicit val niche: Niche[Point]
   implicit val pointEqual = Equal.equal[Point](_ == _)
 

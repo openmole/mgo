@@ -36,6 +36,8 @@ package object mgo extends Termination {
   implicit def unwrap[@specialized A, T](a: A @@ T): A = Tag.unwrap[A, T](a)
   implicit def wrap[@specialized A, T](a: A): A @@ T = Tag.apply[A, T](a)
 
+  def identityLens[A] = monocle.Lens[A, A](identity)(v => identity)
+
   implicit def unitStateConverter[X](s: X): (X, Unit) = (s, Unit)
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {

@@ -22,11 +22,10 @@ import scalaz._
 
 trait Map[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
 
-  case class MapState(hitMap: collection.Map[Point, Int])
-  type STATE = MapState
-  def initialState = MapState(collection.Map())
+  type STATE = collection.Map[Point, Int]
+  def initialState = collection.Map()
 
-  implicit val hits = monocle.macros.Lenser[MapState](_.hitMap)
+  implicit val hits = identityLens[STATE]
 
   implicit val fitness: Fitness[Double]
   implicit val niche: Niche[Point]

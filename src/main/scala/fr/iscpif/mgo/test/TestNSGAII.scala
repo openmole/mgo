@@ -56,19 +56,19 @@ object TestNSGAIIStochastic extends App {
 
   import nsgaII._
 
-  def dimensions = 2
+  def dimensions = 10
   def function = rastrigin
 
   def problem(g: G) = State { rng: Random =>
     val scaled = function.scale(g.genomeValue)
     val eval = function.compute(scaled)
-    (rng, eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval)))
+    (rng, eval + (rng.nextGaussian() /* 0.5 * math.sqrt(eval)*/ ))
   }
 
   val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(10000))
 
   import scala.Ordering.Implicits._
-  val (s, res) = evo.run(41)
+  val (s, res) = evo.run(47)
 
   val oldest = res.minBy(i => Seq(-i.phenotype.size, average(i.phenotype)))
 
