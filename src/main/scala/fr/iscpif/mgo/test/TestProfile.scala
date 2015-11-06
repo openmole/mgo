@@ -39,7 +39,7 @@ object TestProfileSphere extends App {
   def dimensions = 10
   def problem(g: G) = State { rng: Random => (rng, sphere(genomeValues.get(g))) }
 
-  val evo = evolution(profile, 100)(randomGenome(dimensions), problem, afterStep(100))
+  val evo = evolution(profile, 100)(randomGenome(dimensions), problem, afterGeneration(100))
   val res =
     evo.eval(42).map {
       i => s"${i.genome.values(0)}, ${i.phenotype}"
@@ -57,7 +57,7 @@ object TestProfileRastrigin extends App {
   def dimensions = 10
   def problem(g: G) = State { rng: Random => (rng, rastrigin(genomeValues.get(g))) }
 
-  val evo = evolution(profile, 100)(randomGenome(dimensions), problem, afterStep(100))
+  val evo = evolution(profile, 100)(randomGenome(dimensions), problem, afterGeneration(100))
   val res =
     evo.eval(42).map {
       i => s"${i.genome.values(0)}, ${i.phenotype}"

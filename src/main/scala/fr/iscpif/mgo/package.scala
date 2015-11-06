@@ -83,10 +83,12 @@ package object mgo extends Termination {
   def randomPopulation[G](randomGenome: State[Random, G], size: Int) =
     randomGenome.generate(size).map(_.toVector)
 
+  type Termination[S] = State[S, Boolean]
+
   def evolution(algorithm: Algorithm, lambda: Int)(
     newGenome: State[Random, algorithm.G],
     express: (algorithm.G => State[Random, algorithm.P]),
-    termination: State[algorithm.AlgorithmState, Boolean]) = new {
+    termination: Termination[algorithm.AlgorithmState]) = new {
 
     import algorithm._
 

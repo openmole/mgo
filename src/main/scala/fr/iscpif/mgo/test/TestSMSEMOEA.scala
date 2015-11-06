@@ -44,7 +44,7 @@ object TestSMSEMOEAStochastic extends App {
     (rng, eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval)))
   }
 
-  val evo = evolution(nsgaII, 100)(randomGenome(dimensions), problem, afterStep(1000))
+  val evo = evolution(nsgaII, 100)(randomGenome(dimensions), problem, afterGeneration(1000))
 
   import scala.Ordering.Implicits._
   val (s, res) = evo.run(47)

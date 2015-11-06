@@ -28,7 +28,7 @@ import Termination._
 
 trait Termination {
 
-  def afterStep[S](max: Int)(implicit step: monocle.Lens[S, Long @@ Generation]) = State { state: S => (state, step.get(state) >= max) }
+  def afterGeneration[S](max: Long)(implicit step: monocle.Lens[S, Long @@ Generation]) = State { state: S => (state, step.get(state) >= max) }
 
   def afterTime[S](max: Duration)(implicit time: monocle.Lens[S, Long @@ Start]) = State {
     state: S =>
