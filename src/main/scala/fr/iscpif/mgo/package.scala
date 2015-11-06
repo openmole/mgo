@@ -20,12 +20,13 @@ package fr.iscpif
 import fr.iscpif.mgo.Algorithm.CommonState
 import org.apache.commons.math3.random._
 import scala.annotation.tailrec
+import scala.concurrent.duration.Duration
 import scala.util.Random
 import scalaz._
 import Scalaz._
-import scalaz.iteratee.StepT
+import scala.concurrent.duration._
 
-package object mgo extends Termination {
+package object mgo {
 
   type Population[I] = Vector[I]
 
@@ -83,8 +84,6 @@ package object mgo extends Termination {
   def randomPopulation[G](randomGenome: State[Random, G], size: Int) =
     randomGenome.generate(size).map(_.toVector)
 
-  type Termination[S] = State[S, Boolean]
-
   def evolution(algorithm: Algorithm, lambda: Int)(
     newGenome: State[Random, algorithm.G],
     express: (algorithm.G => State[Random, algorithm.P]),
@@ -135,5 +134,20 @@ package object mgo extends Termination {
         val newContent = h :: end.headOption.getOrElse(Nil)
         group(t, begin ::: newContent :: end.drop(1))(equality)
     }
+
+  type Termination[S] = State[S, Boolean]
+
+  sealed trait Generation
+  sealed trait Start
+
+  def afterGeneration[S](max: Long)(implicit step: monocle.Lens[S, Long @@ Generation]): Termination[S] = State { state: S => (state, step.get(state) >= max) }
+
+  def afterTime[S](max: Duration)(implicit time: monocle.Lens[S, Long @@ Start]): Termination[S] = State {
+    state: S =>
+      val duration = (System.currentTimeMillis - time.get(state)).millis
+      (state, duration >= max)
+  }
+
+  def never[S] = State { state: S => (state, false) }
 
 }

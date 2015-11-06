@@ -16,13 +16,12 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.Algorithm.CommonState
+import Algorithm.CommonState
 import monocle.macros._
 
 import scala.util.Random
 import scalaz._
 import Scalaz._
-import Termination._
 
 trait Pop {
   type G
