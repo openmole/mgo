@@ -27,9 +27,10 @@ trait MonoObjective <: Algorithm with GeneticAlgorithm with AllFunctions {
 
   implicit def fitness: Fitness[Double]
   implicit def mergeClones = youngest
-  def cloneRate = 0.0
 
-  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
+  def mu: Int
+
+  override def breeding(pop: Pop, lambda: Int): State[AlgorithmState, Vector[G]] =
     onRank.apply(pop) flatMap { challenged =>
       def fight = tournament(challenged, pop)
       newGenomes(fight, pop).map(_.map(clamp).toVector).generateFlat(lambda)

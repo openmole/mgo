@@ -32,7 +32,7 @@ trait PSE[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
   def cloneRate = 0.0
   implicit val mergeClones = youngest
 
-  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
+  override def breeding(pop: Pop, lambda: Int): State[AlgorithmState, Vector[G]] =
     onHitCount.apply(pop) flatMap { challenged =>
       def fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
       interleaveClones(newGenomes(fight, pop), fight.map(_.genome), lambda)

@@ -31,7 +31,9 @@ trait NSGAII <: Algorithm with GeneticAlgorithm with AllFunctions {
   implicit def diversity = crowdingDistance
   implicit def cloneStrategy: CloneStrategy = youngest
 
-  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
+  def mu: Int
+
+  override def breeding(pop: Pop, lambda: Int): State[AlgorithmState, Vector[G]] =
     (onRank and onDiversity) (pop) flatMap { challenged =>
       def fight = tournament(challenged, pop)
       interleaveClones(newGenomes(fight, pop), fight.map(_.genome), lambda)

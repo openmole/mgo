@@ -56,9 +56,6 @@ trait Algorithm extends Pop {
   implicit def startTime = common composeLens CommonState.startTime
   implicit def random = common composeLens CommonState.random
 
-  def mu: Int
-  def lambda: Int
-
   def initialState: STATE
 
   def algorithmState(random: Random, generation: Long = 0) =
@@ -66,7 +63,7 @@ trait Algorithm extends Pop {
 
   def updateGeneration = State[AlgorithmState, Unit] { s => generation.modify(_ + 1)(s) }
 
-  def breeding(population: Pop): State[AlgorithmState, Vector[G]]
+  def breeding(population: Pop, lambda: Int): State[AlgorithmState, Vector[G]]
   def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop]
 
 }

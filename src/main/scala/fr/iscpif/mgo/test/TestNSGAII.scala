@@ -27,7 +27,6 @@ import Scalaz._
 object TestNSGAIISphere extends App {
 
   val nsgaII = new NSGAII {
-    def lambda = 100
     def mu = 100
     def fitness = Fitness(i => Seq(i.phenotype))
     type P = Double
@@ -38,7 +37,7 @@ object TestNSGAIISphere extends App {
   def dimensions = 10
   def problem(g: G): State[Random, P] = State { rng: Random => (rng, sphere(genomeValues.get(g))) }
 
-  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(100))
+  val evo = evolution(nsgaII, 100)(randomGenome(dimensions), problem, afterStep(100))
   println(evo.eval(42).minBy(_.phenotype))
 
 }
@@ -47,7 +46,6 @@ object TestNSGAIIStochastic extends App {
   def average(s: Seq[Double]) = s.sum / s.size
 
   val nsgaII = new NSGAII {
-    def lambda = 100
     def mu = 100
     def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
     override val cloneStrategy = queue(100)
@@ -65,7 +63,7 @@ object TestNSGAIIStochastic extends App {
     (rng, eval + (rng.nextGaussian() /* 0.5 * math.sqrt(eval)*/ ))
   }
 
-  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(10000))
+  val evo = evolution(nsgaII, 100)(randomGenome(dimensions), problem, afterStep(10000))
 
   import scala.Ordering.Implicits._
   val (s, res) = evo.run(47)

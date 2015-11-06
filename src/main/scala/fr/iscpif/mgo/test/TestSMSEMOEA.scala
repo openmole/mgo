@@ -27,7 +27,6 @@ object TestSMSEMOEAStochastic extends App {
 
   val nsgaII = new SMSEMOEA {
     def referencePoint = Seq(1000.0, 10)
-    def lambda = 100
     def mu = 100
     def fitness = Fitness(i => Seq(average(i.phenotype), 1.0 / i.phenotype.size))
     override val cloneStrategy = queue(100)
@@ -45,7 +44,7 @@ object TestSMSEMOEAStochastic extends App {
     (rng, eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval)))
   }
 
-  val evo = evolution(nsgaII)(randomGenome(dimensions), problem, afterStep(1000))
+  val evo = evolution(nsgaII, 100)(randomGenome(dimensions), problem, afterStep(1000))
 
   import scala.Ordering.Implicits._
   val (s, res) = evo.run(47)

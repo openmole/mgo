@@ -32,7 +32,7 @@ trait Map[Point] <: Algorithm with GeneticAlgorithm with AllFunctions {
   implicit val pointEqual = Equal.equal[Point](_ == _)
   implicit val cloneStrategy: CloneStrategy = youngest
 
-  override def breeding(pop: Pop): State[AlgorithmState, Vector[G]] =
+  override def breeding(pop: Pop, lambda: Int): State[AlgorithmState, Vector[G]] =
     onHitCount.apply(pop) flatMap { challenged =>
       def fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
       interleaveClones(newGenomes(fight, pop), fight.map(_.genome), lambda)

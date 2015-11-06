@@ -80,23 +80,23 @@ package object mgo extends Termination {
     def generate(lambda: Int) = gen.map(Vector(_)).generateFlat(lambda)
   }
 
-  def evolution(algorithm: Algorithm)(
-    randomGenome: State[Random, algorithm.G],
+  def randomPopulation[G](randomGenome: State[Random, G], size: Int) =
+    randomGenome.generate(size).map(_.toVector)
+
+  def evolution(algorithm: Algorithm, lambda: Int)(
+    newGenome: State[Random, algorithm.G],
     express: (algorithm.G => State[Random, algorithm.P]),
     termination: State[algorithm.AlgorithmState, Boolean]) = new {
 
     import algorithm._
 
-    def step(population: Pop): State[AlgorithmState, Pop] = {
-      def expressMonad(g: G) = Individual(g, express)
+    def expressMonad = (g: G) => algorithm.common lifts Individual(g, express)
 
-      def randomIfEmpty =
-        if (population.isEmpty) (random lifts randomGenome).generate(mu).map(_.toVector)
-        else breeding(population)
+    def step(population: Pop): State[AlgorithmState, Pop] = {
 
       for {
-        breed <- randomIfEmpty
-        offspring <- breed.traverseS { g => common lifts expressMonad(g) }
+        breed <- breeding(population, lambda)
+        offspring <- breed.traverseS(expressMonad)
         population <- elitism(population, offspring)
         _ <- updateGeneration
       } yield population
@@ -112,7 +112,14 @@ package object mgo extends Termination {
         else run0(res, s2)
       }
 
-      val allRun = State[AlgorithmState, Pop] { state => run0(Population.empty, state) }
+      def initialGenomes = newGenome.generate(lambda)
+
+      val allRun =
+        for {
+          genomes <- algorithm.random.lifts(initialGenomes)
+          initialPop <- genomes.traverseS(expressMonad)
+          finalPop <- State[AlgorithmState, Pop] { state: AlgorithmState => run0(initialPop, state) }
+        } yield finalPop
 
       allRun.run(algorithmState(random))
     }
