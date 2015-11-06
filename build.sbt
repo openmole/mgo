@@ -38,11 +38,6 @@ resolvers ++= Seq(
   "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
 )
 
-libraryDependencies  ++= Seq(
-  "org.scalanlp" %% "breeze" % "0.10",
-  "org.scalanlp" %% "breeze-natives" % "0.10"
-)
-
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.3" % "test"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
