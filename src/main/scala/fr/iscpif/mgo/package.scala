@@ -81,7 +81,7 @@ package object mgo {
     def generate(lambda: Int) = gen.map(Vector(_)).generateFlat(lambda)
   }
 
-  def randomPopulation[G](randomGenome: State[Random, G], size: Int) =
+  def randomGenomes[G](randomGenome: State[Random, G], size: Int) =
     randomGenome.generate(size).map(_.toVector)
 
   def evolution(algorithm: Algorithm, lambda: Int)(
