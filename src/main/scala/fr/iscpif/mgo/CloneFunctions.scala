@@ -20,6 +20,12 @@ import scala.annotation.tailrec
 import scala.util.Random
 import scalaz._
 
+object CloneFunctions {
+  sealed trait Age
+}
+
+import CloneFunctions._
+
 trait CloneFunctions { this: Algorithm =>
 
   def interleaveClones(genomes: State[AlgorithmState, Vector[G]], clones: State[AlgorithmState, G], lambda: Int)(implicit random: monocle.Lens[AlgorithmState, Random], cloneStrategy: CloneStrategy): State[AlgorithmState, Vector[G]] = {
@@ -67,14 +73,6 @@ trait CloneFunctions { this: Algorithm =>
     override def append(old: P, young: => P): P = young
     def cloneRate = 0.0
   }
-
-  sealed trait Age
-  case class History[+C](history: List[C], age: Int @@ Age = 1)
-
-  implicit def historyHistoryLens[C] = monocle.macros.Lenser[History[C]](_.history)
-  implicit def historyAgeLens[C] = monocle.macros.Lenser[History[C]](_.age)
-  implicit def historyToList[C](h: History[C]) = h.history
-  implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(List(c)) }
 
   def queue[C](size: Int, cloneRate: Double = 0.2)(implicit historyLens: monocle.Lens[P, List[C]], ageLens: monocle.Lens[P, Int @@ Age]) = {
     val _cloneRate = cloneRate

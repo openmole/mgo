@@ -17,7 +17,6 @@
 
 package fr.iscpif
 
-import fr.iscpif.mgo.Algorithm.CommonState
 import org.apache.commons.math3.random._
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
@@ -149,5 +148,12 @@ package object mgo {
   }
 
   def never[S] = State { state: S => (state, false) }
+
+  case class History[+C](history: List[C], age: Int @@ CloneFunctions.Age = 1)
+
+  implicit def historyHistoryLens[C] = monocle.macros.Lenser[History[C]](_.history)
+  implicit def historyAgeLens[C] = monocle.macros.Lenser[History[C]](_.age)
+  implicit def historyToList[C](h: History[C]) = h.history
+  implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(List(c)) }
 
 }
