@@ -28,9 +28,7 @@ import crossover._
 import mutation._
 import diversity._
 
-object breeding { //<: Breeding with Genome with Ranking with Diversity with Niche with Crossover with Mutation { this: Algorithm =>
-
-  type Selection[G, P, S] = State[AlgorithmState[S], Individual[G, P]]
+object breeding {
 
   case class ChallengeResult[A](challenge: Vector[A])(implicit val ordering: scala.Ordering[A]) {
     def score(i: Int) = challenge(i)
@@ -42,8 +40,8 @@ object breeding { //<: Breeding with Genome with Ranking with Diversity with Nic
 
   type Challenge[G, P, S, A] = (Population[Individual[G, P]] => State[S, ChallengeResult[A]])
 
-  def tournament[G, P, S, A](challenge: ChallengeResult[A], pop: Population[Individual[G, P]], rounds: (Int => Int) = _ => 1): Selection[G, P, S] = State { state =>
-    def newChallenger: Int = random[S].get(state).nextInt(pop.size)
+  def tournament[G, P, A](challenge: ChallengeResult[A], pop: Population[Individual[G, P]], rounds: (Int => Int) = _ => 1) = State { rng: Random =>
+    def newChallenger: Int = rng.nextInt(pop.size)
 
     @tailrec def round(champion: Int, rounds: Int): Int =
       if (rounds <= 0) champion
@@ -54,7 +52,7 @@ object breeding { //<: Breeding with Genome with Ranking with Diversity with Nic
         round(newChampion, rounds - 1)
       }
 
-    (state, pop(round(newChallenger, rounds(pop.size))))
+    (rng, pop(round(newChallenger, rounds(pop.size))))
   }
 
   def onRank[G, P](ranking: Ranking[G, P]) = new Challenge[G, P, Random, Lazy[Int]] {
@@ -81,10 +79,8 @@ object breeding { //<: Breeding with Genome with Ranking with Diversity with Nic
 
   }
 
-  def randomSelection[G, P, S](population: Population[Individual[G, P]]): Selection[G, P, S] =
-    for {
-      rng <- random[S]
-    } yield population.random(rng)
+  def randomSelection[G, P, S](population: Population[Individual[G, P]]) =
+    State { rng: Random => (rng, population.random(rng)) }
 
   /*trait NEATMating <: Mating with Lambda with BreedingContext with NEATGenome with P with F {
 

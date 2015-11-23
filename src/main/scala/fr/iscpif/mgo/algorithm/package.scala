@@ -28,6 +28,7 @@ import diversity._
 import clone._
 import breeding._
 import elitism._
+import niche._
 
 package object algorithm {
 
@@ -37,36 +38,69 @@ package object algorithm {
       operationExploration: Double = 0.1,
       ranking: Ranking[GAGenome, P] = paretoRanking(fitness = fitness),
       diversity: Diversity[GAGenome, P] = crowdingDistance(fitness),
-      cloneStrategy: CloneStrategy[P] = youngest[P]) = {
+      cloneStrategy: CloneStrategy[P] = youngest[P]) = new Algorithm[GAGenome, P, Unit] {
+    def initialState = Unit
 
-    new Algorithm[GAGenome, P, Unit] {
-      def initialState = Unit
-
-      override def breeding(pop: Pop, lambda: Int): State[AlgorithmState[Unit], Vector[GAGenome]] = {
-        val challenge =
-          for {
-            c1 <- onRank(ranking)(pop)
-            c2 <- onDiversity(diversity)(pop)
-          } yield c1 and c2
-
-        (random[Unit] lifts challenge).flatMap { challenged =>
-          def fight = tournament[GAGenome, P, Unit, (Lazy[Int], Lazy[Double])](challenged, pop)
-
-          interleaveClones[GAGenome, P, Unit](
-            newGenomes[P, Unit](fight, pop, operationExploration),
-            fight.map(_.genome),
-            lambda,
-            cloneStrategy)
-        }
-      }
-
-      override def elitism(population: Pop, offspring: Pop): State[AlgorithmState[Unit], Pop] =
+    override def breeding(pop: Pop, lambda: Int): State[AlgorithmState[Unit], Vector[GAGenome]] = {
+      val challenge =
         for {
-          p1 <- merge(population, offspring)
-          p2 <- applyCloneStrategy(p1, cloneStrategy)
-          p3 <- removeNaN(p2, fitness)
-          p4 <- keepNonDominated(mu, p3, ranking, diversity)
-        } yield p4
+          c1 <- onRank(ranking)(pop)
+          c2 <- onDiversity(diversity)(pop)
+        } yield c1 and c2
+
+      (random[Unit] lifts challenge).flatMap { challenged =>
+        def fight = random[Unit] lifts tournament(challenged, pop)
+
+        interleaveClones[GAGenome, P, Unit](
+          newGenomes[P, Unit](fight, pop, operationExploration),
+          fight.map(_.genome),
+          lambda,
+          cloneStrategy)
+      }
+    }
+
+    override def elitism(population: Pop, offspring: Pop): State[AlgorithmState[Unit], Pop] =
+      for {
+        _ <- State.init[AlgorithmState[Unit]]
+        p1 = merge(population, offspring)
+        p2 = applyCloneStrategy(p1, cloneStrategy)
+        p3 = removeNaN(p2, fitness)
+        p4 <- random[Unit] lifts keepNonDominated(mu, ranking, diversity)(p3)
+      } yield p4
+  }
+
+  def profile[P](
+    fitness: Fitness[GAGenome, P, Double],
+    niche: Niche[GAGenome, P, Int])(
+      operationExploration: Double = 0.1,
+      cloneStrategy: CloneStrategy[P] = youngest[P]) = new Algorithm[GAGenome, P, Unit] {
+    def initialState = Unit
+
+    implicit val nicheEqual = Equal.equal[Int](_ == _)
+
+    override def breeding(pop: Pop, lambda: Int): State[AlgorithmState[Unit], Vector[GAGenome]] = {
+      val challenge = onRank(profileRanking(niche, fitness))(pop)
+
+      (random[Unit] lifts challenge).flatMap { challenged =>
+        def fight = random[Unit] lifts tournament(challenged, pop, size => math.round(math.log10(size).toInt))
+
+        interleaveClones[GAGenome, P, Unit](
+          newGenomes[P, Unit](fight, pop, operationExploration),
+          fight.map(_.genome),
+          lambda,
+          cloneStrategy
+        )
+      }
+    }
+
+    override def elitism(population: Pop, offspring: Pop): State[AlgorithmState[Unit], Pop] = {
+      val p1 = merge(population, offspring)
+      val p2 = applyCloneStrategy(p1, cloneStrategy)
+      val p3 = removeNaN(p2, fitness)
+
+      def keep(p: Pop) = State.gets { s: AlgorithmState[Unit] => keepBest(1, fitness)(p) }
+
+      for { p4 <- nicheElitism(keep, p3, niche) } yield p4
     }
   }
 

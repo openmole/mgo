@@ -28,11 +28,7 @@ import niche._
 
 object elitism {
 
-  trait KeepInNiche[G, P, S] extends (Population[Individual[G, P]] => State[AlgorithmState[S], Population[Individual[G, P]]])
-
-  def merge[G, P, S](population: Population[Individual[G, P]], offspring: Population[Individual[G, P]]) = State[S, Population[Individual[G, P]]] { s =>
-    (s, population ++ offspring)
-  }
+  def merge[G, P](population: Population[Individual[G, P]], offspring: Population[Individual[G, P]]) = population ++ offspring
 
   object IsNaN {
     implicit def doubleCanBeNaN = new IsNaN[Double] {
@@ -46,10 +42,10 @@ object elitism {
 
   trait IsNaN[A] <: (A => Boolean)
 
-  def removeNaN[G, P, S, A](population: Population[Individual[G, P]], fitness: Fitness[G, P, A])(implicit isNaN: IsNaN[A]) =
-     State { s: S => s -> population.filterNot(i => isNaN(fitness(i))) }
+  def removeNaN[G, P, A](population: Population[Individual[G, P]], fitness: Fitness[G, P, A])(implicit isNaN: IsNaN[A]) =
+     population.filterNot(i => isNaN(fitness(i)))
 
-  def keepNonDominated[G, P, S](mu: Int, population: Population[Individual[G, P]], ranking: Ranking[G, P], diversity: Diversity[G, P]) = {
+  def keepNonDominated[G, P](mu: Int, ranking: Ranking[G, P], diversity: Diversity[G, P])(population: Population[Individual[G, P]]) = {
     def newPopulation: State[Random, Population[Individual[G, P]]] =
       if (population.size < mu) State.state { population }
       else {
@@ -88,20 +84,32 @@ object elitism {
         else State.state { selected }
       }
 
-    random[S] lifts newPopulation
+    newPopulation
   }
 
 
-  def keepBest[G, P, S](mu: Int, population: Population[Individual[G, P]])(implicit ranking: Ranking[G, P]) = {
-      def newPopulation: Population[Individual[G, P]] =
-        if (population.size < mu) population
-        else {
-          val ranks = ranking(population).map(_())
-          (population zip ranks).sortBy { _._2 }.map(_._1).take(mu)
-        }
-      State { s: S => s -> newPopulation }
+  def keepBestRanked[G, P, S](mu: Int, ranking: Ranking[G, P])(population: Population[Individual[G, P]]) =
+    if (population.size < mu) population
+    else {
+      val ranks = ranking(population).map(_ ())
+      (population zip ranks).sortBy {
+        _._2
+      }.map(_._1).take(mu)
     }
 
+  def keepBest[G, P, S](mu: Int, fitness: Fitness[G, P, Double])(population: Population[Individual[G, P]])  =
+    population.sortBy { fitness }.take(mu)
+
+  def keepRandom[G, P, S](nicheSize: Int)(population: Population[Individual[G, P]]) =
+    State { rng: Random => (rng, rng.shuffle(population).take(nicheSize)) }
+
+  def nicheElitism[G, P, S, N](
+    keep: Population[Individual[G, P]] => State[AlgorithmState[S], Population[Individual[G, P]]],
+    population: Population[Individual[G, P]],
+    niche: Niche[G, P, N])(implicit equal: Equal[N]): State[AlgorithmState[S], Population[Individual[G, P]]] =
+    for {
+      pops <- group(population.toList)(equal.contramap(niche)).traverseS { is => keep(is.to[Vector]) }
+    } yield pops.flatten.toVector
 
 
   /*def conservativeFIFO(offspring: Pop, mu: Int)(implicit doubleFitness: DoubleFitness[F]) =  new Elitism {
@@ -159,24 +167,21 @@ object elitism {
   }*/
 
 
-  def keepRandom[G, P, S](nicheSize: Int) = new KeepInNiche[G, P, S] {
-    override def apply(population: Population[Individual[G, P]]) = {
-      def keep = State { rng: Random => (rng, rng.shuffle(population).take(nicheSize)) }
-      random[S] lifts keep
-    }
-  }
 
-  def keepBestRanked[G, P, S](mu: Int)(implicit ranking: Ranking[G, P]) = new KeepInNiche[G, P, S]  {
+  /*def keepBestRanked[G, P, S](mu: Int, ranking: Ranking[G, P]) = new KeepInNiche[G, P, S]  {
     override def apply(population: Population[Individual[G, P]]) = State.state {
       val ranks = ranking(population).map(_())
       (population zip ranks).sortBy(_._2).unzip._1.take(mu)
     }
-  }
+  }*/
 
-  def nicheElitism[G, P, S, N](keep: KeepInNiche[G, P, S], population: Population[Individual[G, P]])(implicit niche: Niche[G, P, N], equal: Equal[N]) =
-    for {
-      pops <- group(population.toList)(equal.contramap(niche)).traverseS { is => keep(is.to[Vector]) }
-    } yield pops.flatten.toVector
+  /*def keepBest[G, P, S](mu: Int, fitness: Fitness[G, P, Double]) = new KeepInNiche[G, P, S] {
+    override def apply(population: Population[Individual[G, P]]) = State.state {
+      (population).sortBy { fitness }.take(mu)
+    }
+  }*/
+
+
 
 
   /**

@@ -33,7 +33,10 @@ package object mgo {
   implicit def startTime[S] = common[S] composeLens CommonState.startTime
   implicit def random[S] = common[S] composeLens CommonState.random
 
-  def updateGeneration[S] = State[AlgorithmState[S], Unit] { s => generation[S].modify(_ + 1)(s) }
+  def updateGeneration[S] =
+    for {
+      s <- State.init[AlgorithmState[S]]
+    } yield generation[S].modify(_ + 1)(s)
 
   type Population[I] = Vector[I]
 
@@ -46,7 +49,7 @@ package object mgo {
 
   def identityLens[A] = monocle.Lens[A, A](identity)(v => identity)
 
-  implicit def unitStateConverter[X](s: X): (X, Unit) = (s, Unit)
+  //implicit def functionStateConverter[A, B, S](f: A => B) = (a: A) => State.gets { s: S => f(a) }
 
   private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
     val factor = (boundaryMax - boundaryMin) / (max - min)

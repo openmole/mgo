@@ -21,13 +21,11 @@ import scalaz._
 import niche._
 
 object archive {
-  trait Archive[S] <: State[S, Unit]
 
-  def hitMap[A, G, P, S](offspring: Population[Individual[G, P]])(implicit archive: monocle.Lens[S, scala.collection.Map[A, Int]], niche: Niche[G, P, A]) = new Archive[S] {
-
-    override def apply(state: S) = {
+  def hitMap[A, G, P, S](offspring: Population[Individual[G, P]], archive: monocle.Lens[S, scala.collection.Map[A, Int]], niche: Niche[G, P, A]) =
+    State.gets { state: S =>
       archive.modify { archive =>
-          val offSpringArchive = offspring.groupBy(niche).map { case (k, v) => (k -> v.size) }
+        val offSpringArchive = offspring.groupBy(niche).map { case (k, v) => (k -> v.size) }
 
         offSpringArchive.foldLeft(archive) {
           case (a, (a2key, a2value)) =>
@@ -36,7 +34,6 @@ object archive {
         }
       }(state)
     }
-  }
 
 }
 

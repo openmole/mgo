@@ -20,29 +20,3 @@
 //import fr.iscpif.mgo._
 //import scalaz._
 //
-//trait Profile <: Algorithm with GeneticAlgorithm with AllFunctions with NicheFunctions {
-//
-//  type STATE = Unit
-//  def initialState = Unit
-//
-//  implicit val fitness: Fitness[Double]
-//  implicit val niche: Niche[Int]
-//  implicit val nicheEqual = Equal.equal[Int](_ == _)
-//  implicit val mergeClones = youngest
-//  def cloneRate = 0.0
-//
-//  override def breeding(pop: Pop, lambda: Int): State[AlgorithmState, Vector[G]] =
-//    onRank(profileRanking).apply(pop) flatMap { challenged =>
-//      def fight = tournament(challenged, pop, size => math.round(math.log10(size).toInt))
-//      interleaveClones(newGenomes(fight, pop), fight.map(_.genome), lambda)
-//    }
-//
-//  override def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop] =
-//    for {
-//      p1 <- merge(population, offspring)
-//      p2 <- applyCloneStrategy(p1)
-//      p3 <- removeNaN(p2)
-//      p4 <- nicheElitism(keepBestRanked(1), p3)
-//    } yield p4
-//
-//}
