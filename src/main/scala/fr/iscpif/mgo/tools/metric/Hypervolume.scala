@@ -17,8 +17,7 @@
 
 package fr.iscpif.mgo.tools.metric
 
-import fr.iscpif.mgo.Dominance
-
+import fr.iscpif.mgo.dominance._
 import collection.mutable.{ IndexedSeq => MIndexedSeq }
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
@@ -82,7 +81,7 @@ object Hypervolume {
    */
   def apply(front: Seq[Seq[Double]], referencePoint: ReferencePoint): Double = {
     def dominates(point: Seq[Double], other: Seq[Double]): Boolean =
-      Dominance.nonStrictDominance.isDominated(other, point)
+      nonStrictDominance.isDominated(other, point)
 
     val dimensions = referencePoint.size
 

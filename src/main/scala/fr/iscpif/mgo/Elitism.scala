@@ -21,13 +21,16 @@ import scala.annotation.tailrec
 import scala.util.Random
 import scalaz.Scalaz._
 import scalaz._
+import fitness._
+import ranking._
+import diversity._
+import niche._
 
+object elitism {
 
-trait ElitismFunctions <: Fitness with Niche with Ranking with Diversity { this: Algorithm =>
+  trait KeepInNiche[G, P, S] extends (Population[Individual[G, P]] => State[AlgorithmState[S], Population[Individual[G, P]]])
 
-  trait KeepInNiche extends (Pop => State[AlgorithmState, Pop])
-
-  def merge(population: Pop, offspring: Pop) = State[AlgorithmState, Pop] { s =>
+  def merge[G, P, S](population: Population[Individual[G, P]], offspring: Population[Individual[G, P]]) = State[S, Population[Individual[G, P]]] { s =>
     (s, population ++ offspring)
   }
 
@@ -43,11 +46,11 @@ trait ElitismFunctions <: Fitness with Niche with Ranking with Diversity { this:
 
   trait IsNaN[A] <: (A => Boolean)
 
-  def removeNaN[A](population: Pop)(implicit fitness: Fitness[A], isNaN: IsNaN[A]) =
-     State { s: AlgorithmState => s -> population.filterNot(i => isNaN(fitness(i))) }
+  def removeNaN[G, P, S, A](population: Population[Individual[G, P]], fitness: Fitness[G, P, A])(implicit isNaN: IsNaN[A]) =
+     State { s: S => s -> population.filterNot(i => isNaN(fitness(i))) }
 
-  def keepNonDominated(mu: Int, population: Pop)(implicit ranking: Ranking, diversity: Diversity, random: monocle.Lens[AlgorithmState, Random]) = {
-    def newPopulation: State[Random, Pop] =
+  def keepNonDominated[G, P, S](mu: Int, population: Population[Individual[G, P]], ranking: Ranking[G, P], diversity: Diversity[G, P]) = {
+    def newPopulation: State[Random, Population[Individual[G, P]]] =
       if (population.size < mu) State.state { population }
       else {
         val ranks = ranking(population).map {
@@ -85,18 +88,18 @@ trait ElitismFunctions <: Fitness with Niche with Ranking with Diversity { this:
         else State.state { selected }
       }
 
-    random lifts newPopulation
+    random[S] lifts newPopulation
   }
 
 
-  def keepBest(mu: Int, population: Pop)(implicit ranking: Ranking) = {
-      def newPopulation: Pop =
+  def keepBest[G, P, S](mu: Int, population: Population[Individual[G, P]])(implicit ranking: Ranking[G, P]) = {
+      def newPopulation: Population[Individual[G, P]] =
         if (population.size < mu) population
         else {
           val ranks = ranking(population).map(_())
           (population zip ranks).sortBy { _._2 }.map(_._1).take(mu)
         }
-      State { s: AlgorithmState => s -> newPopulation }
+      State { s: S => s -> newPopulation }
     }
 
 
@@ -156,21 +159,21 @@ trait ElitismFunctions <: Fitness with Niche with Ranking with Diversity { this:
   }*/
 
 
-  def keepRandom(nicheSize: Int)(implicit random: monocle.Lens[AlgorithmState, Random]) = new KeepInNiche {
-    override def apply(population: Pop) = {
+  def keepRandom[G, P, S](nicheSize: Int) = new KeepInNiche[G, P, S] {
+    override def apply(population: Population[Individual[G, P]]) = {
       def keep = State { rng: Random => (rng, rng.shuffle(population).take(nicheSize)) }
-      random lifts keep
+      random[S] lifts keep
     }
   }
 
-  def keepBestRanked(mu: Int)(implicit ranking: Ranking) = new KeepInNiche  {
-    override def apply(population: Pop) = State.state {
+  def keepBestRanked[G, P, S](mu: Int)(implicit ranking: Ranking[G, P]) = new KeepInNiche[G, P, S]  {
+    override def apply(population: Population[Individual[G, P]]) = State.state {
       val ranks = ranking(population).map(_())
       (population zip ranks).sortBy(_._2).unzip._1.take(mu)
     }
   }
 
-  def nicheElitism[N](keep: KeepInNiche, population: Pop)(implicit niche: Niche[N], equal: Equal[N]): State[AlgorithmState, Pop] =
+  def nicheElitism[G, P, S, N](keep: KeepInNiche[G, P, S], population: Population[Individual[G, P]])(implicit niche: Niche[G, P, N], equal: Equal[N]) =
     for {
       pops <- group(population.toList)(equal.contramap(niche)).traverseS { is => keep(is.to[Vector]) }
     } yield pops.flatten.toVector

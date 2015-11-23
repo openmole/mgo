@@ -27,6 +27,14 @@ import scala.concurrent.duration._
 
 package object mgo {
 
+  implicit def common[S] = monocle.macros.Lenser[AlgorithmState[S]](_.common)
+  implicit def state[S] = monocle.macros.Lenser[AlgorithmState[S]](_.state)
+  implicit def generation[S] = common[S] composeLens CommonState.generation
+  implicit def startTime[S] = common[S] composeLens CommonState.startTime
+  implicit def random[S] = common[S] composeLens CommonState.random
+
+  def updateGeneration[S] = State[AlgorithmState[S], Unit] { s => generation[S].modify(_ + 1)(s) }
+
   type Population[I] = Vector[I]
 
   object Population {
@@ -83,29 +91,25 @@ package object mgo {
   def randomGenomes[G](randomGenome: State[Random, G], size: Int) =
     randomGenome.generate(size).map(_.toVector)
 
-  def evolution(algorithm: Algorithm, lambda: Int)(
-    newGenome: State[Random, algorithm.G],
-    express: (algorithm.G => State[Random, algorithm.P]),
-    termination: Termination[algorithm.AlgorithmState]) = new {
+  def evolution[G, P, S](algorithm: Algorithm[G, P, S], lambda: Int)(
+    newGenome: State[Random, G],
+    express: (G => State[Random, P]),
+    termination: Termination[AlgorithmState[S]]) = new {
 
-    import algorithm._
+    def expressMonad = (g: G) => common[S] lifts Individual(g, express)
 
-    def expressMonad = (g: G) => algorithm.common lifts Individual(g, express)
-
-    def step(population: Pop): State[AlgorithmState, Pop] = {
-
+    def step(population: Population[Individual[G, P]]): State[AlgorithmState[S], Population[Individual[G, P]]] =
       for {
-        breed <- breeding(population, lambda)
+        breed <- algorithm.breeding(population, lambda)
         offspring <- breed.traverseS(expressMonad)
-        population <- elitism(population, offspring)
+        population <- algorithm.elitism(population, offspring)
         _ <- updateGeneration
       } yield population
-    }
 
-    def eval(random: Random): Pop = run(random)._2
+    def eval(random: Random): Population[Individual[G, P]] = run(random)._2
 
-    def run(random: Random) = {
-      @tailrec def run0(pop: Pop, state: AlgorithmState): (AlgorithmState, Pop) = {
+    def run(rng: Random) = {
+      @tailrec def run0(pop: Population[Individual[G, P]], state: AlgorithmState[S]): (AlgorithmState[S], Population[Individual[G, P]]) = {
         val (s1, res) = step(pop).run(state)
         val (s2, cond) = termination.run(s1)
         if (cond) (s2, res)
@@ -116,12 +120,12 @@ package object mgo {
 
       val allRun =
         for {
-          genomes <- algorithm.random.lifts(initialGenomes)
+          genomes <- random[S] lifts initialGenomes
           initialPop <- genomes.traverseS(expressMonad)
-          finalPop <- State[AlgorithmState, Pop] { state: AlgorithmState => run0(initialPop, state) }
+          finalPop <- State[AlgorithmState[S], Population[Individual[G, P]]] { state: AlgorithmState[S] => run0(initialPop, state) }
         } yield finalPop
 
-      allRun.run(algorithmState(random))
+      allRun.run(algorithm.algorithmState(rng))
     }
   }
 
@@ -148,12 +152,5 @@ package object mgo {
   }
 
   def never[S] = State { state: S => (state, false) }
-
-  case class History[+C](history: List[C], age: Int @@ CloneFunctions.Age = 1)
-
-  implicit def historyHistoryLens[C] = monocle.macros.Lenser[History[C]](_.history)
-  implicit def historyAgeLens[C] = monocle.macros.Lenser[History[C]](_.age)
-  implicit def historyToList[C](h: History[C]) = h.history
-  implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(List(c)) }
 
 }

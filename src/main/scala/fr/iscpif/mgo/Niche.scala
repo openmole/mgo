@@ -18,30 +18,27 @@ package fr.iscpif.mgo
 
 import scalaz._
 
-trait Niche <: Pop {
-  trait Niche[+T] <: (Ind => T)
-}
+object niche {
+  trait Niche[G, P, +T] <: (Individual[G, P] => T)
 
-trait NicheFunctions <: Niche {
-
-  def grid(gridSize: Seq[Double], grid: Ind => Seq[Double]) = new Niche[Seq[Int]] {
-    def apply(individual: Ind): Seq[Int] =
+  def grid[G, P](gridSize: Seq[Double], grid: Individual[G, P] => Seq[Double]) = new Niche[G, P, Seq[Int]] {
+    def apply(individual: Individual[G, P]): Seq[Int] =
       (grid(individual) zip gridSize).map {
         case (x, g) => (x / g).toInt
       }.toArray.toSeq
   }
 
-  def genomeProfile(x: Int, nX: Int)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) =
-    new Niche[Int] {
-      override def apply(individual: Ind): Int = {
+  def genomeProfile[G, P](x: Int, nX: Int)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]) =
+    new Niche[G, P, Int] {
+      override def apply(individual: Individual[G, P]): Int = {
         val niche = (values.get(individual.genome)(x) * nX).toInt
         if (niche == nX) niche - 1 else niche
       }
     }
 
-  def mapGenomePlotter (x: Int, nX: Int, y: Int, nY: Int)(implicit values: Lens[G, Seq[Double] @@ Genome.Value]) =
-    new Niche[(Int, Int)] {
-      override def apply(i: Ind) = {
+  def mapGenomePlotter[G, P] (x: Int, nX: Int, y: Int, nY: Int)(implicit values: Lens[G, Seq[Double] @@ genome.Value]) =
+    new Niche[G, P, (Int, Int)] {
+      override def apply(i: Individual[G, P]) = {
         val (nicheX, nicheY) = ((values.get(i.genome)(x) * nX).toInt, (values.get(i.genome)(y) * nY).toInt)
         (if (nicheX == nX) nicheX - 1 else nicheX, if (nicheY == nY) nicheY - 1 else nicheY)
       }

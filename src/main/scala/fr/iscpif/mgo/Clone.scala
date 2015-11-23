@@ -20,17 +20,16 @@ import scala.annotation.tailrec
 import scala.util.Random
 import scalaz._
 
-object CloneFunctions {
+object clone {
   sealed trait Age
-}
 
-import CloneFunctions._
+  def interleaveClones[G, P, S](
+    genomes: State[AlgorithmState[S], Vector[G]],
+    clones: State[AlgorithmState[S], G],
+    lambda: Int,
+    cloneStrategy: CloneStrategy[P]): State[AlgorithmState[S], Vector[G]] = {
 
-trait CloneFunctions { this: Algorithm =>
-
-  def interleaveClones(genomes: State[AlgorithmState, Vector[G]], clones: State[AlgorithmState, G], lambda: Int)(implicit random: monocle.Lens[AlgorithmState, Random], cloneStrategy: CloneStrategy): State[AlgorithmState, Vector[G]] = {
-
-    @tailrec def interleaveClones0(acc: List[G], pool: List[G], lambda: Int, state: AlgorithmState): (AlgorithmState, List[G]) = {
+    @tailrec def interleaveClones0(acc: List[G], pool: List[G], lambda: Int, state: AlgorithmState[S]): (AlgorithmState[S], List[G]) = {
       if (lambda <= 0) (state, acc)
       else if (random.get(state).nextDouble() < cloneStrategy.cloneRate) {
         val (newState, c) = clones.run(state)
@@ -47,12 +46,12 @@ trait CloneFunctions { this: Algorithm =>
       }
     }
 
-    State { state: AlgorithmState => interleaveClones0(List(), List(), lambda, state) }.map(_.toVector)
+    State { state: AlgorithmState[S] => interleaveClones0(List(), List(), lambda, state) }.map(_.toVector)
   }
 
-  def applyCloneStrategy(population: Pop)(implicit genomeEquality: Equal[G], cloneStrategy: CloneStrategy) = {
+  def applyCloneStrategy[G, P, STATE](population: Population[Individual[G, P]], cloneStrategy: CloneStrategy[P])(implicit genomeEquality: Equal[G]) = {
     def newPop =
-      group(population.toList)(genomeEquality.contramap[Ind](_.genome)).
+      group(population.toList)(genomeEquality.contramap[Individual[G, P]](_.genome)).
         map {
           _.reduce {
             (i1, i2) =>
@@ -61,35 +60,39 @@ trait CloneFunctions { this: Algorithm =>
           }
         }
 
-    State { s: AlgorithmState => s -> newPop.toVector }
+    State { s: STATE => s -> newPop.toVector }
   }
 
-  trait CloneStrategy {
+  trait CloneStrategy[P] {
     def append(old: P, young: => P): P
     def cloneRate: Double
   }
 
-  def youngest = new CloneStrategy {
+  def youngest[P] = new CloneStrategy[P] {
     override def append(old: P, young: => P): P = young
     def cloneRate = 0.0
   }
 
-  def queue[C](size: Int, cloneRate: Double = 0.2)(implicit historyLens: monocle.Lens[P, List[C]], ageLens: monocle.Lens[P, Int @@ Age]) = {
-    val _cloneRate = cloneRate
-    new CloneStrategy {
+  case class History[C](history: List[C], age: Int @@ Age = 1)
 
+  implicit def historyToList[C](h: History[C]) = h.history
+  implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(List(c)) }
+
+  def queue[C](size: Int, cloneRate: Double = 0.2) = {
+    val _cloneRate = cloneRate
+    new CloneStrategy[History[C]] {
       def cloneRate = _cloneRate
 
-      override def append(old: P, young: => P): P = {
-        val oldAge = ageLens.get(old)
-        val youngAge = ageLens.get(young)
+      override def append(old: History[C], young: => History[C]): History[C] = {
+        val oldAge = old.age
+        val youngAge = young.age
 
-        def oldP = historyLens.get(old).takeRight(oldAge)
-        def youngP = historyLens.get(young).takeRight(youngAge)
+        def oldP = old.history.takeRight(oldAge)
+        def youngP = young.history.takeRight(youngAge)
 
-        def newP = historyLens.set((oldP ::: youngP).takeRight(size))(old)
+        def newP = old.copy(history = (oldP ::: youngP).takeRight(size))
 
-        ageLens.set(oldAge + youngAge)(newP)
+        newP.copy(age = oldAge + youngAge)
       }
     }
   }

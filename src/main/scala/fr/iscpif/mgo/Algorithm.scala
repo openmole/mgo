@@ -16,54 +16,36 @@
  */
 package fr.iscpif.mgo
 
-import Algorithm.CommonState
 import monocle.macros._
 
 import scala.util.Random
 import scalaz._
 import Scalaz._
 
-trait Pop {
-  type G
-  type P
+/**
+ * Represent a state of the evolution algorithm
+ */
+@Lenses case class CommonState(
+  generation: Long @@ Generation,
+  startTime: Long @@ Start = System.currentTimeMillis(),
+  random: Random)
+
+case class AlgorithmState[S](
+  common: CommonState,
+  state: S)
+
+trait Algorithm[G, P, S] {
+
   type Ind = Individual[G, P]
   type Pop = Population[Ind]
-}
 
-object Algorithm {
-  /**
-   * Represent a state of the evolution algorithm
-   */
-  @Lenses case class CommonState(
-    generation: Long @@ Generation,
-    startTime: Long @@ Start = System.currentTimeMillis(),
-    random: Random)
-}
-
-trait Algorithm extends Pop {
-
-  /** Type of the state maintained to study the evolution of the algorithm */
-  type STATE
-
-  case class AlgorithmState(
-    common: CommonState,
-    state: STATE)
-
-  implicit def common = monocle.macros.Lenser[AlgorithmState](_.common)
-  implicit def state = monocle.macros.Lenser[AlgorithmState](_.state)
-  implicit def generation = common composeLens CommonState.generation
-  implicit def startTime = common composeLens CommonState.startTime
-  implicit def random = common composeLens CommonState.random
-
-  def initialState: STATE
+  def initialState: S
 
   def algorithmState(random: Random, generation: Long = 0) =
     AlgorithmState(state = initialState, common = CommonState(random = random, generation = generation))
 
-  def updateGeneration = State[AlgorithmState, Unit] { s => generation.modify(_ + 1)(s) }
-
-  def breeding(population: Pop, lambda: Int): State[AlgorithmState, Vector[G]]
-  def elitism(population: Pop, offspring: Pop): State[AlgorithmState, Pop]
+  def breeding(population: Pop, lambda: Int): State[AlgorithmState[S], Vector[G]]
+  def elitism(population: Pop, offspring: Pop): State[AlgorithmState[S], Pop]
 
 }
 

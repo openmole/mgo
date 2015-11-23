@@ -19,25 +19,27 @@ package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.algorithm._
+import fitness._
+import genome._
+import clone._
 
 import scala.util.Random
 import scalaz._
-import Scalaz._
+import ga._
 
 object TestNSGAIISphere extends App {
 
-  val nsgaII = new NSGAII {
-    def mu = 100
-    def fitness = Fitness(i => Seq(i.phenotype))
-    type P = Double
-  }
-
-  import nsgaII._
+  val algo =
+    nsga2[Double](
+      mu = 10,
+      fitness = Fitness(i => Seq(i.phenotype))
+    )()
 
   def dimensions = 10
-  def problem(g: G): State[Random, P] = State { rng: Random => (rng, sphere(genomeValues.get(g))) }
+  def problem(g: GAGenome) = State { rng: Random => (rng, sphere(g.genomeValue)) }
 
-  val evo = evolution(nsgaII, 100)(randomGenome(dimensions), problem, afterGeneration(100))
+  val evo = evolution(algo, 100)(randomGenome(dimensions), problem, afterGeneration(100))
+
   println(evo.eval(42).minBy(_.phenotype))
 
 }
@@ -45,25 +47,22 @@ object TestNSGAIISphere extends App {
 object TestNSGAIIStochastic extends App {
   def average(s: Seq[Double]) = s.sum / s.size
 
-  val nsgaII = new NSGAII {
-    def mu = 100
-    def fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
-    override val cloneStrategy = queue(100)
-    type P = History[Double]
-  }
-
-  import nsgaII._
+  val algo =
+    nsga2[History[Double]](
+      mu = 100,
+      fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
+    )(cloneStrategy = queue(100))
 
   def dimensions = 10
   def function = rastrigin
 
-  def problem(g: G) = State { rng: Random =>
+  def problem(g: GAGenome) = State { rng: Random =>
     val scaled = function.scale(g.genomeValue)
     val eval = function.compute(scaled)
-    (rng, eval + (rng.nextGaussian() /* 0.5 * math.sqrt(eval)*/ ))
+    (rng, eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval)))
   }
 
-  val evo = evolution(nsgaII, 100)(randomGenome(dimensions), problem, afterGeneration(10000))
+  val evo = evolution(algo, 100)(randomGenome(dimensions), problem, afterGeneration(10000))
 
   import scala.Ordering.Implicits._
   val (s, res) = evo.run(47)

@@ -20,39 +20,37 @@ import fr.iscpif.mgo.tools.Math._
 import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo.tools.metric.Hypervolume
 import Ordering.Implicits._
+import fitness._
+import niche._
+import dominance._
 
-trait Ranking <: Pop {
+object ranking {
 
   /**
-    * Compute the ranks of the individuals in the same order
-    */
-  trait Ranking extends (Pop => Vector[Lazy[Int]])
+   * Compute the ranks of the individuals in the same order
+   */
+  trait Ranking[G, P] extends (Population[Individual[G, P]] => Vector[Lazy[Int]])
 
-}
-
-trait RankingFunctions <: Ranking with Fitness with Niche {
-
-  implicit def monoObjectiveRanking(implicit doubleFitness: Fitness[Double]) = new Ranking {
-    def apply(values: Pop) = {
-      val byFitness = values.zipWithIndex.sortBy { case (i, id) => doubleFitness(i) }.map { _._2 }
-      byFitness.zipWithIndex.sortBy { case(id, _) => id }.map { case(_, rank) => Lazy(rank) }
+  implicit def monoObjectiveRanking[G, P](fitness: Fitness[G, P, Double]) = new Ranking[G, P] {
+    def apply(values: Population[Individual[G, P]]) = {
+      val byFitness = values.zipWithIndex.sortBy { case (i, id) => fitness(i) }.map { _._2 }
+      byFitness.zipWithIndex.sortBy { case (id, _) => id }.map { case (_, rank) => Lazy(rank) }
     }
   }
 
-  def hyperVolumeRanking(referencePoint: Seq[Double])(implicit mg: Fitness[Seq[Double]]) = new Ranking {
-    override def apply(values: Pop): Vector[Lazy[Int]] =
-      HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => mg(e)), referencePoint))
+  def hyperVolumeRanking[G, P](referencePoint: Seq[Double], fitness: Fitness[G, P, Seq[Double]]) = new Ranking[G, P] {
+    override def apply(values: Population[Individual[G, P]]): Vector[Lazy[Int]] =
+      HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => fitness(e)), referencePoint))
   }
 
-  def hierarchicalRanking(implicit mg: Fitness[Seq[Double]]) =  new Ranking {
-    override def apply(values: Pop): Vector[Lazy[Int]] =
-      HierarchicalRanking.upRank(values.map(v => mg(v)))
+  def hierarchicalRanking[G, P](fitness: Fitness[G, P, Seq[Double]]) = new Ranking[G, P] {
+    override def apply(values: Population[Individual[G, P]]): Vector[Lazy[Int]] =
+      HierarchicalRanking.upRank(values.map(v => fitness(v)))
   }
 
-  def paretoRanking(dominance: Dominance = Dominance.nonStrictDominance)(implicit mg: Fitness[Seq[Double]]) = new Ranking {
-    override def apply(values: Pop): Vector[Lazy[Int]] = {
-      assert(mg != null)
-      val fitnesses = values.map(i => mg(i))
+  def paretoRanking[G, P](fitness: Fitness[G, P, Seq[Double]], dominance: Dominance = nonStrictDominance) = new Ranking[G, P] {
+    override def apply(values: Population[Individual[G, P]]): Vector[Lazy[Int]] = {
+      val fitnesses = values.map(i => fitness(i))
 
       fitnesses.zipWithIndex.map {
         case (v1, index1) =>
@@ -70,13 +68,12 @@ trait RankingFunctions <: Ranking with Fitness with Niche {
     }
   }
 
+  def profileRanking[G, P](niche: Niche[G, P, Int], fitness: Fitness[G, P, Double]) = new Ranking[G, P] {
 
-  def profileRanking(implicit niche: Niche[Int], aggregation: Fitness[Double]) = new Ranking {
-
-    override def apply(population: Pop): Vector[Lazy[Int]] = {
+    override def apply(population: Population[Individual[G, P]]): Vector[Lazy[Int]] = {
       val (points, indexes) =
         population.map {
-          i => (niche(i).toDouble, aggregation(i))
+          i => (niche(i).toDouble, fitness(i))
         }.zipWithIndex.sortBy(_._1._1).unzip
 
       def signedSurface(p1: Point2D, p2: Point2D, p3: Point2D) = {

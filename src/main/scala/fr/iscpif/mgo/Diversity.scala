@@ -19,40 +19,37 @@ package fr.iscpif.mgo
 
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
-import fr.iscpif.mgo.tools.metric.{CrowdingDistance, Hypervolume, KNearestNeighboursAverageDistance}
+import fr.iscpif.mgo.tools.metric.{ CrowdingDistance, Hypervolume, KNearestNeighboursAverageDistance }
 
 import scala.util.Random
 import scalaz._
+import fitness._
 
 /**
  * Layer of the cake that compute a diversity metric for a set of values
  */
-trait Diversity <: Pop {
+object diversity {
   /** Compute the diversity metric of the values */
-  trait Diversity extends (Pop => State[Random, Vector[Lazy[Double]]])
-}
+  trait Diversity[G, P] extends (Population[Individual[G, P]] => State[Random, Vector[Lazy[Double]]])
 
-
-trait DiversityFunctions <: Diversity with Fitness {
-
- /* def closedCrowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
+  /* def closedCrowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
     override def apply(values: Pop) =
       State.state { ClosedCrowdingDistance(values.map(e => mg(e))) }
   }*/
 
-  def crowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
-    override def apply(values: Pop) =
-      CrowdingDistance(values.map(e => mg(e)))
+  def crowdingDistance[G, P](fitness: Fitness[G, P, Seq[Double]]) = new Diversity[G, P] {
+    override def apply(values: Population[Individual[G, P]]) =
+      CrowdingDistance(values.map(e => fitness(e)))
   }
 
-  def hypervolumeContribution(referencePoint: ReferencePoint)(implicit mg: Fitness[Seq[Double]]) = new Diversity {
-    override def apply(values: Pop) =
-      State.state { Hypervolume.contributions(values.map(e => mg(e)), referencePoint) }
+  def hypervolumeContribution[G, P](referencePoint: ReferencePoint, fitness: Fitness[G, P, Seq[Double]]) = new Diversity[G, P] {
+    override def apply(values: Population[Individual[G, P]]) =
+      State.state { Hypervolume.contributions(values.map(e => fitness(e)), referencePoint) }
   }
 
-  def KNearestNeighbours(k: Int)(implicit mg: Fitness[Seq[Double]]) = new Diversity {
-    override def apply(values: Pop) =
-      State.state { KNearestNeighboursAverageDistance(values.map(e => mg(e)), k) }
+  def KNearestNeighbours[G, P](k: Int, fitness: Fitness[G, P, Seq[Double]]) = new Diversity[G, P] {
+    override def apply(values: Population[Individual[G, P]]) =
+      State.state { KNearestNeighboursAverageDistance(values.map(e => fitness(e)), k) }
   }
 
 }

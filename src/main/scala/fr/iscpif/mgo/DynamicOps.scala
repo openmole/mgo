@@ -20,9 +20,10 @@ import scalaz._
 import util.Random
 import tools._
 
-trait DynamicOps <: Pop {
-  def dynamicOperator[OP](pop: Pop, genomePart: monocle.Lens[G, Option[Int]], exploration: Double, ops: Vector[OP]) = State { rng: Random =>
-    def stats(p: Pop) = {
+object dynamicOps {
+
+  def dynamicOperator[G, P, OP](pop: Population[Individual[G, P]], genomePart: monocle.Lens[G, Option[Int]], exploration: Double, ops: Vector[OP]): State[Random, OP] = State { rng: Random =>
+    def stats(p: Population[Individual[G, P]]) = {
       val working = p.flatMap(i => genomePart.get(i.genome))
       val count = working.groupBy(identity)
       (0 until ops.size).map {

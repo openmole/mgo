@@ -22,69 +22,57 @@ import scala.annotation.tailrec
 import scala.util.Random
 import scalaz._
 import Scalaz._
+import ranking._
+import niche._
+import crossover._
+import mutation._
+import diversity._
 
-trait Breeding { this: Algorithm =>
-  trait Selection <: State[AlgorithmState, Ind]
-}
+object breeding { //<: Breeding with Genome with Ranking with Diversity with Niche with Crossover with Mutation { this: Algorithm =>
 
-trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with Niche with Crossover with Mutation { this: Algorithm =>
+  type Selection[G, P, S] = State[AlgorithmState[S], Individual[G, P]]
 
   case class ChallengeResult[A](challenge: Vector[A])(implicit val ordering: scala.Ordering[A]) {
     def score(i: Int) = challenge(i)
+    def and[B](other: ChallengeResult[B]): ChallengeResult[(A, B)] = {
+      implicit val i2 = other.ordering
+      ChallengeResult(challenge zip other.challenge)
+    }
   }
 
-  trait Challenge[A] <: (Pop => State[AlgorithmState, ChallengeResult[A]]) { ch =>
-    def and[B](other: Challenge[B]) = {
-      new Challenge[(A, B)] {
-        def apply(pop: Pop): State[AlgorithmState, ChallengeResult[(A, B)]] =
-          for {
-            c1 <- ch(pop)
-            c2 <- other(pop)
-          } yield {
-            implicit val i1 = c1.ordering
-            implicit val i2 = c2.ordering
-            ChallengeResult(c1.challenge zip c2.challenge)
-          }
+  type Challenge[G, P, S, A] = (Population[Individual[G, P]] => State[S, ChallengeResult[A]])
+
+  def tournament[G, P, S, A](challenge: ChallengeResult[A], pop: Population[Individual[G, P]], rounds: (Int => Int) = _ => 1): Selection[G, P, S] = State { state =>
+    def newChallenger: Int = random[S].get(state).nextInt(pop.size)
+
+    @tailrec def round(champion: Int, rounds: Int): Int =
+      if (rounds <= 0) champion
+      else {
+        val challenger = newChallenger
+        import challenge.ordering._
+        val newChampion = if (challenge.score(challenger) > challenge.score(champion)) challenger else champion
+        round(newChampion, rounds - 1)
       }
-    }
+
+    (state, pop(round(newChallenger, rounds(pop.size))))
   }
 
-  def tournament[A](challenge: ChallengeResult[A], pop: Pop, rounds: (Int => Int) = _ => 1)(implicit random: monocle.Lens[AlgorithmState, Random]) = new Selection {
-
-    override def apply(state: AlgorithmState): (AlgorithmState, Ind) = {
-      def newChallenger: Int = random.get(state).nextInt(pop.size)
-
-      @tailrec def round(champion: Int, rounds: Int): Int =
-        if (rounds <= 0) champion
-        else {
-          val challenger = newChallenger
-          import challenge.ordering._
-          val newChampion = if (challenge.score(challenger) > challenge.score(champion)) challenger else champion
-          round(newChampion, rounds - 1)
-        }
-
-      (state, pop(round(newChallenger, rounds(pop.size))))
-    }
-  }
-
-
-  def onRank(implicit ranking: Ranking) = new Challenge[Lazy[Int]] {
-    def apply(pop: Pop) = State.state {
+  def onRank[G, P](ranking: Ranking[G, P]) = new Challenge[G, P, Random, Lazy[Int]] {
+    def apply(pop: Population[Individual[G, P]]) = State.state {
       val ordering = implicitly[scala.Ordering[Lazy[Int]]]
       new ChallengeResult(ranking(pop))(ordering.reverse)
     }
   }
 
-  def onDiversity(implicit diversity: Diversity, random: monocle.Lens[AlgorithmState, Random]) = new Challenge[Lazy[Double]] {
-    override def apply(pop: Pop) =
-      random.lifts { diversity(pop).map(div => new ChallengeResult(div)) }
+  def onDiversity[G, P](diversity: Diversity[G, P]) = new Challenge[G, P, Random, Lazy[Double]] {
+    override def apply(pop: Population[Individual[G, P]]) = diversity(pop).map(div => new ChallengeResult(div))
   }
 
-  def onHitCount[P](implicit hitMap: monocle.Lens[STATE, collection.Map[P, Int]], niche: Niche[P], stateLens: monocle.Lens[AlgorithmState, STATE]) = new Challenge[Int] {
+  def onHitCount[G, P, S, N](hitMap: monocle.Lens[S, collection.Map[N, Int]], niche: Niche[G, P, N]) = new Challenge[G, P, AlgorithmState[S], Int] {
 
-    override def apply(pop: Pop) =
+    override def apply(pop: Population[Individual[G, P]]) =
       for {
-        hits <- get[AlgorithmState] map (stateLens composeLens hitMap).get
+        hits <- state[S] map hitMap.get
       } yield {
         val popHits = pop.map(i => hits(niche(i)))
         val ordering = implicitly[scala.Ordering[Int]]
@@ -93,12 +81,10 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
 
   }
 
-  def randomSelection(population: Pop)(implicit random: monocle.Lens[AlgorithmState, Random]) = new Selection {
-    override def apply(state: AlgorithmState): (AlgorithmState, Ind) =
-      (state, population.random(random.get(state)))
-  }
-
-
+  def randomSelection[G, P, S](population: Population[Individual[G, P]]): Selection[G, P, S] =
+    for {
+      rng <- random[S]
+    } yield population.random(rng)
 
   /*trait NEATMating <: Mating with Lambda with BreedingContext with NEATGenome with P with F {
 
@@ -141,16 +127,14 @@ trait BreedingFunctions <: Breeding with Genome with Ranking with Diversity with
 
   }*/
 
-
-  def breed(
-    crossover: Crossover,
-    mutation: Mutation)(s1: Ind, s2: Ind) =
+  def breed[G, P, S](
+    crossover: Crossover[G, S],
+    mutation: Mutation[G, S])(s1: Individual[G, P], s2: Individual[G, P]): State[AlgorithmState[S], List[G]] =
     for {
       c <- crossover(s1.genome, s2.genome)
       (c1, c2) = c
       g1 <- mutation(c1)
       g2 <- mutation(c2)
     } yield { List(g2, g2) }
-
 
 }

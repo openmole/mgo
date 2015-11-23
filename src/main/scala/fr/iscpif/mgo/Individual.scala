@@ -20,7 +20,6 @@ package fr.iscpif.mgo
 import scala.util.Random
 import scalaz._
 import Scalaz._
-import Algorithm._
 
 object Individual {
 

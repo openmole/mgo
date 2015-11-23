@@ -16,14 +16,13 @@
  */
 package fr.iscpif.mgo
 
-/**
- * Dominance type between 2 solution
- */
-trait Dominance {
-  def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean
-}
-
-object Dominance {
+object dominance {
+  /**
+   * Dominance type between 2 solution
+   */
+  trait Dominance {
+    def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean
+  }
 
   /**
    * A point dominates another if the other is not better on any objective

@@ -19,24 +19,21 @@ package fr.iscpif.mgo
 import scala.util.Random
 import scalaz._
 
-object Genome {
+object genome {
   sealed trait Value
   sealed trait From
-}
-
-trait Genome { this: Algorithm =>
 
   implicit class GenomeDecorator[G](g: G) {
-    def genomeValue[V](implicit lens: monocle.Lens[G, V @@ Genome.Value]) = Tag.unwrap(lens.get(g))
+    def genomeValue[V](implicit lens: monocle.Lens[G, V @@ Value]): V = Tag.unwrap(lens.get(g))
   }
 
-  implicit class GenomeIndDecorator(ind: Ind) {
-    def genomeValue[V](implicit lens: monocle.Lens[G, V @@ Genome.Value]) = ind.genome.genomeValue
+  implicit class IndividualGenomeDecorator[G, P](i: Individual[G, P]) {
+    def genomeValue[V](implicit lens: monocle.Lens[G, V @@ Value]): V = Tag.unwrap(lens.get(i.genome))
   }
 
-  type RandomGenome = State[Random, G]
+  type RandomGenome[G] = State[Random, G]
 
-  def clamp(g: G)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value]) =
+  def clamp[G](g: G)(implicit values: monocle.Lens[G, Seq[Double] @@ Value]) =
     values.modify { v => v.map(tools.Math.clamp(_, 0.0, 1.0)) }(g)
 
 }

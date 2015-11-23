@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package fr.iscpif.mgo.archive
+//package fr.iscpif.mgo.archive
 
 //import fr.iscpif.mgo._
 //import fr.iscpif.mgo.genome.NEATGenome

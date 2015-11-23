@@ -23,30 +23,23 @@ import scala.language.higherKinds
 import scala.util.Random
 import scalaz._
 import Scalaz._
-import Genome._
 import tools._
+import dynamicOps._
 
-object Mutation {
+object mutation {
   sealed trait Sigma
-}
 
-import Mutation._
+  type Mutation[G, S] = (G => State[AlgorithmState[S], G])
 
-trait Mutation <: Pop { this: Algorithm =>
-  type Mutation = (G => State[AlgorithmState, G])
-}
-
-trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorithm =>
-
-  def identityMutation = new Mutation {
-    override def apply(g: G): State[AlgorithmState, G] = State.state (g)
+  def identityMutation[G, S] = new Mutation[G, S] {
+    override def apply(g: G) = State.state(g)
   }
 
-  def gaussianMutation(sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
+  def gaussianMutation[G, S](sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Mutation[G, S] = new Mutation[G, S] {
     override def apply(g: G) =
-     for {
-       rng <- random lifts get[Random]
-     } yield values.modify(g => g.map(_ + (rng.nextGaussian * sigma)))(g)
+      for {
+        rng <- random[S]
+      } yield values.modify(g => g.map(_ + (rng.nextGaussian * sigma)))(g)
   }
 
   /**
@@ -57,11 +50,11 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
    * Hinterding, and Zbigniew Michalewicz, Senior Member, IEEE) + How to Solve It,
    * Modern Heuristics
    */
-  def adaptiveCauchy(minimumSigma: Double = 1e-30)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], sigma: monocle.Lens[G, Seq[Double] @@ Sigma], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
+  def adaptiveCauchy[G, S](minimumSigma: Double = 1e-30)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value], sigma: monocle.Lens[G, Seq[Double] @@ Sigma]): Mutation[G, S] = new Mutation[G, S] {
 
     override def apply(g: G) =
       for {
-        rng <- random lifts get[Random ]
+        rng <- random[S]
       } yield {
         val newSigma = sigma.get(g).map { s => math.max(minimumSigma, s * math.exp(rng.nextGaussian)) }
 
@@ -72,15 +65,15 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
 
         newValues.foreach(v => assert(!v.isNaN))
 
-        (values.set(newValues) compose sigma.set(newSigma)) (g)
+        (values.set(newValues) compose sigma.set(newSigma))(g)
       }
 
   }
 
-  def bga(mutationRate: Int => Double, mutationRange: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
+  def bga[G, S](mutationRate: Int => Double, mutationRange: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Mutation[G, S] = new Mutation[G, S] {
     override def apply(g: G) =
       for {
-        rng <- random lifts get[Random ]
+        rng <- random[S] lifts get[Random]
       } yield {
         val vs = values.get(g)
 
@@ -98,7 +91,6 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
       }
   }
 
-
   /**
    * Polynomial mutationolynomial mutation by Deb and Goyal. If is the value of
    * the ith parameter selected for mutation with a probability pm and the result
@@ -107,10 +99,10 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
    * Based on the source code of Jmetal library
    * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
    */
-  def polynomial(distributionIndex: Double, mutationRate: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ Genome.Value], random: monocle.Lens[AlgorithmState, Random]) = new Mutation {
+  def polynomial[G, S](distributionIndex: Double, mutationRate: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Mutation[G, S] = new Mutation[G, S] {
     override def apply(g: G) =
       for {
-        rng <- random lifts get[Random ]
+        rng <- random[S]
       } yield {
         val newValues = values.get(g) map {
           v =>
@@ -145,13 +137,13 @@ trait MutationFunctions <: Mutation with Genome with DynamicOps { this: Algorith
       }
   }
 
-  def dynamicMutation(genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Mutation*)(implicit random: monocle.Lens[AlgorithmState, Random]) = (pop: Pop) => new Mutation {
-     def apply(g: G) =
-       for {
-         s <- random lifts (dynamicOperator(pop, genomePart, exploration, ops.zipWithIndex.toVector))
-         (mutation, i) = s
-         res <- mutation(genomePart.set(Some(i))(g))
-       } yield res
+  def dynamicMutation[G, P, S](genomePart: monocle.Lens[G, Option[Int]], exploration: Double = 0.1)(ops: Mutation[G, S]*) = (pop: Population[Individual[G, P]]) => new Mutation[G, S] {
+    def apply(g: G) =
+      for {
+        s <- random[S] lifts dynamicOperator(pop, genomePart, exploration, ops.zipWithIndex.toVector)
+        (mutation, i) = s
+        res <- mutation(genomePart.set(Some(i))(g))
+      } yield res
   }
 
 }
