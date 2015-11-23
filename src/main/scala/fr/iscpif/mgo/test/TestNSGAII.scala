@@ -27,31 +27,37 @@ import scala.util.Random
 import scalaz._
 import ga._
 
-object TestNSGAIISphere extends App {
-
-  val algo =
-    nsga2[Double](
-      mu = 10,
-      fitness = Fitness(i => Seq(i.phenotype))
-    )()
+object SphereNSGAII extends App {
 
   def dimensions = 10
   def problem(g: GAGenome) = State { rng: Random => (rng, sphere(g.genomeValue)) }
 
-  val evo = evolution(algo, 100)(randomGenome(dimensions), problem, afterGeneration(100))
+  val evo =
+    evolution(
+      NSGA2[Double](
+        mu = 10,
+        fitness = Fitness(i => Seq(i.phenotype))
+      )
+    )(
+        100,
+        randomGenome(dimensions),
+        problem,
+        afterGeneration(100)
+      )
 
   println(evo.eval(42).minBy(_.phenotype))
 
 }
 
-object TestNSGAIIStochastic extends App {
+object StochasticSphereNSGAII extends App {
   def average(s: Seq[Double]) = s.sum / s.size
 
   val algo =
-    nsga2[History[Double]](
+    stochasticNSGA2[Double](
       mu = 100,
-      fitness = Fitness(i => Seq(average(i.phenotype), -i.phenotype.size))
-    )(cloneStrategy = queue(100))
+      fitness = Fitness(i => Seq(average(i.phenotype))),
+      history = 100
+    )
 
   def dimensions = 10
   def function = rastrigin
@@ -62,7 +68,7 @@ object TestNSGAIIStochastic extends App {
     (rng, eval + (rng.nextGaussian() * 0.5 * math.sqrt(eval)))
   }
 
-  val evo = evolution(algo, 100)(randomGenome(dimensions), problem, afterGeneration(10000))
+  val evo = evolution(algo)(100, randomGenome(dimensions), problem, afterGeneration(10000))
 
   import scala.Ordering.Implicits._
   val (s, res) = evo.run(47)

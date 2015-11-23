@@ -29,17 +29,53 @@ import clone._
 import breeding._
 import elitism._
 import niche._
+import tools._
 
 package object algorithm {
 
-  def nsga2[P](
+  def NSGA2[P](
     mu: Int,
-    fitness: Fitness[GAGenome, P, Seq[Double]])(
-      operationExploration: Double = 0.1,
-      ranking: Ranking[GAGenome, P] = paretoRanking(fitness = fitness),
-      diversity: Diversity[GAGenome, P] = crowdingDistance(fitness),
-      cloneStrategy: CloneStrategy[P] = youngest[P]) = new Algorithm[GAGenome, P, Unit] {
+    fitness: Fitness[GAGenome, P, Seq[Double]],
+    operationExploration: Double = 0.1) = new Algorithm[GAGenome, P, Unit] {
     def initialState = Unit
+    def ranking = paretoRanking(fitness)
+    def diversity = crowdingDistance(fitness)
+
+    override def breeding(pop: Pop, lambda: Int): State[AlgorithmState[Unit], Vector[GAGenome]] = {
+      val challenge =
+        for {
+          c1 <- onRank(ranking)(pop)
+          c2 <- onDiversity(diversity)(pop)
+        } yield c1 and c2
+
+      (random[Unit] lifts challenge).flatMap { challenged =>
+        def fight = random[Unit] lifts tournament(challenged, pop)
+        newGenomes[P, Unit](fight, pop, operationExploration).generateFlat(lambda)
+      }
+    }
+
+    override def elitism(population: Pop, offspring: Pop): State[AlgorithmState[Unit], Pop] =
+      for {
+        _ <- State.init[AlgorithmState[Unit]]
+        p1 = merge(population, offspring)
+        p2 = applyCloneStrategy(p1, youngest)
+        p3 = removeNaN(p2, fitness)
+        p4 <- random[Unit] lifts keepNonDominated(mu, ranking, diversity)(p3)
+      } yield p4
+  }
+
+  def stochasticNSGA2[P](
+    mu: Int,
+    fitness: Fitness[GAGenome, History[P], Seq[Double]],
+    history: Int,
+    cloneRate: Double = 0.2,
+    operationExploration: Double = 0.1) = new Algorithm[GAGenome, History[P], Unit] {
+    def initialState = Unit
+
+    def fitnessWithReplications(i: Ind) = fitness(i) ++ Seq(1.0 / i.phenotype.size)
+    def ranking: Ranking[GAGenome, History[P]] = paretoRanking(fitnessWithReplications)
+    def diversity: Diversity[GAGenome, History[P]] = crowdingDistance(fitnessWithReplications)
+    def cloneStrategy = queue[P](size = history, cloneRate = cloneRate)
 
     override def breeding(pop: Pop, lambda: Int): State[AlgorithmState[Unit], Vector[GAGenome]] = {
       val challenge =
@@ -51,8 +87,8 @@ package object algorithm {
       (random[Unit] lifts challenge).flatMap { challenged =>
         def fight = random[Unit] lifts tournament(challenged, pop)
 
-        interleaveClones[GAGenome, P, Unit](
-          newGenomes[P, Unit](fight, pop, operationExploration),
+        interleaveClones[GAGenome, History[P], Unit](
+          newGenomes[History[P], Unit](fight, pop, operationExploration),
           fight.map(_.genome),
           lambda,
           cloneStrategy)
@@ -71,9 +107,8 @@ package object algorithm {
 
   def profile[P](
     fitness: Fitness[GAGenome, P, Double],
-    niche: Niche[GAGenome, P, Int])(
-      operationExploration: Double = 0.1,
-      cloneStrategy: CloneStrategy[P] = youngest[P]) = new Algorithm[GAGenome, P, Unit] {
+    niche: Niche[GAGenome, P, Int],
+    operationExploration: Double = 0.1) = new Algorithm[GAGenome, P, Unit] {
     def initialState = Unit
 
     implicit val nicheEqual = Equal.equal[Int](_ == _)
@@ -83,13 +118,54 @@ package object algorithm {
 
       (random[Unit] lifts challenge).flatMap { challenged =>
         def fight = random[Unit] lifts tournament(challenged, pop, size => math.round(math.log10(size).toInt))
+        newGenomes[P, Unit](fight, pop, operationExploration).generateFlat(lambda)
+      }
+    }
 
-        interleaveClones[GAGenome, P, Unit](
-          newGenomes[P, Unit](fight, pop, operationExploration),
-          fight.map(_.genome),
+    override def elitism(population: Pop, offspring: Pop): State[AlgorithmState[Unit], Pop] = {
+      val p1 = merge(population, offspring)
+      val p2 = applyCloneStrategy(p1, youngest)
+      val p3 = removeNaN(p2, fitness)
+
+      def keep(p: Pop) = State.gets { s: AlgorithmState[Unit] => keepBest(1, fitness)(p) }
+
+      for { p4 <- nicheElitism(keep, p3, niche) } yield p4
+    }
+  }
+
+  def stochasticProfile[P](
+    fitness: Fitness[GAGenome, History[P], Double],
+    niche: Niche[GAGenome, History[P], Int],
+    nicheSize: Int,
+    history: Int,
+    cloneRate: Double = 0.2,
+    operationExploration: Double = 0.1) = new Algorithm[GAGenome, History[P], Unit] {
+    def initialState = Unit
+
+    implicit val nicheEqual = Equal.equal[Int](_ == _)
+
+    def fitnessWithReplications(i: Ind) = Seq(fitness(i), 1.0 / i.phenotype.size)
+    def ranking: Ranking[GAGenome, History[P]] = paretoRanking(fitnessWithReplications)
+    def diversity: Diversity[GAGenome, History[P]] = crowdingDistance(fitnessWithReplications)
+    def cloneStrategy = queue[P](size = history, cloneRate = cloneRate)
+
+    override def breeding(pop: Pop, lambda: Int): State[AlgorithmState[Unit], Vector[GAGenome]] = {
+      val challenge =
+        for {
+          c1 <- onRank(ranking)(pop)
+          c2 <- onDiversity(diversity)(pop)
+        } yield c1 and c2
+
+      val generateClone = State { s: Random => (s, pop.random(s).genome) }
+
+      (random[Unit] lifts challenge).flatMap { challenged =>
+        def fight = random[Unit] lifts tournament(challenged, pop, size => math.round(math.log10(size).toInt))
+
+        interleaveClones[GAGenome, History[P], Unit](
+          newGenomes[History[P], Unit](fight, pop, operationExploration),
+          random[Unit] lifts generateClone,
           lambda,
-          cloneStrategy
-        )
+          cloneStrategy)
       }
     }
 
@@ -98,7 +174,7 @@ package object algorithm {
       val p2 = applyCloneStrategy(p1, cloneStrategy)
       val p3 = removeNaN(p2, fitness)
 
-      def keep(p: Pop) = State.gets { s: AlgorithmState[Unit] => keepBest(1, fitness)(p) }
+      def keep(p: Pop) = random[Unit] lifts keepNonDominated(nicheSize, ranking, diversity)(p)
 
       for { p4 <- nicheElitism(keep, p3, niche) } yield p4
     }

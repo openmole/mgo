@@ -33,11 +33,6 @@ package object mgo {
   implicit def startTime[S] = common[S] composeLens CommonState.startTime
   implicit def random[S] = common[S] composeLens CommonState.random
 
-  def updateGeneration[S] =
-    for {
-      s <- State.init[AlgorithmState[S]]
-    } yield generation[S].modify(_ + 1)(s)
-
   type Population[I] = Vector[I]
 
   object Population {
@@ -91,40 +86,45 @@ package object mgo {
     def generate(lambda: Int) = gen.map(Vector(_)).generateFlat(lambda)
   }
 
-  def randomGenomes[G](randomGenome: State[Random, G], size: Int) =
-    randomGenome.generate(size).map(_.toVector)
+  def randomGenomes[G](randomGenome: State[Random, G], size: Int) = randomGenome.generate(size).map(_.toVector)
 
-  def evolution[G, P, S](algorithm: Algorithm[G, P, S], lambda: Int)(
+  def expressMonad[G, P, S](express: (G => State[Random, P])) = (g: G) => common[S] lifts Individual(g, express)
+
+  def step[G, P, S](algorithm: Algorithm[G, P, S], lambda: Int, express: (G => State[Random, P]))(population: Population[Individual[G, P]]) =
+    for {
+      breed <- algorithm.breeding(population, lambda)
+      offspring <- breed.traverseS(expressMonad[G, P, S](express))
+      population <- algorithm.elitism(population, offspring)
+      s <- State.get[AlgorithmState[S]]
+      _ <- State.put(generation[S].modify(_ + 1)(s))
+    } yield population
+
+  def initialGenomes[G](newGenome: State[Random, G], size: Int) = newGenome.generate(size)
+
+  def evolution[G, P, S](algorithm: Algorithm[G, P, S])(
+    lambda: Int,
     newGenome: State[Random, G],
     express: (G => State[Random, P]),
-    termination: Termination[AlgorithmState[S]]) = new {
-
-    def expressMonad = (g: G) => common[S] lifts Individual(g, express)
-
-    def step(population: Population[Individual[G, P]]): State[AlgorithmState[S], Population[Individual[G, P]]] =
-      for {
-        breed <- algorithm.breeding(population, lambda)
-        offspring <- breed.traverseS(expressMonad)
-        population <- algorithm.elitism(population, offspring)
-        _ <- updateGeneration
-      } yield population
+    termination: Termination[AlgorithmState[S]],
+    onStep: AlgorithmState[S] => Unit = (_: AlgorithmState[S]) => {}) = new {
 
     def eval(random: Random): Population[Individual[G, P]] = run(random)._2
 
     def run(rng: Random) = {
-      @tailrec def run0(pop: Population[Individual[G, P]], state: AlgorithmState[S]): (AlgorithmState[S], Population[Individual[G, P]]) = {
-        val (s1, res) = step(pop).run(state)
+      @tailrec def run0(
+        population: Population[Individual[G, P]],
+        state: AlgorithmState[S]): (AlgorithmState[S], Population[Individual[G, P]]) = {
+        onStep(state)
+        val (s1, res) = step(algorithm, lambda, express)(population).run(state)
         val (s2, cond) = termination.run(s1)
         if (cond) (s2, res)
         else run0(res, s2)
       }
 
-      def initialGenomes = newGenome.generate(lambda)
-
       val allRun =
         for {
-          genomes <- random[S] lifts initialGenomes
-          initialPop <- genomes.traverseS(expressMonad)
+          genomes <- random[S] lifts initialGenomes(newGenome, lambda)
+          initialPop <- genomes.traverseS(expressMonad[G, P, S](express))
           finalPop <- State[AlgorithmState[S], Population[Individual[G, P]]] { state: AlgorithmState[S] => run0(initialPop, state) }
         } yield finalPop
 

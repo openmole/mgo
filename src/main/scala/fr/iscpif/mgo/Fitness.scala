@@ -16,12 +16,11 @@
  */
 package fr.iscpif.mgo
 
-
 object fitness {
 
-  trait Fitness[G, P, F] <: (Individual[G, P] => F)
+  type Fitness[G, P, F] = (Individual[G, P] => F)
 
-  def Fitness[G, P, F](f: (Individual[G, P] => F)) = new Fitness[ G, P, F] {
+  def Fitness[G, P, F](f: (Individual[G, P] => F)) = new Fitness[G, P, F] {
     override def apply(v1: Individual[G, P]): F = f(v1)
   }
 

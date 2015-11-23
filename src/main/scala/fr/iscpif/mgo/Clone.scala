@@ -78,7 +78,7 @@ object clone {
   implicit def historyToList[C](h: History[C]) = h.history
   implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(List(c)) }
 
-  def queue[C](size: Int, cloneRate: Double = 0.2) = {
+  def queue[C](size: Int, cloneRate: Double) = {
     val _cloneRate = cloneRate
     new CloneStrategy[History[C]] {
       def cloneRate = _cloneRate

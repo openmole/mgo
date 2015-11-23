@@ -21,6 +21,8 @@ import math._
 
 package object test {
 
+  def average(s: Seq[Double]) = s.sum / s.size
+
   trait Problem[I, O] {
     def scale(s: I): I
     def compute(i: I): O
