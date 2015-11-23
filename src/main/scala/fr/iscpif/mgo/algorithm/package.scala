@@ -33,8 +33,8 @@ package object algorithm {
 
   def nsga2[P](
     mu: Int,
-    fitness: Fitness[GAGenome, P, Seq[Double]],
-    operationExploration: Double = 0.1)(
+    fitness: Fitness[GAGenome, P, Seq[Double]])(
+      operationExploration: Double = 0.1,
       ranking: Ranking[GAGenome, P] = paretoRanking(fitness = fitness),
       diversity: Diversity[GAGenome, P] = crowdingDistance(fitness),
       cloneStrategy: CloneStrategy[P] = youngest[P]) = {
@@ -52,13 +52,11 @@ package object algorithm {
         (random[Unit] lifts challenge).flatMap { challenged =>
           def fight = tournament[GAGenome, P, Unit, (Lazy[Int], Lazy[Double])](challenged, pop)
 
-          val interleaved: State[AlgorithmState[Unit], Vector[GAGenome]] = interleaveClones[GAGenome, P, Unit](
+          interleaveClones[GAGenome, P, Unit](
             newGenomes[P, Unit](fight, pop, operationExploration),
             fight.map(_.genome),
             lambda,
             cloneStrategy)
-
-          interleaved
         }
       }
 
