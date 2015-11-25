@@ -83,6 +83,12 @@ package object mgo {
 
   }
 
+  def updateGeneration[S] =
+    for {
+      s <- State.get[AlgorithmState[S]]
+      _ <- State.put(generation[S].modify(_ + 1)(s))
+    } yield {}
+
   implicit class ElementStateDecorator[S, G](gen: State[S, G]) {
     def generate(lambda: Int) = gen.map(Vector(_)).generateFlat(lambda)
   }
@@ -96,8 +102,7 @@ package object mgo {
       breed <- algorithm.breeding(population, lambda)
       offspring <- breed.traverseS(expressMonad[G, P, S](express))
       population <- algorithm.elitism(population, offspring)
-      s <- State.get[AlgorithmState[S]]
-      _ <- State.put(generation[S].modify(_ + 1)(s))
+      _ <- updateGeneration[S]
     } yield population
 
   def initialGenomes[G](newGenome: State[Random, G], size: Int) = newGenome.generate(size)
