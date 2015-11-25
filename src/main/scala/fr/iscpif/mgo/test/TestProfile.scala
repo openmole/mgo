@@ -18,8 +18,7 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import algorithm._
-import ga._
+import algorithm.ga._
 import genome._
 import fitness._
 import niche._
@@ -64,7 +63,7 @@ object StochasticSphereProfile extends App {
   def niche = genomeProfile[GAGenome](0, 100)
 
   val stochastic =
-    stochasticProfile[Double](
+    noisyProfile[Double](
       fitness = Fitness(i => average(i.phenotype)),
       niche = niche,
       nicheSize = 10,

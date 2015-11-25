@@ -24,7 +24,6 @@ import scala.util.Random
 import scalaz._
 import Scalaz._
 import tools._
-import dynamicOps._
 
 object mutation {
   sealed trait Sigma

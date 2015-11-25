@@ -22,7 +22,6 @@ import tools._
 import scalaz._
 import Scalaz._
 import tools.Math._
-import dynamicOps._
 
 object crossover {
   type Crossover[G, S] = ((G, G) => State[AlgorithmState[S], (G, G)])

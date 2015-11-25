@@ -18,14 +18,13 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.algorithm._
+import fr.iscpif.mgo.algorithm.ga._
 import fitness._
 import genome._
 import clone._
 
 import scala.util.Random
 import scalaz._
-import ga._
 
 object SphereNSGAII extends App {
 
@@ -53,7 +52,7 @@ object StochasticSphereNSGAII extends App {
   def average(s: Seq[Double]) = s.sum / s.size
 
   val algo =
-    stochasticNSGA2[Double](
+    noisyNSGA2[Double](
       mu = 100,
       fitness = Fitness(i => Seq(average(i.phenotype))),
       history = 100

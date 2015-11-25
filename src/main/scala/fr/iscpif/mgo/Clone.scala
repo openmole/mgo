@@ -19,19 +19,22 @@ package fr.iscpif.mgo
 import scala.annotation.tailrec
 import scala.util.Random
 import scalaz._
+import tools._
 
 object clone {
   sealed trait Age
+
+  def generateClone[G, P](pop: Population[Individual[G, P]]) = State { s: Random => (s, pop.random(s).genome) }
 
   def interleaveClones[G, P, S](
     genomes: State[AlgorithmState[S], Vector[G]],
     clones: State[AlgorithmState[S], G],
     lambda: Int,
-    cloneStrategy: CloneStrategy[P]): State[AlgorithmState[S], Vector[G]] = {
+    cloneRate: Double): State[AlgorithmState[S], Vector[G]] = {
 
     @tailrec def interleaveClones0(acc: List[G], pool: List[G], lambda: Int, state: AlgorithmState[S]): (AlgorithmState[S], List[G]) = {
       if (lambda <= 0) (state, acc)
-      else if (random.get(state).nextDouble() < cloneStrategy.cloneRate) {
+      else if (random.get(state).nextDouble() < cloneRate) {
         val (newState, c) = clones.run(state)
         interleaveClones0(c :: acc, pool, lambda - 1, newState)
       } else {
@@ -65,12 +68,10 @@ object clone {
 
   trait CloneStrategy[P] {
     def append(old: P, young: => P): P
-    def cloneRate: Double
   }
 
   def youngest[P] = new CloneStrategy[P] {
     override def append(old: P, young: => P): P = young
-    def cloneRate = 0.0
   }
 
   case class History[C](history: List[C], age: Int @@ Age = 1)
@@ -78,11 +79,8 @@ object clone {
   implicit def historyToList[C](h: History[C]) = h.history
   implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(List(c)) }
 
-  def queue[C](size: Int, cloneRate: Double) = {
-    val _cloneRate = cloneRate
+  def queue[C](size: Int) = {
     new CloneStrategy[History[C]] {
-      def cloneRate = _cloneRate
-
       override def append(old: History[C], young: => History[C]): History[C] = {
         val oldAge = old.age
         val youngAge = young.age

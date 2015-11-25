@@ -17,6 +17,7 @@
 
 package fr.iscpif
 
+import fr.iscpif.mgo.tools._
 import org.apache.commons.math3.random._
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
@@ -155,5 +156,23 @@ package object mgo {
   }
 
   def never[S] = State { state: S => (state, false) }
+
+  def dynamicOperator[G, P, OP](pop: Population[Individual[G, P]], genomePart: monocle.Lens[G, Option[Int]], exploration: Double, ops: Vector[OP]): State[Random, OP] = State { rng: Random =>
+    def stats(p: Population[Individual[G, P]]) = {
+      val working = p.flatMap(i => genomePart.get(i.genome))
+      val count = working.groupBy(identity)
+      (0 until ops.size).map {
+        i =>
+          val size = count.getOrElse(i, Nil).size
+          i -> (size.toDouble / working.size)
+      }
+    }
+
+    def selected: Int =
+      if (rng.nextDouble < exploration) rng.nextInt(ops.size)
+      else multinomial(stats(pop).toList)(rng)
+
+    (rng, ops(selected))
+  }
 
 }
