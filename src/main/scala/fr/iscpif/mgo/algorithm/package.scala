@@ -202,7 +202,6 @@ package object algorithm {
       def fitnessWithReplications(i: Ind) = Seq(fitness(i), 1.0 / i.phenotype.size)
 
       def ranking: Ranking[GAGenome, History[P]] = paretoRanking(fitnessWithReplications)
-
       def diversity: Diversity[GAGenome, History[P]] = crowdingDistance(fitnessWithReplications)
 
       def cloneStrategy = queue[P](size = history)

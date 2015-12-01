@@ -74,10 +74,18 @@ object clone {
     override def append(old: P, young: => P): P = young
   }
 
-  case class History[C](history: List[C], age: Int @@ Age = 1)
+  object History {
+    implicit def historyIsFunctor = new Functor[History] {
+      override def map[A, B](fa: History[A])(f: (A) => B): History[B] = fa.copy(history = fa.history.map(f))
+    }
+
+    def apply[C](c: C) = new History(Vector(c))
+  }
+
+  case class History[C](history: Vector[C], age: Int @@ Age = 1)
 
   implicit def historyToList[C](h: History[C]) = h.history
-  implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(List(c)) }
+  implicit def stateOfCToHistory[S, C](c: State[S, C]) = c.map { c => History(c) }
 
   def queue[C](size: Int) = {
     new CloneStrategy[History[C]] {
@@ -88,7 +96,7 @@ object clone {
         def oldP = old.history.takeRight(oldAge)
         def youngP = young.history.takeRight(youngAge)
 
-        def newP = old.copy(history = (oldP ::: youngP).takeRight(size))
+        def newP = old.copy(history = (oldP ++ youngP).takeRight(size))
 
         newP.copy(age = oldAge + youngAge)
       }
