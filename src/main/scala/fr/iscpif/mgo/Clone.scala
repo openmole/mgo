@@ -93,7 +93,7 @@ object clone {
         val oldAge = old.age
         val youngAge = young.age
 
-        def oldP = old.history.takeRight(oldAge)
+        def oldP = old.history
         def youngP = young.history.takeRight(youngAge)
 
         def newP = old.copy(history = (oldP ++ youngP).takeRight(size))
