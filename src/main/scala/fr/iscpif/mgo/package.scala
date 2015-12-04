@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2012 reuillon
+ * Copyright (C) 2012 reuillon, Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,71 +36,6 @@ package object mgo {
   type Expression[G, P] = G => P
 
   type Objective[M[_], I] = Vector[I] => M[Vector[I]]
-
-  /**** Breeding composition ****/
-
-  def bindB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: Vector[G1] => Breeding[I, M, G2]): Breeding[I, M, G2] =
-    (individuals: Vector[I]) => for {
-      g1s <- b1(individuals)
-      g2s <- b2(g1s)(individuals)
-    } yield g2s
-
-  def zipB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: Breeding[I, M, G2]): Breeding[I, M, (G1, G2)] = zipWithB { (g1: G1, g2: G2) => (g1, g2) }(b1, b2)
-
-  def zipWithB[I, M[_]: Monad, G1, G2, G3](f: ((G1, G2) => G3))(b1: Breeding[I, M, G1], b2: Breeding[I, M, G2]): Breeding[I, M, G3] =
-    (individuals: Vector[I]) =>
-      for {
-        g1s <- b1(individuals)
-        g2s <- b2(individuals)
-      } yield (g1s, g2s).zipped.map(f)
-
-  def productB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G2] = productWithB[I, M, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
-
-  def productWithB[I, M[_]: Monad, G1, G2, G3](f: (G1, G2) => G3)(b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G3] =
-    (individuals: Vector[I]) =>
-      for {
-        g1s <- b1(individuals)
-        nested <- g1s.traverse[M, Vector[G3]] { (g1: G1) => b2(g1)(individuals).map { (g2s: Vector[G2]) => g2s.map { (g2: G2) => f(g1, g2) } } }
-      } yield Monad[Vector].join(nested)
-
-  /**** Expression composition ****/
-
-  def bindE[G, P1, P2](e1: Expression[G, P1], e2: P1 => Expression[G, P2]): Expression[G, P2] = (genome: G) => e2(e1(genome))(genome)
-
-  def zipE[G, P1, P2](e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, (P1, P2)] = zipWithE[G, P1, P2, (P1, P2)] { (p1: P1, p2: P2) => (p1, p2) }(e1, e2)
-
-  def zipWithE[G, P1, P2, P3](f: (P1, P2) => P3)(e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, P3] = (genome: G) => f(e1(genome), e2(genome))
-
-  /**** Objective composition ****/
-
-  def bindO[M[_]: Monad, I](o1: Objective[M, I], o2: Vector[I] => Objective[M, I]): Objective[M, I] =
-    (phenotypes: Vector[I]) =>
-      for {
-        selected1s <- o1(phenotypes)
-        selected2s <- o2(selected1s)(phenotypes)
-      } yield selected2s
-
-  def andO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
-    (phenotypes: Vector[I]) =>
-      for {
-        selected1s <- o1(phenotypes)
-        selected2s <- o2(phenotypes)
-      } yield selected1s.intersect(selected2s)
-
-  def orO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
-    (phenotypes: Vector[I]) =>
-      for {
-        selected1s <- o1(phenotypes)
-        selected2s <- o2(phenotypes)
-      } yield selected1s.union(selected2s)
-
-  def thenO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
-    (phenotypes: Vector[I]) =>
-      for {
-        selected1s <- o1(phenotypes)
-        selected2s <- o2(selected1s)
-      } yield selected2s
-
 
   /**** Running the EA ****/
 
@@ -177,7 +112,29 @@ package object mgo {
 
   /**** Breeding ****/
 
-  /** Generic Breeding functions **/
+  def bindB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: Vector[G1] => Breeding[I, M, G2]): Breeding[I, M, G2] =
+    (individuals: Vector[I]) => for {
+      g1s <- b1(individuals)
+      g2s <- b2(g1s)(individuals)
+    } yield g2s
+
+  def zipB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: Breeding[I, M, G2]): Breeding[I, M, (G1, G2)] = zipWithB { (g1: G1, g2: G2) => (g1, g2) }(b1, b2)
+
+  def zipWithB[I, M[_]: Monad, G1, G2, G3](f: ((G1, G2) => G3))(b1: Breeding[I, M, G1], b2: Breeding[I, M, G2]): Breeding[I, M, G3] =
+    (individuals: Vector[I]) =>
+      for {
+        g1s <- b1(individuals)
+        g2s <- b2(individuals)
+      } yield (g1s, g2s).zipped.map(f)
+
+  def productB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G2] = productWithB[I, M, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
+
+  def productWithB[I, M[_]: Monad, G1, G2, G3](f: (G1, G2) => G3)(b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G3] =
+    (individuals: Vector[I]) =>
+      for {
+        g1s <- b1(individuals)
+        nested <- g1s.traverse[M, Vector[G3]] { (g1: G1) => b2(g1)(individuals).map { (g2s: Vector[G2]) => g2s.map { (g2: G2) => f(g1, g2) } } }
+      } yield Monad[Vector].join(nested)
 
   def asB[I,I1,M[_]:Monad,G](itoi1: I => I1, breeding: Breeding[I1,M,G]): Breeding[I,M,G] =
     (individuals: Vector[I]) =>
@@ -192,14 +149,6 @@ package object mgo {
       indivsByNiche.valuesIterator.toVector.traverse[M,Vector[G]](breeding).map[Vector[G]](_.flatten)
     }
 
-  /** Mating **/
-
-  /** Crossover **/
-
-  /** Mutation **/
-
-  /** Stochasticity **/
-
   /** Breed a genome for subsequent stochastic expression */
   def withRandomGenB[I, M[_]: Monad, R, G](useRG: M[R])(breeding: Breeding[I,M,G]): Breeding[I,M,(R,G)] =
     (individuals: Vector[I]) =>
@@ -210,15 +159,47 @@ package object mgo {
 
   /**** Expression ****/
 
+  def bindE[G, P1, P2](e1: Expression[G, P1], e2: P1 => Expression[G, P2]): Expression[G, P2] = (genome: G) => e2(e1(genome))(genome)
+
+  def zipE[G, P1, P2](e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, (P1, P2)] = zipWithE[G, P1, P2, (P1, P2)] { (p1: P1, p2: P2) => (p1, p2) }(e1, e2)
+
+  def zipWithE[G, P1, P2, P3](f: (P1, P2) => P3)(e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, P3] = (genome: G) => f(e1(genome), e2(genome))
+
   def asE[G,G1,P](gtog1: G => G1, express: Expression[G1,P]): Expression[G,P] = (genome: G) => express(gtog1(genome))
 
   def withGenomeE[G,P](express: Expression[G,P]): Expression[G,(P,G)] = (genome: G) => (express(genome),genome)
 
   def withE[G,P](f: G => P): Expression[G,P] = f
 
-  /** Generic Expression functions **/
-
   /**** Objectives ****/
+
+  def bindO[M[_]: Monad, I](o1: Objective[M, I], o2: Vector[I] => Objective[M, I]): Objective[M, I] =
+    (phenotypes: Vector[I]) =>
+      for {
+        selected1s <- o1(phenotypes)
+        selected2s <- o2(selected1s)(phenotypes)
+      } yield selected2s
+
+  def andO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+    (phenotypes: Vector[I]) =>
+      for {
+        selected1s <- o1(phenotypes)
+        selected2s <- o2(phenotypes)
+      } yield selected1s.intersect(selected2s)
+
+  def orO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+    (phenotypes: Vector[I]) =>
+      for {
+        selected1s <- o1(phenotypes)
+        selected2s <- o2(phenotypes)
+      } yield selected1s.union(selected2s)
+
+  def thenO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+    (phenotypes: Vector[I]) =>
+      for {
+        selected1s <- o1(phenotypes)
+        selected2s <- o2(selected1s)
+      } yield selected2s
 
   def byNicheO[I,N,M[_]: Monad](niche: I => N, objective: Objective[M,I]): Objective[M,I] =
     (individuals: Vector[I]) => {
