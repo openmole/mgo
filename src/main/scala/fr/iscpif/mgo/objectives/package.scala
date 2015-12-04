@@ -23,6 +23,4 @@ import Scalaz._
 
 package object objectives {
 
-
-
 }
