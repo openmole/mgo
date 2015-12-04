@@ -54,9 +54,9 @@ package object mgo {
       } yield kept
 
   def runEA[I, M[_]: Monad, G](stepFunction: Vector[I] => M[Vector[I]]): Vector[I] => M[Vector[I]] =
-      runEAUntil[I,M,G](
-        {(_:Vector[I]) => false.point[M]},
-        stepFunction)
+    runEAUntil[I, M, G](
+      { (_: Vector[I]) => false.point[M] },
+      stepFunction)
 
   /*def runEAUntilNR[I, M[_]: Monad, G](
     stopCondition: Vector[I] => M[Boolean],
@@ -82,25 +82,25 @@ package object mgo {
   //TODO: Non-tail recursive fonction. Test performance.
   def runEAUntil[I, M[_]: Monad, G](
     stopCondition: Vector[I] => M[Boolean],
-    stepFunction: Vector[I] => M[Vector[I]])(population:Vector[I]): M[Vector[I]] =
+    stepFunction: Vector[I] => M[Vector[I]])(population: Vector[I]): M[Vector[I]] =
     (for {
-        stop <- stopCondition(population)
-      } yield {
-        if(stop) population.point[M]
-        else for {
-          newpop <- stepFunction(population)
-          next <- runEAUntil[I,M,G](stopCondition,stepFunction)(newpop)
-        } yield next
-      }).join
+      stop <- stopCondition(population)
+    } yield {
+      if (stop) population.point[M]
+      else for {
+        newpop <- stepFunction(population)
+        next <- runEAUntil[I, M, G](stopCondition, stepFunction)(newpop)
+      } yield next
+    }).join
 
   /**** Stop conditions ****/
 
-  def anyReaches[I,M[_]: Monad](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
+  def anyReaches[I, M[_]: Monad](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
     (population: Vector[I]) => population.exists(goalReached).point[M]
 
   /**** Pre-step functions ****/
 
-  def writepop[I,M[_]: Monad]: Vector[I] => M[IO[Unit]] =
+  def writepop[I, M[_]: Monad]: Vector[I] => M[IO[Unit]] =
     (population: Vector[I]) => (for {
       _ <- IO.putStrLn("Pop " ++ population.toString)
     } yield ()).point[M]
@@ -127,7 +127,12 @@ package object mgo {
         g2s <- b2(individuals)
       } yield (g1s, g2s).zipped.map(f)
 
-  def productB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G2] = productWithB[I, M, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
+  def productB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G2] =
+    productWithB[I, M, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
+
+  def asB[I, I1, M[_]: Monad, G](itoi1: I => I1, breeding: Breeding[I1, M, G]): Breeding[I, M, G] =
+    (individuals: Vector[I]) =>
+      breeding(individuals.map(itoi1))
 
   def productWithB[I, M[_]: Monad, G1, G2, G3](f: (G1, G2) => G3)(b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G3] =
     (individuals: Vector[I]) =>
@@ -136,21 +141,17 @@ package object mgo {
         nested <- g1s.traverse[M, Vector[G3]] { (g1: G1) => b2(g1)(individuals).map { (g2s: Vector[G2]) => g2s.map { (g2: G2) => f(g1, g2) } } }
       } yield Monad[Vector].join(nested)
 
-  def asB[I,I1,M[_]:Monad,G](itoi1: I => I1, breeding: Breeding[I1,M,G]): Breeding[I,M,G] =
-    (individuals: Vector[I]) =>
-      breeding(individuals.map(itoi1))
+  def mapB[I, M[_]: Monad, G](mutation: I => M[G]): Breeding[I, M, G] =
+    (individuals: Vector[I]) => individuals.traverse[M, G](mutation)
 
-  def mapB[I,M[_]: Monad,G](mutation: I => M[G]): Breeding[I,M,G] =
-    (individuals: Vector[I]) => individuals.traverse[M,G](mutation)
-
-  def byNicheB[I,N,M[_]:Monad,G](niche: I => N)(breeding: Breeding[I,M,G]): Breeding[I,M,G] =
+  def byNicheB[I, N, M[_]: Monad, G](niche: I => N)(breeding: Breeding[I, M, G]): Breeding[I, M, G] =
     (individuals: Vector[I]) => {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
-      indivsByNiche.valuesIterator.toVector.traverse[M,Vector[G]](breeding).map[Vector[G]](_.flatten)
+      indivsByNiche.valuesIterator.toVector.traverse[M, Vector[G]](breeding).map[Vector[G]](_.flatten)
     }
 
   /** Breed a genome for subsequent stochastic expression */
-  def withRandomGenB[I, M[_]: Monad, R, G](useRG: M[R])(breeding: Breeding[I,M,G]): Breeding[I,M,(R,G)] =
+  def withRandomGenB[I, M[_]: Monad, R, G](useRG: M[R])(breeding: Breeding[I, M, G]): Breeding[I, M, (R, G)] =
     (individuals: Vector[I]) =>
       for {
         bred <- breeding(individuals)
@@ -159,17 +160,20 @@ package object mgo {
 
   /**** Expression ****/
 
-  def bindE[G, P1, P2](e1: Expression[G, P1], e2: P1 => Expression[G, P2]): Expression[G, P2] = (genome: G) => e2(e1(genome))(genome)
+  def bindE[G, P1, P2](e1: Expression[G, P1], e2: P1 => Expression[G, P2]): Expression[G, P2] =
+    (genome: G) => e2(e1(genome))(genome)
 
-  def zipE[G, P1, P2](e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, (P1, P2)] = zipWithE[G, P1, P2, (P1, P2)] { (p1: P1, p2: P2) => (p1, p2) }(e1, e2)
+  def zipE[G, P1, P2](e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, (P1, P2)] =
+    zipWithE[G, P1, P2, (P1, P2)] { (p1: P1, p2: P2) => (p1, p2) }(e1, e2)
 
-  def zipWithE[G, P1, P2, P3](f: (P1, P2) => P3)(e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, P3] = (genome: G) => f(e1(genome), e2(genome))
+  def zipWithE[G, P1, P2, P3](f: (P1, P2) => P3)(e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, P3] =
+    (genome: G) => f(e1(genome), e2(genome))
 
-  def asE[G,G1,P](gtog1: G => G1, express: Expression[G1,P]): Expression[G,P] = (genome: G) => express(gtog1(genome))
+  def asE[G, G1, P](gtog1: G => G1, express: Expression[G1, P]): Expression[G, P] = (genome: G) => express(gtog1(genome))
 
-  def withGenomeE[G,P](express: Expression[G,P]): Expression[G,(P,G)] = (genome: G) => (express(genome),genome)
+  def withGenomeE[G, P](express: Expression[G, P]): Expression[G, (P, G)] = (genome: G) => (express(genome), genome)
 
-  def withE[G,P](f: G => P): Expression[G,P] = f
+  def withE[G, P](f: G => P): Expression[G, P] = f
 
   /**** Objectives ****/
 
@@ -201,10 +205,10 @@ package object mgo {
         selected2s <- o2(selected1s)
       } yield selected2s
 
-  def byNicheO[I,N,M[_]: Monad](niche: I => N, objective: Objective[M,I]): Objective[M,I] =
+  def byNicheO[I, N, M[_]: Monad](niche: I => N, objective: Objective[M, I]): Objective[M, I] =
     (individuals: Vector[I]) => {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
-      indivsByNiche.valuesIterator.toVector.traverse[M,Vector[I]](objective).map[Vector[I]](_.flatten)
+      indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)
     }
 
   /***********************************************/
