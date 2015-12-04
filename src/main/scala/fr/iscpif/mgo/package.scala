@@ -144,7 +144,7 @@ package object mgo {
     newpop.point[M]
   }*/
 
-
+  //TODO: Non-tail recursive fonction. Test performance.
   def runEAUntil[I, M[_]: Monad, G](
     stopCondition: Vector[I] => M[Boolean],
     stepFunction: Vector[I] => M[Vector[I]])(population:Vector[I]): M[Vector[I]] =
@@ -179,7 +179,7 @@ package object mgo {
 
   /** Generic Breeding functions **/
 
-  def breedAs[I,I1,M[_]:Monad,G](itoi1: I => I1, breeding: Breeding[I1,M,G]): Breeding[I,M,G] =
+  def asB[I,I1,M[_]:Monad,G](itoi1: I => I1, breeding: Breeding[I1,M,G]): Breeding[I,M,G] =
     (individuals: Vector[I]) =>
       breeding(individuals.map(itoi1))
 
@@ -200,11 +200,31 @@ package object mgo {
 
   /** Stochasticity **/
 
+  /** Breed a genome for subsequent stochastic expression */
+  def withRandomGenB[I, M[_]: Monad, R, G](useRG: M[R])(breeding: Breeding[I,M,G]): Breeding[I,M,(R,G)] =
+    (individuals: Vector[I]) =>
+      for {
+        bred <- breeding(individuals)
+        rgs <- useRG.replicateM(bred.size)
+      } yield rgs.toVector zip bred
+
   /**** Expression ****/
+
+  def asE[G,G1,P](gtog1: G => G1, express: Expression[G1,P]): Expression[G,P] = (genome: G) => express(gtog1(genome))
+
+  def withGenomeE[G,P](express: Expression[G,P]): Expression[G,(P,G)] = (genome: G) => (express(genome),genome)
+
+  def withE[G,P](f: G => P): Expression[G,P] = f
 
   /** Generic Expression functions **/
 
   /**** Objectives ****/
+
+  def byNicheO[I,N,M[_]: Monad](niche: I => N, objective: Objective[M,I]): Objective[M,I] =
+    (individuals: Vector[I]) => {
+      val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
+      indivsByNiche.valuesIterator.toVector.traverse[M,Vector[I]](objective).map[Vector[I]](_.flatten)
+    }
 
   /***********************************************/
 
