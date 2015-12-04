@@ -24,7 +24,7 @@ libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-generic" % mo
 
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
 
-val scalazVersion = "7.1.3"
+val scalazVersion = "7.1.5"
 
 libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % scalazVersion,

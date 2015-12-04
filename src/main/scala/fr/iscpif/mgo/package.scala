@@ -22,11 +22,191 @@ import org.apache.commons.math3.random._
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 import scala.util.Random
-import scalaz._
-import Scalaz._
 import scala.concurrent.duration._
 
+import scala.language.higherKinds
+import scalaz._
+import Scalaz._
+import scalaz.effect.IO
+
 package object mgo {
+
+  type Breeding[I, M[_], G] = Vector[I] => M[Vector[G]]
+
+  type Expression[G, P] = G => P
+
+  type Objective[M[_], I] = Vector[I] => M[Vector[I]]
+
+  /**** Breeding composition ****/
+
+  def bindB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: Vector[G1] => Breeding[I, M, G2]): Breeding[I, M, G2] =
+    (individuals: Vector[I]) => for {
+      g1s <- b1(individuals)
+      g2s <- b2(g1s)(individuals)
+    } yield g2s
+
+  def zipB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: Breeding[I, M, G2]): Breeding[I, M, (G1, G2)] = zipWithB { (g1: G1, g2: G2) => (g1, g2) }(b1, b2)
+
+  def zipWithB[I, M[_]: Monad, G1, G2, G3](f: ((G1, G2) => G3))(b1: Breeding[I, M, G1], b2: Breeding[I, M, G2]): Breeding[I, M, G3] =
+    (individuals: Vector[I]) =>
+      for {
+        g1s <- b1(individuals)
+        g2s <- b2(individuals)
+      } yield (g1s, g2s).zipped.map(f)
+
+  def productB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G2] = productWithB[I, M, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
+
+  def productWithB[I, M[_]: Monad, G1, G2, G3](f: (G1, G2) => G3)(b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G3] =
+    (individuals: Vector[I]) =>
+      for {
+        g1s <- b1(individuals)
+        nested <- g1s.traverse[M, Vector[G3]] { (g1: G1) => b2(g1)(individuals).map { (g2s: Vector[G2]) => g2s.map { (g2: G2) => f(g1, g2) } } }
+      } yield Monad[Vector].join(nested)
+
+  /**** Expression composition ****/
+
+  def bindE[G, P1, P2](e1: Expression[G, P1], e2: P1 => Expression[G, P2]): Expression[G, P2] = (genome: G) => e2(e1(genome))(genome)
+
+  def zipE[G, P1, P2](e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, (P1, P2)] = zipWithE[G, P1, P2, (P1, P2)] { (p1: P1, p2: P2) => (p1, p2) }(e1, e2)
+
+  def zipWithE[G, P1, P2, P3](f: (P1, P2) => P3)(e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, P3] = (genome: G) => f(e1(genome), e2(genome))
+
+  /**** Objective composition ****/
+
+  def bindO[M[_]: Monad, I](o1: Objective[M, I], o2: Vector[I] => Objective[M, I]): Objective[M, I] =
+    (phenotypes: Vector[I]) =>
+      for {
+        selected1s <- o1(phenotypes)
+        selected2s <- o2(selected1s)(phenotypes)
+      } yield selected2s
+
+  def andO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+    (phenotypes: Vector[I]) =>
+      for {
+        selected1s <- o1(phenotypes)
+        selected2s <- o2(phenotypes)
+      } yield selected1s.intersect(selected2s)
+
+  def orO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+    (phenotypes: Vector[I]) =>
+      for {
+        selected1s <- o1(phenotypes)
+        selected2s <- o2(phenotypes)
+      } yield selected1s.union(selected2s)
+
+  def thenO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+    (phenotypes: Vector[I]) =>
+      for {
+        selected1s <- o1(phenotypes)
+        selected2s <- o2(selected1s)
+      } yield selected2s
+
+
+  /**** Running the EA ****/
+
+  def stepEA[I, M[_]: Monad, G](
+    preStep: Vector[I] => M[Unit],
+    breeding: Breeding[I, M, G],
+    expression: Expression[G, I],
+    objective: Objective[M, I],
+    replacementStrategy: (Vector[I], Vector[I]) => Vector[I]): Vector[I] => M[Vector[I]] =
+    (population: Vector[I]) =>
+      for {
+        _ <- preStep(population)
+        bred <- breeding(population)
+        expressed <- bred.map(expression).point[M]
+        kept <- objective(replacementStrategy(population, expressed))
+      } yield kept
+
+  def runEA[I, M[_]: Monad, G](stepFunction: Vector[I] => M[Vector[I]]): Vector[I] => M[Vector[I]] =
+      runEAUntil[I,M,G](
+        {(_:Vector[I]) => false.point[M]},
+        stepFunction)
+
+  /*def runEAUntilNR[I, M[_]: Monad, G](
+    stopCondition: Vector[I] => M[Boolean],
+    stepFunction: Vector[I] => M[Vector[I]],
+    stop: Boolean = false)(population:Vector[I]): M[Vector[I]] =
+
+    var stop = false
+    var newpop = population
+
+    while(!stop) {
+      for {
+        stop_ <- stopCondition(newpop)
+        newpop_ <- stepFunction(newpop)
+      } yield {
+        stop = stop_
+        newpop = newpop_
+        ()}
+    }
+
+    newpop.point[M]
+  }*/
+
+
+  def runEAUntil[I, M[_]: Monad, G](
+    stopCondition: Vector[I] => M[Boolean],
+    stepFunction: Vector[I] => M[Vector[I]])(population:Vector[I]): M[Vector[I]] =
+    (for {
+        stop <- stopCondition(population)
+      } yield {
+        if(stop) population.point[M]
+        else for {
+          newpop <- stepFunction(population)
+          next <- runEAUntil[I,M,G](stopCondition,stepFunction)(newpop)
+        } yield next
+      }).join
+
+  /**** Stop conditions ****/
+
+  def anyReaches[I,M[_]: Monad](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
+    (population: Vector[I]) => population.exists(goalReached).point[M]
+
+  /**** Pre-step functions ****/
+
+  def writepop[I,M[_]: Monad]: Vector[I] => M[IO[Unit]] =
+    (population: Vector[I]) => (for {
+      _ <- IO.putStrLn("Pop " ++ population.toString)
+    } yield ()).point[M]
+
+  /**** Replacement strategies ****/
+
+  def muPlusLambda[I](parents: Vector[I], offsprings: Vector[I]): Vector[I] = parents ++ offsprings
+  def muCommaLambda[I](parents: Vector[I], offsprings: Vector[I]): Vector[I] = offsprings
+
+  /**** Breeding ****/
+
+  /** Generic Breeding functions **/
+
+  def breedAs[I,I1,M[_]:Monad,G](itoi1: I => I1, breeding: Breeding[I1,M,G]): Breeding[I,M,G] =
+    (individuals: Vector[I]) =>
+      breeding(individuals.map(itoi1))
+
+  def mapB[I,M[_]: Monad,G](mutation: I => M[G]): Breeding[I,M,G] =
+    (individuals: Vector[I]) => individuals.traverse[M,G](mutation)
+
+  def byNicheB[I,N,M[_]:Monad,G](niche: I => N)(breeding: Breeding[I,M,G]): Breeding[I,M,G] =
+    (individuals: Vector[I]) => {
+      val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
+      indivsByNiche.valuesIterator.toVector.traverse[M,Vector[G]](breeding).map[Vector[G]](_.flatten)
+    }
+
+  /** Mating **/
+
+  /** Crossover **/
+
+  /** Mutation **/
+
+  /** Stochasticity **/
+
+  /**** Expression ****/
+
+  /** Generic Expression functions **/
+
+  /**** Objectives ****/
+
+  /***********************************************/
 
   implicit def common[S] = monocle.macros.Lenser[AlgorithmState[S]](_.common)
   implicit def state[S] = monocle.macros.Lenser[AlgorithmState[S]](_.state)
