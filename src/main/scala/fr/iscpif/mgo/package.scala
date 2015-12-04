@@ -79,7 +79,7 @@ package object mgo {
     newpop.point[M]
   }*/
 
-  //TODO: Non-tail recursive fonction. Test performance.
+  //TODO: Non-tail recursive function. Test performance.
   def runEAUntil[I, M[_]: Monad, G](
     stopCondition: Vector[I] => M[Boolean],
     stepFunction: Vector[I] => M[Vector[I]])(population: Vector[I]): M[Vector[I]] =

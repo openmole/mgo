@@ -14,13 +14,12 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package fr.iscpif.mgo
 
 import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 
-package object objectives {
+object Breedings {
 
 }
