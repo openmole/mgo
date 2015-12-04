@@ -25,11 +25,11 @@ import genome._
 import ranking._
 import diversity._
 import clone._
-import breeding._
+import breedings._
 import elitism._
 import niche._
 import tools._
-import breeding._
+import breedings._
 import mutation._
 import crossover._
 
