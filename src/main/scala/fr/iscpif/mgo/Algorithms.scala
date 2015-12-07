@@ -70,28 +70,26 @@ object Algorithms {
     def breeding[M[_]: Monad](useRG: M[Random])(
       lambda: Int,
       fitness: Fitness[Vector[Double], Seq[Double]],
-      operationExploration: Double = 0.1): Breeding[(Int, Vector[Double]), M, (Int, Vector[Double])] =
-      (individuals: Vector[(Int, Vector[Double])]) => {
+      operationExploration: Double = 0.1): Breeding[(Vector[Double], Int), M, (Vector[Double], Int)] =
+      (individuals: Vector[(Vector[Double], Int)]) => {
 
         type V = Vector[Double]
-        type IWithOp = (Int, V)
-        type GWithOp = (Int, V)
+        type IWithOp = (V,Int)
+        type GWithOp = (V,Int)
 
         for {
           rg <- useRG
           selected <- tournament[IWithOp, (Lazy[Int], Lazy[Double]), M](useRG)(
             rankAndDiversity(
-              reversedRanking(paretoRanking[IWithOp] { (opWithI: IWithOp) => fitness(opWithI._2) }),
-              crowdingDistance[IWithOp] { (opWithI: IWithOp) => fitness(opWithI._2) }(rg)),
+              reversedRanking(paretoRanking[IWithOp] { (opWithI: IWithOp) => fitness(opWithI._1) }),
+              crowdingDistance[IWithOp] { (opWithI: IWithOp) => fitness(opWithI._1) }(rg)),
             lambda)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]])(individuals)
-          bred <- dynamicallyOpB[IWithOp, M, V, GWithOp, (V, V), (V, V)](useRG)(
-            { _._1 },
-            { (g: V, i: Int) => (i, g) }
-          )(asB[IWithOp, V, M, (V, V)](_._2, pairConsecutive[V, M]),
-              { case (g1, g2) => Vector(g1, g2).point[M] },
-              crossoversAndMutations[M](useRG),
-              operationExploration)(implicitly[Monad[M]])(selected)
-          clamped = (bred: Vector[GWithOp]).map { case (op, g) => (op, g.map { x: Double => max(0.0, min(1.0, x)) }) }
+          bred <- dynamicallyOpB[V, M, V, (V, V), (V, V)](useRG)(
+            pairConsecutive[V, M],
+            { case (g1, g2) => Vector(g1, g2).point[M] },
+            crossoversAndMutations[M](useRG),
+            operationExploration)(implicitly[Monad[M]])(selected)
+          clamped = (bred: Vector[GWithOp]).map { case (g,op) => (g.map { x: Double => max(0.0, min(1.0, x)) }, op) }
         } yield clamped
       }
 

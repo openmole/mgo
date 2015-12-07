@@ -179,30 +179,30 @@ object Breedings {
 
   /**** Dynamic breeding ****/
 
-  /** Dynamically selects an operator and applies it for each pair of parents. Types I and G2 contains the information about the operator with which they were generated. */
-  def dynamicallyOpB[I, M[_]: Monad, G1, G2, IS, G1S](useRG: M[Random])(
-    getOp: I => Int,
-    setOpG: (G1, Int) => G2)(
-      mate: Vector[I] => M[Vector[IS]],
-      unmate: G1S => M[Vector[G1]],
-      ops: Vector[IS => M[G1S]],
-      exploration: Double): Breeding[I, M, G2] =
-    (individuals: Vector[I]) => {
+  /** Dynamically selects an operator and applies it for each pair of parents.
+    *
+    * @param mate Used to turn the individuals into a vector of elements that will be input to the selected operator.
+    * @param unmate Used to turn a vector of elements output by the operator back into a vector of Gs. */
+  def dynamicallyOpB[I, M[_]: Monad, G, OI, OO](useRG: M[Random])(
+      mate: Vector[I] => M[Vector[OI]],
+      unmate: OO => M[Vector[G]],
+      ops: Vector[OI => M[OO]],
+      exploration: Double): Breeding[(I,Int), M, (G,Int)] =
+    (individuals: Vector[(I,Int)]) => {
       val total = individuals.size * 2
-      val proportion: Map[Int, Double] = individuals.map(getOp).groupBy(identity).mapValues(_.length.toDouble / total)
+      val proportion: Map[Int, Double] = individuals.map(_._2).groupBy(identity).mapValues(_.length.toDouble / total)
 
       def selectOp(rg: Random): Int =
         if (rg.nextDouble < exploration) rg.nextInt(ops.size)
         else multinomial(proportion.toList)(rg)
 
       for {
-        vmates <- mate(individuals)
+        vmates <- mate(individuals.map{_._1})
         rgs <- useRG.replicateM(vmates.size)
         offspringsAndOp <- (rgs.toVector zip vmates).map { case (rg, mates) => (selectOp(rg), mates) }
-          .traverse[M, (G1S, Int)] { case (selectedop, mates) => ops(selectedop)(mates).map[(G1S, Int)] { (_: G1S, selectedop) } }
-        bred <- offspringsAndOp.traverse[M, Vector[G2]] { case (offsprings, op) => unmate(offsprings).map[Vector[G2]] { (g1s: Vector[G1]) => g1s.map(setOpG(_: G1, op)) } }
+          .traverse[M, (OO, Int)] { case (selectedop, mates) => ops(selectedop)(mates).map[(OO, Int)] { (_: OO, selectedop) } }
+        bred <- offspringsAndOp.traverse[M, Vector[(G,Int)]] { case (offsprings, op) => unmate(offsprings).map[Vector[(G,Int)]] { (gs: Vector[G]) => gs.map((_: G, op)) } }
       } yield bred.toVector.flatten
     }
 
 }
-
