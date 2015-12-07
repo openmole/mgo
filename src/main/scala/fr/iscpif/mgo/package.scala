@@ -151,7 +151,7 @@ package object mgo {
     }
 
   /** Breed a genome for subsequent stochastic expression */
-  def withRandomGenB[I, M[_]: Monad, R, G](useRG: M[R])(breeding: Breeding[I, M, G]): Breeding[I, M, (R, G)] =
+  def withRandomGenB[I, M[_]: Monad, G](useRG: M[Random])(breeding: Breeding[I, M, G]): Breeding[I, M, (Random, G)] =
     (individuals: Vector[I]) =>
       for {
         bred <- breeding(individuals)

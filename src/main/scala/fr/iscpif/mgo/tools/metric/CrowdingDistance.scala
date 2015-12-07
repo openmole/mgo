@@ -35,11 +35,11 @@ object CrowdingDistance {
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
-  def apply(data: Vector[Seq[Double]]) = State[Random, Vector[Lazy[Double]]] { rng: Random =>
+  def apply(data: Vector[Seq[Double]])(rng: Random): Vector[Lazy[Double]] = {
     def res = data.transpose.map {
       d: Seq[Double] =>
         val grouped: Map[Double, Seq[Int]] =
-          (d.zipWithIndex).groupBy { case (d, _) => d }.mapValues { _.map { case (_, i) => i } }
+          d.zipWithIndex.groupBy { case (d, _) => d }.mapValues { _.map { case (_, i) => i } }
 
         val sortedDistances = grouped.keys.toSeq.sorted
 
@@ -71,7 +71,7 @@ object CrowdingDistance {
           }
         res.sortBy { case (_, indice) => indice }.map { case (c, _) => c }
     }.transpose.map { _.sum }.map(Lazy(_))
-    (rng, res)
+    res
   }
 
 }

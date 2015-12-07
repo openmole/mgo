@@ -29,6 +29,32 @@ import fitness._
  * Layer of the cake that compute a diversity metric for a set of values
  */
 object diversity {
+
+  /** Compute the diversity metric of the values */
+  type Diversity[I] = Population[I] => Vector[Lazy[Double]]
+
+  /* def closedCrowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
+    override def apply(values: Pop) =
+      State.state { ClosedCrowdingDistance(values.map(e => mg(e))) }
+  }*/
+
+  def crowdingDistance[I](fitness: Fitness[I, Seq[Double]])(rg: Random): Diversity[I] =
+    (values: Population[I]) =>
+      CrowdingDistance(values.map(e => fitness(e)))(rg)
+
+  def hypervolumeContribution[I](referencePoint: ReferencePoint, fitness: Fitness[I, Seq[Double]]): Diversity[I] =
+    (values: Population[I]) =>
+      Hypervolume.contributions(values.map(e => fitness(e)), referencePoint)
+
+  def KNearestNeighbours[I](k: Int, fitness: Fitness[I, Seq[Double]]): Diversity[I] =
+    (values: Population[I]) =>
+      KNearestNeighboursAverageDistance(values.map(e => fitness(e)), k)
+
+}
+
+object diversityOld {
+  import fitnessOld._
+
   /** Compute the diversity metric of the values */
   trait Diversity[G, P] extends (Population[Individual[G, P]] => State[Random, Vector[Lazy[Double]]])
 
@@ -39,7 +65,7 @@ object diversity {
 
   def crowdingDistance[G, P](fitness: Fitness[G, P, Seq[Double]]) = new Diversity[G, P] {
     override def apply(values: Population[Individual[G, P]]) =
-      CrowdingDistance(values.map(e => fitness(e)))
+      State { (rg: Random) => (rg, CrowdingDistance(values.map(e => fitness(e)))(rg)) }
   }
 
   def hypervolumeContribution[G, P](referencePoint: ReferencePoint, fitness: Fitness[G, P, Seq[Double]]) = new Diversity[G, P] {

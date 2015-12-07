@@ -19,6 +19,30 @@ package fr.iscpif.mgo
 import scalaz._
 
 object niche {
+  type Niche[-I, +T] = (I => T)
+
+  def grid[I](gridSize: Seq[Double], grid: I => Seq[Double]): Niche[I, Seq[Int]] =
+    (individual: I) => {
+      (grid(individual) zip gridSize).map {
+        case (x, g) => (x / g).toInt
+      }.toArray.toSeq
+    }
+
+  def genomeProfile[G](x: Int, nX: Int)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Niche[G, Int] =
+    (genome: G) => {
+      val niche = (values.get(genome)(x) * nX).toInt
+      if (niche == nX) niche - 1 else niche
+    }
+
+  def mapGenomePlotter[G](x: Int, nX: Int, y: Int, nY: Int)(implicit values: Lens[G, Seq[Double] @@ genome.Value]): Niche[G, (Int, Int)] =
+    (genome: G) => {
+      val (nicheX, nicheY) = ((values.get(genome)(x) * nX).toInt, (values.get(genome)(y) * nY).toInt)
+      (if (nicheX == nX) nicheX - 1 else nicheX, if (nicheY == nY) nicheY - 1 else nicheY)
+    }
+
+}
+
+object nicheOld {
   type Niche[-G, -P, +T] = (Individual[G, P] => T)
 
   def grid[G, P](gridSize: Seq[Double], grid: Individual[G, P] => Seq[Double]) = new Niche[G, P, Seq[Int]] {
@@ -45,3 +69,4 @@ object niche {
     }
 
 }
+

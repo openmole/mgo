@@ -27,6 +27,10 @@ import diversity._
 import niche._
 
 object elitism {
+  import fitnessOld._
+  import rankingOld._
+  import nicheOld._
+  import diversityOld._
 
   def merge[G, P](population: Population[Individual[G, P]], offspring: Population[Individual[G, P]]) = population ++ offspring
 

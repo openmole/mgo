@@ -18,6 +18,21 @@ package fr.iscpif.mgo
 
 object fitness {
 
+  type Fitness[I, F] = I => F
+
+  def Fitness[I, F](f: (I => F)): Fitness[I, F] =
+    (v1: I) => f(v1)
+
+  implicit class IndividualFitnessDecorator[I](i: I) {
+    def fitness[F](implicit f: Fitness[I, F]): F = f(i)
+  }
+
+  def asF[I1, I2, F](t: I2 => I1)(fitness: Fitness[I1, F]): Fitness[I2, F] = (i: I2) => fitness(t(i))
+
+}
+
+object fitnessOld {
+
   type Fitness[G, P, F] = (Individual[G, P] => F)
 
   def Fitness[G, P, F](f: (Individual[G, P] => F)) = new Fitness[G, P, F] {

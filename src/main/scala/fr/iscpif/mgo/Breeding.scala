@@ -29,6 +29,9 @@ import mutation._
 import diversity._
 
 object breeding {
+  import rankingOld._
+  import nicheOld._
+  import diversityOld._
 
   case class ChallengeResult[A](challenge: Vector[A])(implicit val ordering: scala.Ordering[A]) {
     def score(i: Int) = challenge(i)
@@ -131,6 +134,6 @@ object breeding {
       (c1, c2) = c
       g1 <- mutation(c1)
       g2 <- mutation(c2)
-    } yield { List(g2, g2) }
+    } yield { List(g1, g2) }
 
 }

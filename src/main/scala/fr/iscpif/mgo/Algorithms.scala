@@ -16,12 +16,101 @@
  */
 package fr.iscpif.mgo
 
+import fr.iscpif.mgo.fitness._
+import fr.iscpif.mgo.tools.Lazy
+
 import scala.language.higherKinds
+import scalaz.Ordering.{ LT, EQ, GT }
 import scalaz._
 import Scalaz._
 
+import Breedings._
+import ranking._
+import diversity._
+
+import scala.math.{ min, max }
+
+import scala.util.Random
+
 object Algorithms {
 
+  object NSGA2 {
 
+    def crossovers[M[_]: Monad](useRG: M[Random]): Vector[Crossover[(Vector[Double], Vector[Double]), M, (Vector[Double], Vector[Double])]] =
+      Vector(
+        replicatePairC(blxC(useRG)(0.1)),
+        replicatePairC(blxC(useRG)(0.5)),
+        replicatePairC(blxC(useRG)(2.0)),
+        sbxC(useRG)(0.1),
+        sbxC(useRG)(0.5),
+        sbxC(useRG)(2.0)
+      )
+
+    def mutations[M[_]: Monad](useRG: M[Random]): Vector[Mutation[Vector[Double], M, Vector[Double]]] =
+      Vector(
+        bgaM(useRG)(mutationRate = 1.0 / _, mutationRange = 0.001),
+        bgaM(useRG)(mutationRate = 1.0 / _, mutationRange = 0.01),
+        bgaM(useRG)(mutationRate = 2.0 / _, mutationRange = 0.1),
+        bgaM(useRG)(mutationRate = _ => 0.5, mutationRange = 0.5)
+      )
+
+    def crossoversAndMutations[M[_]: Monad](useRG: M[Random]): Vector[((Vector[Double], Vector[Double])) => M[(Vector[Double], Vector[Double])]] =
+      for {
+        c <- crossovers(useRG)
+        m <- mutations(useRG)
+      } yield {
+        (mates: (Vector[Double], Vector[Double])) =>
+          for {
+            crossed <- c(mates)
+            m1 <- m(crossed._1)
+            m2 <- m(crossed._2)
+          } yield (m1, m2)
+      }
+
+    def breeding[M[_]: Monad](useRG: M[Random])(
+      lambda: Int,
+      fitness: Fitness[Vector[Double], Seq[Double]],
+      operationExploration: Double = 0.1): Breeding[(Int, Vector[Double]), M, (Int, Vector[Double])] =
+      (individuals: Vector[(Int, Vector[Double])]) => {
+
+        type V = Vector[Double]
+        type IWithOp = (Int, V)
+        type GWithOp = (Int, V)
+
+        for {
+          rg <- useRG
+          selected <- tournament[IWithOp, (Lazy[Int], Lazy[Double]), M](useRG)(
+            rankAndDiversity(
+              reversedRanking(paretoRanking[IWithOp] { (opWithI: IWithOp) => fitness(opWithI._2) }),
+              crowdingDistance[IWithOp] { (opWithI: IWithOp) => fitness(opWithI._2) }(rg)),
+            lambda)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]])(individuals)
+          bred <- dynamicallyOpB[IWithOp, M, V, GWithOp, (V, V), (V, V)](useRG)(
+            { _._1 },
+            { (g: V, i: Int) => (i, g) }
+          )(asB[IWithOp, V, M, (V, V)](_._2, pairConsecutive[V, M]),
+              { case (g1, g2) => Vector(g1, g2).point[M] },
+              crossoversAndMutations[M](useRG),
+              operationExploration)(implicitly[Monad[M]])(selected)
+          clamped = (bred: Vector[GWithOp]).map { case (op, g) => (op, g.map { x: Double => max(0.0, min(1.0, x)) }) }
+        } yield clamped
+      }
+
+    def elitism[M[_]: Monad]: Objective[M, (Int, Vector[Double])] = ???
+    /*(individuals: Vector[(Int, Vector[Double])]) =>
+        for {
+          //p2 = applyCloneStrategy(p1, youngest)
+          //p3 = removeNaN(p2, fitness)
+          //p4 <- random[Unit] lifts keepNonDominated(mu, ranking, diversity)(p3)
+        } yield */
+
+    def step[M[_]: Monad]: Vector[(Int, Vector[Double])] => M[Vector[(Int, Vector[Double])]] = ???
+    /*stepEA(
+        ???,
+        breeding,
+        ???,
+        elitism,
+        muPlusLambda[(Int,Vector[Double])]) */
+
+  }
 
 }

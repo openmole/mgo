@@ -16,17 +16,17 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.fitness.Fitness
+import fr.iscpif.mgo.fitnessOld.Fitness
 import fr.iscpif.mgo.tools.Lazy
 
 import scala.util.Random
 import scalaz._
 import genome._
-import ranking._
-import diversity._
+import rankingOld._
+import diversityOld._
 import clone._
 import elitism._
-import niche._
+import nicheOld._
 import tools._
 import breeding._
 import mutation._
@@ -93,6 +93,7 @@ package object algorithm {
       def diversity = crowdingDistance(fitness)
 
       override def breeding(pop: Pop, lambda: Int): State[AlgorithmState[Unit], Vector[GAGenome]] = {
+        //ChallengeResult[(Rank,Diversity)] == Vector[(Rank,Diversity)]
         val challenge =
           for {
             c1 <- onRank(ranking)(pop)

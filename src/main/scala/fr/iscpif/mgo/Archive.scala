@@ -22,6 +22,8 @@ import niche._
 
 object archive {
 
+  import nicheOld._
+
   def hitMap[A, G, P, S](offspring: Population[Individual[G, P]], archive: monocle.Lens[S, scala.collection.Map[A, Int]], niche: Niche[G, P, A]) =
     State.gets { state: S =>
       archive.modify { archive =>

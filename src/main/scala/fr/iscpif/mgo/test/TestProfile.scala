@@ -60,6 +60,8 @@ import util.Random
 //
 object StochasticSphereProfile extends App {
 
+  import nicheOld._
+
   def niche = genomeProfile[GAGenome](0, 100)
 
   val stochastic =

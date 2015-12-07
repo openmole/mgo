@@ -15,6 +15,9 @@ object Lazy {
    */
   def apply[T](f: => T) = new Lazy(f)
 
+  /** Pattern matching, (evaluates the lazy computation in x) */
+  def unapply[T](x: Lazy[T]): Option[T] = Some(x())
+
   /**
    * Defines ordering on lazy proxies
    */
