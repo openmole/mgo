@@ -22,7 +22,6 @@ import algorithm.ga._
 import genome._
 import fitness._
 import niche._
-import clone._
 
 import scalaz._
 import util.Random
@@ -61,12 +60,13 @@ import util.Random
 object StochasticSphereProfile extends App {
 
   import nicheOld._
+  import cloneOld._
 
   def niche = genomeProfile[GAGenome](0, 100)
 
   val stochastic =
     noisyProfile[Double](
-      fitness = Fitness(i => average(i.phenotype)),
+      fitness = i => average(i.phenotype),
       niche = niche,
       nicheSize = 10,
       history = 100

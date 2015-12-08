@@ -46,11 +46,11 @@ object ranking {
     (values: Population[I]) =>
       HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => fitness(e)), referencePoint))
 
-  def hierarchicalRanking[I](fitness: Fitness[I, Seq[Double]]): Ranking[I] =
+  def hierarchicalRanking[I](fitness: Fitness[I, Vector[Double]]): Ranking[I] =
     (values: Population[I]) =>
       HierarchicalRanking.upRank(values.map(v => fitness(v)))
 
-  def paretoRanking[I](fitness: Fitness[I, Seq[Double]], dominance: Dominance = nonStrictDominance): Ranking[I] =
+  def paretoRanking[I](fitness: Fitness[I, Vector[Double]], dominance: Dominance = nonStrictDominance): Ranking[I] =
     (values: Population[I]) => {
       val fitnesses = values.map(i => fitness(i))
 
@@ -115,8 +115,14 @@ object ranking {
   def reversedRanking[I](ranking: Ranking[I]): Vector[I] => Vector[Lazy[Int]] =
     (population: Vector[I]) => ranking(population).map { x => /*map lazyly*/ Lazy(-x()) }
 
+  //TODO: the following functions don't produce rankings and don't belong here.
   def rankAndDiversity[I](ranking: Ranking[I], diversity: Diversity[I]): Vector[I] => Vector[(Lazy[Int], Lazy[Double])] =
     (population: Vector[I]) => ranking(population) zip diversity(population)
+
+  def paretoRankingAndCrowdingDiversity[I](fitness: I => Vector[Double])(rg: Random): Vector[I] => Vector[(Lazy[Int], Lazy[Double])] =
+    rankAndDiversity(
+      reversedRanking(paretoRanking[I] { (i: I) => fitness(i) }),
+      crowdingDistance[I] { (i: I) => fitness(i) }(rg))
 
   //TODO: on doit pouvoir supprimer cet instance d'order spécifique à (Lazy[Int],Lazy[Double]) en utilisant une instance
   //d'Order pour (A,B) et pour Lazy[A]

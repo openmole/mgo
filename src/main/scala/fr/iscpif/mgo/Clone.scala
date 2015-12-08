@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 Romain Reuillon
+ * Copyright (C) 2015 Romain Reuillon, Guillaume Chérel
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -21,7 +21,7 @@ import scala.util.Random
 import scalaz._
 import tools._
 
-object clone {
+object cloneOld {
   sealed trait Age
 
   def generateClone[G, P](pop: Population[Individual[G, P]]) = State { s: Random => (s, pop.random(s).genome) }

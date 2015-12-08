@@ -21,7 +21,7 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.algorithm.ga._
 import fitness._
 import genome._
-import clone._
+import cloneOld._
 
 import scala.util.Random
 import scalaz._
@@ -35,7 +35,7 @@ object SphereNSGAII extends App {
     evolution(
       NSGA2[Double](
         mu = 10,
-        fitness = Fitness(i => Seq(i.phenotype))
+        fitness = i => Seq(i.phenotype)
       )
     )(
         100,
@@ -54,7 +54,7 @@ object StochasticSphereNSGAII extends App {
   val algo =
     noisyNSGA2[Double](
       mu = 100,
-      fitness = Fitness(i => Seq(average(i.phenotype))),
+      fitness = i => Seq(average(i.phenotype)),
       history = 100
     )
 
