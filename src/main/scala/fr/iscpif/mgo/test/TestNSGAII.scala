@@ -58,7 +58,7 @@ object SphereNSGAII extends App {
       finalpop <- ea(initialPop)
     } yield finalpop
 
-  println(res.run((EvolutionData(), ()))) //  .map[Unit].minBy((_: NSGA2.Individual).fitness.sum))
+  println(res.run((EvolutionData(random = newRNG(1)), ()))) //  .map[Unit].minBy((_: NSGA2.Individual).fitness.sum))
 
 }
 
