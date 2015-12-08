@@ -22,4 +22,27 @@ import Scalaz._
 
 object Objectives {
 
+  type Objective[I, M[_]] = Vector[I] => M[Vector[I]]
+
+  /** Returns the mu individuals with the highest ranks. */
+  def keepBestByO[I, K: Order, M[_]: Monad](f: Vector[I] => Vector[K], mu: Int): Objective[I, M] =
+    (individuals: Vector[I]) =>
+      if (individuals.size < mu) individuals.point[M]
+      else {
+        val scores = f(individuals)
+        val sortedBestToWorst = (individuals zip scores).sortBy { _._2 }(implicitly[Order[K]].reverseOrder.toScalaOrdering).map { _._1 }
+
+        sortedBestToWorst.take(mu).point[M]
+      }
+
+  /**** Clone strategies ****/
+  def applyCloneStrategy[I, G, M[_]: Monad](getGenome: I => G, cloneStrategy: Vector[I] => M[Vector[I]]): Objective[I, M] =
+    (individuals: Vector[I]) =>
+      for {
+        res <- individuals.groupBy(getGenome).valuesIterator.toVector.traverseM[M, I](cloneStrategy)
+      } yield res
+
+  def clonesKeepYoungest[C, M[_]: Monad](generation: C => Long): Vector[C] => M[Vector[C]] =
+    (clones: Vector[C]) => clones.maxBy(generation).point[Vector].point[M]
+
 }

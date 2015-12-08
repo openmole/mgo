@@ -21,5 +21,6 @@ import scalaz._
 import Scalaz._
 
 object Expressions {
+  type Expression[G, P] = G => P
 
 }

@@ -24,7 +24,7 @@ import scalaz._
 import genome._
 import rankingOld._
 import diversityOld._
-import clone._
+import cloneOld._
 import elitism._
 import nicheOld._
 import tools._

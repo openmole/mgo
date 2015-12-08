@@ -29,13 +29,12 @@ import scalaz._
 import Scalaz._
 import scalaz.effect.IO
 
+import mgo.Breedings._
+import mgo.Expressions._
+import mgo.Objectives._
+import fr.iscpif.mgo.Contexts._
+
 package object mgo {
-
-  type Breeding[I, M[_], G] = Vector[I] => M[Vector[G]]
-
-  type Expression[G, P] = G => P
-
-  type Objective[M[_], I] = Vector[I] => M[Vector[I]]
 
   /**** Running the EA ****/
 
@@ -43,7 +42,7 @@ package object mgo {
     preStep: Vector[I] => M[Unit],
     breeding: Breeding[I, M, G],
     expression: Expression[G, I],
-    objective: Objective[M, I],
+    objective: Objective[I, M],
     replacementStrategy: (Vector[I], Vector[I]) => Vector[I]): Vector[I] => M[Vector[I]] =
     (population: Vector[I]) =>
       for {
@@ -130,9 +129,9 @@ package object mgo {
   def productB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G2] =
     productWithB[I, M, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
 
-  def asB[I, I1, M[_]: Monad, G](itoi1: I => I1, breeding: Breeding[I1, M, G]): Breeding[I, M, G] =
+  def liftB[I, I1, M[_]: Monad, G1, G](itoi1: I => I1, g1tog: G1 => G, breeding: Breeding[I1, M, G1]): Breeding[I, M, G] =
     (individuals: Vector[I]) =>
-      breeding(individuals.map(itoi1))
+      breeding(individuals.map(itoi1)).map[Vector[G]] { (g1s: Vector[G1]) => g1s.map(g1tog) }
 
   def productWithB[I, M[_]: Monad, G1, G2, G3](f: (G1, G2) => G3)(b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G3] =
     (individuals: Vector[I]) =>
@@ -151,11 +150,11 @@ package object mgo {
     }
 
   /** Breed a genome for subsequent stochastic expression */
-  def withRandomGenB[I, M[_]: Monad, G](useRG: M[Random])(breeding: Breeding[I, M, G]): Breeding[I, M, (Random, G)] =
+  def withRandomGenB[I, M[_]: Monad: UseRG, G](breeding: Breeding[I, M, G]): Breeding[I, M, (Random, G)] =
     (individuals: Vector[I]) =>
       for {
         bred <- breeding(individuals)
-        rgs <- useRG.replicateM(bred.size)
+        rgs <- implicitly[UseRG[M]].useRG.replicateM(bred.size)
       } yield rgs.toVector zip bred
 
   /**** Expression ****/
@@ -177,35 +176,35 @@ package object mgo {
 
   /**** Objectives ****/
 
-  def bindO[M[_]: Monad, I](o1: Objective[M, I], o2: Vector[I] => Objective[M, I]): Objective[M, I] =
+  def bindO[M[_]: Monad, I](o1: Objective[I, M], o2: Vector[I] => Objective[I, M]): Objective[I, M] =
     (phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(selected1s)(phenotypes)
       } yield selected2s
 
-  def andO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+  def andO[M[_]: Monad, I](o1: Objective[I, M], o2: Objective[I, M]): Objective[I, M] =
     (phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(phenotypes)
       } yield selected1s.intersect(selected2s)
 
-  def orO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+  def orO[M[_]: Monad, I](o1: Objective[I, M], o2: Objective[I, M]): Objective[I, M] =
     (phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(phenotypes)
       } yield selected1s.union(selected2s)
 
-  def thenO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
+  def thenO[M[_]: Monad, I](o1: Objective[I, M], o2: Objective[I, M]): Objective[I, M] =
     (phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(selected1s)
       } yield selected2s
 
-  def byNicheO[I, N, M[_]: Monad](niche: I => N, objective: Objective[M, I]): Objective[M, I] =
+  def byNicheO[I, N, M[_]: Monad](niche: I => N, objective: Objective[I, M]): Objective[I, M] =
     (individuals: Vector[I]) => {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)

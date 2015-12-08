@@ -22,6 +22,10 @@ import scala.util.Random
 import scalaz._
 import Scalaz._
 
+import Breedings._
+import Expressions._
+import Objectives._
+
 /**
  * Represent a state of the evolution algorithm
  */
@@ -49,3 +53,26 @@ trait Algorithm[G, P, S] {
 
 }
 
+trait AlgorithmNew[I, M[_], G] {
+
+  implicit val m: Monad[M]
+
+  def initialM: M[Unit]
+  def initialGenomes: M[Vector[G]]
+  def breeding: Breeding[I, M, G]
+  def elitism: Objective[I, M]
+}
+
+/*object AlgorithmNew {
+  def apply[Individual, Genome, M[_]: Monad](
+    initialState_ : M[Vector[Individual]],
+    breeding_ : Breeding[Individual, M, Genome],
+    elitism_ : Objective[Individual, M]) = new AlgorithmNew {
+      implicit val m: Monad[M] = implicitly[Monad[M]]
+
+      def initialState = initialState_
+      def breeding = breeding_
+      def elitism = elitism_
+  }
+
+}*/ 
