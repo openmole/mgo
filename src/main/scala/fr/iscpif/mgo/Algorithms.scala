@@ -47,6 +47,12 @@ object Algorithms {
     case class Genome(values: V, operator: Maybe[Int], generation: Long)
     case class Individual(genome: Genome, fitness: Vector[Double])
 
+    def initialGenomes[M[_]: Monad: UseRG](mu: Int, genomeSize: Int): M[Vector[Genome]] =
+      for {
+        values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
+        genomes = values.map { (vs: Vector[Double]) => Genome(vs, Maybe.empty, 0) }
+      } yield genomes
+
     def crossovers[M[_]: Monad: UseRG]: Vector[Crossover[(V, V), M, (V, V)]] =
       Vector(
         replicatePairC(blxC(0.1)),
@@ -125,16 +131,12 @@ object Algorithms {
         elitism[M](mu),
         muPlusLambda[Individual])
 
-    def algorithm(mu: Int, lambda: Int, genomeSize: Int) = new AlgorithmNew[Individual, EvolutionStateMonad[Unit]#l, Genome] {
+    def algorithm(mu: Int, lambda: Int, genomeSize: Int) = new AlgorithmNew[Individual, EvolutionStateMonad[Unit]#l, Genome, (EvolutionData, Unit)] {
       implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
-      def initialM: EvolutionState[Unit, Unit] = State.put[(EvolutionData, Unit)]((EvolutionData(), ()))
+      def initialState: (EvolutionData, Unit) = (EvolutionData(), ())
 
-      def initialGenomes: EvolutionState[Unit, Vector[Genome]] =
-        for {
-          values <- GenomeVectorDouble.randomGenomes[EvolutionStateMonad[Unit]#l](mu, genomeSize)
-          genomes = values.map { (vs: Vector[Double]) => Genome(vs, Maybe.empty, 0) }
-        } yield genomes
+      def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l](mu, genomeSize)
 
       def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.breeding[EvolutionStateMonad[Unit]#l](lambda)
 

@@ -53,11 +53,11 @@ trait Algorithm[G, P, S] {
 
 }
 
-trait AlgorithmNew[I, M[_], G] {
+trait AlgorithmNew[I, M[_], G, S] {
 
   implicit val m: Monad[M]
 
-  def initialM: M[Unit]
+  def initialState: S
   def initialGenomes: M[Vector[G]]
   def breeding: Breeding[I, M, G]
   def elitism: Objective[I, M]

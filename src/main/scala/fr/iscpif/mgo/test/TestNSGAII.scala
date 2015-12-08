@@ -27,6 +27,42 @@ import scala.util.Random
 import scalaz._
 
 object SphereNSGAII extends App {
+  import Algorithms.NSGA2
+  import Contexts.default._
+  import Contexts._
+  import Expressions._
+
+  val mu = 10
+  val lambda = 100
+  def dimensions = 10
+  val maxiter = 100
+
+  def express: Expression[NSGA2.Genome, Vector[Double]] = { case NSGA2.Genome(values, _, _) => Vector(sphere(values)) }
+
+  val ea: Vector[NSGA2.Individual] => EvolutionState[Unit, Vector[NSGA2.Individual]] =
+    runEAUntil[NSGA2.Individual, EvolutionStateMonad[Unit]#l, NSGA2.Genome](
+      stopCondition = { (individuals: Vector[NSGA2.Individual]) =>
+        implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
+      },
+      stepFunction = NSGA2.step[EvolutionStateMonad[Unit]#l](
+        fitness = express,
+        mu = mu,
+        lambda = lambda
+      )
+    )
+
+  val res: EvolutionState[Unit, Vector[NSGA2.Individual]] =
+    for {
+      initialGenomes <- NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l](mu, dimensions)
+      initialPop = initialGenomes.map { (g: NSGA2.Genome) => NSGA2.Individual(g, express(g)) }
+      finalpop <- ea(initialPop)
+    } yield finalpop
+
+  println(res.run((EvolutionData(), ()))) //  .map[Unit].minBy((_: NSGA2.Individual).fitness.sum))
+
+}
+
+object SphereNSGAIIOld extends App {
 
   def dimensions = 10
   def problem(g: GAGenome) = State { rng: Random => (rng, sphere(g.genomeValue)) }

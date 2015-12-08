@@ -39,6 +39,7 @@ object Contexts {
     def getGeneration: M[Long]
     def setGeneration(i: Long): M[Unit]
     def incrementGeneration: M[Unit]
+    def generationReached(x: Long): M[Boolean]
   }
 
   object default {
@@ -64,7 +65,7 @@ object Contexts {
         } yield rg1
     }
 
-    implicit def evolutionStateGenerational[S]: Generational[({ type l[x] = EvolutionState[S, x] })#l] = new Generational[({ type l[x] = EvolutionState[S, x] })#l] {
+    implicit def evolutionStateGenerational[S]: Generational[EvolutionStateMonad[S]#l] = new Generational[EvolutionStateMonad[S]#l] {
       def getGeneration: EvolutionState[S, Long] =
         for {
           s <- State.get[(EvolutionData, S)]
@@ -78,6 +79,12 @@ object Contexts {
 
       def incrementGeneration: EvolutionState[S, Unit] =
         getGeneration >>= { (generation: Long) => setGeneration(generation + 1) }
+
+      def generationReached(x: Long): EvolutionState[S, Boolean] =
+        for {
+          g <- getGeneration
+        } yield (g >= x)
+
     }
 
   }
