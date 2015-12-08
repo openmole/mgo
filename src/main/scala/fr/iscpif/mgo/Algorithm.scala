@@ -61,6 +61,7 @@ trait AlgorithmNew[I, M[_], G, S] {
   def initialGenomes: M[Vector[G]]
   def breeding: Breeding[I, M, G]
   def elitism: Objective[I, M]
+
 }
 
 /*object AlgorithmNew {
@@ -74,5 +75,4 @@ trait AlgorithmNew[I, M[_], G, S] {
       def breeding = breeding_
       def elitism = elitism_
   }
-
-}*/ 
+}*/

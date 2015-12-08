@@ -38,7 +38,7 @@ object Algorithms {
       for {
         rg <- implicitly[UseRG[M]].useRG
         values = Vector.fill(n)(Vector.fill(genomeLength)(rg.nextDouble))
-      } yield values.toVector
+      } yield values
   }
 
   object NSGA2 {
