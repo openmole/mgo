@@ -51,14 +51,18 @@ object SphereNSGAII extends App {
       )
     )
 
-  val res: EvolutionState[Unit, Vector[NSGA2.Individual]] =
+  val evolution: EvolutionState[Unit, Vector[NSGA2.Individual]] =
     for {
       initialGenomes <- NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l](mu, dimensions)
       initialPop = initialGenomes.map { (g: NSGA2.Genome) => NSGA2.Individual(g, express(g)) }
       finalpop <- ea(initialPop)
     } yield finalpop
 
-  println(res.run((EvolutionData(random = newRNG(1)), ()))) //  .map[Unit].minBy((_: NSGA2.Individual).fitness.sum))
+  val (finalstate, finalpop) = evolution(EvolutionData[Unit](random = newRNG(1), s = ()))
+
+  println(finalstate)
+
+  println(finalpop)
 
 }
 

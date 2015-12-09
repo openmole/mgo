@@ -85,7 +85,7 @@ package object algorithm {
     def NSGA2[P](
       mu: Int,
       fitness: Fitness[GAGenome, P, Seq[Double]],
-      operationExploration: Double = 0.1) = new Algorithm[GAGenome, P, Unit] {
+      operationExploration: Double = 0.1) = new AlgorithmOld[GAGenome, P, Unit] {
       def initialState = Unit
 
       def ranking = paretoRanking(fitness)
@@ -121,7 +121,7 @@ package object algorithm {
       fitness: Fitness[GAGenome, History[P], Seq[Double]],
       history: Int,
       cloneRate: Double = 0.2,
-      operationExploration: Double = 0.1) = new Algorithm[GAGenome, History[P], Unit] {
+      operationExploration: Double = 0.1) = new AlgorithmOld[GAGenome, History[P], Unit] {
       def initialState = Unit
 
       def fitnessWithReplications(i: Ind) = fitness(i) ++ Seq(1.0 / i.phenotype.size)
@@ -163,7 +163,7 @@ package object algorithm {
     def profile[P](
       fitness: Fitness[GAGenome, P, Double],
       niche: Niche[GAGenome, P, Int],
-      operationExploration: Double = 0.1) = new Algorithm[GAGenome, P, Unit] {
+      operationExploration: Double = 0.1) = new AlgorithmOld[GAGenome, P, Unit] {
       def initialState = Unit
 
       implicit val nicheEqual = Equal.equal[Int](_ == _)
@@ -194,7 +194,7 @@ package object algorithm {
       nicheSize: Int,
       history: Int,
       cloneRate: Double = 0.2,
-      operationExploration: Double = 0.1) = new Algorithm[GAGenome, History[P], Unit] {
+      operationExploration: Double = 0.1) = new AlgorithmOld[GAGenome, History[P], Unit] {
       def initialState = Unit
 
       implicit val nicheEqual = Equal.equal[Int](_ == _)
@@ -237,7 +237,7 @@ package object algorithm {
 
     def PSE[P, Point](
       niche: Niche[GAGenome, P, Point],
-      operationExploration: Double = 0.1) = new Algorithm[GAGenome, P, collection.Map[Point, Int]] {
+      operationExploration: Double = 0.1) = new AlgorithmOld[GAGenome, P, collection.Map[Point, Int]] {
       implicit val pointEqual = Equal.equal[Point](_ == _)
 
       def initialState = Map()
@@ -262,7 +262,7 @@ package object algorithm {
       niche: Niche[GAGenome, P, Point],
       history: Int,
       cloneRate: Double = 0.2,
-      operationExploration: Double = 0.1) = new Algorithm[GAGenome, P, collection.Map[Point, Int]] {
+      operationExploration: Double = 0.1) = new AlgorithmOld[GAGenome, P, collection.Map[Point, Int]] {
       implicit val pointEqual = Equal.equal[Point](_ == _)
 
       def initialState = Map()

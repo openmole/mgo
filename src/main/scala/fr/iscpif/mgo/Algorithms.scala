@@ -34,9 +34,9 @@ import scala.math.{ min, max }
 object Algorithms {
 
   object GenomeVectorDouble {
-    def randomGenomes[M[_]: Monad: UseRG](n: Int, genomeLength: Int): M[Vector[Vector[Double]]] =
+    def randomGenomes[M[_]: Monad: RandomGen](n: Int, genomeLength: Int): M[Vector[Vector[Double]]] =
       for {
-        rg <- implicitly[UseRG[M]].useRG
+        rg <- implicitly[RandomGen[M]].split
         values = Vector.fill(n)(Vector.fill(genomeLength)(rg.nextDouble))
       } yield values
   }
@@ -47,13 +47,13 @@ object Algorithms {
     case class Genome(values: V, operator: Maybe[Int], generation: Long)
     case class Individual(genome: Genome, fitness: Vector[Double])
 
-    def initialGenomes[M[_]: Monad: UseRG](mu: Int, genomeSize: Int): M[Vector[Genome]] =
+    def initialGenomes[M[_]: Monad: RandomGen](mu: Int, genomeSize: Int): M[Vector[Genome]] =
       for {
         values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
         genomes = values.map { (vs: Vector[Double]) => Genome(vs, Maybe.empty, 0) }
       } yield genomes
 
-    def crossovers[M[_]: Monad: UseRG]: Vector[Crossover[(V, V), M, (V, V)]] =
+    def crossovers[M[_]: Monad: RandomGen]: Vector[Crossover[(V, V), M, (V, V)]] =
       Vector(
         replicatePairC(blxC(0.1)),
         replicatePairC(blxC(0.5)),
@@ -63,7 +63,7 @@ object Algorithms {
         sbxC(2.0)
       )
 
-    def mutations[M[_]: Monad: UseRG]: Vector[Mutation[V, M, V]] =
+    def mutations[M[_]: Monad: RandomGen]: Vector[Mutation[V, M, V]] =
       Vector(
         bgaM(mutationRate = 1.0 / _, mutationRange = 0.001),
         bgaM(mutationRate = 1.0 / _, mutationRange = 0.01),
@@ -71,7 +71,7 @@ object Algorithms {
         bgaM(mutationRate = _ => 0.5, mutationRange = 0.5)
       )
 
-    def crossoversAndMutations[M[_]: Monad: UseRG]: Vector[((V, V)) => M[(V, V)]] =
+    def crossoversAndMutations[M[_]: Monad: RandomGen]: Vector[((V, V)) => M[(V, V)]] =
       for {
         c <- crossovers[M]
         m <- mutations[M]
@@ -84,17 +84,17 @@ object Algorithms {
           } yield (m1, m2)
       }
 
-    def breeding[M[_]: Monad: UseRG: Generational](
+    def breeding[M[_]: Monad: RandomGen: Generational](
       lambda: Int,
       operationExploration: Double = 0.1): Breeding[Individual, M, Genome] =
       (individuals: Vector[Individual]) => {
 
         for {
-          rg <- implicitly[UseRG[M]].useRG
+          rg <- implicitly[RandomGen[M]].split
           generation <- implicitly[Generational[M]].getGeneration
           selected <- tournament[Individual, (Lazy[Int], Lazy[Double]), M](
             paretoRankingAndCrowdingDiversity[Individual] { (i: Individual) => i.fitness }(rg),
-            lambda)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]], implicitly[UseRG[M]])(individuals)
+            lambda)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]], implicitly[RandomGen[M]])(individuals)
           bred <- liftB[Individual, (V, Maybe[Int]), M, (V, Maybe[Int]), Genome](
             { (i: Individual) => (i.genome.values, i.genome.operator) },
             { case (values: V, op: Maybe[Int]) => Genome(values, op, generation) },
@@ -107,10 +107,10 @@ object Algorithms {
         } yield clamped
       }
 
-    def elitism[M[_]: Monad: UseRG](mu: Int): Objective[Individual, M] =
+    def elitism[M[_]: Monad: RandomGen](mu: Int): Objective[Individual, M] =
       (individuals: Vector[Individual]) =>
         for {
-          rg <- implicitly[UseRG[M]].useRG
+          rg <- implicitly[RandomGen[M]].split
           decloned <- applyCloneStrategy[Individual, Genome, M](
             { (i: Individual) => i.genome },
             clonesKeepYoungest[Individual, M] { (i: Individual) => i.genome.generation })(implicitly[Monad[M]])(individuals)
@@ -120,7 +120,7 @@ object Algorithms {
             mu)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]])(noNaN)
         } yield kept
 
-    def step[M[_]: Monad: UseRG: Generational](
+    def step[M[_]: Monad: RandomGen: Generational](
       fitness: Genome => Vector[Double],
       mu: Int,
       lambda: Int): Vector[Individual] => M[Vector[Individual]] =
@@ -131,16 +131,17 @@ object Algorithms {
         elitism[M](mu),
         muPlusLambda[Individual])
 
-    def algorithm(mu: Int, lambda: Int, genomeSize: Int) = new AlgorithmNew[Individual, EvolutionStateMonad[Unit]#l, Genome, (EvolutionData, Unit)] {
-      implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
+    def algorithm(mu: Int, lambda: Int, genomeSize: Int) =
+      new Algorithm[Individual, EvolutionStateMonad[Unit]#l, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
+        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
-      def initialState: (EvolutionData, Unit) = (EvolutionData(), ())
+        def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l](mu, genomeSize)
+        def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.breeding[EvolutionStateMonad[Unit]#l](lambda)
+        def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NSGA2.elitism[EvolutionStateMonad[Unit]#l](mu)
 
-      def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l](mu, genomeSize)
+        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = State(_ => x)
+        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = x.run(EvolutionData[Unit](0, Tag.of[Start](0), null, ()))
 
-      def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.breeding[EvolutionStateMonad[Unit]#l](lambda)
-
-      def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NSGA2.elitism[EvolutionStateMonad[Unit]#l](mu)
-    }
+      }
   }
 }

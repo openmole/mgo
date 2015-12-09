@@ -27,12 +27,12 @@ import scala.util.Random
 
 object Contexts {
 
-  trait UseRG[M[_]] {
+  trait RandomGen[M[_]] {
     /**
      * implementations of this function must use a random number generator contained in M in order to produce the Random returned, and update the original
      * random number generator in an independant manner so that it is never used twice (and allows for safe parallelisation).
      */
-    def useRG: M[Random]
+    def split: M[Random]
   }
 
   trait Generational[M[_]] {
@@ -44,37 +44,38 @@ object Contexts {
 
   object default {
 
-    case class EvolutionData(
+    case class EvolutionData[S](
       generation: Long = 0,
       startTime: Long @@ Start = System.currentTimeMillis(),
-      random: Random = newRNG(System.currentTimeMillis()))
+      random: Random = newRNG(System.currentTimeMillis()),
+      s: S)
 
-    type EvolutionState[S, T] = State[(EvolutionData, S), T]
+    type EvolutionState[S, T] = State[EvolutionData[S], T]
     type EvolutionStateMonad[S] = ({ type l[x] = EvolutionState[S, x] })
 
-    implicit def evolutionStateUseRG[S]: UseRG[EvolutionStateMonad[S]#l] = new UseRG[EvolutionStateMonad[S]#l] {
+    implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
 
-      def useRG: EvolutionState[S, Random] =
+      def split: EvolutionState[S, Random] =
         for {
-          s <- State.get[(EvolutionData, S)]
-          rg = s._1.random
+          s <- State.get[EvolutionData[S]]
+          rg = s.random
           //TODO: est-ce que c'est une bonne manière de générer 2 nouveaux générateurs aléatoires indépendants?
           rg1 = newRNG(rg.nextLong())
           rg2 = newRNG(rg.nextLong())
-          _ <- State.put[(EvolutionData, S)]((s._1.copy(random = rg2), s._2))
+          _ <- State.put[EvolutionData[S]](s.copy(random = rg2))
         } yield rg1
     }
 
     implicit def evolutionStateGenerational[S]: Generational[EvolutionStateMonad[S]#l] = new Generational[EvolutionStateMonad[S]#l] {
       def getGeneration: EvolutionState[S, Long] =
         for {
-          s <- State.get[(EvolutionData, S)]
-        } yield s._1.generation
+          s <- State.get[EvolutionData[S]]
+        } yield s.generation
 
       def setGeneration(i: Long): EvolutionState[S, Unit] =
         for {
-          s <- State.get[(EvolutionData, S)]
-          _ <- State.put[(EvolutionData, S)]((s._1.copy(generation = i), s._2))
+          s <- State.get[EvolutionData[S]]
+          _ <- State.put[EvolutionData[S]](s.copy(generation = i))
         } yield ()
 
       def incrementGeneration: EvolutionState[S, Unit] =
@@ -83,7 +84,7 @@ object Contexts {
       def generationReached(x: Long): EvolutionState[S, Boolean] =
         for {
           g <- getGeneration
-        } yield (g >= x)
+        } yield g >= x
 
     }
 

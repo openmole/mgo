@@ -150,11 +150,11 @@ package object mgo {
     }
 
   /** Breed a genome for subsequent stochastic expression */
-  def withRandomGenB[I, M[_]: Monad: UseRG, G](breeding: Breeding[I, M, G]): Breeding[I, M, (Random, G)] =
+  def withRandomGenB[I, M[_]: Monad: RandomGen, G](breeding: Breeding[I, M, G]): Breeding[I, M, (Random, G)] =
     (individuals: Vector[I]) =>
       for {
         bred <- breeding(individuals)
-        rgs <- implicitly[UseRG[M]].useRG.replicateM(bred.size)
+        rgs <- implicitly[RandomGen[M]].split.replicateM(bred.size)
       } yield rgs.toVector zip bred
 
   /**** Expression ****/
@@ -281,7 +281,7 @@ package object mgo {
 
   def expressMonad[G, P, S](express: (G => State[Random, P])) = (g: G) => common[S] lifts Individual(g, express)
 
-  def step[G, P, S](algorithm: Algorithm[G, P, S], lambda: Int, express: (G => State[Random, P]))(population: Population[Individual[G, P]]) =
+  def step[G, P, S](algorithm: AlgorithmOld[G, P, S], lambda: Int, express: (G => State[Random, P]))(population: Population[Individual[G, P]]) =
     for {
       breed <- algorithm.breeding(population, lambda)
       offspring <- breed.traverseS(expressMonad[G, P, S](express))
@@ -291,7 +291,7 @@ package object mgo {
 
   def initialGenomes[G](newGenome: State[Random, G], size: Int) = newGenome.generate(size)
 
-  def evolution[G, P, S](algorithm: Algorithm[G, P, S])(
+  def evolution[G, P, S](algorithm: AlgorithmOld[G, P, S])(
     lambda: Int,
     newGenome: State[Random, G],
     express: (G => State[Random, P]),
