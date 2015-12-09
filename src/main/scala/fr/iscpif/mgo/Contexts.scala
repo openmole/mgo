@@ -22,6 +22,7 @@ import fr.iscpif.mgo.Objectives._
 import scala.language.higherKinds
 import scalaz._
 import Scalaz._
+import scalaz.effect.IO
 
 import scala.util.Random
 
@@ -50,32 +51,32 @@ object Contexts {
       random: Random = newRNG(System.currentTimeMillis()),
       s: S)
 
-    type EvolutionState[S, T] = State[EvolutionData[S], T]
+    type EvolutionState[S, T] = StateT[IO, EvolutionData[S], T]
     type EvolutionStateMonad[S] = ({ type l[x] = EvolutionState[S, x] })
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
 
       def split: EvolutionState[S, Random] =
         for {
-          s <- State.get[EvolutionData[S]]
+          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
           rg = s.random
           //TODO: est-ce que c'est une bonne manière de générer 2 nouveaux générateurs aléatoires indépendants?
           rg1 = newRNG(rg.nextLong())
           rg2 = newRNG(rg.nextLong())
-          _ <- State.put[EvolutionData[S]](s.copy(random = rg2))
+          _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].put(s.copy(random = rg2))
         } yield rg1
     }
 
     implicit def evolutionStateGenerational[S]: Generational[EvolutionStateMonad[S]#l] = new Generational[EvolutionStateMonad[S]#l] {
       def getGeneration: EvolutionState[S, Long] =
         for {
-          s <- State.get[EvolutionData[S]]
+          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
         } yield s.generation
 
       def setGeneration(i: Long): EvolutionState[S, Unit] =
         for {
-          s <- State.get[EvolutionData[S]]
-          _ <- State.put[EvolutionData[S]](s.copy(generation = i))
+          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
+          _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].put(s.copy(generation = i))
         } yield ()
 
       def incrementGeneration: EvolutionState[S, Unit] =

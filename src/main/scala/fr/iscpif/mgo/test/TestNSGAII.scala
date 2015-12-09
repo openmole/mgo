@@ -25,6 +25,9 @@ import cloneOld._
 
 import scala.util.Random
 import scalaz._
+import Scalaz._
+
+import scalaz.effect.IO
 
 object SphereNSGAII extends App {
   import Algorithms.NSGA2
@@ -44,11 +47,13 @@ object SphereNSGAII extends App {
       stopCondition = { (individuals: Vector[NSGA2.Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },
-      stepFunction = NSGA2.step[EvolutionStateMonad[Unit]#l](
-        fitness = express,
-        mu = mu,
-        lambda = lambda
-      )
+      stepFunction =
+        (individuals: Vector[NSGA2.Individual]) =>
+          for {
+            generation <- implicitly[Generational[EvolutionStateMonad[Unit]#l]].getGeneration
+            _ <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[Unit], a] })#L]].liftMU(IO.putStrLn(s"Generation ${generation.toString} Pop " ++ individuals.minBy { _.fitness.sum }.toString))
+            res <- NSGA2.step[EvolutionStateMonad[Unit]#l](fitness = express, mu = mu, lambda = lambda)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals)
+          } yield res
     )
 
   val evolution: EvolutionState[Unit, Vector[NSGA2.Individual]] =
@@ -58,12 +63,16 @@ object SphereNSGAII extends App {
       finalpop <- ea(initialPop)
     } yield finalpop
 
-  val (finalstate, finalpop) = evolution(EvolutionData[Unit](random = newRNG(1), s = ()))
+  val (finalstate, finalpop) = evolution(EvolutionData[Unit](random = newRNG(1), s = ())).unsafePerformIO()
 
+  println("---- Final State ----")
   println(finalstate)
 
+  println("---- Final Population ----")
   println(finalpop)
 
+  println("---- Fitnesses ----")
+  println(finalpop.map { (_: NSGA2.Individual).fitness })
 }
 
 object SphereNSGAIIOld extends App {
