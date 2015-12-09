@@ -48,7 +48,7 @@ package object mgo {
       for {
         _ <- preStep(population)
         bred <- breeding(population)
-        expressed <- bred.map(expression).point[M]
+        expressed = bred.par.map(expression).toVector
         kept <- objective(replacementStrategy(population, expressed))
       } yield kept
 

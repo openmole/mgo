@@ -35,10 +35,10 @@ object SphereNSGAII extends App {
   import Contexts._
   import Expressions._
 
-  val mu = 10
+  val mu = 100
   val lambda = 100
   def dimensions = 10
-  val maxiter = 100
+  val maxiter = 100000
 
   def express: Expression[NSGA2.Genome, Vector[Double]] = { case NSGA2.Genome(values, _, _) => Vector(sphere(values)) }
 
@@ -51,7 +51,7 @@ object SphereNSGAII extends App {
         (individuals: Vector[NSGA2.Individual]) =>
           for {
             generation <- implicitly[Generational[EvolutionStateMonad[Unit]#l]].getGeneration
-            _ <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[Unit], a] })#L]].liftMU(IO.putStrLn(s"Generation ${generation.toString} Pop " ++ individuals.minBy { _.fitness.sum }.toString))
+            _ <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[Unit], a] })#L]].liftMU(IO.putStrLn(s"Generation ${generation.toString} Best " ++ individuals.minBy { _.fitness.sum }.toString))
             res <- NSGA2.step[EvolutionStateMonad[Unit]#l](fitness = express, mu = mu, lambda = lambda)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals)
           } yield res
     )
