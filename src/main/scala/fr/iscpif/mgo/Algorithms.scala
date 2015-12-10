@@ -30,6 +30,7 @@ import Contexts._
 import Contexts.default._
 
 import scala.math.{ min, max }
+import scalaz.effect.IO
 
 object Algorithms {
 
@@ -131,7 +132,7 @@ object Algorithms {
         elitism[M](mu),
         muPlusLambda[Individual])
 
-    /*def algorithm(mu: Int, lambda: Int, genomeSize: Int) =
+    def algorithm(mu: Int, lambda: Int, genomeSize: Int) =
       new Algorithm[Individual, EvolutionStateMonad[Unit]#l, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
         implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
@@ -139,9 +140,9 @@ object Algorithms {
         def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.breeding[EvolutionStateMonad[Unit]#l](lambda)
         def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NSGA2.elitism[EvolutionStateMonad[Unit]#l](mu)
 
-        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = State.apply[](_ => x)
-        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = x.run(EvolutionData[Unit](0, Tag.of[Start](0), null, ()))
+        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
+        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
 
-      }*/
+      }
   }
 }

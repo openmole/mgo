@@ -47,12 +47,15 @@ object Contexts {
 
     case class EvolutionData[S](
       generation: Long = 0,
-      startTime: Long @@ Start = System.currentTimeMillis(),
+      startTime: Long @@ Start = Tag.of[Start](System.currentTimeMillis()),
       random: Random = newRNG(System.currentTimeMillis()),
       s: S)
 
     type EvolutionState[S, T] = StateT[IO, EvolutionData[S], T]
     type EvolutionStateMonad[S] = ({ type l[x] = EvolutionState[S, x] })
+
+    def wrap[S, T](x: (EvolutionData[S], T)): EvolutionState[S, T] = StateT.apply[IO, EvolutionData[S], T](_ => IO(x))
+    def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, Tag.of[Start](0), null, s)).unsafePerformIO
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
 
@@ -86,8 +89,14 @@ object Contexts {
         for {
           g <- getGeneration
         } yield g >= x
-
     }
+
+    def addIOBefore[S, A, B](mio: EvolutionState[S, IO[A]], action: A => EvolutionState[S, B]): EvolutionState[S, B] =
+      for {
+        ioa <- mio
+        a <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, A](ioa)
+        res <- action(a)
+      } yield res
 
   }
 }

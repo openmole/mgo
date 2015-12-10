@@ -38,7 +38,7 @@ object SphereNSGAII extends App {
   val mu = 100
   val lambda = 100
   def dimensions = 10
-  val maxiter = 100000
+  val maxiter = 100
 
   def express: Expression[NSGA2.Genome, Vector[Double]] = { case NSGA2.Genome(values, _, _) => Vector(sphere(values)) }
 
@@ -49,11 +49,15 @@ object SphereNSGAII extends App {
       },
       stepFunction =
         (individuals: Vector[NSGA2.Individual]) =>
-          for {
-            generation <- implicitly[Generational[EvolutionStateMonad[Unit]#l]].getGeneration
-            _ <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[Unit], a] })#L]].liftMU(IO.putStrLn(s"Generation ${generation.toString} Best " ++ individuals.minBy { _.fitness.sum }.toString))
-            res <- NSGA2.step[EvolutionStateMonad[Unit]#l](fitness = express, mu = mu, lambda = lambda)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals)
-          } yield res
+          addIOBefore[Unit, Unit, Vector[NSGA2.Individual]](
+            writeGen[EvolutionStateMonad[Unit]#l](),
+            { _ =>
+              addIOBefore[Unit, Unit, Vector[NSGA2.Individual]](
+                write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness.sum }.toString),
+                { _ => NSGA2.step[EvolutionStateMonad[Unit]#l](fitness = express, mu = mu, lambda = lambda)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals) }
+              )
+            }
+          )
     )
 
   val evolution: EvolutionState[Unit, Vector[NSGA2.Individual]] =
@@ -63,7 +67,11 @@ object SphereNSGAII extends App {
       finalpop <- ea(initialPop)
     } yield finalpop
 
-  val (finalstate, finalpop) = evolution(EvolutionData[Unit](random = newRNG(1), s = ())).unsafePerformIO()
+  val start = wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
+
+  val (finalstate, finalpop) = unwrap[Unit, Vector[NSGA2.Individual]](s = ())(
+    start >> evolution
+  )
 
   println("---- Final State ----")
   println(finalstate)
@@ -75,7 +83,7 @@ object SphereNSGAII extends App {
   println(finalpop.map { (_: NSGA2.Individual).fitness })
 }
 
-object SphereNSGAIIOld extends App {
+/*object SphereNSGAIIOld extends App {
 
   def dimensions = 10
   def problem(g: GAGenome) = State { rng: Random => (rng, sphere(g.genomeValue)) }
@@ -95,7 +103,7 @@ object SphereNSGAIIOld extends App {
 
   println(evo.eval(42).minBy(_.phenotype))
 
-}
+}*/
 
 object StochasticSphereNSGAII extends App {
   def average(s: Seq[Double]) = s.sum / s.size

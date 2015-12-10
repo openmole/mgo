@@ -99,10 +99,16 @@ package object mgo {
 
   /**** Pre-step functions ****/
 
-  def writepop[I, M[_]: Monad]: Vector[I] => M[IO[Unit]] =
-    (population: Vector[I]) => (for {
-      _ <- IO.putStrLn("Pop " ++ population.toString)
-    } yield ()).point[M]
+  def write[M[_]: Monad](s: String, writeFunction: String => IO[Unit] = IO.putStrLn): M[IO[Unit]] =
+    for {
+      io <- writeFunction(s).point[M]
+    } yield io
+
+  def writeGen[M[_]: Monad: Generational](writeFunction: Long => IO[Unit] = { g => IO.putStrLn(s"Generation ${g.toString}") }): M[IO[Unit]] =
+    for {
+      generation <- implicitly[Generational[M]].getGeneration
+      io <- writeFunction(generation).point[M]
+    } yield io
 
   /**** Replacement strategies ****/
 
