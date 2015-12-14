@@ -204,11 +204,23 @@ object Breedings {
 
       for {
         vmates <- mate(individuals.map { _._1 })
-        rgs <- implicitly[RandomGen[M]].split.replicateM(vmates.size)
-        offspringsAndOp <- (rgs.toVector zip vmates).map { case (rg, mates) => (selectOp(rg), mates) }
+        rg <- implicitly[RandomGen[M]].split
+        offspringsAndOp <- vmates.map { mates => (selectOp(rg), mates) }
           .traverse[M, (OO, Maybe[Int])] { case (selectedop, mates) => ops(selectedop)(mates).map[(OO, Maybe[Int])] { (_: OO, Maybe.Just(selectedop)) } }
         bred <- offspringsAndOp.traverse[M, Vector[(G, Maybe[Int])]] { case (offsprings, op) => unmate(offsprings).map[Vector[(G, Maybe[Int])]] { (gs: Vector[G]) => gs.map((_: G, op)) } }
       } yield bred.toVector.flatten
     }
 
+  /**** Cloning ****/
+
+  def opOrClone[I, M[_]: Monad: RandomGen, G](
+    getGenome: I => G,
+    op: I => M[G],
+    cloneProbability: Double): I => M[G] =
+    probabilisticOperatorB[I, M, G](
+      Vector(
+        (getGenome(_).point[M], cloneProbability),
+        (op(_), 1 - cloneProbability)
+      )
+    )
 }

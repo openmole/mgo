@@ -20,6 +20,8 @@ import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 
+import scala.math.min
+
 object Objectives {
 
   type Objective[I, M[_]] = Vector[I] => M[Vector[I]]
@@ -42,7 +44,22 @@ object Objectives {
         res <- individuals.groupBy(getGenome).valuesIterator.toVector.traverseM[M, I](cloneStrategy)
       } yield res
 
-  def clonesKeepYoungest[C, M[_]: Monad](generation: C => Long): Vector[C] => M[Vector[C]] =
-    (clones: Vector[C]) => clones.maxBy(generation).point[Vector].point[M]
+  def clonesKeepYoungest[I, M[_]: Monad](generation: I => Long): Vector[I] => M[Vector[I]] =
+    (clones: Vector[I]) => clones.maxBy(generation).point[Vector].point[M]
 
+  //TODO: L'algo suivant suppose que la partie de l'historique du jeune avant young.age est un duplicat du plus vieux.
+  //Pas sur que ça soit toujours le cas: On peut avoir 2 clones qui ont évolué différemment et n'ont pas d'histoire commune.
+  //Si c'est le cas, alors on supprime une partie d'historique que l'on devrait garder.
+  def clonesMergeHistories[I, P, M[_]](historySize: Int)(implicit ia: Age[I], ih: PhenotypeHistory[I, P], m: Monad[M]): Vector[I] => M[Vector[I]] =
+    (clones: Vector[I]) => {
+      clones.sortBy { i => -ia.getAge(i) }.reduceLeft { (i1, i2) =>
+        val oldAge = ia.getAge(i1)
+        val youngAge = ia.getAge(i2)
+
+        def oldH: Vector[P] = ih.getHistory(i1)
+        def youngH: Vector[P] = ih.getHistory(i2).takeRight(min(youngAge, Int.MaxValue).toInt)
+
+        ia.setAge(ih.setHistory(i1, (oldH ++ youngH).takeRight(historySize)), oldAge + youngAge)
+      }
+    }.point[Vector].point[M]
 }

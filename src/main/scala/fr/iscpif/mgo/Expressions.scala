@@ -23,4 +23,7 @@ import Scalaz._
 object Expressions {
   type Expression[G, P] = G => P
 
+  def historyE[G, P](e: Expression[G, P])(implicit gh: PhenotypeHistory[G, P]): Expression[G, G] =
+    (g: G) =>
+      implicitly[PhenotypeHistory[G, P]].append(g, e(g))
 }

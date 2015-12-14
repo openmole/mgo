@@ -35,8 +35,8 @@ object SphereNSGAII extends App {
   import Contexts._
   import Expressions._
 
-  val mu = 100
-  val lambda = 100
+  val mu = 10
+  val lambda = 10
   def dimensions = 10
   val maxiter = 100
 
@@ -83,6 +83,61 @@ object SphereNSGAII extends App {
   println(finalpop.map { (_: NSGA2.Individual).fitness })
 }
 
+object StochasticSphereNSGAII extends App {
+  import Algorithms.NoisyNSGA2
+  import Contexts.default._
+  import Contexts._
+  import Expressions._
+
+  val mu = 10
+  val lambda = 10
+  def dimensions = 10
+  val maxiter = 100
+  val historySize = 10
+
+  def express: Expression[NoisyNSGA2.Individual, Vector[Double]] = { case i: NoisyNSGA2.Individual => Vector(sphere(i.genome.values)) }
+
+  val ea: Vector[NoisyNSGA2.Individual] => EvolutionState[Unit, Vector[NoisyNSGA2.Individual]] =
+    runEAUntil[NoisyNSGA2.Individual, EvolutionStateMonad[Unit]#l, NoisyNSGA2.Genome](
+      stopCondition = { (individuals: Vector[NoisyNSGA2.Individual]) =>
+        implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
+      },
+      stepFunction =
+        (individuals: Vector[NoisyNSGA2.Individual]) =>
+          addIOBefore[Unit, Unit, Vector[NoisyNSGA2.Individual]](
+            writeGen[EvolutionStateMonad[Unit]#l](),
+            { _ =>
+              addIOBefore[Unit, Unit, Vector[NoisyNSGA2.Individual]](
+                write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitnessHistory.last.sum }.toString),
+                { _ => NoisyNSGA2.step[EvolutionStateMonad[Unit]#l](fitness = express, mu = mu, lambda = lambda, historySize = historySize)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals) }
+              )
+            }
+          )
+    )
+
+  val evolution: EvolutionState[Unit, Vector[NoisyNSGA2.Individual]] =
+    for {
+      initialGenomes <- NoisyNSGA2.initialPopulation[EvolutionStateMonad[Unit]#l](mu, dimensions)
+      initialPop = initialGenomes.map { (i: NoisyNSGA2.Individual) => i.copy(fitnessHistory = Vector(express(i))) }
+      finalpop <- ea(initialPop)
+    } yield finalpop
+
+  val start = wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
+
+  val (finalstate, finalpop) = unwrap[Unit, Vector[NoisyNSGA2.Individual]](s = ())(
+    start >> evolution
+  )
+
+  println("---- Final State ----")
+  println(finalstate)
+
+  println("---- Final Population ----")
+  println(finalpop.mkString("\n"))
+
+  println("---- Fitnesses ----")
+  println(finalpop.map { (_: NoisyNSGA2.Individual).fitnessHistory }.mkString("\n"))
+}
+
 /*object SphereNSGAIIOld extends App {
 
   def dimensions = 10
@@ -105,7 +160,7 @@ object SphereNSGAII extends App {
 
 }*/
 
-object StochasticSphereNSGAII extends App {
+/*object StochasticSphereNSGAIIOld extends App {
   def average(s: Seq[Double]) = s.sum / s.size
 
   val algo =
@@ -135,4 +190,4 @@ object StochasticSphereNSGAII extends App {
   println(res.groupBy(_.genome.fromOperation).toList.map { case (k, v) => k -> v.size }.sortBy(_._1))
   println(function.scale(oldest.genomeValue) + " " + average(oldest.phenotype) + " " + oldest.phenotype.size + " " + oldest.born)
 
-}
+}*/

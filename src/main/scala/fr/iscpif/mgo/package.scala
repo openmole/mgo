@@ -78,7 +78,7 @@ package object mgo {
     newpop.point[M]
   }*/
 
-  //TODO: Non-tail recursive function. Test performance.
+  //TODO: Non-tail recursive function. Make a tail recursive one (Trampoline).
   def runEAUntil[I, M[_]: Monad, G](
     stopCondition: Vector[I] => M[Boolean],
     stepFunction: Vector[I] => M[Vector[I]])(population: Vector[I]): M[Vector[I]] =
@@ -155,6 +155,16 @@ package object mgo {
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[G]](breeding).map[Vector[G]](_.flatten)
     }
 
+  def probabilisticOperatorB[I, M[_]: Monad: RandomGen, G](
+    opsAndWeights: Vector[(I => M[G], Double)]): I => M[G] =
+    (mates: I) => {
+      for {
+        rg <- implicitly[RandomGen[M]].split
+        op = multinomial[I => M[G]](opsAndWeights.toList)(rg)
+        g <- op(mates)
+      } yield g
+    }
+
   /** Breed a genome for subsequent stochastic expression */
   def withRandomGenB[I, M[_]: Monad: RandomGen, G](breeding: Breeding[I, M, G]): Breeding[I, M, (Random, G)] =
     (individuals: Vector[I]) =>
@@ -215,6 +225,19 @@ package object mgo {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)
     }
+
+  /**** Some typeclasses, move this to a more appropriate place ****/
+  trait Age[I] {
+    def getAge(i: I): Long
+    def setAge(i: I, a: Long): I
+  }
+
+  trait PhenotypeHistory[I, P] {
+    def getPhenotype(i: I): P
+    def append(i: I, p: P): I
+    def getHistory(i: I): Vector[P]
+    def setHistory(i: I, h: Vector[P]): I
+  }
 
   /***********************************************/
 

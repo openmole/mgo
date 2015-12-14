@@ -52,6 +52,10 @@ object cloneOld {
     State { state: AlgorithmState[S] => interleaveClones0(List(), List(), lambda, state) }.map(_.toVector)
   }
 
+  trait CloneStrategy[P] {
+    def append(old: P, young: => P): P
+  }
+
   def applyCloneStrategy[G, P](population: Population[Individual[G, P]], cloneStrategy: CloneStrategy[P])(implicit genomeEquality: Equal[G]) = {
     def newPop =
       group(population.toList)(genomeEquality.contramap[Individual[G, P]](_.genome)).
@@ -64,10 +68,6 @@ object cloneOld {
         }
 
     newPop.toVector
-  }
-
-  trait CloneStrategy[P] {
-    def append(old: P, young: => P): P
   }
 
   def youngest[P] = new CloneStrategy[P] {
