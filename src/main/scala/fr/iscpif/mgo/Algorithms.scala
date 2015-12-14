@@ -217,7 +217,8 @@ object Algorithms {
           // transformer un Individual en (Individual, Operateur) pour correspondre à la signature de dynamicallyOpB. Puis, on
           // associe les individus par paires parceque les operateurs qu'on utilise ensuite (crossover + mutation) prennent des
           // paires et renvoiens des paires. Ensuite, on map sur les operateurs crossoversAndMutations pour les transformer en operateurs
-          // qui prennent et renvoient des paires d'individus plutôt que de Vecteur[Double]. On pourrait peut-être gagner en simplicité sur
+          // qui prennent et renvoient des paires d'individus plutôt que de Vecteur[Double]. L'avantage de cette approche est que les fonctions individuelles
+          // sont minimalistes, le désavantage est qu'il y a beaucoup de travail pour les combiner ensemble. On pourrait peut-être gagner en simplicité sur
           // cette transformation de signatures avec une autre approche: par exemple, si toutes les fonctions de breeding prennent des fonctions
           // qui leur permettent d'extraire les info dont elles ont besoin à partir des individus (ce que fait actuellement liftB), ou des lenses.
           bred <- liftB[Individual, (Individual, Maybe[Int]), M, (Individual, Maybe[Int]), Individual](
