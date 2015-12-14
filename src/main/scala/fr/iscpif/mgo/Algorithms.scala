@@ -219,7 +219,7 @@ object Algorithms {
           // paires et renvoiens des paires. Ensuite, on map sur les operateurs crossoversAndMutations pour les transformer en operateurs
           // qui prennent et renvoient des paires d'individus plutôt que de Vecteur[Double]. On pourrait peut-être gagner en simplicité sur
           // cette transformation de signatures avec une autre approche: par exemple, si toutes les fonctions de breeding prennent des fonctions
-          // qui leur permettent d'extraire les info dont elles ont besoin à partir des individus (ce que fait actuellement liftB), ou des lenses!
+          // qui leur permettent d'extraire les info dont elles ont besoin à partir des individus (ce que fait actuellement liftB), ou des lenses.
           bred <- liftB[Individual, (Individual, Maybe[Int]), M, (Individual, Maybe[Int]), Individual](
             { (i: Individual) => (i, i.genome.operator) },
             { case (i: Individual, op: Maybe[Int]) => i.copy(genome = i.genome.copy(operator = op, age = 0)) },
