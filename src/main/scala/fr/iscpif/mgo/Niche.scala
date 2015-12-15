@@ -28,9 +28,9 @@ object niche {
       }.toArray.toSeq
     }
 
-  def genomeProfile[G](x: Int, nX: Int)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Niche[G, Int] =
+  def genomeProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
     (genome: G) => {
-      val niche = (values.get(genome)(x) * nX).toInt
+      val niche = (values(genome)(x) * nX).toInt
       if (niche == nX) niche - 1 else niche
     }
 

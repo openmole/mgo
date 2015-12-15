@@ -18,10 +18,14 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.algorithm.ga._
+import fr.iscpif.mgo.algorithm._
 import fitness._
 import genome._
-import cloneOld._
+
+import algorithm.NSGA2
+import Contexts.default._
+import Contexts._
+import Expressions._
 
 import scala.util.Random
 import scalaz._
@@ -30,10 +34,6 @@ import Scalaz._
 import scalaz.effect.IO
 
 object SphereNSGAII extends App {
-  import Algorithms.NSGA2
-  import Contexts.default._
-  import Contexts._
-  import Expressions._
 
   val mu = 10
   val lambda = 10
@@ -67,9 +67,9 @@ object SphereNSGAII extends App {
       finalpop <- ea(initialPop)
     } yield finalpop
 
-  val start = wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
+  val start = Contexts.default.wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
 
-  val (finalstate, finalpop) = unwrap[Unit, Vector[NSGA2.Individual]](s = ())(
+  val (finalstate, finalpop) = Contexts.default.unwrap[Unit, Vector[NSGA2.Individual]](s = ())(
     start >> evolution
   )
 
@@ -77,17 +77,13 @@ object SphereNSGAII extends App {
   println(finalstate)
 
   println("---- Final Population ----")
-  println(finalpop)
+  println(finalpop.mkString("\n"))
 
   println("---- Fitnesses ----")
-  println(finalpop.map { (_: NSGA2.Individual).fitness })
+  println(finalpop.map { (_: NSGA2.Individual).fitness }.mkString("\n"))
 }
 
 object StochasticSphereNSGAII extends App {
-  import Algorithms.NoisyNSGA2
-  import Contexts.default._
-  import Contexts._
-  import Expressions._
 
   val mu = 10
   val lambda = 10
@@ -122,9 +118,9 @@ object StochasticSphereNSGAII extends App {
       finalpop <- ea(initialPop)
     } yield finalpop
 
-  val start = wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
+  val start = Contexts.default.wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
 
-  val (finalstate, finalpop) = unwrap[Unit, Vector[NoisyNSGA2.Individual]](s = ())(
+  val (finalstate, finalpop) = Contexts.default.unwrap[Unit, Vector[NoisyNSGA2.Individual]](s = ())(
     start >> evolution
   )
 

@@ -18,13 +18,75 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import algorithm.ga._
-import genome._
-import fitness._
-import niche._
+import fr.iscpif.mgo.niche._
 
+import algorithm.Profile
+import Contexts.default._
+import Contexts._
+import Expressions._
+
+import scala.util.Random
 import scalaz._
-import util.Random
+import Scalaz._
+
+import scalaz.effect.IO
+
+object SphereProfile extends App {
+
+  val muByNiche = 1
+  val lambda = 10
+  def dimensions = 10
+  val maxiter = 100
+
+  def express: Expression[Profile.Genome, Double] = { case Profile.Genome(values, _, _) => sphere(values) }
+
+  //Niche over the first dimension of the genome
+  def niche: Niche[Profile.Individual, Int] = genomeProfile[Profile.Individual](
+    values = (_: Profile.Individual).genome.values,
+    x = 0,
+    nX = 10)
+
+  val ea: Vector[Profile.Individual] => EvolutionState[Unit, Vector[Profile.Individual]] =
+    runEAUntil[Profile.Individual, EvolutionStateMonad[Unit]#l, Profile.Genome](
+      stopCondition = { (individuals: Vector[Profile.Individual]) =>
+        implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
+      },
+      stepFunction =
+        (individuals: Vector[Profile.Individual]) =>
+          addIOBefore[Unit, Unit, Vector[Profile.Individual]](
+            writeGen[EvolutionStateMonad[Unit]#l](),
+            { _ =>
+              addIOBefore[Unit, Unit, Vector[Profile.Individual]](
+                write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness }.toString),
+                { _ => Profile.step[EvolutionStateMonad[Unit]#l](fitness = express, niche = niche, muByNiche = muByNiche, lambda = lambda)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals) }
+              )
+            }
+          )
+    )
+
+  val evolution: EvolutionState[Unit, Vector[Profile.Individual]] =
+    for {
+      initialGenomes <- Profile.initialGenomes[EvolutionStateMonad[Unit]#l](muByNiche, dimensions)
+      initialPop = initialGenomes.map { (g: Profile.Genome) => Profile.Individual(g, express(g)) }
+      finalpop <- ea(initialPop)
+    } yield finalpop
+
+  val start = Contexts.default.wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
+
+  val (finalstate, finalpop) = Contexts.default.unwrap[Unit, Vector[Profile.Individual]](s = ())(
+    start >> evolution
+  )
+
+  println("---- Final State ----")
+  println(finalstate)
+
+  println("---- Final Population ----")
+  println(finalpop.mkString("\n"))
+
+  println("---- Fitnesses ----")
+  println(finalpop.map { (_: Profile.Individual).fitness }.mkString("\n"))
+
+}
 
 //object Profile {
 //  val deterministic =
@@ -57,11 +119,20 @@ import util.Random
 //
 //}
 //
-object StochasticSphereProfile extends App {
+
+object StochasticSphereProfileOld extends App {
+
+  import fr.iscpif.mgo._
+  import algorithm.ga._
+  import genome._
+
+  import scalaz._
+  import util.Random
 
   import nicheOld._
   import cloneOld._
 
+  //Niche over the first dimension of the genome
   def niche = genomeProfile[GAGenome](0, 100)
 
   val stochastic =

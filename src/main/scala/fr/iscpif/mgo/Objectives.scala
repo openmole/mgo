@@ -26,8 +26,14 @@ object Objectives {
 
   type Objective[I, M[_]] = Vector[I] => M[Vector[I]]
 
+  def minimiseO[I, M[_]: Monad, F: Order](f: I => F, mu: Int): Objective[I, M] =
+    (individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).toScalaOrdering).take(mu).point[M]
+
+  def maximiseO[I, M[_]: Monad, F: Order](f: I => F, mu: Int): Objective[I, M] =
+    (individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).reverseOrder.toScalaOrdering).take(mu).point[M]
+
   /** Returns the mu individuals with the highest ranks. */
-  def keepBestByO[I, K: Order, M[_]: Monad](f: Vector[I] => Vector[K], mu: Int): Objective[I, M] =
+  def keepHighestRankedO[I, K: Order, M[_]: Monad](f: Vector[I] => Vector[K], mu: Int): Objective[I, M] =
     (individuals: Vector[I]) =>
       if (individuals.size < mu) individuals.point[M]
       else {

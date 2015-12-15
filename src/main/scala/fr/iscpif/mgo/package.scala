@@ -135,7 +135,7 @@ package object mgo {
   def productB[I, M[_]: Monad, G1, G2](b1: Breeding[I, M, G1], b2: G1 => Breeding[I, M, G2]): Breeding[I, M, G2] =
     productWithB[I, M, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
 
-  def liftB[I, I1, M[_]: Monad, G1, G](itoi1: I => I1, g1tog: G1 => G, breeding: Breeding[I1, M, G1]): Breeding[I, M, G] =
+  def asB[I, I1, M[_]: Monad, G1, G](itoi1: I => I1, g1tog: G1 => G, breeding: Breeding[I1, M, G1]): Breeding[I, M, G] =
     (individuals: Vector[I]) =>
       breeding(individuals.map(itoi1)).map[Vector[G]] { (g1s: Vector[G1]) => g1s.map(g1tog) }
 
@@ -226,7 +226,7 @@ package object mgo {
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)
     }
 
-  /**** Some typeclasses, move this to a more appropriate place ****/
+  /**** Some typeclasses, TODO: move this to a more appropriate place ****/
   trait Age[I] {
     def getAge(i: I): Long
     def setAge(i: I, a: Long): I

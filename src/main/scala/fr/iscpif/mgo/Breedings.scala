@@ -214,12 +214,12 @@ object Breedings {
   /**** Cloning ****/
 
   def opOrClone[I, M[_]: Monad: RandomGen, G](
-    getGenome: I => G,
+    clone: I => G,
     op: I => M[G],
     cloneProbability: Double): I => M[G] =
     probabilisticOperatorB[I, M, G](
       Vector(
-        (getGenome(_).point[M], cloneProbability),
+        (clone(_).point[M], cloneProbability),
         (op(_), 1 - cloneProbability)
       )
     )

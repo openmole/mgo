@@ -5,6 +5,8 @@
 
 package fr.iscpif.mgo.tools
 
+import scalaz.{ Order, Ordering }
+
 object Lazy {
 
   /**
@@ -21,8 +23,11 @@ object Lazy {
   /**
    * Defines ordering on lazy proxies
    */
-  implicit def lazyOrdering[T](implicit ord: Ordering[T]): Ordering[Lazy[T]] = Ordering.by(_.apply)
+  implicit def lazyOrdering[T](implicit ord: scala.Ordering[T]): scala.Ordering[Lazy[T]] = scala.Ordering.by(_.apply)
 
+  implicit def lazyOrder[T: Order]: Order[Lazy[T]] = new Order[Lazy[T]] {
+    def order(x: Lazy[T], y: Lazy[T]): scalaz.Ordering = implicitly[Order[T]].order(x(), y())
+  }
 }
 
 /**
@@ -49,3 +54,4 @@ class Lazy[T](f: => T) {
 
   override def toString() = value.toString
 }
+
