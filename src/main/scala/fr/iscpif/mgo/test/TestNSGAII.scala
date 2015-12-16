@@ -38,26 +38,26 @@ object SphereNSGAII extends App {
   val mu = 10
   val lambda = 10
   def dimensions = 10
-  val maxiter = 100
+  val maxiter = 500
+  val operationExploration = 0.1
 
   def express: Expression[NSGA2.Genome, Vector[Double]] = { case NSGA2.Genome(values, _, _) => Vector(sphere(values)) }
 
   val ea: Vector[NSGA2.Individual] => EvolutionState[Unit, Vector[NSGA2.Individual]] =
-    runEAUntil[NSGA2.Individual, EvolutionStateMonad[Unit]#l, NSGA2.Genome](
+    runEAUntil[NSGA2.Individual, EvolutionStateMonad[Unit]#l](
       stopCondition = { (individuals: Vector[NSGA2.Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },
       stepFunction =
-        (individuals: Vector[NSGA2.Individual]) =>
-          addIOBefore[Unit, Unit, Vector[NSGA2.Individual]](
-            writeGen[EvolutionStateMonad[Unit]#l](),
-            { _ =>
-              addIOBefore[Unit, Unit, Vector[NSGA2.Individual]](
-                write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness.sum }.toString),
-                { _ => NSGA2.step[EvolutionStateMonad[Unit]#l](fitness = express, mu = mu, lambda = lambda)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals) }
-              )
-            }
-          )
+        (individuals: Vector[NSGA2.Individual]) => for {
+          _ <- liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]())
+          _ <- liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness.sum }.toString))
+          res <- NSGA2.step[EvolutionStateMonad[Unit]#l](
+            fitness = express,
+            mu = mu,
+            lambda = lambda,
+            operationExploration = operationExploration)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals)
+        } yield res
     )
 
   val evolution: EvolutionState[Unit, Vector[NSGA2.Individual]] =
@@ -90,31 +90,35 @@ object StochasticSphereNSGAII extends App {
   def dimensions = 10
   val maxiter = 100
   val historySize = 10
+  val operationExploration = 0.1
+  val cloneProbability = 0.1
 
-  def express: Expression[NoisyNSGA2.Individual, Vector[Double]] = { case i: NoisyNSGA2.Individual => Vector(sphere(i.genome.values)) }
+  def express: Expression[(Random, Vector[Double]), Vector[Double]] = { case (rg: Random, v: Vector[Double]) => Vector(rg.nextGaussian() * 0.5 * math.sqrt(sphere(v))) }
 
   val ea: Vector[NoisyNSGA2.Individual] => EvolutionState[Unit, Vector[NoisyNSGA2.Individual]] =
-    runEAUntil[NoisyNSGA2.Individual, EvolutionStateMonad[Unit]#l, NoisyNSGA2.Genome](
+    runEAUntil[NoisyNSGA2.Individual, EvolutionStateMonad[Unit]#l](
       stopCondition = { (individuals: Vector[NoisyNSGA2.Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },
       stepFunction =
-        (individuals: Vector[NoisyNSGA2.Individual]) =>
-          addIOBefore[Unit, Unit, Vector[NoisyNSGA2.Individual]](
-            writeGen[EvolutionStateMonad[Unit]#l](),
-            { _ =>
-              addIOBefore[Unit, Unit, Vector[NoisyNSGA2.Individual]](
-                write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitnessHistory.last.sum }.toString),
-                { _ => NoisyNSGA2.step[EvolutionStateMonad[Unit]#l](fitness = express, mu = mu, lambda = lambda, historySize = historySize)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals) }
-              )
-            }
-          )
+        (individuals: Vector[NoisyNSGA2.Individual]) => for {
+          _ <- liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]())
+          _ <- liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitnessHistory.last.sum }.toString))
+          res <- NoisyNSGA2.step[EvolutionStateMonad[Unit]#l](
+            fitness = express,
+            mu = mu,
+            lambda = lambda,
+            historySize = historySize,
+            operationExploration = operationExploration,
+            cloneProbability = cloneProbability)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals)
+        } yield res
     )
 
   val evolution: EvolutionState[Unit, Vector[NoisyNSGA2.Individual]] =
     for {
+      rg <- implicitly[RandomGen[EvolutionStateMonad[Unit]#l]].split
       initialGenomes <- NoisyNSGA2.initialPopulation[EvolutionStateMonad[Unit]#l](mu, dimensions)
-      initialPop = initialGenomes.map { (i: NoisyNSGA2.Individual) => i.copy(fitnessHistory = Vector(express(i))) }
+      initialPop = initialGenomes.map { (i: NoisyNSGA2.Individual) => i.copy(fitnessHistory = Vector(express((rg, i.genome)))) }
       finalpop <- ea(initialPop)
     } yield finalpop
 

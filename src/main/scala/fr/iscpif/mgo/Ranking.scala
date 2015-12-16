@@ -119,7 +119,7 @@ object ranking {
   def rankAndDiversity[I](ranking: Ranking[I], diversity: Diversity[I]): Vector[I] => Vector[(Lazy[Int], Lazy[Double])] =
     (population: Vector[I]) => ranking(population) zip diversity(population)
 
-  def paretoRankingAndCrowdingDiversity[I](fitness: I => Vector[Double])(rg: Random): Vector[I] => Vector[(Lazy[Int], Lazy[Double])] =
+  def paretoRankingMinAndCrowdingDiversity[I](fitness: I => Vector[Double])(rg: Random): Vector[I] => Vector[(Lazy[Int], Lazy[Double])] =
     rankAndDiversity(
       reversedRanking(paretoRanking[I] { (i: I) => fitness(i) }),
       crowdingDistance[I] { (i: I) => fitness(i) }(rg))

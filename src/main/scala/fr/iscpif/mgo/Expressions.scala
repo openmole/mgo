@@ -20,10 +20,15 @@ import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 
+import scala.util.Random
+
 object Expressions {
   type Expression[G, P] = G => P
 
   def historyE[G, P](e: Expression[G, P])(implicit gh: PhenotypeHistory[G, P]): Expression[G, G] =
-    (g: G) =>
-      implicitly[PhenotypeHistory[G, P]].append(g, e(g))
+    (g: G) => implicitly[PhenotypeHistory[G, P]].append(g, e(g))
+
+  def asE[G, G1, P1, P](gtog1: G => G1, p1top: P1 => P, e: Expression[G1, P1]): Expression[G, P] =
+    (g: G) => p1top(e(gtog1(g)))
+
 }

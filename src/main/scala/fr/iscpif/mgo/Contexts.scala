@@ -58,7 +58,6 @@ object Contexts {
     def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, Tag.of[Start](0), null, s)).unsafePerformIO
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
-
       def split: EvolutionState[S, Random] =
         for {
           s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
@@ -97,6 +96,12 @@ object Contexts {
         a <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, A](ioa)
         res <- action(a)
       } yield res
+
+    def liftIOValue[S, A](mio: EvolutionState[S, IO[A]]): EvolutionState[S, A] =
+      for {
+        ioa <- mio
+        a <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, A](ioa)
+      } yield a
 
   }
 }

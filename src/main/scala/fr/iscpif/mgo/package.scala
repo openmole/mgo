@@ -52,8 +52,8 @@ package object mgo {
         kept <- objective(replacementStrategy(population, expressed))
       } yield kept
 
-  def runEA[I, M[_]: Monad, G](stepFunction: Vector[I] => M[Vector[I]]): Vector[I] => M[Vector[I]] =
-    runEAUntil[I, M, G](
+  def runEA[I, M[_]: Monad](stepFunction: Vector[I] => M[Vector[I]]): Vector[I] => M[Vector[I]] =
+    runEAUntil[I, M](
       { (_: Vector[I]) => false.point[M] },
       stepFunction)
 
@@ -79,7 +79,7 @@ package object mgo {
   }*/
 
   //TODO: Non-tail recursive function. Make a tail recursive one (Trampoline).
-  def runEAUntil[I, M[_]: Monad, G](
+  def runEAUntil[I, M[_]: Monad](
     stopCondition: Vector[I] => M[Boolean],
     stepFunction: Vector[I] => M[Vector[I]])(population: Vector[I]): M[Vector[I]] =
     (for {
@@ -88,7 +88,7 @@ package object mgo {
       if (stop) population.point[M]
       else for {
         newpop <- stepFunction(population)
-        next <- runEAUntil[I, M, G](stopCondition, stepFunction)(newpop)
+        next <- runEAUntil[I, M](stopCondition, stepFunction)(newpop)
       } yield next
     }).join
 

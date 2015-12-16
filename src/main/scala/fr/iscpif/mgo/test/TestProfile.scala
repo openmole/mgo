@@ -20,7 +20,7 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.niche._
 
-import algorithm.Profile
+import algorithm.NoisyProfile
 import Contexts.default._
 import Contexts._
 import Expressions._
@@ -33,47 +33,50 @@ import scalaz.effect.IO
 
 object SphereProfile extends App {
 
+  import algorithm.Profile._
+
   val muByNiche = 1
   val lambda = 10
-  def dimensions = 10
+  val dimensions = 10
   val maxiter = 100
+  val operationExploration = 0.1
 
-  def express: Expression[Profile.Genome, Double] = { case Profile.Genome(values, _, _) => sphere(values) }
+  def express: Expression[Genome, Double] = { case Genome(values, _, _) => sphere(values) }
 
   //Niche over the first dimension of the genome
-  def niche: Niche[Profile.Individual, Int] = genomeProfile[Profile.Individual](
-    values = (_: Profile.Individual).genome.values,
+  def niche: Niche[Individual, Int] = genomeProfile[Individual](
+    values = (_: Individual).genome.values,
     x = 0,
     nX = 10)
 
-  val ea: Vector[Profile.Individual] => EvolutionState[Unit, Vector[Profile.Individual]] =
-    runEAUntil[Profile.Individual, EvolutionStateMonad[Unit]#l, Profile.Genome](
-      stopCondition = { (individuals: Vector[Profile.Individual]) =>
+  val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
+    runEAUntil[Individual, EvolutionStateMonad[Unit]#l](
+      stopCondition = { (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },
       stepFunction =
-        (individuals: Vector[Profile.Individual]) =>
-          addIOBefore[Unit, Unit, Vector[Profile.Individual]](
-            writeGen[EvolutionStateMonad[Unit]#l](),
-            { _ =>
-              addIOBefore[Unit, Unit, Vector[Profile.Individual]](
-                write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness }.toString),
-                { _ => Profile.step[EvolutionStateMonad[Unit]#l](fitness = express, niche = niche, muByNiche = muByNiche, lambda = lambda)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals) }
-              )
-            }
-          )
+        (individuals: Vector[Individual]) => for {
+          _ <- liftIOValue(writeGen[EvolutionStateMonad[Unit]#l]())
+          _ <- liftIOValue(write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness }.toString))
+          res <- step[EvolutionStateMonad[Unit]#l](
+            fitness = express,
+            niche = niche,
+            muByNiche = muByNiche,
+            lambda = lambda,
+            operationExploration = operationExploration)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals)
+        } yield res
     )
 
-  val evolution: EvolutionState[Unit, Vector[Profile.Individual]] =
+  val evolution: EvolutionState[Unit, Vector[Individual]] =
     for {
-      initialGenomes <- Profile.initialGenomes[EvolutionStateMonad[Unit]#l](muByNiche, dimensions)
-      initialPop = initialGenomes.map { (g: Profile.Genome) => Profile.Individual(g, express(g)) }
+      initialGenomes <- initialGenomes[EvolutionStateMonad[Unit]#l](muByNiche, dimensions)
+      initialPop = initialGenomes.map { (g: Genome) => Individual(g, express(g)) }
       finalpop <- ea(initialPop)
     } yield finalpop
 
   val start = Contexts.default.wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
 
-  val (finalstate, finalpop) = Contexts.default.unwrap[Unit, Vector[Profile.Individual]](s = ())(
+  val (finalstate, finalpop) = Contexts.default.unwrap[Unit, Vector[Individual]](s = ())(
     start >> evolution
   )
 
@@ -84,7 +87,73 @@ object SphereProfile extends App {
   println(finalpop.mkString("\n"))
 
   println("---- Fitnesses ----")
-  println(finalpop.map { (_: Profile.Individual).fitness }.mkString("\n"))
+  println(finalpop.map { (_: Individual).fitness }.mkString("\n"))
+
+}
+
+object StochasticSphereProfile extends App {
+
+  import algorithm.NoisyProfile._
+
+  val muByNiche = 1
+  val lambda = 10
+  def dimensions = 10
+  val maxiter = 1000
+  val operationExploration = 0.1
+  val cloneProbability = 0.1
+  val historySize = 100
+
+  //TODO: Stochastic Sphere
+  def express: Expression[(Random, Vector[Double]), Double] = { case (rg: Random, v: Vector[Double]) => rg.nextGaussian() * 0.5 + math.sqrt(sphere(v)) }
+
+  //Niche over the first dimension of the genome
+  def niche: Niche[Individual, Int] = genomeProfile[Individual](
+    values = (_: Individual).genome,
+    x = 0,
+    nX = 10)
+
+  val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
+    runEAUntil[Individual, EvolutionStateMonad[Unit]#l](
+      stopCondition = { (individuals: Vector[Individual]) =>
+        implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
+      },
+      stepFunction =
+        (individuals: Vector[Individual]) => for {
+          _ <- liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]())
+          _ <- liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitnessHistory.last }.toString))
+          res <- step[EvolutionStateMonad[Unit]#l](
+            fitness = express,
+            niche = niche,
+            muByNiche = muByNiche,
+            lambda = lambda,
+            historySize = historySize,
+            operationExploration = operationExploration,
+            cloneProbability = cloneProbability)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals)
+        } yield res
+    )
+
+  val evolution: EvolutionState[Unit, Vector[Individual]] =
+    for {
+      rg <- implicitly[RandomGen[EvolutionStateMonad[Unit]#l]].split
+      initialPop <- initialPopulation[EvolutionStateMonad[Unit]#l](muByNiche, dimensions)
+      initialPopEval = initialPop.map { (i: Individual) => individualHistory.append(i, express((rg, i.genome))) }
+      finalpop <- ea(initialPopEval)
+    } yield finalpop
+
+  val start = Contexts.default.wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
+
+  val (finalstate, finalpop) = Contexts.default.unwrap[Unit, Vector[Individual]](s = ())(
+    start >> evolution
+  )
+
+  println("---- Final State ----")
+  println(finalstate)
+
+  println("---- Final Population ----")
+  println(finalpop.mkString("\n"))
+
+  println("---- Fitnesses ----")
+  println(finalpop.map { (_: Individual).fitnessHistory }.mkString("\n"))
 
 }
 
@@ -120,7 +189,7 @@ object SphereProfile extends App {
 //}
 //
 
-object StochasticSphereProfileOld extends App {
+/*object StochasticSphereProfileOld extends App {
 
   import fr.iscpif.mgo._
   import algorithm.ga._
@@ -157,7 +226,7 @@ object StochasticSphereProfileOld extends App {
   for { b <- bests } println(b.phenotype.size)
   for { b <- bests } println(s"""${b.genomeValue.mkString(",")},${average(b.phenotype)}""")
 
-}
+}*/
 //
 //object TestProfileRastrigin extends App {
 //

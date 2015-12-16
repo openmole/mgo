@@ -44,7 +44,7 @@ object Profile {
   def breeding[M[_]: Monad: RandomGen: Generational](
     lambda: Int,
     niche: Niche[Individual, Int],
-    operationExploration: Double = 0.1): Breeding[Individual, M, Genome] =
+    operationExploration: Double): Breeding[Individual, M, Genome] =
     (individuals: Vector[Individual]) => {
       for {
         rg <- implicitly[RandomGen[M]].split
@@ -86,7 +86,7 @@ object Profile {
     niche: Niche[Individual, Int],
     muByNiche: Int,
     lambda: Int,
-    operationExploration: Double = 0.1): Vector[Individual] => M[Vector[Individual]] =
+    operationExploration: Double): Vector[Individual] => M[Vector[Individual]] =
     stepEA[Individual, M, Genome](
       { (_: Vector[Individual]) => implicitly[Generational[M]].incrementGeneration },
       breeding[M](lambda, niche, operationExploration),

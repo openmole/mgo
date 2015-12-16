@@ -44,14 +44,13 @@ object NSGA2 {
 
   def breeding[M[_]: Monad: RandomGen: Generational](
     lambda: Int,
-    operationExploration: Double = 0.1): Breeding[Individual, M, Genome] =
+    operationExploration: Double): Breeding[Individual, M, Genome] =
     (individuals: Vector[Individual]) => {
-
       for {
         rg <- implicitly[RandomGen[M]].split
         generation <- implicitly[Generational[M]].getGeneration
         selected <- tournament[Individual, (Lazy[Int], Lazy[Double]), M](
-          paretoRankingAndCrowdingDiversity[Individual] { (i: Individual) => i.fitness }(rg),
+          paretoRankingMinAndCrowdingDiversity[Individual] { (i: Individual) => i.fitness }(rg),
           lambda)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]], implicitly[RandomGen[M]])(individuals)
         bred <- asB[Individual, (V, Maybe[Int]), M, (V, Maybe[Int]), Genome](
           { (i: Individual) => (i.genome.values, i.genome.operator) },
@@ -74,27 +73,28 @@ object NSGA2 {
           clonesKeepYoungest[Individual, M] { (i: Individual) => i.genome.generation })(implicitly[Monad[M]])(individuals)
         noNaN = (decloned: Vector[Individual]).filterNot { (_: Individual).genome.values.exists { (_: Double).isNaN } }
         kept <- keepHighestRankedO[Individual, (Lazy[Int], Lazy[Double]), M](
-          paretoRankingAndCrowdingDiversity[Individual] { (i: Individual) => i.fitness }(rg),
+          paretoRankingMinAndCrowdingDiversity[Individual] { (i: Individual) => i.fitness }(rg),
           mu)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]])(noNaN)
       } yield kept
 
   def step[M[_]: Monad: RandomGen: Generational](
     fitness: Genome => Vector[Double],
     mu: Int,
-    lambda: Int): Vector[Individual] => M[Vector[Individual]] =
+    lambda: Int,
+    operationExploration: Double): Vector[Individual] => M[Vector[Individual]] =
     stepEA[Individual, M, Genome](
       { (_: Vector[Individual]) => implicitly[Generational[M]].incrementGeneration },
-      breeding[M](lambda),
+      breeding[M](lambda, operationExploration),
       { (g: Genome) => Individual(g, fitness(g)) },
       elitism[M](mu),
       muPlusLambda[Individual])
 
-  def algorithm(mu: Int, lambda: Int, genomeSize: Int) =
+  def algorithm(mu: Int, lambda: Int, genomeSize: Int, operationExploration: Double) =
     new Algorithm[Individual, EvolutionStateMonad[Unit]#l, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
       implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
       def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l](mu, genomeSize)
-      def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.breeding[EvolutionStateMonad[Unit]#l](lambda)
+      def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.breeding[EvolutionStateMonad[Unit]#l](lambda, operationExploration)
       def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NSGA2.elitism[EvolutionStateMonad[Unit]#l](mu)
 
       def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
