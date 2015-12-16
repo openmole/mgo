@@ -32,7 +32,16 @@ import Contexts._
 
 object Breedings {
 
-  type Breeding[I, M[_], G] = Vector[I] => M[Vector[G]]
+  //type Breeding[I, M[_], G] = Vector[I] => M[Vector[G]]
+  type Breeding[I, M[_], G] = Kleisli[M, Vector[I], Vector[G]]
+
+  implicit def breedingToFunction[I, M[_]: Monad, G](b: Breeding[I, M, G]): Vector[I] => M[Vector[G]] = b.run
+  implicit def functionToBreeding[I, M[_]: Monad, G](f: Vector[I] => M[Vector[G]]): Breeding[I, M, G] = Kleisli.kleisli[M, Vector[I], Vector[G]](f)
+
+  /*implicit def breedingMonad[I, M[_]: Monad]: Monad[BreedingMonad[I, M]#l] = new Monad[BreedingMonad[I, M]#l] {
+    def point[A](a: => A): Breeding[I, M, A] = { _ => a.point[M] }
+    def bind[A, B](fa: Breeding[I, M, A])(f: (A) ⇒ Breeding[I, M, B]): Breeding[I, M, B] = ???
+  }*/
 
   /**** Selection ****/
 
