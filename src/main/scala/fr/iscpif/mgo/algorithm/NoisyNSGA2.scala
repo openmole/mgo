@@ -140,7 +140,7 @@ object NoisyNSGA2 {
       elitism[M](mu, historySize),
       muPlusLambda[Individual])
 
-  def algorithm(
+  /*def algorithm(
     mu: Int,
     lambda: Int,
     genomeSize: Int,
@@ -156,6 +156,6 @@ object NoisyNSGA2 {
 
       def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
       def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
-    }
+    }*/
 }
 

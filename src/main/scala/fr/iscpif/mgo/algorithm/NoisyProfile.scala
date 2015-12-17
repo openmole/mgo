@@ -135,7 +135,7 @@ object NoisyProfile {
       elitism[M](muByNiche, niche, historySize),
       muPlusLambda[Individual])
 
-  def algorithm(muByNiche: Int, lambda: Int, genomeSize: Int, niche: Niche[Individual, Int], historySize: Int, operationExploration: Double, cloneProbability: Double) =
+  /*def algorithm(muByNiche: Int, lambda: Int, genomeSize: Int, niche: Niche[Individual, Int], historySize: Int, operationExploration: Double, cloneProbability: Double) =
     new Algorithm[Individual, EvolutionStateMonad[Unit]#l, Individual, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
       implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
@@ -146,6 +146,6 @@ object NoisyProfile {
       def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
       def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
 
-    }
+    }*/
 
 }

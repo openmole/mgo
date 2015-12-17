@@ -19,6 +19,8 @@ package fr.iscpif.mgo
 import fr.iscpif.mgo.Breedings._
 import fr.iscpif.mgo.Contexts._
 
+import scala.util.Random
+
 import scalaz._
 import Scalaz._
 
@@ -28,7 +30,7 @@ package object algorithm {
     def randomGenomes[M[_]: Monad: RandomGen](n: Int, genomeLength: Int): M[Vector[Vector[Double]]] =
       for {
         rg <- implicitly[RandomGen[M]].split
-        values = Vector.fill(n)(Vector.fill(genomeLength)(rg.nextDouble))
+        values = Vector.fill(n)(Vector.fill(genomeLength)(Random.nextDouble))
       } yield values
   }
 

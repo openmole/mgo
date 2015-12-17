@@ -79,7 +79,9 @@ trait Algorithm[I, M[_], G, C[_]] {
 
   def initialGenomes: M[Vector[G]]
   def breeding: Breeding[I, M, G]
+  def expression: Expression[G, I]
   def elitism: Objective[I, M]
+  def step: Vector[I] => M[Vector[I]]
   /** Turn a non monadic value into a monadic one. */
   def wrap[A](m: C[A]): M[A]
   def unwrap[A](m: M[A]): C[A]

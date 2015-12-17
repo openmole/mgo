@@ -22,7 +22,6 @@ import fr.iscpif.mgo.algorithm._
 import fitness._
 import genome._
 
-import algorithm.NSGA2
 import Contexts.default._
 import Contexts._
 import Expressions._
@@ -35,41 +34,43 @@ import scalaz.effect.IO
 
 object SphereNSGAII extends App {
 
+  import NSGA2.Algorithm.{ Individual, Genome, gValues }
+
   val mu = 10
   val lambda = 10
   def dimensions = 10
-  val maxiter = 500
+  val maxiter = 100
   val operationExploration = 0.1
 
-  def express: Expression[NSGA2.Genome, Vector[Double]] = { case NSGA2.Genome(values, _, _) => Vector(sphere(values)) }
+  val fitness: Expression[Vector[Double], Vector[Double]] = { x => Vector(sphere(x)) }
 
-  val ea: Vector[NSGA2.Individual] => EvolutionState[Unit, Vector[NSGA2.Individual]] =
-    runEAUntil[NSGA2.Individual, EvolutionStateMonad[Unit]#l](
-      stopCondition = { (individuals: Vector[NSGA2.Individual]) =>
+  val algo = NSGA2.Algorithm(fitness, mu, lambda, dimensions, operationExploration)
+
+  val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
+    runEAUntil[Individual, EvolutionStateMonad[Unit]#l](
+      stopCondition = { (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },
       stepFunction =
-        (individuals: Vector[NSGA2.Individual]) => for {
+        (individuals: Vector[Individual]) => for {
           _ <- liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]())
           _ <- liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness.sum }.toString))
-          res <- NSGA2.step[EvolutionStateMonad[Unit]#l](
-            fitness = express,
-            mu = mu,
-            lambda = lambda,
-            operationExploration = operationExploration)(implicitly[Monad[EvolutionStateMonad[Unit]#l]], implicitly[RandomGen[EvolutionStateMonad[Unit]#l]], implicitly[Generational[EvolutionStateMonad[Unit]#l]])(individuals)
+          //res <- step(mu, lambda, fitness, operationExploration)(individuals)
+          res <- algo.step(individuals)
         } yield res
     )
 
-  val evolution: EvolutionState[Unit, Vector[NSGA2.Individual]] =
+  val evolution: EvolutionState[Unit, Vector[Individual]] =
     for {
-      initialGenomes <- NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l](mu, dimensions)
-      initialPop = initialGenomes.map { (g: NSGA2.Genome) => NSGA2.Individual(g, express(g)) }
+      //ig <- initialGenomes(mu, dimensions)
+      ig <- algo.initialGenomes
+      initialPop = ig.map { (g: Genome) => Individual(g, fitness(gValues.get(g))) }
       finalpop <- ea(initialPop)
     } yield finalpop
 
-  val start = Contexts.default.wrap[Unit, Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
+  val start = algo.wrap[Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
 
-  val (finalstate, finalpop) = Contexts.default.unwrap[Unit, Vector[NSGA2.Individual]](s = ())(
+  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](
     start >> evolution
   )
 
@@ -80,7 +81,8 @@ object SphereNSGAII extends App {
   println(finalpop.mkString("\n"))
 
   println("---- Fitnesses ----")
-  println(finalpop.map { (_: NSGA2.Individual).fitness }.mkString("\n"))
+  println(finalpop.map { (_: Individual).fitness }.mkString("\n"))
+  println("Done")
 }
 
 object StochasticSphereNSGAII extends App {
