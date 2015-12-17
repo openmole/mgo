@@ -25,6 +25,7 @@ import scala.math.min
 object Objectives {
 
   type Objective[I, M[_]] = Vector[I] => M[Vector[I]]
+  //type Objective[I, M[_]] = Kleisli[M, Vector[I], Vector[I]]
 
   def minimiseO[I, M[_]: Monad, F: Order](f: I => F, mu: Int): Objective[I, M] =
     (individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).toScalaOrdering).take(mu).point[M]
