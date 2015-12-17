@@ -32,6 +32,12 @@ import Scalaz._
 
 object NSGA2 {
 
+  // TODO: les fonctions breeding et elitism définies dans les objets respectifs aux algos doivent être indépendantes des
+  // types pour pouvoir être réutilisées ensuite dans d'autres algos. L'algorithme pure (ici NSGA2) est réellement spécifié
+  // dans la fonction algorithm tout en bas. Déplacer les types ci-dessous dans cette fonction, et refactorer les fonctions
+  // breeding et elitism pour qu'elle travaille sur des types abstraits I,G plutot qu'individual, et qu'elle prennent des lenses
+  // pour accéder aux infos dont elles ont besoin sur les I,G, etc.
+
   type V = Vector[Double]
   case class Genome(values: V, operator: Maybe[Int], generation: Long)
   case class Individual(genome: Genome, fitness: Vector[Double])
@@ -41,7 +47,6 @@ object NSGA2 {
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
       genomes = values.map { (vs: Vector[Double]) => Genome(vs, Maybe.empty, 0) }
     } yield genomes
-
 
   // TODO: Kleisli refactoring: Un Breeding est une fonction Vector[A] => M[Vector[B]], on peut la représenter
   // en utilisant un type Kleisli[M, Vector[A], Vector[B]] et utiliser les fonctions de composition sur Kleisli. Notamment,
