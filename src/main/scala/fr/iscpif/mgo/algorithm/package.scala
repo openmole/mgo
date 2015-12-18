@@ -35,7 +35,7 @@ package object algorithm {
   }
 
   object dynamicOperators {
-    def crossovers[M[_]: Monad: RandomGen]: Vector[Crossover[(Vector[Double], Vector[Double]), M, (Vector[Double], Vector[Double])]] =
+    def crossovers[M[_]: Monad: RandomGen]: Vector[Crossover[ M,(Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
       Vector(
         replicatePairC(blxC(0.1)),
         replicatePairC(blxC(0.5)),
@@ -45,7 +45,7 @@ package object algorithm {
         sbxC(2.0)
       )
 
-    def mutations[M[_]: Monad: RandomGen]: Vector[Mutation[Vector[Double], M, Vector[Double]]] =
+    def mutations[M[_]: Monad: RandomGen]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
       Vector(
         bgaM(mutationRate = 1.0 / _, mutationRange = 0.001),
         bgaM(mutationRate = 1.0 / _, mutationRange = 0.01),
@@ -53,17 +53,17 @@ package object algorithm {
         bgaM(mutationRate = _ => 0.5, mutationRange = 0.5)
       )
 
-    def crossoversAndMutations[M[_]: Monad: RandomGen]: Vector[((Vector[Double], Vector[Double])) => M[(Vector[Double], Vector[Double])]] =
+    def crossoversAndMutations[M[_]: Monad: RandomGen]: Vector[Kleisli[M,(Vector[Double], Vector[Double]),(Vector[Double], Vector[Double])]] =
       for {
         c <- crossovers[M]
         m <- mutations[M]
       } yield {
-        (mates: (Vector[Double], Vector[Double])) =>
+        Kleisli((mates: (Vector[Double], Vector[Double])) =>
           for {
             crossed <- c(mates)
             m1 <- m(crossed._1)
             m2 <- m(crossed._2)
-          } yield (m1, m2)
+          } yield (m1, m2))
       }
   }
 }

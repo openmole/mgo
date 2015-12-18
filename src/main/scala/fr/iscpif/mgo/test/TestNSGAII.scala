@@ -47,7 +47,7 @@ object SphereNSGAII extends App {
   val algo = NSGA2.Algorithm(mu = mu, lambda = lambda, fitness = fitness, genomeSize = dimensions, operatorExploration = operatorExploration)
 
   val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
-    runEAUntil[Individual, EvolutionStateMonad[Unit]#l](
+    runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
       stopCondition = { (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },
@@ -100,7 +100,7 @@ object StochasticSphereNSGAII extends App {
   val algo = NoisyNSGA2.Algorithm(mu = mu, lambda = lambda, fitness = express, operatorExploration = operatorExploration, genomeSize = dimensions, historySize = historySize, cloneProbability = cloneProbability)
 
   val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
-    runEAUntil[Individual, EvolutionStateMonad[Unit]#l](
+    runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
       stopCondition = { (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },

@@ -24,41 +24,45 @@ import scala.math.min
 
 object Objectives {
 
-  type Objective[I, M[_]] = Vector[I] => M[Vector[I]]
-  //type Objective[I, M[_]] = Kleisli[M, Vector[I], Vector[I]]
+  //type Objective[I, M[_]] = Vector[I] => M[Vector[I]]
+  type Objective[ M[_], I] = Kleisli[M, Vector[I], Vector[I]]
 
-  def minimiseO[I, M[_]: Monad, F: Order](f: I => F, mu: Int): Objective[I, M] =
-    (individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).toScalaOrdering).take(mu).point[M]
+  object Objective {
+    def apply[M[_]: Monad, I](f: Vector[I] => M[Vector[I]]): Objective[M, I] = Kleisli(f)
+  }
 
-  def maximiseO[I, M[_]: Monad, F: Order](f: I => F, mu: Int): Objective[I, M] =
-    (individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).reverseOrder.toScalaOrdering).take(mu).point[M]
+  def minimiseO[M[_]: Monad, I, F: Order](f: I => F, mu: Int): Objective[M,I] =
+    Objective((individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).toScalaOrdering).take(mu).point[M])
+
+  def maximiseO[ M[_]: Monad, I,F: Order](f: I => F, mu: Int): Objective[M,I] =
+    Objective((individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).reverseOrder.toScalaOrdering).take(mu).point[M])
 
   /** Returns the mu individuals with the highest ranks. */
-  def keepHighestRankedO[I, K: Order, M[_]: Monad](f: Vector[I] => Vector[K], mu: Int): Objective[I, M] =
-    (individuals: Vector[I]) =>
+  def keepHighestRankedO[M[_]: Monad, I, K: Order](f: Vector[I] => Vector[K], mu: Int): Objective[M, I] =
+    Objective((individuals: Vector[I]) =>
       if (individuals.size < mu) individuals.point[M]
       else {
         val scores = f(individuals)
         val sortedBestToWorst = (individuals zip scores).sortBy { _._2 }(implicitly[Order[K]].reverseOrder.toScalaOrdering).map { _._1 }
 
         sortedBestToWorst.take(mu).point[M]
-      }
+      })
 
   /**** Clone strategies ****/
-  def applyCloneStrategy[I, G, M[_]: Monad](getGenome: I => G, cloneStrategy: Vector[I] => M[Vector[I]]): Objective[I, M] =
-    (individuals: Vector[I]) =>
+  def applyCloneStrategy[M[_]: Monad, I, G](getGenome: I => G, cloneStrategy: Objective[M,I]): Objective[M,I] =
+    Objective((individuals: Vector[I]) =>
       for {
-        res <- individuals.groupBy(getGenome).valuesIterator.toVector.traverseM[M, I](cloneStrategy)
-      } yield res
+        res <- individuals.groupBy(getGenome).valuesIterator.toVector.traverseM[M, I](cloneStrategy.run)
+      } yield res)
 
-  def clonesKeepYoungest[I, M[_]: Monad](generation: I => Long): Vector[I] => M[Vector[I]] =
-    (clones: Vector[I]) => clones.maxBy(generation).point[Vector].point[M]
+  def keepYoungest[M[_]: Monad,I](iGeneration: Lens[I, Long]): Objective[M,I] =
+    Objective((clones: Vector[I]) => clones.maxBy(iGeneration.get).point[Vector].point[M])
 
   //TODO: L'algo suivant suppose que la partie de l'historique du jeune avant young.age est un duplicat du plus vieux.
   //Pas sur que ça soit toujours le cas: On peut avoir 2 clones qui ont évolué différemment et n'ont pas d'histoire commune.
   //Si c'est le cas, alors on supprime une partie d'historique que l'on devrait garder.
-  def clonesMergeHistories[I, P, M[_]: Monad](iAge: Lens[I, Long], iHistory: Lens[I, Vector[P]])(historySize: Int): Vector[I] => M[Vector[I]] =
-    (clones: Vector[I]) => {
+  def mergeHistories[ M[_]: Monad, I, P](iAge: Lens[I, Long], iHistory: Lens[I, Vector[P]])(historySize: Int): Objective[M, I] =
+    Objective((clones: Vector[I]) => {
       clones.sortBy { i => -iAge.get(i) }.reduceLeft { (i1, i2) =>
         val oldAge = iAge.get(i1)
         val youngAge = iAge.get(i2)
@@ -68,5 +72,5 @@ object Objectives {
 
         iAge.set(iHistory.set(i1, (oldH ++ youngH).takeRight(historySize)), oldAge + youngAge)
       }
-    }.point[Vector].point[M]
+    }.point[Vector].point[M])
 }

@@ -73,14 +73,14 @@ trait AlgorithmOld[G, P, S] {
  * val indivs2 = genomes2.map(express)
  * val (s22, selected2) = run((s21, indivs2), elitism)
  */
-trait Algorithm[I, M[_], G, C[_]] {
+trait Algorithm[M[_], I, G, C[_]] {
 
   implicit val m: Monad[M]
 
   def initialGenomes: M[Vector[G]]
-  def breeding: Breeding[I, M, G]
+  def breeding: Breeding[ M,I, G]
   def expression: Expression[G, I]
-  def elitism: Objective[I, M]
+  def elitism: Objective[M,I]
   def step: Vector[I] => M[Vector[I]]
   /** Turn a non monadic value into a monadic one. */
   def wrap[A](m: C[A]): M[A]

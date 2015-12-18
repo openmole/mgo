@@ -58,7 +58,7 @@ object SphereProfile extends App {
     operatorExploration = operatorExploration)
 
   val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
-    runEAUntil[Individual, EvolutionStateMonad[Unit]#l](
+    runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
       stopCondition = { (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },
@@ -126,7 +126,7 @@ object StochasticSphereProfile extends App {
     cloneProbability = cloneProbability)
 
   val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
-    runEAUntil[Individual, EvolutionStateMonad[Unit]#l](
+    runEAUntil[ EvolutionStateMonad[Unit]#l, Individual](
       stopCondition = { (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       },

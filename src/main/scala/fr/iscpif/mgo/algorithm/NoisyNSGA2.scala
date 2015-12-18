@@ -55,55 +55,57 @@ object NoisyNSGA2 {
     iCons: (Vector[Double], Maybe[Int], Long, Vector[Vector[Double]]) => I)(
       lambda: Int,
       operatorExploration: Double,
-      cloneProbability: Double): Breeding[I, M, (Random, I)] =
-    withRandomGenB[I, M, I](
-      (individuals: Vector[I]) => {
+      cloneProbability: Double): Breeding[M, I, (Random, I)] =
+    withRandomGenB[M, I, I](
+      Breeding(
+        (individuals: Vector[I]) => {
 
-        //TODO: Vérifier le sens de paretoRanking
-        for {
-          rg <- implicitly[RandomGen[M]].split
-          selected <- tournament[I, (Lazy[Int], Lazy[Double]), M](
-            paretoRankingMinAndCrowdingDiversity[I] { fitnessWithReplications(iFitness, iHistory) }(rg),
-            lambda)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]], implicitly[RandomGen[M]])(individuals)
-          // Ce qui suit est compliqué parce qu'il y a plusieurs étapes de fonctions imbriquées: On utilise liftB pour
-          // transformer un I en (I, Operateur) pour correspondre à la signature de dynamicallyOpB. Puis, on
-          // associe les individus par paires parceque les operateurs qu'on utilise ensuite (crossover + mutation) prennent des
-          // paires et renvoiens des paires. Ensuite, on map sur les operateurs crossoversAndMutations pour les transformer en operateurs
-          // qui prennent et renvoient des paires d'individus plutôt que de Vecteur[Double]. L'avantage de cette approche est que les fonctions individuelles
-          // sont minimalistes, et aussi que la signature des fonction nous donne beaucoup d'info sur ce que fait la fonction, le
-          // désavantage est qu'il y a beaucoup de travail pour les combiner ensemble. On pourrait peut-être gagner en simplicité sur
-          // cette transformation de signatures avec une autre approche: par exemple, si toutes les fonctions de breeding prennent des fonctions
-          // qui leur permettent d'extraire les info dont elles ont besoin à partir des individus (ce que fait actuellement liftB), ou des lenses.
-          bred <- asB[I, (I, Maybe[Int]), M, (I, Maybe[Int]), I](
-            { i => (i, iOperator.get(i)) },
-            { case (i, op) => iOperator.set(i, op) },
-            dynamicallyOpB[I, M, I, (I, I), (I, I)](
-              pairConsecutive[I, M],
-              { case (i1, i2) => Vector(i1, i2).point[M] },
-              dynamicOperators.crossoversAndMutations[M].map {
-                op =>
-                  opOrClone[(I, I), M, (I, I)](
-                    // cloning copies the whole individual as is and increments its age
-                    clone = {
-                      case (i1, i2) =>
-                        def age(i: I): I = iAge.mod(_ + 1, i)
-                        (age(i1), age(i2))
-                    },
-                    op = {
-                      case (i1, i2) =>
-                        for {
-                          newg1g2 <- op(iValues.get(i1), iValues.get(i2))
-                          (newg1, newg2) = newg1g2
-                          newi1 = iHistory.set(iValues.set(i1, newg1), Vector.empty)
-                          newi2 = iHistory.set(iValues.set(i2, newg2), Vector.empty)
-                        } yield (newi1, newi2)
-                    },
-                    cloneProbability = cloneProbability)
-              },
-              operatorExploration))(implicitly[Monad[M]])(selected)
-          clamped = (bred: Vector[I]).map { iValues =>= { _ map { x: Double => max(0.0, min(1.0, x)) } } }
-        } yield clamped
-      }
+          //TODO: Vérifier le sens de paretoRanking
+          for {
+            rg <- implicitly[RandomGen[M]].split
+            selected <- tournament[M, I, (Lazy[Int], Lazy[Double])](
+              paretoRankingMinAndCrowdingDiversity[I] { fitnessWithReplications(iFitness, iHistory) }(rg),
+              lambda)(implicitly[Monad[M]], implicitly[RandomGen[M]], implicitly[Order[(Lazy[Int], Lazy[Double])]])(individuals)
+            // Ce qui suit est compliqué parce qu'il y a plusieurs étapes de fonctions imbriquées: On utilise liftB pour
+            // transformer un I en (I, Operateur) pour correspondre à la signature de dynamicallyOpB. Puis, on
+            // associe les individus par paires parceque les operateurs qu'on utilise ensuite (crossover + mutation) prennent des
+            // paires et renvoiens des paires. Ensuite, on map sur les operateurs crossoversAndMutations pour les transformer en operateurs
+            // qui prennent et renvoient des paires d'individus plutôt que de Vecteur[Double]. L'avantage de cette approche est que les fonctions individuelles
+            // sont minimalistes, et aussi que la signature des fonction nous donne beaucoup d'info sur ce que fait la fonction, le
+            // désavantage est qu'il y a beaucoup de travail pour les combiner ensemble. On pourrait peut-être gagner en simplicité sur
+            // cette transformation de signatures avec une autre approche: par exemple, si toutes les fonctions de breeding prennent des fonctions
+            // qui leur permettent d'extraire les info dont elles ont besoin à partir des individus (ce que fait actuellement liftB), ou des lenses.
+            bred <- asB[ M,I, (I, Maybe[Int]), (I, Maybe[Int]), I](
+              { i => (i, iOperator.get(i)) },
+              { case (i, op) => iOperator.set(i, op) },
+              dynamicallyOpB[M, I, I, (I, I), (I, I)](
+                pairConsecutive[M, I],
+                Kleisli.kleisli[M,(I,I),Vector[I]]{ case (i1, i2) => Vector(i1, i2).point[M] },
+                dynamicOperators.crossoversAndMutations[M].map {
+                  op =>
+                    opOrClone[M, (I, I), (I, I)](
+                      // cloning copies the whole individual as is and increments its age
+                      clone = {
+                        case (i1, i2) =>
+                          def age(i: I): I = iAge.mod(_ + 1, i)
+                          (age(i1), age(i2))
+                      },
+                      op = {
+                        case (i1, i2) =>
+                          for {
+                            newg1g2 <- op(iValues.get(i1), iValues.get(i2))
+                            (newg1, newg2) = newg1g2
+                            newi1 = iHistory.set(iValues.set(i1, newg1), Vector.empty)
+                            newi2 = iHistory.set(iValues.set(i2, newg2), Vector.empty)
+                          } yield (newi1, newi2)
+                      },
+                      cloneProbability = cloneProbability)
+                },
+                operatorExploration))(implicitly[Monad[M]])(selected)
+            clamped = (bred: Vector[I]).map { iValues =>= { _ map { x: Double => max(0.0, min(1.0, x)) } } }
+          } yield clamped
+        }
+      )
     )
 
   def expression[I](
@@ -116,24 +118,24 @@ object NoisyNSGA2 {
     iFitness: Lens[I, Vector[Double]],
     iHistory: Lens[I, Vector[Vector[Double]]],
     iOperator: Lens[I, Maybe[Int]],
-    iAge: Lens[I, Long])(mu: Int, historySize: Int): Objective[I, M] =
-    (individuals: Vector[I]) =>
+    iAge: Lens[I, Long])(mu: Int, historySize: Int): Objective[M, I] =
+    Objective((individuals: Vector[I]) =>
       for {
         rg <- implicitly[RandomGen[M]].split
-        decloned <- applyCloneStrategy[I, Vector[Double], M](
+        decloned <- applyCloneStrategy[M,I, Vector[Double]](
           { (i: I) => iValues.get(i) },
-          clonesMergeHistories[I, Vector[Double], M](iAge, iHistory)(historySize))(implicitly[Monad[M]])(individuals)
+          mergeHistories[M, I, Vector[Double]](iAge, iHistory)(historySize))(implicitly[Monad[M]])(individuals)
         noNaN = (decloned: Vector[I]).filterNot { iValues.get(_).exists { (_: Double).isNaN } }
-        kept <- keepHighestRankedO[I, (Lazy[Int], Lazy[Double]), M](
+        kept <- keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](
           paretoRankingMinAndCrowdingDiversity[I] { fitnessWithReplications(iFitness, iHistory) }(rg),
-          mu)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]])(noNaN)
-      } yield kept
+          mu)(implicitly[Monad[M]], implicitly[Order[(Lazy[Int], Lazy[Double])]])(noNaN)
+      } yield kept)
 
   def step[M[_]: Monad: Generational: RandomGen, I, G](
-    breeding: Breeding[I, M, (Random, G)],
+    breeding: Breeding[M, I, (Random, G)],
     expression: Expression[(Random, G), I],
-    elitism: Objective[I, M]): Vector[I] => M[Vector[I]] =
-    stepEA[I, M, (Random, G)](
+    elitism: Objective[M, I]): Vector[I] => M[Vector[I]] =
+    stepEA[M, I, (Random, G)](
       { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
       breeding,
       expression,
@@ -166,13 +168,13 @@ object NoisyNSGA2 {
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[(Random, Individual)]] =
       NoisyNSGA2.initialGenomes[EvolutionStateMonad[Unit]#l, Individual](Individual)(mu, genomeSize)
-    def breeding(lambda: Int, operatorExploration: Double, cloneProbability: Double): Breeding[Individual, EvolutionStateMonad[Unit]#l, (Random, Individual)] =
+    def breeding(lambda: Int, operatorExploration: Double, cloneProbability: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual)] =
       NoisyNSGA2.breeding[EvolutionStateMonad[Unit]#l, Individual](
         iFitness, iHistory, iValues, iOperator, iAge, Individual
       )(lambda, operatorExploration, cloneProbability)
     def expression(fitness: (Random, Vector[Double]) => Vector[Double]): Expression[(Random, Individual), Individual] =
       NoisyNSGA2.expression[Individual](iValues, iHistory)(fitness)
-    def elitism(mu: Int, historySize: Int): Objective[Individual, EvolutionStateMonad[Unit]#l] =
+    def elitism(mu: Int, historySize: Int): Objective[EvolutionStateMonad[Unit]#l, Individual] =
       NoisyNSGA2.elitism[EvolutionStateMonad[Unit]#l, Individual](iValues, iFitness, iHistory, iOperator, iAge)(mu, historySize)
 
     def step(
@@ -198,14 +200,14 @@ object NoisyNSGA2 {
       genomeSize: Int,
       historySize: Int,
       cloneProbability: Double) =
-      new Algorithm[Individual, EvolutionStateMonad[Unit]#l, (Random, Individual), ({ type l[x] = (EvolutionData[Unit], x) })#l] {
+      new Algorithm[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual), ({ type l[x] = (EvolutionData[Unit], x) })#l] {
 
         implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
         def initialGenomes: EvolutionState[Unit, Vector[(Random, Individual)]] = NoisyNSGA2.Algorithm.initialGenomes(mu, genomeSize)
-        def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, (Random, Individual)] = NoisyNSGA2.Algorithm.breeding(lambda, operatorExploration, cloneProbability)
+        def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual)] = NoisyNSGA2.Algorithm.breeding(lambda, operatorExploration, cloneProbability)
         def expression: Expression[(Random, Individual), Individual] = NoisyNSGA2.Algorithm.expression(fitness)
-        def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NoisyNSGA2.Algorithm.elitism(mu, historySize)
+        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NoisyNSGA2.Algorithm.elitism(mu, historySize)
 
         def step: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] = NoisyNSGA2.Algorithm.step(mu, lambda, fitness, operatorExploration, historySize, cloneProbability)
 
@@ -213,22 +215,6 @@ object NoisyNSGA2 {
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
       }
   }
-  /*def algorithm(
-    mu: Int,
-    lambda: Int,
-    genomeSize: Int,
-    historySize: Int,
-    operatorExploration: Double,
-    cloneProbability: Double) =
-    new Algorithm[Individual, EvolutionStateMonad[Unit]#l, Individual, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
-      implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
-      def initialGenomes: EvolutionState[Unit, Vector[Individual]] = NoisyNoisyNSGA2.initialPopulation[EvolutionStateMonad[Unit]#l](mu, genomeSize)
-      def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Individual] = NoisyNSGA2.breeding[EvolutionStateMonad[Unit]#l](lambda, operatorExploration, cloneProbability)
-      def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NoisyNSGA2.elitism[EvolutionStateMonad[Unit]#l](mu, historySize)
-
-      def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
-      def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
-    }*/
 }
 

@@ -46,27 +46,27 @@ object Profile {
     gCons: (Vector[Double], Maybe[Int], Long) => G)(
       lambda: Int,
       niche: Niche[I, Int],
-      operatorExploration: Double): Breeding[I, M, G] =
-    (individuals: Vector[I]) => {
+      operatorExploration: Double): Breeding[M, I, G] =
+    Breeding((individuals: Vector[I]) => {
       type V = Vector[Double]
       for {
         rg <- implicitly[RandomGen[M]].split
         generation <- implicitly[Generational[M]].getGeneration
-        selected <- tournament[I, Lazy[Int], M](
+        selected <- tournament[M, I, Lazy[Int]](
           ranking = profileRanking[I](niche, iFitness.get(_: I)),
           size = lambda,
-          rounds = size => math.round(math.log10(size).toInt))(implicitly[Order[Lazy[Int]]], implicitly[Monad[M]], implicitly[RandomGen[M]])(individuals)
-        bred <- asB[I, (V, Maybe[Int]), M, (V, Maybe[Int]), G](
+          rounds = size => math.round(math.log10(size).toInt))(implicitly[Monad[M]], implicitly[RandomGen[M]], implicitly[Order[Lazy[Int]]])(individuals)
+        bred <- asB[M, I, (V, Maybe[Int]), (V, Maybe[Int]), G](
           { (i: I) => ((iGenome >=> gValues).get(i), (iGenome >=> gOperator).get(i)) },
-          { case (values: V, op: Maybe[Int]) => gCons(values, op, generation) },
-          dynamicallyOpB[V, M, V, (V, V), (V, V)](
-            pairConsecutive[V, M],
-            { case (g1, g2) => Vector(g1, g2).point[M] },
+          { (valuesop: (V, Maybe[Int])) => gCons(valuesop._1, valuesop._2, generation) },
+          dynamicallyOpB[M, V, V, (V, V), (V, V)](
+            pairConsecutive[M, V],
+            Kleisli.kleisli[M,(V,V),Vector[V]]{ case (g1, g2) => Vector(g1, g2).point[M] } ,
             dynamicOperators.crossoversAndMutations[M],
             operatorExploration))(implicitly[Monad[M]])(selected)
         clamped = (bred: Vector[G]).map { gValues =>= { _ map { x: Double => max(0.0, min(1.0, x)) } } }
       } yield clamped
-    }
+    })
 
   def expression[G, I](
     gValues: Lens[G, Vector[Double]],
@@ -77,27 +77,27 @@ object Profile {
   def elitism[M[_]: Monad: RandomGen, I](
     iFitness: Lens[I, Double],
     iGenomeValues: Lens[I, Vector[Double]],
-    iGeneration: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int]): Objective[I, M] =
+    iGeneration: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int]): Objective[M, I] =
     byNicheO[I, Int, M](
       niche = niche,
-      objective = (individuals: Vector[I]) =>
+      objective = Objective((individuals: Vector[I]) =>
         for {
           rg <- implicitly[RandomGen[M]].split
-          decloned <- applyCloneStrategy[I, Vector[Double], M](
+          decloned <- applyCloneStrategy[M, I, Vector[Double]](
             { (i: I) => iGenomeValues.get(i) },
-            clonesKeepYoungest[I, M] { (i: I) => iGeneration.get(i) })(implicitly[Monad[M]])(individuals)
+            keepYoungest[M, I] { iGeneration })(implicitly[Monad[M]])(individuals)
           noNaN = (decloned: Vector[I]).filterNot { iGenomeValues.get(_).exists { (_: Double).isNaN } }
-          kept <- minimiseO[I, M, Double](
+          kept <- minimiseO[M, I, Double](
             { i: I => iFitness.get(i) },
             muByNiche)(implicitly[Monad[M]], implicitly[Order[Double]])(noNaN)
-        } yield kept
+        } yield kept)
     )
 
   def step[M[_]: Monad: RandomGen: Generational, I, G](
-    breeding: Breeding[I, M, G],
+    breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    elitism: Objective[I, M]): Vector[I] => M[Vector[I]] =
-    stepEA[I, M, G](
+    elitism: Objective[M, I]): Vector[I] => M[Vector[I]] =
+    stepEA[M, I, G](
       { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
       breeding,
       expression,
@@ -134,12 +134,12 @@ object Profile {
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
       Profile.initialGenomes[EvolutionStateMonad[Unit]#l, Genome](Genome)(mu, genomeSize)
-    def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double): Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = Profile.breeding[EvolutionStateMonad[Unit]#l, Individual, Genome](
+    def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = Profile.breeding[EvolutionStateMonad[Unit]#l, Individual, Genome](
       iFitness, iGenome, gValues, gOperator, Genome
     )(lambda, niche, operatorExploration)
     def expression(fitness: Expression[Vector[Double], Double]): Expression[Genome, Individual] =
       Profile.expression[Genome, Individual](gValues, Individual)(fitness)
-    def elitism(muByNiche: Int, niche: Niche[Individual, Int]): Objective[Individual, EvolutionStateMonad[Unit]#l] =
+    def elitism(muByNiche: Int, niche: Niche[Individual, Int]): Objective[EvolutionStateMonad[Unit]#l, Individual] =
       Profile.elitism[EvolutionStateMonad[Unit]#l, Individual](iFitness, iGenomeValues, iGeneration)(muByNiche, niche)
 
     def step(
@@ -164,14 +164,14 @@ object Profile {
       niche: Niche[Individual, Int],
       genomeSize: Int,
       operatorExploration: Double) =
-      new Algorithm[Individual, EvolutionStateMonad[Unit]#l, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
+      new Algorithm[EvolutionStateMonad[Unit]#l, Individual, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
 
         implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = Profile.Algorithm.initialGenomes(muByNiche, genomeSize)
-        def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = Profile.Algorithm.breeding(lambda, niche, operatorExploration)
+        def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = Profile.Algorithm.breeding(lambda, niche, operatorExploration)
         def expression: Expression[Genome, Individual] = Profile.Algorithm.expression(fitness)
-        def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = Profile.Algorithm.elitism(muByNiche, niche)
+        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = Profile.Algorithm.elitism(muByNiche, niche)
 
         def step: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] = Profile.Algorithm.step(muByNiche, lambda, fitness, niche, operatorExploration)
 

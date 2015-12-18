@@ -32,8 +32,12 @@ import Contexts._
 
 object Breedings {
 
-  type Breeding[I, M[_], G] = Vector[I] => M[Vector[G]]
-  //type Breeding[I, M[_], G] = Kleisli[M, Vector[I], Vector[G]]
+  //type Breeding[I, M[_], G] = Vector[I] => M[Vector[G]]
+  type Breeding[M[_], I, G] = Kleisli[M, Vector[I], Vector[G]]
+
+  object Breeding {
+    def apply[M[_]: Monad, I, G](f: Vector[I] => M[Vector[G]]): Breeding[M, I, G] = Kleisli.kleisli[M, Vector[I], Vector[G]](f)
+  }
 
   //implicit def breedingToFunction[I, M[_]: Monad, G](b: Breeding[I, M, G]): Vector[I] => M[Vector[G]] = b.run
   //implicit def functionToBreeding[I, M[_]: Monad, G](f: Vector[I] => M[Vector[G]]): Breeding[I, M, G] = Kleisli.kleisli[M, Vector[I], Vector[G]](f)
@@ -45,34 +49,36 @@ object Breedings {
 
   /**** Selection ****/
 
-  def tournament[I, K: Order, M[_]: Monad: RandomGen](ranking: Vector[I] => Vector[K], size: Int, rounds: Int => Int = _ => 1): Breeding[I, M, I] =
-    (individuals: Vector[I]) =>
-      if (individuals.isEmpty) individuals.point[M]
-      else {
-        val scores: Vector[K] = ranking(individuals)
-        val popsize = individuals.size
+  def tournament[M[_]: Monad: RandomGen, I, K: Order](ranking: Vector[I] => Vector[K], size: Int, rounds: Int => Int = _ => 1): Breeding[M, I, I] =
+    Breeding.apply(
+      (individuals: Vector[I]) =>
+        if (individuals.isEmpty) individuals.point[M]
+        else {
+          val scores: Vector[K] = ranking(individuals)
+          val popsize = individuals.size
 
-        def findOneChampion(rg: Random): I = {
-          val challengers: Vector[Int] = Vector.fill(rounds(popsize))(rg.nextInt(popsize))
-          challengers.maximumBy(scores) match {
-            case Some(champion) => individuals(champion)
-            case None => individuals(rg.nextInt(popsize))
+          def findOneChampion(rg: Random): I = {
+            val challengers: Vector[Int] = Vector.fill(rounds(popsize))(rg.nextInt(popsize))
+            challengers.maximumBy(scores) match {
+              case Some(champion) => individuals(champion)
+              case None => individuals(rg.nextInt(popsize))
+            }
           }
-        }
 
-        for {
-          rgs <- implicitly[RandomGen[M]].split.replicateM(size)
-          champions = rgs.toVector.map(findOneChampion)
-        } yield champions
-      }
+          for {
+            rgs <- implicitly[RandomGen[M]].split.replicateM(size)
+            champions = rgs.toVector.map(findOneChampion)
+          } yield champions
+        }
+    )
 
   /**** Mating ****/
 
-  def groupConsecutive[I, M[_]: Monad](groupSize: Int): Breeding[I, M, Vector[I]] =
-    (individuals: Vector[I]) => individuals.grouped(groupSize).toVector.point[M]
+  def groupConsecutive[M[_]: Monad,I ](groupSize: Int): Breeding[M,I, Vector[I]] =
+    Breeding((individuals: Vector[I]) => individuals.grouped(groupSize).toVector.point[M])
 
-  def pairConsecutive[I, M[_]: Monad]: Breeding[I, M, (I, I)] =
-    (individuals: Vector[I]) => individuals.grouped(2).map { case Vector(a, b) => (a, b); case Vector(a) => (a, a) }.toVector.point[M]
+  def pairConsecutive[M[_]: Monad,I]: Breeding[ M, I, (I, I)] =
+    Breeding((individuals: Vector[I]) => individuals.grouped(2).map { case Vector(a, b) => (a, b); case Vector(a) => (a, a) }.toVector.point[M])
 
   /**** Crossover ****/
 
@@ -84,25 +90,29 @@ object Breedings {
    *
    * The type G can also represent more than one genome.
    */
-  type Crossover[P, M[_], G] = P => M[G]
+  type Crossover[M[_], P, O] = Kleisli[M,P,O]
 
-  def replicateC[P, M[_]: Monad, G](n: Int, c: Crossover[P, M, G]): Crossover[P, M, Vector[G]] =
-    (mates: P) =>
+  object Crossover {
+    def apply[M[_]: Monad, P, O](f: P => M[O]): Crossover[M,P,O] = Kleisli.kleisli[M,P,O](f)
+  }
+
+  def replicateC[M[_]: Monad, P, O](n: Int, c: Crossover[ M,P, O]): Crossover[ M, P, Vector[O]] =
+    Crossover((mates: P) =>
       for {
         gs <- c(mates).replicateM(n)
-      } yield gs.toVector
+      } yield gs.toVector)
 
-  def replicatePairC[P, M[_]: Monad, G](c: Crossover[P, M, G]): Crossover[P, M, (G, G)] =
-    (mates: P) =>
+  def replicatePairC[ M[_]: Monad, P, O](c: Crossover[M, P, O]): Crossover[ M,P, (O, O)] =
+    Crossover((mates: P) =>
       for {
         g1 <- c(mates)
         g2 <- c(mates)
-      } yield (g1, g2)
+      } yield (g1, g2))
 
-  def identityC[I, M[_]: Monad]: Crossover[I, M, I] = _.point[M]
+  def identityC[M[_]: Monad, I]: Crossover[M, I, I] = Crossover(_.point[M])
 
-  def blxC[M[_]: Monad: RandomGen](alpha: Double = 0.5): Crossover[(Vector[Double], Vector[Double]), M, Vector[Double]] =
-    (mates: (Vector[Double], Vector[Double])) =>
+  def blxC[M[_]: Monad: RandomGen](alpha: Double = 0.5): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
+    Crossover((mates: (Vector[Double], Vector[Double])) =>
       for {
         rg <- implicitly[RandomGen[M]].split
       } yield {
@@ -113,7 +123,7 @@ object Breedings {
             val range = cmax - cmin
             rg.nextDouble().scale(cmin - alpha * range, cmax + alpha * range)
         }
-      }
+      })
 
   /**
    * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :
@@ -134,8 +144,8 @@ object Breedings {
    * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
    *
    */
-  def sbxC[M[_]: Monad: RandomGen](distributionIndex: Double = 2.0): Crossover[(Vector[Double], Vector[Double]), M, (Vector[Double], Vector[Double])] =
-    (mates: (Vector[Double], Vector[Double])) => {
+  def sbxC[M[_]: Monad: RandomGen](distributionIndex: Double = 2.0): Crossover[ M,(Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])] =
+    Crossover((mates: (Vector[Double], Vector[Double])) => {
 
       val exponent = 1.0 / (distributionIndex + 1.0)
 
@@ -167,15 +177,19 @@ object Breedings {
         assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
         (o1, o2)
       }
-    }
+    })
 
   /**** Mutation ****/
 
   /** A mutation is a function from a single genome to another single genome */
-  type Mutation[G1, M[_], G2] = G1 => M[G2]
+  type Mutation[M[_], G1, G2] = Kleisli[M,G1,G2]
 
-  def bgaM[M[_]: Monad: RandomGen](mutationRate: Int => Double, mutationRange: Double): Mutation[Vector[Double], M, Vector[Double]] =
-    (g: Vector[Double]) =>
+  object Mutation {
+    def apply[M[_]: Monad, G1, G2](f: G1 => M[G2]): Mutation[M, G1, G2] = Kleisli.kleisli[M,G1,G2](f)
+  }
+
+  def bgaM[M[_]: Monad: RandomGen](mutationRate: Int => Double, mutationRange: Double): Mutation[M,Vector[Double],  Vector[Double]] =
+    Mutation((g: Vector[Double]) =>
       for {
         rng <- implicitly[RandomGen[M]].split
       } yield {
@@ -188,7 +202,7 @@ object Breedings {
               x + (sign * mutationRange * ro)
             } else x
         }
-      }
+      })
 
   /**** Dynamic breeding ****/
 
@@ -198,12 +212,12 @@ object Breedings {
    * @param mate Used to turn the individuals into a vector of elements that will be input to the selected operator.
    * @param unmate Used to turn a vector of elements output by the operator back into a vector of Gs.
    */
-  def dynamicallyOpB[I, M[_]: Monad: RandomGen, G, OI, OO](
-    mate: Vector[I] => M[Vector[OI]],
-    unmate: OO => M[Vector[G]],
-    ops: Vector[OI => M[OO]],
-    exploration: Double): Breeding[(I, Maybe[Int]), M, (G, Maybe[Int])] =
-    (individuals: Vector[(I, Maybe[Int])]) => {
+  def dynamicallyOpB[M[_]: Monad: RandomGen,I, G, OI, OO](
+    mate: Kleisli[M, Vector[I], Vector[OI]],
+    unmate: Kleisli[M, OO, Vector[G]],
+    ops: Vector[Kleisli[M,OI,OO]],
+    exploration: Double): Breeding[ M, (I, Maybe[Int]), (G, Maybe[Int])] =
+    Breeding((individuals: Vector[(I, Maybe[Int])]) => {
       val total = individuals.size * 2
       val proportion: Map[Int, Double] = individuals.collect { case (_, Maybe.Just(op)) => op }.groupBy(identity).mapValues(_.length.toDouble / total)
 
@@ -212,24 +226,24 @@ object Breedings {
         else multinomial(proportion.toList)(rg)
 
       for {
-        vmates <- mate(individuals.map { _._1 })
+        vmates <- mate.run(individuals.map { _._1 })
         rg <- implicitly[RandomGen[M]].split
         offspringsAndOp <- vmates.map { mates => (selectOp(rg), mates) }
-          .traverse[M, (OO, Maybe[Int])] { case (selectedop, mates) => ops(selectedop)(mates).map[(OO, Maybe[Int])] { (_: OO, Maybe.Just(selectedop)) } }
-        bred <- offspringsAndOp.traverse[M, Vector[(G, Maybe[Int])]] { case (offsprings, op) => unmate(offsprings).map[Vector[(G, Maybe[Int])]] { (gs: Vector[G]) => gs.map((_: G, op)) } }
+          .traverse[M, (OO, Maybe[Int])] { case (selectedop, mates) => ops(selectedop).run(mates).map[(OO, Maybe[Int])] { (_: OO, Maybe.Just(selectedop)) } }
+        bred <- offspringsAndOp.traverse[M, Vector[(G, Maybe[Int])]] { case (offsprings, op) => unmate.run(offsprings).map[Vector[(G, Maybe[Int])]] { (gs: Vector[G]) => gs.map((_: G, op)) } }
       } yield bred.toVector.flatten
-    }
+    })
 
   /**** Cloning ****/
 
-  def opOrClone[I, M[_]: Monad: RandomGen, G](
+  def opOrClone[M[_]: Monad: RandomGen,I,  G](
     clone: I => G,
     op: I => M[G],
-    cloneProbability: Double): I => M[G] =
-    probabilisticOperatorB[I, M, G](
+    cloneProbability: Double): Kleisli[M,I,G] =
+    Kleisli(probabilisticOperatorB[ M,I, G](
       Vector(
         (clone(_).point[M], cloneProbability),
         (op(_), 1 - cloneProbability)
       )
-    )
+    ))
 }
