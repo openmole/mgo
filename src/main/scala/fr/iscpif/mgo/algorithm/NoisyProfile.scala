@@ -33,114 +33,194 @@ import Scalaz._
 
 object NoisyProfile {
 
-  type V = Vector[Double]
-  case class Individual(
-    genome: V,
-    operator: Maybe[Int],
-    age: Long,
-    fitnessHistory: Vector[Double])
+  def fitnessWithReplications[I](
+    iFitness: Lens[I, Double],
+    iHistory: Lens[I, Vector[Double]])(i: I): Vector[Double] = Vector(iFitness.get(i), 1.0 / iHistory.get(i).size)
 
-  implicit val individualAge: Age[Individual] = new Age[Individual] {
-    def getAge(i: Individual): Long = i.age
-    def setAge(i: Individual, a: Long): Individual = i.copy(age = a)
-  }
-
-  implicit val individualHistory: PhenotypeHistory[Individual, Double] = new PhenotypeHistory[Individual, Double] {
-    def getPhenotype(i: Individual): Double = i.fitnessHistory.last
-    def append(i: Individual, p: Double): Individual = i.copy(fitnessHistory = i.fitnessHistory :+ p)
-    def getHistory(i: Individual): Vector[Double] = i.fitnessHistory
-    def setHistory(i: Individual, h: Vector[Double]): Individual = i.copy(fitnessHistory = h)
-  }
-
-  def fitnessWithReplications(i: Individual): Vector[Double] = Vector(individualHistory.getPhenotype(i), 1.0 / individualHistory.getHistory(i).size)
-
-  def initialPopulation[M[_]: Monad: RandomGen](mu: Int, genomeSize: Int): M[Vector[Individual]] =
+  def initialGenomes[M[_]: Monad: RandomGen, I](
+    iCons: (Vector[Double], Maybe[Int], Long, Vector[Double]) => I)(mu: Int, genomeSize: Int): M[Vector[(Random, I)]] =
     for {
+      rgs <- implicitly[RandomGen[M]].split.replicateM(mu)
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
-      indivs = values.map { (vs: Vector[Double]) => Individual(genome = vs, operator = Maybe.empty, age = 1, fitnessHistory = Vector.empty) }
+      indivs = rgs.toVector zip values.map { (vs: Vector[Double]) => iCons(vs, Maybe.empty, 1, Vector.empty) }
     } yield indivs
 
-  def breeding[M[_]: Monad: RandomGen: Generational](
-    lambda: Int,
-    niche: Niche[Individual, Int],
-    operationExploration: Double,
-    cloneProbability: Double): Breeding[Individual, M, Individual] =
-    (individuals: Vector[Individual]) => {
-      for {
-        rg <- implicitly[RandomGen[M]].split
-        generation <- implicitly[Generational[M]].getGeneration
-        selected <- tournament[Individual, (Lazy[Int], Lazy[Double]), M](
-          ranking = paretoRankingMinAndCrowdingDiversity[Individual] { fitnessWithReplications }(rg),
-          size = lambda,
-          rounds = size => math.round(math.log10(size).toInt))(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]], implicitly[RandomGen[M]])(individuals)
-        bred <- asB[Individual, (Individual, Maybe[Int]), M, (Individual, Maybe[Int]), Individual](
-          { (i: Individual) => (i, i.operator) },
-          { case (i: Individual, op: Maybe[Int]) => i.copy(operator = op) },
-          dynamicallyOpB[Individual, M, Individual, (Individual, Individual), (Individual, Individual)](
-            pairConsecutive[Individual, M],
-            { case (i1, i2) => Vector(i1, i2).point[M] },
-            dynamicOperators.crossoversAndMutations[M].map {
-              op =>
-                opOrClone[(Individual, Individual), M, (Individual, Individual)](
-                  // cloning copies the whole individual as is and increments its age
-                  clone = {
-                    case (i1: Individual, i2: Individual) =>
-                      def age(i: Individual): Individual = i.copy(age = i.age + 1)
-                      (age(i1), age(i2))
-                  },
-                  op = {
-                    case (i1: Individual, i2: Individual) =>
-                      for {
-                        newg1g2 <- op(i1.genome, i2.genome)
-                        (newg1, newg2) = newg1g2
-                        newi1 = i1.copy(genome = newg1, fitnessHistory = Vector.empty)
-                        newi2 = i2.copy(genome = newg2, fitnessHistory = Vector.empty)
-                      } yield (newi1, newi2)
-                  },
-                  cloneProbability = cloneProbability)
-            },
-            operationExploration))(implicitly[Monad[M]])(selected)
-        clamped = (bred: Vector[Individual]).map { (i: Individual) => i.copy(genome = i.genome.map { x: Double => max(0.0, min(1.0, x)) }) }
-      } yield clamped
-    }
-
-  def elitism[M[_]: Monad: RandomGen](muByNiche: Int, niche: Niche[Individual, Int], historySize: Int): Objective[Individual, M] =
-    byNicheO[Individual, Int, M](
-      niche = niche,
-      objective = (individuals: Vector[Individual]) =>
+  def breeding[M[_]: Monad: RandomGen: Generational, I](
+    iFitness: Lens[I, Double],
+    iHistory: Lens[I, Vector[Double]],
+    iValues: Lens[I, Vector[Double]],
+    iOperator: Lens[I, Maybe[Int]],
+    iAge: Lens[I, Long],
+    iCons: (Vector[Double], Maybe[Int], Long, Vector[Double]) => I)(
+      lambda: Int,
+      niche: Niche[I, Int],
+      operatorExploration: Double,
+      cloneProbability: Double): Breeding[I, M, (Random, I)] =
+    withRandomGenB[I, M, I](
+      (individuals: Vector[I]) => {
         for {
           rg <- implicitly[RandomGen[M]].split
-          decloned <- applyCloneStrategy[Individual, (V, Maybe[Int], Long), M](
-            { (i: Individual) => (i.genome, i.operator, i.age) },
-            clonesMergeHistories[Individual, Double, M](historySize))(implicitly[Monad[M]])(individuals)
-          noNaN = (decloned: Vector[Individual]).filterNot { (_: Individual).genome.exists { (_: Double).isNaN } }
-          kept <- keepHighestRankedO[Individual, (Lazy[Int], Lazy[Double]), M](
-            paretoRankingMinAndCrowdingDiversity[Individual] { fitnessWithReplications }(rg),
+          generation <- implicitly[Generational[M]].getGeneration
+          selected <- tournament[I, (Lazy[Int], Lazy[Double]), M](
+            ranking = paretoRankingMinAndCrowdingDiversity[I] { fitnessWithReplications(iFitness, iHistory) }(rg),
+            size = lambda,
+            rounds = size => math.round(math.log10(size).toInt))(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]], implicitly[RandomGen[M]])(individuals)
+          bred <- asB[I, (I, Maybe[Int]), M, (I, Maybe[Int]), I](
+            { (i: I) => (i, iOperator.get(i)) },
+            { case (i, op) => iOperator.set(i, op) },
+            dynamicallyOpB[I, M, I, (I, I), (I, I)](
+              pairConsecutive[I, M],
+              { case (i1, i2) => Vector(i1, i2).point[M] },
+              dynamicOperators.crossoversAndMutations[M].map {
+                op =>
+                  opOrClone[(I, I), M, (I, I)](
+                    // cloning copies the whole individual as is and increments its age
+                    clone = {
+                      case (i1, i2) =>
+                        def age(i: I): I = iAge.mod(_ + 1, i)
+                        (age(i1), age(i2))
+                    },
+                    op = {
+                      case (i1, i2) =>
+                        for {
+                          newg1g2 <- op(iValues.get(i1), iValues.get(i2))
+                          (newg1, newg2) = newg1g2
+                          newi1 = iHistory.set(iValues.set(i1, newg1), Vector.empty)
+                          newi2 = iHistory.set(iValues.set(i2, newg2), Vector.empty)
+                        } yield (newi1, newi2)
+                    },
+                    cloneProbability = cloneProbability)
+              },
+              operatorExploration))(implicitly[Monad[M]])(selected)
+          clamped = (bred: Vector[I]).map { iValues =>= { _ map { x: Double => max(0.0, min(1.0, x)) } } }
+        } yield clamped
+      }
+    )
+
+  def expression[I](
+    iValues: Lens[I, Vector[Double]],
+    iHistory: Lens[I, Vector[Double]])(fitness: (Random, Vector[Double]) => Double): Expression[(Random, I), I] =
+    { case (rg, i) => iHistory.mod(_ :+ fitness(rg, iValues.get(i)), i) }
+
+  def elitism[M[_]: Monad: RandomGen, I](
+    iValues: Lens[I, Vector[Double]],
+    iFitness: Lens[I, Double],
+    iHistory: Lens[I, Vector[Double]],
+    iOperator: Lens[I, Maybe[Int]],
+    iAge: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int], historySize: Int): Objective[I, M] =
+    byNicheO[I, Int, M](
+      niche = niche,
+      objective = (individuals: Vector[I]) =>
+        for {
+          rg <- implicitly[RandomGen[M]].split
+          decloned <- applyCloneStrategy[I, Vector[Double], M](
+            { (i: I) => iValues.get(i) },
+            clonesMergeHistories[I, Double, M](iAge, iHistory)(historySize))(implicitly[Monad[M]])(individuals)
+          noNaN = (decloned: Vector[I]).filterNot { iValues.get(_).exists { (_: Double).isNaN } }
+          kept <- keepHighestRankedO[I, (Lazy[Int], Lazy[Double]), M](
+            paretoRankingMinAndCrowdingDiversity[I] { fitnessWithReplications(iFitness, iHistory) }(rg),
             muByNiche)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]])(noNaN)
         } yield kept
     )
 
-  def step[M[_]: Monad: RandomGen: Generational](
-    fitness: Expression[(Random, Vector[Double]), Double],
-    niche: Niche[Individual, Int],
-    muByNiche: Int,
-    lambda: Int,
-    historySize: Int,
-    cloneProbability: Double,
-    operationExploration: Double): Vector[Individual] => M[Vector[Individual]] =
-    stepEA[Individual, M, (Random, Individual)](
-      { (_: Vector[Individual]) => implicitly[Generational[M]].incrementGeneration },
-      withRandomGenB[Individual, M, Individual](breeding[M](lambda, niche, operationExploration, cloneProbability)),
-      { case (rg: Random, i: Individual) => individualHistory.append(i, fitness((rg, i.genome))) },
-      elitism[M](muByNiche, niche, historySize),
-      muPlusLambda[Individual])
+  def step[M[_]: Monad: RandomGen: Generational, I](
+    breeding: Breeding[I, M, (Random, I)],
+    expression: Expression[(Random, I), I],
+    elitism: Objective[I, M]): Vector[I] => M[Vector[I]] =
+    stepEA[I, M, (Random, I)](
+      { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
+      breeding,
+      expression,
+      elitism,
+      muPlusLambda[I])
 
-  /*def algorithm(muByNiche: Int, lambda: Int, genomeSize: Int, niche: Niche[Individual, Int], historySize: Int, operationExploration: Double, cloneProbability: Double) =
+  object Algorithm {
+
+    case class Individual(
+      genome: Vector[Double],
+      operator: Maybe[Int],
+      age: Long,
+      fitnessHistory: Vector[Double])
+
+    val iValues: Lens[Individual, Vector[Double]] = Lens.lensu(
+      set = (i, v) => i.copy(genome = v),
+      get = _.genome
+    )
+    val iOperator: Lens[Individual, Maybe[Int]] = Lens.lensu(
+      set = (i, o) => i.copy(operator = o),
+      get = _.operator
+    )
+    val iAge: Lens[Individual, Long] = Lens.lensu(
+      set = (i, a) => i.copy(age = a),
+      get = _.age
+    )
+    val iHistory: Lens[Individual, Vector[Double]] = Lens.lensu(
+      set = (i, h) => i.copy(fitnessHistory = h),
+      get = _.fitnessHistory
+    )
+    val iFitness: Lens[Individual, Double] = Lens.lensu(
+      set = (i, f) => i.copy(fitnessHistory = i.fitnessHistory.dropRight(1) :+ f),
+      get = _.fitnessHistory.last
+    )
+
+    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[(Random, Individual)]] = NoisyProfile.initialGenomes[EvolutionStateMonad[Unit]#l, Individual](Individual)(mu, genomeSize)
+    def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double): Breeding[Individual, EvolutionStateMonad[Unit]#l, (Random, Individual)] =
+      NoisyProfile.breeding[EvolutionStateMonad[Unit]#l, Individual](
+        iFitness, iHistory, iValues, iOperator, iAge, Individual
+      )(lambda, niche, operatorExploration, cloneProbability)
+    def expression(fitness: (Random, Vector[Double]) => Double): Expression[(Random, Individual), Individual] =
+      NoisyProfile.expression[Individual](iValues, iHistory)(fitness)
+    def elitism(muByNiche: Int, niche: Niche[Individual, Int], historySize: Int): Objective[Individual, EvolutionStateMonad[Unit]#l] =
+      NoisyProfile.elitism[EvolutionStateMonad[Unit]#l, Individual](iValues, iFitness, iHistory, iOperator, iAge)(muByNiche, niche, historySize)
+
+    def step(
+      muByNiche: Int,
+      lambda: Int,
+      fitness: (Random, Vector[Double]) => Double,
+      niche: Niche[Individual, Int],
+      historySize: Int,
+      cloneProbability: Double,
+      operatorExploration: Double): Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
+      NoisyProfile.step[EvolutionStateMonad[Unit]#l, Individual](
+        breeding(lambda, niche, operatorExploration, cloneProbability),
+        expression(fitness),
+        elitism(muByNiche, niche, historySize)
+      )
+
+    def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
+    def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
+
+    def apply(
+      muByNiche: Int,
+      lambda: Int,
+      fitness: (Random, Vector[Double]) => Double,
+      niche: Niche[Individual, Int],
+      genomeSize: Int,
+      historySize: Int,
+      operatorExploration: Double,
+      cloneProbability: Double) =
+      new Algorithm[Individual, EvolutionStateMonad[Unit]#l, (Random, Individual), ({ type l[x] = (EvolutionData[Unit], x) })#l] {
+
+        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
+
+        def initialGenomes: EvolutionState[Unit, Vector[(Random, Individual)]] = NoisyProfile.Algorithm.initialGenomes(muByNiche, genomeSize)
+        def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, (Random, Individual)] = NoisyProfile.Algorithm.breeding(lambda, niche, operatorExploration, cloneProbability)
+        def expression: Expression[(Random, Individual), Individual] = NoisyProfile.Algorithm.expression(fitness)
+        def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NoisyProfile.Algorithm.elitism(muByNiche, niche, historySize)
+
+        def step: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] = NoisyProfile.Algorithm.step(muByNiche, lambda, fitness, niche, historySize, cloneProbability, operatorExploration)
+
+        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyProfile.Algorithm.wrap(x)
+        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
+      }
+  }
+
+  /*def algorithm(muByNiche: Int, lambda: Int, genomeSize: Int, niche: Niche[Individual, Int], historySize: Int, operatorExploration: Double, cloneProbability: Double) =
     new Algorithm[Individual, EvolutionStateMonad[Unit]#l, Individual, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
       implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
       def initialGenomes: EvolutionState[Unit, Vector[Individual]] = NoisyProfile.initialPopulation[EvolutionStateMonad[Unit]#l](muByNiche, genomeSize)
-      def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Individual] = NoisyProfile.breeding[EvolutionStateMonad[Unit]#l](lambda, niche, operationExploration, cloneProbability)
+      def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Individual] = NoisyProfile.breeding[EvolutionStateMonad[Unit]#l](lambda, niche, operatorExploration, cloneProbability)
       def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NoisyProfile.elitism[EvolutionStateMonad[Unit]#l](muByNiche, niche, historySize)
 
       def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)

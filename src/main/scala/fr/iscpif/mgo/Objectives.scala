@@ -57,16 +57,16 @@ object Objectives {
   //TODO: L'algo suivant suppose que la partie de l'historique du jeune avant young.age est un duplicat du plus vieux.
   //Pas sur que ça soit toujours le cas: On peut avoir 2 clones qui ont évolué différemment et n'ont pas d'histoire commune.
   //Si c'est le cas, alors on supprime une partie d'historique que l'on devrait garder.
-  def clonesMergeHistories[I, P, M[_]](historySize: Int)(implicit ia: Age[I], ih: PhenotypeHistory[I, P], m: Monad[M]): Vector[I] => M[Vector[I]] =
+  def clonesMergeHistories[I, P, M[_]: Monad](iAge: Lens[I, Long], iHistory: Lens[I, Vector[P]])(historySize: Int): Vector[I] => M[Vector[I]] =
     (clones: Vector[I]) => {
-      clones.sortBy { i => -ia.getAge(i) }.reduceLeft { (i1, i2) =>
-        val oldAge = ia.getAge(i1)
-        val youngAge = ia.getAge(i2)
+      clones.sortBy { i => -iAge.get(i) }.reduceLeft { (i1, i2) =>
+        val oldAge = iAge.get(i1)
+        val youngAge = iAge.get(i2)
 
-        def oldH: Vector[P] = ih.getHistory(i1)
-        def youngH: Vector[P] = ih.getHistory(i2).takeRight(min(youngAge, Int.MaxValue).toInt)
+        def oldH: Vector[P] = iHistory.get(i1)
+        def youngH: Vector[P] = iHistory.get(i2).takeRight(min(youngAge, Int.MaxValue).toInt)
 
-        ia.setAge(ih.setHistory(i1, (oldH ++ youngH).takeRight(historySize)), oldAge + youngAge)
+        iAge.set(iHistory.set(i1, (oldH ++ youngH).takeRight(historySize)), oldAge + youngAge)
       }
     }.point[Vector].point[M]
 }

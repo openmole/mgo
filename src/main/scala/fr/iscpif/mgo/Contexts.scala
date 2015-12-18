@@ -29,8 +29,11 @@ import scala.util.Random
 object Contexts {
 
   trait RandomGen[M[_]] {
+    /** returns the random number generator in M */
+    def get: M[Random]
     /**
-     * implementations of this function must use a random number generator contained in M in order to produce the Random returned, and update the original
+     * Returns a new random number generator that is independant from the one in M, useful for parallel computations.
+     * Implementations of this function must use a random number generator contained in M in order to produce the Random returned, and update the original
      * random number generator in an independant manner so that it is never used twice (and allows for safe parallelisation).
      */
     def split: M[Random]
@@ -58,6 +61,11 @@ object Contexts {
     def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, Tag.of[Start](0), Random, s)).unsafePerformIO
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
+      def get: EvolutionState[S, Random] =
+        for {
+          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
+        } yield s.random
+
       def split: EvolutionState[S, Random] =
         for {
           s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get

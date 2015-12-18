@@ -226,19 +226,6 @@ package object mgo {
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)
     }
 
-  /**** Some typeclasses, TODO: move this to a more appropriate place ****/
-  trait Age[I] {
-    def getAge(i: I): Long
-    def setAge(i: I, a: Long): I
-  }
-
-  trait PhenotypeHistory[I, P] {
-    def getPhenotype(i: I): P
-    def append(i: I, p: P): I
-    def getHistory(i: I): Vector[P]
-    def setHistory(i: I, h: Vector[P]): I
-  }
-
   /***********************************************/
 
   implicit def common[S] = monocle.macros.Lenser[AlgorithmState[S]](_.common)

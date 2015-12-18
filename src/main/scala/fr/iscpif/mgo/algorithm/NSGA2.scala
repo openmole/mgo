@@ -31,15 +31,11 @@ import scala.math._
 import scalaz._
 import Scalaz._
 
-import util.Random
-
 object NSGA2 {
 
   // TODO: les fonctions breeding et elitism définies dans les objets respectifs aux algos doivent être indépendantes des
-  // types pour pouvoir être réutilisées ensuite dans d'autres algos. L'algorithme pure (ici NSGA2) est réellement spécifié
-  // dans la fonction algorithm tout en bas. Déplacer les types ci-dessous dans cette fonction, et refactorer les fonctions
-  // breeding et elitism pour qu'elle travaille sur des types abstraits I,G plutot qu'individual, et qu'elle prennent des lenses
-  // pour accéder aux infos dont elles ont besoin sur les I,G, etc.
+  // types pour pouvoir être réutilisées ensuite dans d'autres algos. L'algorithme pur (ici NSGA2) est réellement spécifié
+  // dans la fonction algorithm tout en bas.
 
   def initialGenomes[M[_]: Monad: RandomGen, G](cons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
     for {
@@ -60,10 +56,9 @@ object NSGA2 {
     iGenome: Lens[I, G],
     gValues: Lens[G, Vector[Double]],
     gOperator: Lens[G, Maybe[Int]],
-    gGeneration: Lens[G, Long],
     gCons: (Vector[Double], Maybe[Int], Long) => G)(
       lambda: Int,
-      operationExploration: Double): Breeding[I, M, G] =
+      operatorExploration: Double): Breeding[I, M, G] =
     (individuals: Vector[I]) => {
       type V = Vector[Double]
       for {
@@ -79,7 +74,7 @@ object NSGA2 {
             pairConsecutive[V, M],
             { case (g1, g2) => Vector(g1, g2).point[M] },
             dynamicOperators.crossoversAndMutations[M],
-            operationExploration))(implicitly[Monad[M]])(selected)
+            operatorExploration))(implicitly[Monad[M]])(selected)
         clamped = (bred: Vector[G]).map { gValues =>= { _ map { x: Double => max(0.0, min(1.0, x)) } } }
       } yield clamped
     }
@@ -106,6 +101,17 @@ object NSGA2 {
           paretoRankingMinAndCrowdingDiversity[I] { iFitness.get }(rg),
           mu)(implicitly[Order[(Lazy[Int], Lazy[Double])]], implicitly[Monad[M]])(noNaN)
       } yield kept
+
+  def step[M[_]: Monad: RandomGen: Generational, I, G](
+    breeding: Breeding[I, M, G],
+    expression: Expression[G, I],
+    elitism: Objective[I, M]): Vector[I] => M[Vector[I]] =
+    stepEA[I, M, G](
+      { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
+      breeding,
+      expression,
+      elitism,
+      muPlusLambda[I])
 
   /** The default NSGA2 algorithm */
   object Algorithm {
@@ -139,51 +145,42 @@ object NSGA2 {
     val iGenomeValues: Lens[Individual, Vector[Double]] = iGenome >=> gValues
     val iGeneration: Lens[Individual, Long] = iGenome >=> gGeneration
 
-    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] = NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l, Genome](Genome)(mu, genomeSize)
-    def breeding(lambda: Int, operationExploration: Double): Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.breeding[EvolutionStateMonad[Unit]#l, Individual, Genome](
-      iFitness,
-      iGenome,
-      gValues,
-      gOperator,
-      gGeneration,
-      Genome
-    )(lambda, operationExploration)
-    def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] = NSGA2.expression[Genome, Individual](
-      gValues,
-      Individual
-    )(fitness)
-    def elitism(mu: Int): Objective[Individual, EvolutionStateMonad[Unit]#l] = NSGA2.elitism[EvolutionStateMonad[Unit]#l, Individual](
-      iFitness,
-      iGenomeValues,
-      iGeneration
-    )(mu)
+    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
+      NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l, Genome](Genome)(mu, genomeSize)
+    def breeding(lambda: Int, operatorExploration: Double): Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] =
+      NSGA2.breeding[EvolutionStateMonad[Unit]#l, Individual, Genome](
+        iFitness, iGenome, gValues, gOperator, Genome
+      )(lambda, operatorExploration)
+    def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
+      NSGA2.expression[Genome, Individual](gValues, Individual)(fitness)
+    def elitism(mu: Int): Objective[Individual, EvolutionStateMonad[Unit]#l] =
+      NSGA2.elitism[EvolutionStateMonad[Unit]#l, Individual](iFitness, iGenomeValues, iGeneration)(mu)
 
     def step(
       mu: Int,
       lambda: Int,
       fitness: Expression[Vector[Double], Vector[Double]],
-      operationExploration: Double): Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
-      stepEA[Individual, EvolutionStateMonad[Unit]#l, Genome](
-        { (_: Vector[Individual]) => implicitly[Generational[EvolutionStateMonad[Unit]#l]].incrementGeneration },
-        breeding(lambda, operationExploration),
+      operatorExploration: Double): Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
+      NSGA2.step[EvolutionStateMonad[Unit]#l, Individual, Genome](
+        breeding(lambda, operatorExploration),
         expression(fitness),
-        elitism(mu),
-        muPlusLambda[Individual])
+        elitism(mu)
+      )
 
     def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
     def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
 
-    def apply(fitness: Vector[Double] => Vector[Double], mu: Int, lambda: Int, genomeSize: Int, operationExploration: Double) =
+    def apply(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) =
       new Algorithm[Individual, EvolutionStateMonad[Unit]#l, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
 
         implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(mu, genomeSize)
-        def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.Algorithm.breeding(lambda, operationExploration)
+        def breeding: Breeding[Individual, EvolutionStateMonad[Unit]#l, Genome] = NSGA2.Algorithm.breeding(lambda, operatorExploration)
         def expression: Expression[Genome, Individual] = NSGA2.Algorithm.expression(fitness)
         def elitism: Objective[Individual, EvolutionStateMonad[Unit]#l] = NSGA2.Algorithm.elitism(mu)
 
-        def step: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] = NSGA2.Algorithm.step(mu, lambda, fitness, operationExploration)
+        def step: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] = NSGA2.Algorithm.step(mu, lambda, fitness, operatorExploration)
 
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
