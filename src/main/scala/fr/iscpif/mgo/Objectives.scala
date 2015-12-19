@@ -40,7 +40,7 @@ object Objectives {
     Objective((individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).reverseOrder.toScalaOrdering).take(mu).point[M])
 
   /** Returns n individuals randomly. */
-  def randomO[M[_]: Monad: RandomGen, I](n: Int): Objective[M,I] =
+  def randomO[M[_]: Monad: RandomGen, I](n: Int): Objective[M, I] =
     Objective(
       (individuals: Vector[I]) => {
         val popSize = individuals.size

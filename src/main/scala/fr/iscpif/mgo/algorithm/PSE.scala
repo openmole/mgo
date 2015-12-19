@@ -40,7 +40,7 @@ object PSE {
       gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty, 0) }
     } yield gs
 
-  def breeding[M[_]: Monad: RandomGen: Generational: ({type l[x[_]]=HitMapper[x,C]})#l, I, G, C](
+  def breeding[M[_]: Monad: RandomGen: Generational: ({ type l[x[_]] = HitMapper[x, C] })#l, I, G, C](
     iGenome: Lens[I, G],
     gValues: Lens[G, Vector[Double]],
     gOperator: Lens[G, Maybe[Int]],
@@ -51,7 +51,7 @@ object PSE {
     for {
       // Select lambda parents whose corresponding cell has low hit count
       parents <- tournament[M, I, Lazy[Int]](
-        ranking = reversedRanking[M,I](hitCountRanking[M,I,C](cell)),
+        ranking = reversedRanking[M, I](hitCountRanking[M, I, C](cell)),
         size = lambda)
       // Compute the proportion of each operator in the population
       opstats = parents.map { (iGenome >=> gOperator).get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size)
@@ -100,21 +100,21 @@ object PSE {
       fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
     (g: G) => iCons(g, fitness(gValues.get(g)))
 
-  def elitism[M[_]: Monad: RandomGen: ({type l[x[_]]=HitMapper[x,C]})#l, I, C](
+  def elitism[M[_]: Monad: RandomGen: ({ type l[x[_]] = HitMapper[x, C] })#l, I, C](
     iGenomeValues: Lens[I, Vector[Double]],
     iGeneration: Lens[I, Long],
     cell: I => C)(
       muPerCell: Int): Objective[M, I] =
     for {
       // Update the hitmap with the newly evaluated individuals
-      _ <- Kleisli.kleisli[M, Vector[I], Unit]{(is: Vector[I]) => implicitly[HitMapper[M,C]].addHits(is.map(cell))}
+      _ <- Kleisli.kleisli[M, Vector[I], Unit] { (is: Vector[I]) => implicitly[HitMapper[M, C]].addHits(is.map(cell)) }
       // Declone
       decloned <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues.get, keepYoungest[M, I] { iGeneration })
       // Filter out NaNs
       // TODO: flatMapPureB est assez générique pour être utilisée avec des objectifs aussi. Regrouper les fonctions génériques sur Kleisli ensemble et les renommer
       noNaNs <- thenK(flatMapPureB[M, I, I] { i: I => if (iGenomeValues.get(i).exists { (_: Double).isNaN }) Vector.empty else Vector(i) })(decloned)
       // Keep muPerCell individuals per cell randomly
-      is <- thenK(byNicheO[M,I,C](cell, randomO[M,I](muPerCell)))(noNaNs)
+      is <- thenK(byNicheO[M, I, C](cell, randomO[M, I](muPerCell)))(noNaNs)
     } yield is
 
   def step[M[_]: Monad: RandomGen: Generational, I, G](
@@ -128,8 +128,10 @@ object PSE {
       elitism,
       muPlusLambda[I])
 
-  /** The default PSE algorithm working with Vector[Double] genomes and patterns. (TODO: Can we abstract this to
-    * make a default PSE algorithm for any types for genomes and patterns?) */
+  /**
+   * The default PSE algorithm working with Vector[Double] genomes and patterns. (TODO: Can we abstract this to
+   * make a default PSE algorithm for any types for genomes and patterns?)
+   */
   object Algorithm {
 
     import fr.iscpif.mgo.Contexts.default._
@@ -137,7 +139,7 @@ object PSE {
     type V = Vector[Double]
     case class Genome(values: V, operator: Maybe[Int], generation: Long)
     case class Individual(genome: Genome, pattern: Vector[Double])
-    type HitMap = Map[Vector[Int],Int]
+    type HitMap = Map[Vector[Int], Int]
 
     val iPattern: Lens[Individual, Vector[Double]] = Lens.lensu(
       set = (i, v) => i.copy(pattern = v),
@@ -165,12 +167,12 @@ object PSE {
     // HitMapper instance of the default Context
     implicit def mHitMap: HitMapper[EvolutionStateMonad[HitMap]#l, Vector[Int]] =
       new HitMapper[EvolutionStateMonad[HitMap]#l, Vector[Int]] {
-        def hitCount(cell: Vector[Int]): EvolutionState[HitMap,Int] =
+        def hitCount(cell: Vector[Int]): EvolutionState[HitMap, Int] =
           for {
             s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
           } yield s.s(cell)
 
-        def addHit(cell: Vector[Int]): EvolutionState[HitMap,Unit] =
+        def addHit(cell: Vector[Int]): EvolutionState[HitMap, Unit] =
           for {
             s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
             currentHitCount = s.s.getOrElse(cell, 0)
@@ -179,10 +181,10 @@ object PSE {
             _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].put(s.copy(s = newHitMap))
           } yield ()
 
-        def addHits(cells: Vector[Vector[Int]]): EvolutionState[HitMap,Unit] =
+        def addHits(cells: Vector[Vector[Int]]): EvolutionState[HitMap, Unit] =
           for {
             s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
-            newHitMap = s.s ++ (cells.map{ c => (c, s.s.getOrElse(c, 0) + 1)})
+            newHitMap = s.s ++ (cells.map { c => (c, s.s.getOrElse(c, 0) + 1) })
             // Modify the hitMap by incrementing the corresponding values
             _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].put(s.copy(s = newHitMap))
           } yield ()
@@ -217,20 +219,20 @@ object PSE {
       )
 
     def wrap[A](x: (EvolutionData[HitMap], A)): EvolutionState[HitMap, A] = default.wrap[HitMap, A](x)
-    def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = default.unwrap[HitMap, A](Map.empty[Vector[Int],Int])(x)
+    def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = default.unwrap[HitMap, A](Map.empty[Vector[Int], Int])(x)
 
     def apply(mu: Int,
-              lambda: Int,
-              express: Vector[Double] => Vector[Double],
-              genomeSize: Int,
-              operatorExploration: Double,
-              anchor: Vector[Double],
-              discretisationStep: Vector[Double]) =
+      lambda: Int,
+      express: Vector[Double] => Vector[Double],
+      genomeSize: Int,
+      operatorExploration: Double,
+      anchor: Vector[Double],
+      discretisationStep: Vector[Double]) =
       new Algorithm[EvolutionStateMonad[HitMap]#l, Individual, Genome, ({ type l[x] = (EvolutionData[HitMap], x) })#l] {
 
         implicit val m: Monad[EvolutionStateMonad[HitMap]#l] = implicitly[Monad[EvolutionStateMonad[HitMap]#l]]
 
-        val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor,discretisationStep)
+        val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep)
 
         def initialGenomes: EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(mu, genomeSize)
         def breeding: Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] = PSE.Algorithm.breeding(lambda, operatorExploration, cell)

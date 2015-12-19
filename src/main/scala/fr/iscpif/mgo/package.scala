@@ -247,7 +247,6 @@ package object mgo {
   def thenK[M[_]: Monad, R, A, B](k: Kleisli[M, A, B])(a: A): Kleisli[M, R, B] =
     Kleisli.kleisli[M, R, B](_ => k.run(a))
 
-
   /***********************************************/
 
   implicit def common[S] = monocle.macros.Lenser[AlgorithmState[S]](_.common)
