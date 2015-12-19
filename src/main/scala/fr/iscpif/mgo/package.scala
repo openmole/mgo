@@ -38,23 +38,23 @@ package object mgo {
 
   /**** Running the EA ****/
 
-  def stepEA[M[_]: Monad, I,  G](
+  def stepEA[M[_]: Monad, I, G](
     preStep: Vector[I] => M[Unit],
-    breeding: Breeding[ M, I, G],
+    breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    objective: Objective[ M,I],
-    replacementStrategy: (Vector[I], Vector[I]) => Vector[I]): Vector[I] => M[Vector[I]] =
-    (population: Vector[I]) =>
-      for {
-        _ <- preStep(population)
-        bred <- breeding(population)
-        expressed = bred.par.map(expression).toVector
-        kept <- objective(replacementStrategy(population, expressed))
-      } yield kept
+    objective: Objective[M, I],
+    replacementStrategy: (Vector[I], Vector[I]) => Vector[I]): Kleisli[M, Vector[I], Vector[I]] =
+    for {
+      population <- Kleisli.ask[M, Vector[I]]
+      _ <- Kleisli.kleisli[M, Vector[I], Unit](preStep)
+      bred <- breeding
+      expressed = bred.par.map(expression).toVector
+      kept <- thenK(objective)(replacementStrategy(population, expressed))
+    } yield kept
 
-  def runEA[M[_]: Monad, I](stepFunction: Vector[I] => M[Vector[I]]): Vector[I] => M[Vector[I]] =
+  def runEA[M[_]: Monad, I](stepFunction: Kleisli[M, Vector[I], Vector[I]]): Kleisli[M, Vector[I], Vector[I]] =
     runEAUntil[M, I](
-      { (_: Vector[I]) => false.point[M] },
+      Kleisli.kleisli[M, Vector[I], Boolean]({ (_: Vector[I]) => false.point[M] }),
       stepFunction)
 
   /*def runEAUntilNR[ M[_]: Monad, , IG](
@@ -79,22 +79,19 @@ package object mgo {
   }*/
 
   //TODO: Non-tail recursive function. Make a tail recursive one (Trampoline).
-  def runEAUntil[ M[_]: Monad, I](
-    stopCondition: Vector[I] => M[Boolean],
-    stepFunction: Vector[I] => M[Vector[I]])(population: Vector[I]): M[Vector[I]] =
-    (for {
-      stop <- stopCondition(population)
-    } yield {
-      if (stop) population.point[M]
-      else for {
-        newpop <- stepFunction(population)
-        next <- runEAUntil[M, I](stopCondition, stepFunction)(newpop)
-      } yield next
-    }).join
+  def runEAUntil[M[_]: Monad, I](
+    stopCondition: Kleisli[M, Vector[I], Boolean],
+    stepFunction: Kleisli[M, Vector[I], Vector[I]]): Kleisli[M, Vector[I], Vector[I]] =
+    for {
+      population <- Kleisli.ask[M, Vector[I]]
+      stop <- stopCondition
+      res <- if (stop) Kleisli.ask[M, Vector[I]]
+      else stepFunction >=> runEAUntil[M, I](stopCondition, stepFunction)
+    } yield res
 
   /**** Stop conditions ****/
 
-  def anyReaches[M[_]: Monad,I](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
+  def anyReaches[M[_]: Monad, I](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
     (population: Vector[I]) => population.exists(goalReached).point[M]
 
   /**** Pre-step functions ****/
@@ -117,61 +114,69 @@ package object mgo {
 
   /**** Breeding ****/
 
-  def bindB[ M[_]: Monad,I, G1, G2](b1: Breeding[ M, I, G1], b2: Vector[G1] => Breeding[ M, I, G2]): Breeding[ M, I, G2] =
+  def bindB[M[_]: Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: Vector[G1] => Breeding[M, I, G2]): Breeding[M, I, G2] =
     Breeding((individuals: Vector[I]) => for {
       g1s <- b1(individuals)
       g2s <- b2(g1s)(individuals)
     } yield g2s)
 
-  def zipB[M[_]: Monad, I,  G1, G2](b1: Breeding[ M, I, G1], b2: Breeding[ M, I, G2]): Breeding[ M, I, (G1, G2)] = zipWithB { (g1: G1, g2: G2) => (g1, g2) }(b1, b2)
+  def zipB[M[_]: Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: Breeding[M, I, G2]): Breeding[M, I, (G1, G2)] = zipWithB { (g1: G1, g2: G2) => (g1, g2) }(b1, b2)
 
-  def zipWithB[ M[_]: Monad, I, G1, G2, G3](f: ((G1, G2) => G3))(b1: Breeding[ M, I, G1], b2: Breeding[ M, I, G2]): Breeding[ M, I, G3] =
+  def zipWithB[M[_]: Monad, I, G1, G2, G3](f: ((G1, G2) => G3))(b1: Breeding[M, I, G1], b2: Breeding[M, I, G2]): Breeding[M, I, G3] =
     Breeding((individuals: Vector[I]) =>
       for {
         g1s <- b1(individuals)
         g2s <- b2(individuals)
       } yield (g1s, g2s).zipped.map(f))
 
-  def productB[ M[_]: Monad, I, G1, G2](b1: Breeding[ M, I, G1], b2: G1 => Breeding[ M, I, G2]): Breeding[ M, I, G2] =
-    productWithB[ M, I, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
+  def productB[M[_]: Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: G1 => Breeding[M, I, G2]): Breeding[M, I, G2] =
+    productWithB[M, I, G1, G2, G2] { (_: G1, g2: G2) => g2 }(b1, b2)
 
-  def asB[M[_]: Monad,I, I1,  G1, G](itoi1: I => I1, g1tog: G1 => G, breeding: Breeding[ M, I1, G1]): Breeding[ M, I, G] =
+  def asB[M[_]: Monad, I, I1, G1, G](itoi1: I => I1, g1tog: G1 => G, breeding: Breeding[M, I1, G1]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) =>
       breeding(individuals.map(itoi1)).map[Vector[G]] { (g1s: Vector[G1]) => g1s.map(g1tog) })
 
-  def productWithB[ M[_]: Monad, I, G1, G2, G3](f: (G1, G2) => G3)(b1: Breeding[ M, I, G1], b2: G1 => Breeding[ M, I, G2]): Breeding[ M, I, G3] =
+  def productWithB[M[_]: Monad, I, G1, G2, G3](f: (G1, G2) => G3)(b1: Breeding[M, I, G1], b2: G1 => Breeding[M, I, G2]): Breeding[M, I, G3] =
     Breeding((individuals: Vector[I]) =>
       for {
         g1s <- b1(individuals)
         nested <- g1s.traverse[M, Vector[G3]] { (g1: G1) => b2(g1)(individuals).map { (g2s: Vector[G2]) => g2s.map { (g2: G2) => f(g1, g2) } } }
       } yield Monad[Vector].join(nested))
 
-  def mapB[ M[_]: Monad, I, G](mutation: I => M[G]): Breeding[ M, I, G] =
-    Breeding((individuals: Vector[I]) => individuals.traverse[M, G](mutation))
+  def mapB[M[_]: Monad, I, G](op: I => M[G]): Breeding[M, I, G] =
+    Breeding((individuals: Vector[I]) => individuals.traverse[M, G](op))
 
-  def byNicheB[I, N, M[_]: Monad, G](niche: I => N)(breeding: Breeding[ M, I, G]): Breeding[ M, I, G] =
+  def mapPureB[M[_]: Monad, I, G](op: I => G): Breeding[M, I, G] =
+    Breeding((individuals: Vector[I]) => individuals.traverse[M, G](op(_: I).point[M]))
+
+  def flatMapB[M[_]: Monad, I, G](op: I => M[Vector[G]]): Breeding[M, I, G] =
+    Breeding((individuals: Vector[I]) => individuals.traverseM[M, G](op))
+
+  def byNicheB[I, N, M[_]: Monad, G](niche: I => N)(breeding: Breeding[M, I, G]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) => {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[G]](breeding).map[Vector[G]](_.flatten)
     })
 
-  def probabilisticOperatorB[ M[_]: Monad: RandomGen, I, G](
-    opsAndWeights: Vector[(I => M[G], Double)]): I => M[G] =
-    (mates: I) => {
+  def flatMapPureB[M[_]: Monad, I, G](op: I => Vector[G]): Breeding[M, I, G] =
+    Breeding((individuals: Vector[I]) => individuals.traverseM[M, G](op(_: I).point[M]))
+
+  def probabilisticOperatorB[M[_]: Monad: RandomGen, I, G](
+    opsAndWeights: Vector[(Kleisli[M, I, G], Double)]): Kleisli[M, I, (G, Int)] =
+    Kleisli((mates: I) => {
       for {
         rg <- implicitly[RandomGen[M]].split
-        op = multinomial[I => M[G]](opsAndWeights.toList)(rg)
-        g <- op(mates)
-      } yield g
-    }
+        op = multinomial[Int](opsAndWeights.zipWithIndex.map { case ((op, w), i) => (i, w) }.toList)(rg)
+        g <- opsAndWeights(op)._1.run(mates)
+      } yield (g, op)
+    })
 
   /** Breed a genome for subsequent stochastic expression */
-  def withRandomGenB[ M[_]: Monad: RandomGen, I, G](breeding: Breeding[ M, I, G]): Breeding[ M, I, (Random, G)] =
+  def withRandomGenB[M[_]: Monad: RandomGen, I]: Breeding[M, I, (Random, I)] =
     Breeding((individuals: Vector[I]) =>
       for {
-        bred <- breeding(individuals)
-        rgs <- implicitly[RandomGen[M]].split.replicateM(bred.size)
-      } yield rgs.toVector zip bred)
+        rgs <- implicitly[RandomGen[M]].split.replicateM(individuals.size)
+      } yield rgs.toVector zip individuals)
 
   /**** Expression ****/
 
@@ -225,6 +230,22 @@ package object mgo {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)
     })
+
+  /**** Helper functions ****/
+
+  /**
+   * This function helps chaining Kleisli arrows in for comprehensions. For example, given two Kleisli arrows
+   * k of type Kleisli[M,A,B] and l of type Kleisli[M,B,C], the following are equivalent:
+   *
+   * k >=> l
+   *
+   * for {
+   *   a <- k
+   *   b <- thenK(l)(a)
+   * } yield b
+   */
+  def thenK[M[_]: Monad, R, A, B](k: Kleisli[M, A, B])(a: A): Kleisli[M, R, B] =
+    Kleisli.kleisli[M, R, B](_ => k.run(a))
 
   /***********************************************/
 

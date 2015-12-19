@@ -57,16 +57,20 @@ object SphereProfile extends App {
     genomeSize = dimensions,
     operatorExploration = operatorExploration)
 
-  val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
+  def k[A] = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], A] _
+  def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
+
+  val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
     runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
-      stopCondition = { (individuals: Vector[Individual]) =>
+      stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
-      },
+      }),
       stepFunction =
-        (individuals: Vector[Individual]) => for {
-          _ <- liftIOValue(writeGen[EvolutionStateMonad[Unit]#l]())
-          _ <- liftIOValue(write[EvolutionStateMonad[Unit]#l](individuals.minBy { iFitness.get }.toString))
-          res <- algo.step(individuals)
+        for {
+          individuals <- ka
+          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]()) }
+          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness }.toString)) }
+          res <- algo.step
         } yield res
     )
 
@@ -74,7 +78,7 @@ object SphereProfile extends App {
     for {
       ig <- algo.initialGenomes
       initialPop = ig.map { (g: Genome) => Individual(g, express(gValues.get(g))) }
-      finalpop <- ea(initialPop)
+      finalpop <- ea.run(initialPop)
     } yield finalpop
 
   val start = algo.wrap[Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
@@ -125,16 +129,20 @@ object StochasticSphereProfile extends App {
     operatorExploration = operatorExploration,
     cloneProbability = cloneProbability)
 
-  val ea: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
-    runEAUntil[ EvolutionStateMonad[Unit]#l, Individual](
-      stopCondition = { (individuals: Vector[Individual]) =>
+  def k[A] = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], A] _
+  def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
+
+  val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
+    runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
+      stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
-      },
+      }),
       stepFunction =
-        (individuals: Vector[Individual]) => for {
-          _ <- liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]())
-          _ <- liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitnessHistory.last }.toString))
-          res <- algo.step(individuals)
+        for {
+          individuals <- ka
+          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]()) }
+          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitnessHistory.last }.toString)) }
+          res <- algo.step
         } yield res
     )
 
@@ -142,7 +150,7 @@ object StochasticSphereProfile extends App {
     for {
       ig <- algo.initialGenomes
       initialPopEval = ig.map { case (rg, i) => iHistory.set(i, Vector(express(rg, i.genome))) }
-      finalpop <- ea(initialPopEval)
+      finalpop <- ea.run(initialPopEval)
     } yield finalpop
 
   val start = algo.wrap[Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())

@@ -16,6 +16,10 @@
  */
 package fr.iscpif.mgo
 
+import fr.iscpif.mgo.Contexts.RandomGen
+
+import scala.language.higherKinds
+
 import fr.iscpif.mgo.diversity._
 import fr.iscpif.mgo.tools.Math._
 import fr.iscpif.mgo.tools._
@@ -24,34 +28,38 @@ import Ordering.Implicits._
 import fitness._
 import niche._
 import dominance._
+import scalaz.Ordering.{ LT, GT, EQ }
 
 import scala.util.Random
-import scalaz.Ordering.{ EQ, GT, LT }
-import scalaz.{ Ordering, Order }
+import scalaz._
+import Scalaz._
 
 object ranking {
 
   /**
    * Compute the ranks of the individuals in the same order
    */
-  type Ranking[I] = Population[I] => Vector[Lazy[Int]]
+  type Ranking[M[_], I] = Kleisli[M, Vector[I], Vector[Lazy[Int]]]
+  object Ranking {
+    def apply[M[_]: Monad, I](f: Vector[I] => M[Vector[Lazy[Int]]]): Ranking[M, I] = Kleisli(f)
+  }
 
-  implicit def monoObjectiveRanking[I](fitness: Fitness[I, Double]): Ranking[I] =
-    (values: Population[I]) => {
+  implicit def monoObjectiveRanking[M[_]: Monad, I](fitness: Fitness[I, Double]): Ranking[M, I] =
+    Ranking((values: Vector[I]) => {
       val byFitness = values.zipWithIndex.sortBy { case (i, id) => fitness(i) }.map { _._2 }
       byFitness.zipWithIndex.sortBy { case (id, _) => id }.map { case (_, rank) => Lazy(rank) }
-    }
+    }.point[M])
 
-  def hyperVolumeRanking[I](referencePoint: Seq[Double], fitness: Fitness[I, Seq[Double]]): Ranking[I] =
-    (values: Population[I]) =>
-      HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => fitness(e)), referencePoint))
+  def hyperVolumeRanking[M[_]: Monad, I](referencePoint: Seq[Double], fitness: Fitness[I, Seq[Double]]): Ranking[M, I] =
+    Ranking((values: Vector[I]) =>
+      HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => fitness(e)), referencePoint)).point[M])
 
-  def hierarchicalRanking[I](fitness: Fitness[I, Vector[Double]]): Ranking[I] =
-    (values: Population[I]) =>
-      HierarchicalRanking.upRank(values.map(v => fitness(v)))
+  def hierarchicalRanking[M[_]: Monad, I](fitness: Fitness[I, Vector[Double]]): Ranking[M, I] =
+    Ranking((values: Vector[I]) =>
+      HierarchicalRanking.upRank(values.map(v => fitness(v))).point[M])
 
-  def paretoRanking[I](fitness: Fitness[I, Vector[Double]], dominance: Dominance = nonStrictDominance): Ranking[I] =
-    (values: Population[I]) => {
+  def paretoRanking[M[_]: Monad, I](fitness: Fitness[I, Vector[Double]], dominance: Dominance = nonStrictDominance): Ranking[M, I] =
+    Ranking((values: Vector[I]) => {
       val fitnesses = values.map(i => fitness(i))
 
       fitnesses.zipWithIndex.map {
@@ -67,10 +75,10 @@ object ranking {
             }
           )
       }
-    }
+    }.point[M])
 
-  def profileRanking[I](niche: Niche[I, Int], fitness: Fitness[I, Double]): Ranking[I] =
-    (population: Population[I]) => {
+  def profileRanking[M[_]: Monad, I](niche: Niche[I, Int], fitness: Fitness[I, Double]): Ranking[M, I] =
+    Ranking((population: Vector[I]) => {
       val (points, indexes) =
         population.map {
           i => (niche(i).toDouble, fitness(i))
@@ -108,21 +116,25 @@ object ranking {
         }
 
       HierarchicalRanking.downRank(contributions.toVector)
-    }
+    }.point[M])
 
   /**** Generic functions on rankings ****/
 
-  def reversedRanking[I](ranking: Ranking[I]): Vector[I] => Vector[Lazy[Int]] =
-    (population: Vector[I]) => ranking(population).map { x => /*map lazyly*/ Lazy(-x()) }
+  def reversedRanking[M[_]: Monad, I](ranking: Ranking[M, I]): Ranking[M, I] =
+    Ranking((population: Vector[I]) => ranking(population).map { _.map { x => /*map lazyly*/ Lazy(-x()) } })
 
   //TODO: the following functions don't produce rankings and don't belong here.
-  def rankAndDiversity[I](ranking: Ranking[I], diversity: Diversity[I]): Vector[I] => Vector[(Lazy[Int], Lazy[Double])] =
-    (population: Vector[I]) => ranking(population) zip diversity(population)
+  def rankAndDiversity[M[_]: Monad, I](ranking: Ranking[M, I], diversity: Diversity[M, I]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
+    Kleisli((population: Vector[I]) =>
+      for {
+        r <- ranking(population)
+        d <- diversity(population)
+      } yield r zip d)
 
-  def paretoRankingMinAndCrowdingDiversity[I](fitness: I => Vector[Double])(rg: Random): Vector[I] => Vector[(Lazy[Int], Lazy[Double])] =
+  def paretoRankingMinAndCrowdingDiversity[M[_]: Monad: RandomGen, I](fitness: I => Vector[Double]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
     rankAndDiversity(
-      reversedRanking(paretoRanking[I] { (i: I) => fitness(i) }),
-      crowdingDistance[I] { (i: I) => fitness(i) }(rg))
+      reversedRanking(paretoRanking[M, I] { (i: I) => fitness(i) }),
+      crowdingDistance[M, I] { (i: I) => fitness(i) })
 
   //TODO: on doit pouvoir supprimer cet instance d'order spécifique à (Lazy[Int],Lazy[Double]) en utilisant une instance
   //d'Order pour (A,B) et pour Lazy[A]
@@ -145,24 +157,24 @@ object rankingOld {
   /**
    * Compute the ranks of the individuals in the same order
    */
-  type Ranking[G, P] = Population[Individual[G, P]] => Vector[Lazy[Int]]
+  type Ranking[G, P] = Vector[Individual[G, P]] => Vector[Lazy[Int]]
 
   implicit def monoObjectiveRanking[G, P](fitness: Fitness[G, P, Double]): Ranking[G, P] =
-    (values: Population[Individual[G, P]]) => {
+    (values: Vector[Individual[G, P]]) => {
       val byFitness = values.zipWithIndex.sortBy { case (i, id) => fitness(i) }.map { _._2 }
       byFitness.zipWithIndex.sortBy { case (id, _) => id }.map { case (_, rank) => Lazy(rank) }
     }
 
   def hyperVolumeRanking[G, P](referencePoint: Seq[Double], fitness: Fitness[G, P, Seq[Double]]): Ranking[G, P] =
-    (values: Population[Individual[G, P]]) =>
+    (values: Vector[Individual[G, P]]) =>
       HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => fitness(e)), referencePoint))
 
   def hierarchicalRanking[G, P](fitness: Fitness[G, P, Seq[Double]]): Ranking[G, P] =
-    (values: Population[Individual[G, P]]) =>
+    (values: Vector[Individual[G, P]]) =>
       HierarchicalRanking.upRank(values.map(v => fitness(v)))
 
   def paretoRanking[G, P](fitness: Fitness[G, P, Seq[Double]], dominance: Dominance = nonStrictDominance): Ranking[G, P] =
-    (values: Population[Individual[G, P]]) => {
+    (values: Vector[Individual[G, P]]) => {
       val fitnesses = values.map(i => fitness(i))
 
       fitnesses.zipWithIndex.map {
@@ -181,7 +193,7 @@ object rankingOld {
     }
 
   def profileRanking[G, P](niche: Niche[G, P, Int], fitness: Fitness[G, P, Double]): Ranking[G, P] =
-    (population: Population[Individual[G, P]]) => {
+    (population: Vector[Individual[G, P]]) => {
       val (points, indexes) =
         population.map {
           i => (niche(i).toDouble, fitness(i))

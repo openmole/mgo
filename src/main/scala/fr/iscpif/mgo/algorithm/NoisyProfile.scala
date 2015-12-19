@@ -33,6 +33,7 @@ import Scalaz._
 
 object NoisyProfile {
 
+  // TODO: maximiser ou minimiser history size?
   def fitnessWithReplications[I](
     iFitness: Lens[I, Double],
     iHistory: Lens[I, Vector[Double]])(i: I): Vector[Double] = Vector(iFitness.get(i), 1.0 / iHistory.get(i).size)
@@ -55,47 +56,52 @@ object NoisyProfile {
       lambda: Int,
       niche: Niche[I, Int],
       operatorExploration: Double,
-      cloneProbability: Double): Breeding[M, I,  (Random, I)] =
-    withRandomGenB[M, I,  I](
-      Breeding((individuals: Vector[I]) => {
-        for {
-          rg <- implicitly[RandomGen[M]].split
-          generation <- implicitly[Generational[M]].getGeneration
-          selected <- tournament[M, I, (Lazy[Int], Lazy[Double])](
-            ranking = paretoRankingMinAndCrowdingDiversity[I] { fitnessWithReplications(iFitness, iHistory) }(rg),
-            size = lambda,
-            rounds = size => math.round(math.log10(size).toInt))(implicitly[Monad[M]], implicitly[RandomGen[M]], implicitly[Order[(Lazy[Int], Lazy[Double])]])(individuals)
-          bred <- asB[ M,I, (I, Maybe[Int]), (I, Maybe[Int]), I](
-            { (i: I) => (i, iOperator.get(i)) },
-            { case (i, op) => iOperator.set(i, op) },
-            dynamicallyOpB[M, I,  I, (I, I), (I, I)](
-              pairConsecutive[M, I],
-              Kleisli.kleisli[M,(I,I),Vector[I]]{ case (i1, i2) => Vector(i1, i2).point[M] },
-              dynamicOperators.crossoversAndMutations[M].map {
-                op =>
-                  opOrClone[M, (I, I), (I, I)](
-                    // cloning copies the whole individual as is and increments its age
-                    clone = {
-                      case (i1, i2) =>
-                        def age(i: I): I = iAge.mod(_ + 1, i)
-                        (age(i1), age(i2))
-                    },
-                    op = {
-                      case (i1, i2) =>
-                        for {
-                          newg1g2 <- op(iValues.get(i1), iValues.get(i2))
-                          (newg1, newg2) = newg1g2
-                          newi1 = iHistory.set(iValues.set(i1, newg1), Vector.empty)
-                          newi2 = iHistory.set(iValues.set(i2, newg2), Vector.empty)
-                        } yield (newi1, newi2)
-                    },
-                    cloneProbability = cloneProbability)
-              },
-              operatorExploration))(implicitly[Monad[M]])(selected)
-          clamped = (bred: Vector[I]).map { iValues =>= { _ map { x: Double => max(0.0, min(1.0, x)) } } }
-        } yield clamped
-      }
-    ))
+      cloneProbability: Double): Breeding[M, I, (Random, I)] =
+    for {
+      // Select parents minimising fitness and minimising history size and maximising diversity
+      parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
+        ranking = paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iFitness, iHistory) },
+        size = lambda,
+        rounds = size => math.round(math.log10(size).toInt))
+      // Compute the proportion of each operator in the population
+      opstats = parents.map { iOperator.get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size)
+      // Get the genome values
+      parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { (iValues).get })(parents)
+      // Pair parent genomes together
+      couples <- thenK(pairConsecutive[M, Vector[Double]])(parentgenomes)
+      // Apply a crossover+mutation operator to each couple. The operator is selected with a probability equal to its proportion in the population.
+      // There is a chance equal to operatorExploration to select an operator at random uniformly instead.
+      pairedOffspringsAndOps <- thenK(
+        mapB[M, (Vector[Double], Vector[Double]), (((Vector[Double], Vector[Double]), Int), Int)](
+          probabilisticOperatorB[M, (Vector[Double], Vector[Double]), ((Vector[Double], Vector[Double]), Int)](
+            Vector(
+              // This is the operator with probability distribution equal to the proportion in the population
+              (probabilisticOperatorB[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])](
+                dynamicOperators.crossoversAndMutations[M].zipWithIndex.map {
+                  case (op, index) => (op, opstats.getOrElse(index, 0.0))
+                }),
+                1 - operatorExploration),
+              // This is the operator drawn with a uniform probability distribution.
+              (probabilisticOperatorB[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])](
+                dynamicOperators.crossoversAndMutations[M].zipWithIndex.map {
+                  case (op, index) => (op, 1.0 / opstats.size.toDouble)
+                }),
+                operatorExploration))).run))(couples)
+      // Flatten the resulting offsprings and assign their respective operator to each
+      offspringsAndOps <- thenK(flatMapPureB[M, (((Vector[Double], Vector[Double]), Int), Int), (Vector[Double], Int)] {
+        case (((g1, g2), op), _) => Vector((g1, op), (g2, op))
+      })(pairedOffspringsAndOps)
+      // Clamp genome values between 0 and 1
+      clamped <- thenK(mapPureB[M, (Vector[Double], Int), (Vector[Double], Int)] {
+        Lens.firstLens[Vector[Double], Int] =>= { _ map { x: Double => max(0.0, min(1.0, x)) } }
+      })(offspringsAndOps)
+      // Construct the final I type
+      is <- thenK(mapPureB[M, (Vector[Double], Int), I] { case (g, op) => iCons(g, Maybe.just(op), 0.toLong, Vector.empty) })(clamped)
+      // Replace some offsprings by clones from the original population
+      withclones <- clonesReplace[M, I, I](iAge =>= { _ + 1 }, cloneProbability)(is)
+      // Add an independant random number generator to each individual
+      result <- thenK(withRandomGenB[M, I])(withclones)
+    } yield result
 
   def expression[I](
     iValues: Lens[I, Vector[Double]],
@@ -108,26 +114,28 @@ object NoisyProfile {
     iHistory: Lens[I, Vector[Double]],
     iOperator: Lens[I, Maybe[Int]],
     iAge: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int], historySize: Int): Objective[M, I] =
-    byNicheO[I, Int, M](
-      niche = niche,
-      objective = Objective((individuals: Vector[I]) =>
-        for {
-          rg <- implicitly[RandomGen[M]].split
-          decloned <- applyCloneStrategy[M, I, Vector[Double]](
-            { (i: I) => iValues.get(i) },
-            mergeHistories[M, I, Double](iAge, iHistory)(historySize))(implicitly[Monad[M]])(individuals)
-          noNaN = (decloned: Vector[I]).filterNot { iValues.get(_).exists { (_: Double).isNaN } }
-          kept <- keepHighestRankedO[M,I, (Lazy[Int], Lazy[Double])](
-            paretoRankingMinAndCrowdingDiversity[I] { fitnessWithReplications(iFitness, iHistory) }(rg),
-            muByNiche)(implicitly[Monad[M]], implicitly[Order[(Lazy[Int], Lazy[Double])]])(noNaN)
-        } yield kept)
-    )
+    for {
+      // Declone
+      decloned <- applyCloneStrategy[M, I, Vector[Double]](
+        { (i: I) => iValues.get(i) },
+        mergeHistories[M, I, Double](iAge, iHistory)(historySize))
+      // Filter out NaNs
+      noNaN = (decloned: Vector[I]).filterNot { iValues.get(_).exists { (_: Double).isNaN } }
+      // Keep in each niche muByNiche individuals with lowest fitness
+      kept <- thenK(
+        byNicheO[I, Int, M](
+          niche = niche,
+          objective = keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](
+            paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iFitness, iHistory) },
+            muByNiche))
+      )(noNaN)
+    } yield kept
 
   def step[M[_]: Monad: RandomGen: Generational, I](
-    breeding: Breeding[M, I,  (Random, I)],
+    breeding: Breeding[M, I, (Random, I)],
     expression: Expression[(Random, I), I],
-    elitism: Objective[M, I]): Vector[I] => M[Vector[I]] =
-    stepEA[M, I,  (Random, I)](
+    elitism: Objective[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    stepEA[M, I, (Random, I)](
       { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
       breeding,
       expression,
@@ -180,7 +188,7 @@ object NoisyProfile {
       niche: Niche[Individual, Int],
       historySize: Int,
       cloneProbability: Double,
-      operatorExploration: Double): Vector[Individual] => EvolutionState[Unit, Vector[Individual]] =
+      operatorExploration: Double): Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
       NoisyProfile.step[EvolutionStateMonad[Unit]#l, Individual](
         breeding(lambda, niche, operatorExploration, cloneProbability),
         expression(fitness),
@@ -208,7 +216,7 @@ object NoisyProfile {
         def expression: Expression[(Random, Individual), Individual] = NoisyProfile.Algorithm.expression(fitness)
         def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NoisyProfile.Algorithm.elitism(muByNiche, niche, historySize)
 
-        def step: Vector[Individual] => EvolutionState[Unit, Vector[Individual]] = NoisyProfile.Algorithm.step(muByNiche, lambda, fitness, niche, historySize, cloneProbability, operatorExploration)
+        def step: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] = NoisyProfile.Algorithm.step(muByNiche, lambda, fitness, niche, historySize, cloneProbability, operatorExploration)
 
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyProfile.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)

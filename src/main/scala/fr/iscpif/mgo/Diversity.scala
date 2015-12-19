@@ -17,12 +17,16 @@
 
 package fr.iscpif.mgo
 
+import scala.language.higherKinds
+
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
 import fr.iscpif.mgo.tools.metric.{ CrowdingDistance, Hypervolume, KNearestNeighboursAverageDistance }
+import fr.iscpif.mgo.Contexts._
 
 import scala.util.Random
 import scalaz._
+import Scalaz._
 import fitness._
 
 /**
@@ -31,24 +35,29 @@ import fitness._
 object diversity {
 
   /** Compute the diversity metric of the values */
-  type Diversity[I] = Population[I] => Vector[Lazy[Double]]
+  type Diversity[M[_], I] = Kleisli[M, Vector[I], Vector[Lazy[Double]]]
+  object Diversity {
+    def apply[M[_]: Monad, I](f: Vector[I] => M[Vector[Lazy[Double]]]): Diversity[M, I] = Kleisli.kleisli[M, Vector[I], Vector[Lazy[Double]]](f)
+  }
 
   /* def closedCrowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
     override def apply(values: Pop) =
       State.state { ClosedCrowdingDistance(values.map(e => mg(e))) }
   }*/
 
-  def crowdingDistance[I](fitness: Fitness[I, Seq[Double]])(rg: Random): Diversity[I] =
-    (values: Population[I]) =>
-      CrowdingDistance(values.map(e => fitness(e)))(rg)
+  def crowdingDistance[M[_]: Monad: RandomGen, I](fitness: Fitness[I, Seq[Double]]): Diversity[M, I] =
+    Diversity((values: Vector[I]) =>
+      for {
+        rg <- implicitly[RandomGen[M]].get
+      } yield CrowdingDistance(values.map(e => fitness(e)))(rg))
 
-  def hypervolumeContribution[I](referencePoint: ReferencePoint, fitness: Fitness[I, Seq[Double]]): Diversity[I] =
-    (values: Population[I]) =>
-      Hypervolume.contributions(values.map(e => fitness(e)), referencePoint)
+  def hypervolumeContribution[M[_]: Monad, I](referencePoint: ReferencePoint, fitness: Fitness[I, Seq[Double]]): Diversity[M, I] =
+    Diversity((values: Vector[I]) =>
+      Hypervolume.contributions(values.map(e => fitness(e)), referencePoint).point[M])
 
-  def KNearestNeighbours[I](k: Int, fitness: Fitness[I, Seq[Double]]): Diversity[I] =
-    (values: Population[I]) =>
-      KNearestNeighboursAverageDistance(values.map(e => fitness(e)), k)
+  def KNearestNeighbours[M[_]: Monad, I](k: Int, fitness: Fitness[I, Seq[Double]]): Diversity[M, I] =
+    Diversity((values: Vector[I]) =>
+      KNearestNeighboursAverageDistance(values.map(e => fitness(e)), k).point[M])
 
 }
 
