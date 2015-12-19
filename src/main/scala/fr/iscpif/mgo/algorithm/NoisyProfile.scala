@@ -33,7 +33,6 @@ import Scalaz._
 
 object NoisyProfile {
 
-  // TODO: maximiser ou minimiser history size?
   def fitnessWithReplications[I](
     iFitness: Lens[I, Double],
     iHistory: Lens[I, Vector[Double]])(i: I): Vector[Double] = Vector(iFitness.get(i), 1.0 / iHistory.get(i).size)
@@ -58,7 +57,7 @@ object NoisyProfile {
       operatorExploration: Double,
       cloneProbability: Double): Breeding[M, I, (Random, I)] =
     for {
-      // Select parents minimising fitness and minimising history size and maximising diversity
+      // Select parents with the double objective of minimising fitness and maximising history size with a pareto ranking, and then maximising diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
         ranking = paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iFitness, iHistory) },
         size = lambda,

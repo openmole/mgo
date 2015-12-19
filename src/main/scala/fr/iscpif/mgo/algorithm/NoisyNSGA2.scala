@@ -34,7 +34,6 @@ import scala.math._
 
 object NoisyNSGA2 {
 
-  // TODO: maximiser ou minimiser history size?
   def fitnessWithReplications[I](
     iFitness: Lens[I, Vector[Double]],
     iHistory: Lens[I, Vector[Vector[Double]]])(i: I): Vector[Double] = iFitness.get(i) ++ Vector(1.0 / iHistory.get(i).size.toDouble)
@@ -57,9 +56,8 @@ object NoisyNSGA2 {
       lambda: Int,
       operatorExploration: Double,
       cloneProbability: Double): Breeding[M, I, (Random, I)] =
-    //TODO: Vérifier le sens de paretoRanking
     for {
-      // Select lambda parents with minimum pareto rank and maximum crowding diversity
+      // Select parents with the double objective of minimising fitness and maximising history size with a pareto ranking, and then maximising diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
         paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iFitness, iHistory) },
         lambda)
