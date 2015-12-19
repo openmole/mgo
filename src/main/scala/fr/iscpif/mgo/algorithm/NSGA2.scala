@@ -43,14 +43,6 @@ object NSGA2 {
       gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty, 0) }
     } yield gs
 
-  // TODO: Kleisli refactoring: Un Breeding est une fonction Vector[A] => M[Vector[B]], on peut la représenter
-  // en utilisant un type Kleisli[M, Vector[A], Vector[B]] et utiliser les fonctions de composition sur Kleisli. Notamment,
-  // on peut enchainer deux Breedings avec b1 >> b2. Pour l'instant, on travaille à l'interieur de la monade M (cf le for ci-dessous).
-  // Utiliser les fonctions de compositions définies sur Kleisli signifierait qu'on travaille au niveau du Breeding (for {_ <- b1; _ <- b2 } yield ???).
-  // Ça implique un peu de refactoring: notamment, on ne pourrait plus utiliser paretoRankingMinAndCrowdingDiversity tel quel, parce qu'il
-  // faut lui passer un Random, et qu'on l'extrait de M (avec split). On pourrait s'en sortir en faisant en sorte que toutes les fonctions
-  // (au moins celles qu'on a besoin de composer, soit du type Kleisli[M, U,V]. Le travail dans M se ferait alors à l'intérieur des fonctions
-  // individuelles (paretoRankingMinAnd... extrait elle même le Random dont elle a besoin).
   def breeding[M[_]: Monad: RandomGen: Generational, I, G](
     iFitness: Lens[I, Vector[Double]],
     iGenome: Lens[I, G],

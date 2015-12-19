@@ -16,7 +16,7 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.Contexts.RandomGen
+import fr.iscpif.mgo.Contexts._
 
 import scala.language.higherKinds
 
@@ -117,6 +117,11 @@ object ranking {
 
       HierarchicalRanking.downRank(contributions.toVector)
     }.point[M])
+
+  //TODO: Lazy ne sert à rien ici. On pourrait redefinir le type Ranking en Ranking[M,I,K] avec K est de typeclass Order,
+  // pour ne pas toujours être obligé d'utiliser Lazy.
+  def hitCountRanking[M[_]: Monad: ({type l[x[_]]=HitMapper[x,C]})#l, I, C](cell: I => C) : Ranking[M,I] =
+    Ranking{ is:Vector[I] => is.traverse{i:I => implicitly[HitMapper[M,C]].hitCount(cell(i)).map[Lazy[Int]]{ i => Lazy(i)}} }
 
   /**** Generic functions on rankings ****/
 

@@ -20,6 +20,8 @@ import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 
+import Contexts._
+
 import scala.math.min
 
 object Objectives {
@@ -36,6 +38,17 @@ object Objectives {
 
   def maximiseO[M[_]: Monad, I, F: Order](f: I => F, mu: Int): Objective[M, I] =
     Objective((individuals: Vector[I]) => individuals.sorted(implicitly[Order[F]].contramap[I](f).reverseOrder.toScalaOrdering).take(mu).point[M])
+
+  /** Returns n individuals randomly. */
+  def randomO[M[_]: Monad: RandomGen, I](n: Int): Objective[M,I] =
+    Objective(
+      (individuals: Vector[I]) => {
+        val popSize = individuals.size
+        for {
+          rg <- implicitly[RandomGen[M]].get
+        } yield Vector.fill(n)(individuals(rg.nextInt(popSize)))
+      }
+    )
 
   /** Returns the mu individuals with the highest ranks. */
   def keepHighestRankedO[M[_]: Monad, I, K: Order](f: Kleisli[M, Vector[I], Vector[K]], mu: Int): Objective[M, I] =

@@ -225,7 +225,7 @@ package object mgo {
         selected2s <- o2(selected1s)
       } yield selected2s)
 
-  def byNicheO[I, N, M[_]: Monad](niche: I => N, objective: Objective[M, I]): Objective[M, I] =
+  def byNicheO[M[_]: Monad, I, N](niche: I => N, objective: Objective[M, I]): Objective[M, I] =
     Objective((individuals: Vector[I]) => {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)
@@ -246,6 +246,7 @@ package object mgo {
    */
   def thenK[M[_]: Monad, R, A, B](k: Kleisli[M, A, B])(a: A): Kleisli[M, R, B] =
     Kleisli.kleisli[M, R, B](_ => k.run(a))
+
 
   /***********************************************/
 

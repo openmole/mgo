@@ -46,6 +46,12 @@ object Contexts {
     def generationReached(x: Long): M[Boolean]
   }
 
+  trait HitMapper[M[_], C] {
+    def hitCount(cell: C): M[Int]
+    def addHit(cell: C): M[Unit]
+    def addHits(cells: Vector[C]): M[Unit]
+  }
+
   object default {
 
     case class EvolutionData[S](

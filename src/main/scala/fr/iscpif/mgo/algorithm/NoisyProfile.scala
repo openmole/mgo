@@ -122,7 +122,7 @@ object NoisyProfile {
       noNaN = (decloned: Vector[I]).filterNot { iValues.get(_).exists { (_: Double).isNaN } }
       // Keep in each niche muByNiche individuals with lowest fitness
       kept <- thenK(
-        byNicheO[I, Int, M](
+        byNicheO[M, I, Int](
           niche = niche,
           objective = keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](
             paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iFitness, iHistory) },

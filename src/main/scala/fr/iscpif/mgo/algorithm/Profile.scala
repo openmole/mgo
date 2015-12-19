@@ -114,7 +114,7 @@ object Profile {
       noNaN = (decloned: Vector[I]).filterNot { iGenomeValues.get(_).exists { (_: Double).isNaN } }
       // Keep in each niche muByNiche individuals with lowest fitness
       kept <- thenK(
-        byNicheO[I, Int, M](
+        byNicheO[M, I, Int](
           niche = niche,
           objective = minimiseO[M, I, Double]({ i: I => iFitness.get(i) }, muByNiche))
       )(noNaN)
