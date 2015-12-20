@@ -47,6 +47,8 @@ object Contexts {
   }
 
   trait HitMapper[M[_], C] {
+    def get: M[Map[C, Int]]
+    def set(newMap: Map[Vector[Int], Int]): M[Unit]
     def hitCount(cell: C): M[Int]
     def addHit(cell: C): M[Unit]
     def addHits(cells: Vector[C]): M[Unit]

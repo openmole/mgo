@@ -167,10 +167,22 @@ object PSE {
     // HitMapper instance of the default Context
     implicit def mHitMap: HitMapper[EvolutionStateMonad[HitMap]#l, Vector[Int]] =
       new HitMapper[EvolutionStateMonad[HitMap]#l, Vector[Int]] {
+        def get: EvolutionState[HitMap, Map[Vector[Int], Int]] =
+          for {
+            s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
+          } yield s.s
+
+        def set(newMap: Map[Vector[Int], Int]): EvolutionState[HitMap, Unit] =
+          for {
+            _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].modify {
+              s => s.copy(s = newMap)
+            }
+          } yield ()
+
         def hitCount(cell: Vector[Int]): EvolutionState[HitMap, Int] =
           for {
             s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
-          } yield s.s(cell)
+          } yield s.s.getOrElse(cell, 0)
 
         def addHit(cell: Vector[Int]): EvolutionState[HitMap, Unit] =
           for {
@@ -190,9 +202,9 @@ object PSE {
           } yield ()
       }
 
-    def cell(anchor: Vector[Double], step: Vector[Double])(i: Individual): Vector[Int] =
-      (i.pattern zip anchor zip step).map {
-        case ((x, a), s) => ((x - a) / s).floor.toInt
+    def cell(anchor: Vector[Double], step: Vector[Double], lowBound: Vector[Double], highBound: Vector[Double])(i: Individual): Vector[Int] =
+      (i.pattern zip anchor zip step zip lowBound zip highBound).map {
+        case ((((x, a), s), lb), hb) => ((max(lb, min(hb, x)) - a) / s).floor.toInt
       }
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =
@@ -227,12 +239,14 @@ object PSE {
       genomeSize: Int,
       operatorExploration: Double,
       anchor: Vector[Double],
-      discretisationStep: Vector[Double]) =
+      discretisationStep: Vector[Double],
+      lowBound: Vector[Double],
+      highBound: Vector[Double]) =
       new Algorithm[EvolutionStateMonad[HitMap]#l, Individual, Genome, ({ type l[x] = (EvolutionData[HitMap], x) })#l] {
 
         implicit val m: Monad[EvolutionStateMonad[HitMap]#l] = implicitly[Monad[EvolutionStateMonad[HitMap]#l]]
 
-        val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep)
+        val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep, lowBound, highBound)
 
         def initialGenomes: EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(mu, genomeSize)
         def breeding: Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] = PSE.Algorithm.breeding(lambda, operatorExploration, cell)

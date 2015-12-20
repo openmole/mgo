@@ -1,25 +1,111 @@
-///*
-// * Copyright (C) Guillaume Chérel 06/05/14
-// *
-// * This program is free software: you can redistribute it and/or modify
-// * it under the terms of the GNU Affero General Public License as published by
-// * the Free Software Foundation, either version 3 of the License, or
-// * (at your option) any later version.
-// *
-// * This program is distributed in the hope that it will be useful,
-// * but WITHOUT ANY WARRANTY; without even the implied warranty of
-// * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// * GNU General Public License for more details.
-// *
-// * You should have received a copy of the GNU General Public License
-// * along with this program.  If not, see <http://www.gnu.org/licenses/>.
-// */
-//
-///*
-//  This object runs PSE on the ZDT4 function
-// */
-//
-//package fr.iscpif.mgo.test
+/*
+ * Copyright (C) Guillaume Chérel 06/05/14
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+package fr.iscpif.mgo.test
+
+import fr.iscpif.mgo._
+import fr.iscpif.mgo.algorithm._
+
+import Contexts.default._
+import Contexts._
+import Expressions._
+
+import scala.util.Random
+import scalaz._
+import Scalaz._
+
+object ZDT4PSE extends App {
+  import PSE.Algorithm._
+
+  val maxiter: Int = 1000
+  val mu: Int = 10
+  val lambda: Int = 10
+  val genomeSize: Int = 10
+  val operatorExploration: Double = 0.1
+  val anchor: Vector[Double] = Vector(0.0, 0.0)
+  val discretisationStep: Vector[Double] = Vector(0.1, 20)
+  val lowBound: Vector[Double] = Vector(0.0, 0.0)
+  val highBound: Vector[Double] = Vector(1.0, 200.0)
+
+  val express: Vector[Double] => Vector[Double] = zdt4(_).toVector
+
+  val algo = PSE.Algorithm(
+    mu = mu,
+    lambda = lambda,
+    express = express,
+    genomeSize = genomeSize,
+    operatorExploration = operatorExploration,
+    anchor = anchor,
+    discretisationStep = discretisationStep,
+    lowBound = lowBound,
+    highBound = highBound)
+
+  def k[A] = Kleisli.kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], A] _
+  def ka = Kleisli.ask[EvolutionStateMonad[HitMap]#l, Vector[Individual]]
+
+  val ea: Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] =
+    runEAUntil[EvolutionStateMonad[HitMap]#l, Individual](
+      stopCondition = Kleisli.kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
+        implicitly[Generational[EvolutionStateMonad[HitMap]#l]].generationReached(maxiter)
+      }),
+      stepFunction =
+        for {
+          individuals <- ka
+          hitmap <- k[HitMap] { _ => mHitMap.get }
+          _ <- k[Unit] { _ => liftIOValue[HitMap, Unit](writeGen[EvolutionStateMonad[HitMap]#l]()) }
+          _ <- k[Unit] { _ => liftIOValue[HitMap, Unit](write[EvolutionStateMonad[HitMap]#l](" volume discovered = " ++ hitmap.values.count { _ > 0 }.toString)) }
+          res <- algo.step
+        } yield res
+    )
+
+  val evolution: EvolutionState[HitMap, Vector[Individual]] =
+    for {
+      ig <- algo.initialGenomes
+      initialPop = ig.map { g => Individual(g, express(gValues.get(g))) }
+      finalpop <- ea.run(initialPop)
+    } yield finalpop
+
+  val start = algo.wrap[Unit]((EvolutionData[HitMap](random = newRNG(1), s = Map.empty[Vector[Int], Int]), ()))
+
+  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](start >> evolution)
+
+  println("---- Final State ----")
+  println(finalstate)
+
+  println("---- Final Population ----")
+  println(finalpop.mkString("\n"))
+
+  println("---- Patterns ----")
+  println(finalpop.map { (_: Individual).pattern }.sortWith {
+    case (a, b) =>
+      val i = (a.zipAll(b, Double.MinValue, Double.MinValue).indexWhere { case (x1, x2) => x1 != x2 })
+      if (i == -1) false
+      else a(i) < b(i)
+  }.mkString("\n"))
+
+  println("---- Cells in HitMap ----")
+  println(finalstate.s.toVector.sortWith {
+    case (a, b) =>
+      val i = (a._1.zipAll(b._1, Int.MinValue, Int.MinValue).indexWhere { case (x1, x2) => x1 != x2 })
+      if (i == -1) false
+      else a._1(i) < b._1(i)
+  }.mkString("\n"))
+}
+
 //
 //import fr.iscpif.mgo._
 //
