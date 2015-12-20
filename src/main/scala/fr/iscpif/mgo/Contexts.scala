@@ -52,6 +52,7 @@ object Contexts {
     def hitCount(cell: C): M[Int]
     def addHit(cell: C): M[Unit]
     def addHits(cells: Vector[C]): M[Unit]
+    def removeHit(cell: C): M[Unit]
   }
 
   object default {

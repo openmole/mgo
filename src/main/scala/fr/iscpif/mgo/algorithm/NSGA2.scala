@@ -88,7 +88,7 @@ object NSGA2 {
       clamped <- thenK(mapPureB[M, (Vector[Double], Int), (Vector[Double], Int)] {
         Lens.firstLens[Vector[Double], Int] =>= { _ map { x: Double => max(0.0, min(1.0, x)) } }
       })(offspringsAndOps)
-      // Add the current generation to new offsprings
+      // Add the current generation number to new offsprings
       offspringsOpsGens <- thenK(mapB[M, (Vector[Double], Int), (Vector[Double], Int, Long)] {
         case (g, op) => implicitly[Generational[M]].getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
       })(clamped)

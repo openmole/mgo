@@ -47,7 +47,8 @@ object PSE {
     gCons: (Vector[Double], Maybe[Int], Long) => G,
     cell: I => C)(
       lambda: Int,
-      operatorExploration: Double): Breeding[M, I, G] = {
+      operatorExploration: Double,
+      cloneProbability: Double): Breeding[M, I, G] = {
     for {
       // Select lambda parents whose corresponding cell has low hit count
       parents <- tournament[M, I, Lazy[Int]](
@@ -91,7 +92,18 @@ object PSE {
       })(clamped)
       // Construct the final G type
       gs <- thenK(mapPureB[M, (Vector[Double], Int, Long), G] { case (g, op, gen) => gCons(g, Maybe.just(op), gen) })(offspringsOpsGens)
-    } yield gs
+      // Replace some offsprings by clones from the original. Preferentially pick the clone with lower hit counts (the parents selected by tournament above) because
+      // the evolution also keeps individual with high hitcounts as it progresses and we want to reevaluate individuals which are rare to eliminate
+      // individuals that are rare by chance (in case of stochastic evaluation).
+      result <- thenK(clonesReplace[M, I, G](
+        cloneF = Kleisli.kleisli[M, I, G] { (i: I) =>
+          for {
+            // decrement the hitcount for the corresponding cell
+            _ <- implicitly[HitMapper[M, C]].removeHit(cell(i))
+          } yield iGenome.get(i)
+        },
+        cloneProbability = cloneProbability)(gs))(parents)
+    } yield result
   }
 
   def expression[G, I](
@@ -200,6 +212,15 @@ object PSE {
             // Modify the hitMap by incrementing the corresponding values
             _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].put(s.copy(s = newHitMap))
           } yield ()
+
+        def removeHit(cell: Vector[Int]): EvolutionState[HitMap, Unit] =
+          for {
+            s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
+            currentHitCount = s.s.getOrElse(cell, 0)
+            newHitMap = s.s + ((cell, currentHitCount - 1))
+            // Modify the hitMap by incrementing the corresponding value
+            _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].put(s.copy(s = newHitMap))
+          } yield ()
       }
 
     def cell(anchor: Vector[Double], step: Vector[Double], lowBound: Vector[Double], highBound: Vector[Double])(i: Individual): Vector[Int] =
@@ -209,10 +230,10 @@ object PSE {
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =
       PSE.initialGenomes[EvolutionStateMonad[HitMap]#l, Genome](Genome)(mu, genomeSize)
-    def breeding(lambda: Int, operatorExploration: Double, cell: Individual => Vector[Int]): Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] =
+    def breeding(lambda: Int, operatorExploration: Double, cloneProbability: Double, cell: Individual => Vector[Int]): Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] =
       PSE.breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome, Vector[Int]](
         iGenome, gValues, gOperator, Genome, cell
-      )(lambda, operatorExploration)
+      )(lambda, operatorExploration, cloneProbability)
     def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
       PSE.expression[Genome, Individual](gValues, Individual)(fitness)
     def elitism(muPerCell: Int, cell: Individual => Vector[Int]): Objective[EvolutionStateMonad[HitMap]#l, Individual] =
@@ -223,9 +244,10 @@ object PSE {
       lambda: Int,
       fitness: Expression[Vector[Double], Vector[Double]],
       operatorExploration: Double,
+      cloneProbability: Double,
       cell: Individual => Vector[Int]): Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] =
       PSE.step[EvolutionStateMonad[HitMap]#l, Individual, Genome](
-        breeding(lambda, operatorExploration, cell),
+        breeding(lambda, operatorExploration, cloneProbability, cell),
         expression(fitness),
         elitism(mu, cell)
       )
@@ -238,6 +260,7 @@ object PSE {
       express: Vector[Double] => Vector[Double],
       genomeSize: Int,
       operatorExploration: Double,
+      cloneProbability: Double,
       anchor: Vector[Double],
       discretisationStep: Vector[Double],
       lowBound: Vector[Double],
@@ -249,11 +272,11 @@ object PSE {
         val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep, lowBound, highBound)
 
         def initialGenomes: EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(mu, genomeSize)
-        def breeding: Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] = PSE.Algorithm.breeding(lambda, operatorExploration, cell)
+        def breeding: Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] = PSE.Algorithm.breeding(lambda, operatorExploration, cloneProbability, cell)
         def expression: Expression[Genome, Individual] = PSE.Algorithm.expression(express)
         def elitism: Objective[EvolutionStateMonad[HitMap]#l, Individual] = PSE.Algorithm.elitism(mu, cell)
 
-        def step: Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] = PSE.Algorithm.step(mu, lambda, express, operatorExploration, cell)
+        def step: Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] = PSE.Algorithm.step(mu, lambda, express, operatorExploration, cloneProbability, cell)
 
         def wrap[A](x: (EvolutionData[HitMap], A)): EvolutionState[HitMap, A] = PSE.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = PSE.Algorithm.unwrap(x)

@@ -97,7 +97,7 @@ object NoisyProfile {
       // Construct the final I type
       is <- thenK(mapPureB[M, (Vector[Double], Int), I] { case (g, op) => iCons(g, Maybe.just(op), 0.toLong, Vector.empty) })(clamped)
       // Replace some offsprings by clones from the original population
-      withclones <- clonesReplace[M, I, I](iAge =>= { _ + 1 }, cloneProbability)(is)
+      withclones <- clonesReplace[M, I, I](Kleisli.kleisli[M, I, I] { (i: I) => iAge.mod({ _ + 1 }, i).point[M] }, cloneProbability)(is)
       // Add an independant random number generator to each individual
       result <- thenK(withRandomGenB[M, I])(withclones)
     } yield result

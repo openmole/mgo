@@ -36,6 +36,7 @@ object ZDT4PSE extends App {
   val lambda: Int = 10
   val genomeSize: Int = 10
   val operatorExploration: Double = 0.1
+  val cloneProbability = 0.1
   val anchor: Vector[Double] = Vector(0.0, 0.0)
   val discretisationStep: Vector[Double] = Vector(0.1, 20)
   val lowBound: Vector[Double] = Vector(0.0, 0.0)
@@ -49,6 +50,7 @@ object ZDT4PSE extends App {
     express = express,
     genomeSize = genomeSize,
     operatorExploration = operatorExploration,
+    cloneProbability = cloneProbability,
     anchor = anchor,
     discretisationStep = discretisationStep,
     lowBound = lowBound,
@@ -67,7 +69,7 @@ object ZDT4PSE extends App {
           individuals <- ka
           hitmap <- k[HitMap] { _ => mHitMap.get }
           _ <- k[Unit] { _ => liftIOValue[HitMap, Unit](writeGen[EvolutionStateMonad[HitMap]#l]()) }
-          _ <- k[Unit] { _ => liftIOValue[HitMap, Unit](write[EvolutionStateMonad[HitMap]#l](" volume discovered = " ++ hitmap.values.count { _ > 0 }.toString)) }
+          _ <- k[Unit] { _ => liftIOValue[HitMap, Unit](write[EvolutionStateMonad[HitMap]#l]("Volume discovered = " ++ hitmap.values.count { _ > 0 }.toString)) }
           res <- algo.step
         } yield res
     )
