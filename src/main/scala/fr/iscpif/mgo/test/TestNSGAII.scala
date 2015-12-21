@@ -18,7 +18,6 @@
 package fr.iscpif.mgo.test
 
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.algorithm.NSGA2.Algorithm.Individual
 import fr.iscpif.mgo.algorithm._
 
 import Contexts.default._
@@ -31,7 +30,7 @@ import Scalaz._
 
 object SphereNSGAII extends App {
 
-  import NSGA2.Algorithm.{ Individual, Genome, gValues }
+  import NSGA2.Algorithm.{ Individual, Genome, iGenome, gValues, iFitness }
 
   val mu = 10
   val lambda = 10
@@ -54,8 +53,11 @@ object SphereNSGAII extends App {
       stepFunction =
         for {
           individuals <- ka
-          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]()) }
-          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness.sum }.toString)) }
+          _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
+            individuals.map {
+              i: Individual => state.generation.toString ++ "\t" ++ (iGenome >=> gValues).get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).mkString("\t")
+            }.mkString("\n")
+          }
           res <- algo.step
         } yield res
     )
@@ -64,6 +66,7 @@ object SphereNSGAII extends App {
     for {
       ig <- algo.initialGenomes
       initialPop = ig.map { (g: Genome) => Individual(g, fitness(gValues.get(g))) }
+      _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") }.run(Vector.empty)
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
@@ -84,7 +87,7 @@ object SphereNSGAII extends App {
 
 object StochasticSphereNSGAII extends App {
 
-  import NoisyNSGA2.Algorithm.{ Individual, iHistory }
+  import NoisyNSGA2.Algorithm.{ Individual, iHistory, iValues, iFitness }
 
   val mu = 10
   val lambda = 10
@@ -108,9 +111,10 @@ object StochasticSphereNSGAII extends App {
       }),
       stepFunction =
         for {
-          individuals <- ka
-          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]()) }
-          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitnessHistory.last.sum }.toString)) }
+          _ <- writeS((state: EvolutionData[Unit], individuals: Vector[Individual]) =>
+            individuals.map {
+              i: Individual => state.generation.toString ++ "\t" ++ iValues.get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).mkString("\t")
+            }.mkString("\n"))
           res <- algo.step
         } yield res
     )
@@ -119,6 +123,7 @@ object StochasticSphereNSGAII extends App {
     for {
       ig <- algo.initialGenomes
       initialPop = ig.map { case (rg, i) => iHistory.set(i, Vector(express(rg, i.genome))) }
+      _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") ++ "\thistoryLength" }.run(Vector.empty)
       finalpop <- ea.run(initialPop)
     } yield finalpop
 

@@ -67,9 +67,11 @@ object SphereProfile extends App {
       }),
       stepFunction =
         for {
-          individuals <- ka
-          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]()) }
-          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitness }.toString)) }
+          _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
+            individuals.map {
+              i: Individual => state.generation.toString ++ "\t" ++ (iGenome >=> gValues).get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).toString
+            }.mkString("\n")
+          }
           res <- algo.step
         } yield res
     )
@@ -78,6 +80,7 @@ object SphereProfile extends App {
     for {
       ig <- algo.initialGenomes
       initialPop = ig.map { (g: Genome) => Individual(g, express(gValues.get(g))) }
+      _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ "fitness" }.run(Vector.empty)
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
@@ -140,8 +143,11 @@ object StochasticSphereProfile extends App {
       stepFunction =
         for {
           individuals <- ka
-          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](writeGen[EvolutionStateMonad[Unit]#l]()) }
-          _ <- k[Unit] { _ => liftIOValue[Unit, Unit](write[EvolutionStateMonad[Unit]#l](individuals.minBy { _.fitnessHistory.last }.toString)) }
+          _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
+            individuals.map {
+              i: Individual => state.generation.toString ++ "\t" ++ iValues.get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).toString ++ "\t" ++ iHistory.get(i).length.toString
+            }.mkString("\n")
+          }
           res <- algo.step
         } yield res
     )
@@ -150,6 +156,7 @@ object StochasticSphereProfile extends App {
     for {
       ig <- algo.initialGenomes
       initialPopEval = ig.map { case (rg, i) => iHistory.set(i, Vector(express(rg, i.genome))) }
+      _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ "fitness" ++ "\t" ++ "historyLength" }.run(Vector.empty)
       finalpop <- ea.run(initialPopEval)
     } yield finalpop
 

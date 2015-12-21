@@ -107,12 +107,12 @@ object Contexts {
         } yield g >= x
     }
 
-    def addIOBefore[S, A, B](mio: EvolutionState[S, IO[A]], action: A => EvolutionState[S, B]): EvolutionState[S, B] =
+    /*def addIOBefore[S, A, B](mio: EvolutionState[S, IO[A]], action: A => EvolutionState[S, B]): EvolutionState[S, B] =
       for {
         ioa <- mio
         a <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, A](ioa)
         res <- action(a)
-      } yield res
+      } yield res*/
 
     def liftIOValue[S, A](mio: EvolutionState[S, IO[A]]): EvolutionState[S, A] =
       for {
@@ -120,6 +120,14 @@ object Contexts {
         a <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, A](ioa)
       } yield a
 
+    def writeS[S, I](writeFun: (EvolutionData[S], Vector[I]) => String, ioFun: String => IO[Unit] = IO.putStrLn): Kleisli[EvolutionStateMonad[S]#l, Vector[I], Unit] =
+      Kleisli.kleisli[EvolutionStateMonad[S]#l, Vector[I], Unit] { (is: Vector[I]) =>
+        for {
+          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
+          io <- ioFun(writeFun(s, is)).point[EvolutionStateMonad[S]#l]
+          _ <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, Unit](io)
+        } yield ()
+      }
   }
 }
 

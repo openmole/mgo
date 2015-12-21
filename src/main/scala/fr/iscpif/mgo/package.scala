@@ -110,6 +110,7 @@ package object mgo {
   /**** Replacement strategies ****/
 
   def muPlusLambda[I](parents: Vector[I], offsprings: Vector[I]): Vector[I] = parents ++ offsprings
+
   def muCommaLambda[I](parents: Vector[I], offsprings: Vector[I]): Vector[I] = offsprings
 
   /**** Breeding ****/

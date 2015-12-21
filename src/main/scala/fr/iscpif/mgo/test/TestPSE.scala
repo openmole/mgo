@@ -31,7 +31,7 @@ import Scalaz._
 object ZDT4PSE extends App {
   import PSE.Algorithm._
 
-  val maxiter: Int = 1000
+  val maxiter: Int = 100
   val mu: Int = 10
   val lambda: Int = 10
   val genomeSize: Int = 10
@@ -68,8 +68,12 @@ object ZDT4PSE extends App {
         for {
           individuals <- ka
           hitmap <- k[HitMap] { _ => mHitMap.get }
-          _ <- k[Unit] { _ => liftIOValue[HitMap, Unit](writeGen[EvolutionStateMonad[HitMap]#l]()) }
-          _ <- k[Unit] { _ => liftIOValue[HitMap, Unit](write[EvolutionStateMonad[HitMap]#l]("Volume discovered = " ++ hitmap.values.count { _ > 0 }.toString)) }
+          _ <- writeS((state: EvolutionData[HitMap], individuals: Vector[Individual]) =>
+            s"Generation = ${state.generation}, Volume discovered = ${state.s.values.count { _ > 0 }.toString}")
+          _ <- writeS((state: EvolutionData[HitMap], individuals: Vector[Individual]) =>
+            individuals.map {
+              i: Individual => state.generation.toString ++ "\t" ++ (iGenome >=> gValues).get(i).mkString("\t") ++ "\t" ++ iPattern.get(i).mkString("\t")
+            }.mkString("\n"))
           res <- algo.step
         } yield res
     )
@@ -78,6 +82,7 @@ object ZDT4PSE extends App {
     for {
       ig <- algo.initialGenomes
       initialPop = ig.map { g => Individual(g, express(gValues.get(g))) }
+      _ <- writeS { (state: EvolutionData[HitMap], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(genomeSize)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(individuals.head.pattern.size)(i => s"p$i").mkString("\t") }.run(initialPop)
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
@@ -88,8 +93,9 @@ object ZDT4PSE extends App {
   println("---- Final State ----")
   println(finalstate)
 
-  println("---- Final Population ----")
+  /*println("---- Final Population ----")
   println(finalpop.mkString("\n"))
+  */
 
   println("---- Patterns ----")
   println(finalpop.map { (_: Individual).pattern }.sortWith {
