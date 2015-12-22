@@ -92,7 +92,7 @@ object SphereNSGAII extends App {
 
 object StochasticSphereNSGAII extends App {
 
-  import NoisyNSGA2.Algorithm.{ Individual, iHistory, iValues, iFitness }
+  import NoisyNSGA2.Algorithm.{ Individual, iHistory, iValues }
 
   val mu = 10
   val lambda = 10
@@ -118,7 +118,7 @@ object StochasticSphereNSGAII extends App {
         for {
           _ <- writeS((state: EvolutionData[Unit], individuals: Vector[Individual]) =>
             individuals.map {
-              i: Individual => state.generation.toString ++ "\t" ++ iValues.get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).mkString("\t")
+              i: Individual => state.generation.toString ++ "\t" ++ iValues.get(i).mkString("\t") ++ "\t" ++ iHistory.get(i).transpose.map { vs => vs.sum / vs.size }.mkString("\t")
             }.mkString("\n"))
           res <- algo.step
         } yield res,

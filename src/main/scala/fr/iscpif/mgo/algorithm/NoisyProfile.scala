@@ -34,8 +34,7 @@ import Scalaz._
 object NoisyProfile {
 
   def fitnessWithReplications[I](
-    iFitness: Lens[I, Double],
-    iHistory: Lens[I, Vector[Double]])(i: I): Vector[Double] = Vector(iFitness.get(i), 1.0 / iHistory.get(i).size)
+    iHistory: Lens[I, Vector[Double]])(i: I): Vector[Double] = Vector(iHistory.get(i).sum / iHistory.get(i).size, 1.0 / iHistory.get(i).size)
 
   def initialGenomes[M[_]: Monad: RandomGen, I](
     iCons: (Vector[Double], Maybe[Int], Long, Vector[Double]) => I)(mu: Int, genomeSize: Int): M[Vector[(Random, I)]] =
@@ -46,7 +45,6 @@ object NoisyProfile {
     } yield indivs
 
   def breeding[M[_]: Monad: RandomGen: Generational, I](
-    iFitness: Lens[I, Double],
     iHistory: Lens[I, Vector[Double]],
     iValues: Lens[I, Vector[Double]],
     iOperator: Lens[I, Maybe[Int]],
@@ -59,7 +57,7 @@ object NoisyProfile {
     for {
       // Select parents with the double objective of minimising fitness and maximising history size with a pareto ranking, and then maximising diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
-        ranking = paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iFitness, iHistory) },
+        ranking = paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iHistory) },
         size = lambda,
         rounds = size => math.round(math.log10(size).toInt))
       // Compute the proportion of each operator in the population
@@ -111,7 +109,6 @@ object NoisyProfile {
 
   def elitism[M[_]: Monad: RandomGen, I](
     iValues: Lens[I, Vector[Double]],
-    iFitness: Lens[I, Double],
     iHistory: Lens[I, Vector[Double]],
     iOperator: Lens[I, Maybe[Int]],
     iAge: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int], historySize: Int): Objective[M, I] =
@@ -127,7 +124,7 @@ object NoisyProfile {
         byNicheO[M, I, Int](
           niche = niche,
           objective = keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](
-            paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iFitness, iHistory) },
+            paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iHistory) },
             muByNiche))
       )(noNaN)
     } yield kept
@@ -167,20 +164,16 @@ object NoisyProfile {
       set = (i, h) => i.copy(fitnessHistory = h),
       get = _.fitnessHistory
     )
-    val iFitness: Lens[Individual, Double] = Lens.lensu(
-      set = (i, f) => i.copy(fitnessHistory = i.fitnessHistory.dropRight(1) :+ f),
-      get = _.fitnessHistory.last
-    )
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[(Random, Individual)]] = NoisyProfile.initialGenomes[EvolutionStateMonad[Unit]#l, Individual](Individual)(mu, genomeSize)
     def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual)] =
       NoisyProfile.breeding[EvolutionStateMonad[Unit]#l, Individual](
-        iFitness, iHistory, iValues, iOperator, iAge, Individual
+        iHistory, iValues, iOperator, iAge, Individual
       )(lambda, niche, operatorExploration, cloneProbability)
     def expression(fitness: (Random, Vector[Double]) => Double): Expression[(Random, Individual), Individual] =
       NoisyProfile.expression[Individual](iValues, iHistory)(fitness)
     def elitism(muByNiche: Int, niche: Niche[Individual, Int], historySize: Int): Objective[EvolutionStateMonad[Unit]#l, Individual] =
-      NoisyProfile.elitism[EvolutionStateMonad[Unit]#l, Individual](iValues, iFitness, iHistory, iOperator, iAge)(muByNiche, niche, historySize)
+      NoisyProfile.elitism[EvolutionStateMonad[Unit]#l, Individual](iValues, iHistory, iOperator, iAge)(muByNiche, niche, historySize)
 
     def step(
       muByNiche: Int,

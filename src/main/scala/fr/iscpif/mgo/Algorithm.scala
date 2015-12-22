@@ -100,7 +100,6 @@ trait Algorithm[M[_], I, G, C[_]] {
   implicit val m: Monad[M]
 
   val cRandom: Lens[C, Random]
-  val iAge: Lens[I, Long]
 
   def initialGenomes(n: Int): M[Vector[G]]
   def breeding(n: Int): Breeding[M, I, G]
