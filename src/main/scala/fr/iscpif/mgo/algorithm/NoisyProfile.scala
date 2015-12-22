@@ -37,11 +37,11 @@ object NoisyProfile {
     iHistory: Lens[I, Vector[Double]])(i: I): Vector[Double] = Vector(iHistory.get(i).sum / iHistory.get(i).size, 1.0 / iHistory.get(i).size)
 
   def initialGenomes[M[_]: Monad: RandomGen, I](
-    iCons: (Vector[Double], Maybe[Int], Long, Vector[Double]) => I)(mu: Int, genomeSize: Int): M[Vector[(Random, I)]] =
+    iCons: (Vector[Double], Maybe[Int], Long, Vector[Double]) => I)(mu: Int, genomeSize: Int): M[Vector[I]] =
     for {
       rgs <- implicitly[RandomGen[M]].split.replicateM(mu)
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
-      indivs = rgs.toVector zip values.map { (vs: Vector[Double]) => iCons(vs, Maybe.empty, 1, Vector.empty) }
+      indivs = values.map { (vs: Vector[Double]) => iCons(vs, Maybe.empty, 1, Vector.empty) }
     } yield indivs
 
   def breeding[M[_]: Monad: RandomGen: Generational, I](
@@ -53,7 +53,7 @@ object NoisyProfile {
       lambda: Int,
       niche: Niche[I, Int],
       operatorExploration: Double,
-      cloneProbability: Double): Breeding[M, I, (Random, I)] =
+      cloneProbability: Double): Breeding[M, I, I] =
     for {
       // Select parents with the double objective of minimising fitness and maximising history size with a pareto ranking, and then maximising diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
@@ -97,9 +97,7 @@ object NoisyProfile {
       // Replace some offsprings by clones from the original population.
       // TODO: les clones sont tirés aléatoirement de la population initiale, pas de tirage par tournoi. Est-ce qu'il
       // faut biaiser le choix des clones par meilleure fitness et historique plus court?
-      withclones <- clonesReplace[M, I, I](Kleisli.kleisli[M, I, I] { (i: I) => iAge.mod({ _ + 1 }, i).point[M] }, cloneProbability)(is)
-      // Add an independant random number generator to each individual
-      result <- thenK(withRandomGenB[M, I])(withclones)
+      result <- clonesReplace[M, I, I](Kleisli.kleisli[M, I, I] { (i: I) => iAge.mod({ _ + 1 }, i).point[M] }, cloneProbability)(is)
     } yield result
 
   def expression[I](
@@ -165,8 +163,8 @@ object NoisyProfile {
       get = _.fitnessHistory
     )
 
-    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[(Random, Individual)]] = NoisyProfile.initialGenomes[EvolutionStateMonad[Unit]#l, Individual](Individual)(mu, genomeSize)
-    def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual)] =
+    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Individual]] = NoisyProfile.initialGenomes[EvolutionStateMonad[Unit]#l, Individual](Individual)(mu, genomeSize)
+    def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, Individual] =
       NoisyProfile.breeding[EvolutionStateMonad[Unit]#l, Individual](
         iHistory, iValues, iOperator, iAge, Individual
       )(lambda, niche, operatorExploration, cloneProbability)
@@ -174,20 +172,6 @@ object NoisyProfile {
       NoisyProfile.expression[Individual](iValues, iHistory)(fitness)
     def elitism(muByNiche: Int, niche: Niche[Individual, Int], historySize: Int): Objective[EvolutionStateMonad[Unit]#l, Individual] =
       NoisyProfile.elitism[EvolutionStateMonad[Unit]#l, Individual](iValues, iHistory, iOperator, iAge)(muByNiche, niche, historySize)
-
-    def step(
-      muByNiche: Int,
-      lambda: Int,
-      fitness: (Random, Vector[Double]) => Double,
-      niche: Niche[Individual, Int],
-      historySize: Int,
-      cloneProbability: Double,
-      operatorExploration: Double): Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
-      NoisyProfile.step[EvolutionStateMonad[Unit]#l, Individual](
-        breeding(lambda, niche, operatorExploration, cloneProbability),
-        expression(fitness),
-        elitism(muByNiche, niche, historySize)
-      )
 
     def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
     def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
@@ -205,15 +189,58 @@ object NoisyProfile {
 
         implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
-        def initialGenomes: EvolutionState[Unit, Vector[(Random, Individual)]] = NoisyProfile.Algorithm.initialGenomes(muByNiche, genomeSize)
-        def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual)] = NoisyProfile.Algorithm.breeding(lambda, niche, operatorExploration, cloneProbability)
+        def initialGenomes: EvolutionState[Unit, Vector[(Random, Individual)]] =
+          for {
+            ig <- NoisyProfile.Algorithm.initialGenomes(muByNiche, genomeSize)
+            //Add an independant random number generator to each individual
+            result <- withRandomGenB[EvolutionStateMonad[Unit]#l, Individual].run(ig)
+          } yield result
+
+        def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual)] =
+          for {
+            bred <- NoisyProfile.Algorithm.breeding(lambda, niche, operatorExploration, cloneProbability)
+            //Add an independant random number generator to each individual
+            result <- thenK[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual], Vector[(Random, Individual)]](withRandomGenB[EvolutionStateMonad[Unit]#l, Individual])(bred)
+          } yield result
+
         def expression: Expression[(Random, Individual), Individual] = NoisyProfile.Algorithm.expression(fitness)
+
         def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NoisyProfile.Algorithm.elitism(muByNiche, niche, historySize)
 
-        def step: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] = NoisyProfile.Algorithm.step(muByNiche, lambda, fitness, niche, historySize, cloneProbability, operatorExploration)
+        def step: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
+          NoisyProfile.step[EvolutionStateMonad[Unit]#l, Individual](
+            breeding,
+            expression,
+            elitism)
 
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyProfile.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
+      }
+
+    def algoOpenMOLE(muByNiche: Int, lambda: Int, operatorExploration: Double, genomeSize: Int, historySize: Int, cloneProbability: Double, x: Int, nX: Int) =
+      new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Individual, EvolutionData[Unit]] {
+
+        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
+
+        val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
+          set = (e, r) => e.copy(random = r),
+          get = _.random
+        )
+
+        def niche(i: Individual): Int = genomeProfile[Individual](
+          values = iValues.get,
+          x = x,
+          nX = nX)(i)
+
+        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Individual]] = NoisyProfile.Algorithm.initialGenomes(n, genomeSize)
+        def breeding(n: Int): Breeding[EvolutionStateMonad[Unit]#l, Individual, Individual] = NoisyProfile.Algorithm.breeding(n, niche, operatorExploration, cloneProbability)
+        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NoisyProfile.Algorithm.elitism(muByNiche, niche, historySize)
+
+        def initForIsland(i: Individual): Individual = i.copy(age = 0)
+
+        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyProfile.Algorithm.wrap(x)
+        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
+
       }
   }
 }

@@ -228,6 +228,5 @@ object NoisyNSGA2 {
 
       }
   }
-
 }
 
