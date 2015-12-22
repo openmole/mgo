@@ -32,6 +32,7 @@ object ZDT4PSE extends App {
   import PSE.Algorithm._
 
   val maxiter: Int = 100
+  val initialPopSize: Int = 10
   val mu: Int = 10
   val lambda: Int = 10
   val genomeSize: Int = 10
@@ -45,7 +46,8 @@ object ZDT4PSE extends App {
   val express: Vector[Double] => Vector[Double] = zdt4(_).toVector
 
   val algo = PSE.Algorithm(
-    mu = mu,
+    initialPopSize = initialPopSize,
+    keepPerCell = mu,
     lambda = lambda,
     express = express,
     genomeSize = genomeSize,

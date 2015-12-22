@@ -27,6 +27,7 @@ import fr.iscpif.mgo.Objectives._
 import fr.iscpif.mgo.Contexts._
 
 import scala.math._
+import scala.util.Random
 
 import scalaz._
 import Scalaz._
@@ -255,7 +256,9 @@ object PSE {
     def wrap[A](x: (EvolutionData[HitMap], A)): EvolutionState[HitMap, A] = default.wrap[HitMap, A](x)
     def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = default.unwrap[HitMap, A](Map.empty[Vector[Int], Int])(x)
 
-    def apply(mu: Int,
+    def apply(
+      initialPopSize: Int,
+      keepPerCell: Int,
       lambda: Int,
       express: Vector[Double] => Vector[Double],
       genomeSize: Int,
@@ -271,16 +274,49 @@ object PSE {
 
         val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep, lowBound, highBound)
 
-        def initialGenomes: EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(mu, genomeSize)
+        def initialGenomes: EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(initialPopSize, genomeSize)
         def breeding: Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] = PSE.Algorithm.breeding(lambda, operatorExploration, cloneProbability, cell)
         def expression: Expression[Genome, Individual] = PSE.Algorithm.expression(express)
-        def elitism: Objective[EvolutionStateMonad[HitMap]#l, Individual] = PSE.Algorithm.elitism(mu, cell)
+        def elitism: Objective[EvolutionStateMonad[HitMap]#l, Individual] = PSE.Algorithm.elitism(keepPerCell, cell)
 
-        def step: Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] = PSE.Algorithm.step(mu, lambda, express, operatorExploration, cloneProbability, cell)
+        def step: Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] = PSE.Algorithm.step(keepPerCell, lambda, express, operatorExploration, cloneProbability, cell)
 
         def wrap[A](x: (EvolutionData[HitMap], A)): EvolutionState[HitMap, A] = PSE.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = PSE.Algorithm.unwrap(x)
 
       }
+
+    def algoOpenMOLE(initialPopSize: Int,
+      keepPerCell: Int,
+      lambda: Int,
+      genomeSize: Int,
+      operatorExploration: Double,
+      cloneProbability: Double,
+      anchor: Vector[Double],
+      discretisationStep: Vector[Double],
+      lowBound: Vector[Double],
+      highBound: Vector[Double]) =
+      new AlgorithmOpenMOLE[EvolutionStateMonad[HitMap]#l, Individual, Genome, EvolutionData[HitMap]] {
+
+        implicit val m: Monad[EvolutionStateMonad[HitMap]#l] = implicitly[Monad[EvolutionStateMonad[HitMap]#l]]
+
+        val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep, lowBound, highBound)
+
+        val cRandom: Lens[EvolutionData[HitMap], Random] = Lens.lensu(
+          set = (e, r) => e.copy(random = r),
+          get = _.random
+        )
+
+        def initialGenomes(n: Int): EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(n, genomeSize)
+        def breeding(n: Int): Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] = PSE.Algorithm.breeding(n, operatorExploration, cloneProbability, cell)
+        def elitism: Objective[EvolutionStateMonad[HitMap]#l, Individual] = PSE.Algorithm.elitism(keepPerCell, cell)
+
+        def initForIsland(i: Individual): Individual = i
+
+        def wrap[A](x: (EvolutionData[HitMap], A)): EvolutionState[HitMap, A] = PSE.Algorithm.wrap(x)
+        def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = PSE.Algorithm.unwrap(x)
+
+      }
+
   }
 }
