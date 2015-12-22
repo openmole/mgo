@@ -27,15 +27,16 @@ import Expressions._
 import scala.util.Random
 import scalaz._
 import Scalaz._
+import scalaz.effect.IO
 
 object SphereNSGAII extends App {
 
   import NSGA2.Algorithm.{ Individual, Genome, iGenome, gValues, iFitness }
 
-  val mu = 10
-  val lambda = 10
+  val mu = 2
+  val lambda = 2
   def dimensions = 10
-  val maxiter = 100
+  val maxiter = 100000
   val operatorExploration = 0.1
 
   val fitness: Expression[Vector[Double], Vector[Double]] = { x => Vector(sphere(x)) }
@@ -46,20 +47,26 @@ object SphereNSGAII extends App {
   def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
 
   val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
-    runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
+    runEAUntilStackless[Unit, Individual](
       stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       }),
       stepFunction =
         for {
           individuals <- ka
-          _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
-            individuals.map {
-              i: Individual => state.generation.toString ++ "\t" ++ (iGenome >=> gValues).get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).mkString("\t")
-            }.mkString("\n")
-          }
+          _ <- writeS(
+            { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
+              if (state.generation % 100 == 0)
+                individuals.map {
+                  i: Individual =>
+                    state.generation.toString ++ "\t" ++ (iGenome >=> gValues).get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).mkString("\t")
+                }.mkString("\n") ++ "\n"
+              else ""
+            },
+            IO.putStr)
           res <- algo.step
-        } yield res
+        } yield res,
+      start = EvolutionData[Unit](random = newRNG(1), s = ())
     )
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
@@ -70,9 +77,7 @@ object SphereNSGAII extends App {
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
-  val start = algo.wrap[Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
-
-  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](start >> evolution)
+  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
 
   println("---- Final State ----")
   println(finalstate)
@@ -105,7 +110,7 @@ object StochasticSphereNSGAII extends App {
   def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
 
   val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
-    runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
+    runEAUntilStackless[Unit, Individual](
       stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       }),
@@ -116,7 +121,8 @@ object StochasticSphereNSGAII extends App {
               i: Individual => state.generation.toString ++ "\t" ++ iValues.get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).mkString("\t")
             }.mkString("\n"))
           res <- algo.step
-        } yield res
+        } yield res,
+      start = EvolutionData[Unit](random = newRNG(1), s = ())
     )
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
@@ -127,9 +133,7 @@ object StochasticSphereNSGAII extends App {
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
-  val start = algo.wrap[Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
-
-  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](start >> evolution)
+  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
 
   println("---- Final State ----")
   println(finalstate)

@@ -61,7 +61,7 @@ object SphereProfile extends App {
   def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
 
   val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
-    runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
+    runEAUntilStackless[Unit, Individual](
       stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       }),
@@ -73,7 +73,8 @@ object SphereProfile extends App {
             }.mkString("\n")
           }
           res <- algo.step
-        } yield res
+        } yield res,
+      start = EvolutionData[Unit](random = newRNG(1), s = ())
     )
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
@@ -84,11 +85,7 @@ object SphereProfile extends App {
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
-  val start = algo.wrap[Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
-
-  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](
-    start >> evolution
-  )
+  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
 
   println("---- Final State ----")
   println(finalstate)
@@ -136,7 +133,7 @@ object StochasticSphereProfile extends App {
   def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
 
   val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
-    runEAUntil[EvolutionStateMonad[Unit]#l, Individual](
+    runEAUntilStackless[Unit, Individual](
       stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
         implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
       }),
@@ -149,7 +146,8 @@ object StochasticSphereProfile extends App {
             }.mkString("\n")
           }
           res <- algo.step
-        } yield res
+        } yield res,
+      start = EvolutionData[Unit](random = newRNG(1), s = ())
     )
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
@@ -160,11 +158,7 @@ object StochasticSphereProfile extends App {
       finalpop <- ea.run(initialPopEval)
     } yield finalpop
 
-  val start = algo.wrap[Unit](EvolutionData[Unit](random = newRNG(1), s = ()), ())
-
-  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](
-    start >> evolution
-  )
+  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
 
   println("---- Final State ----")
   println(finalstate)

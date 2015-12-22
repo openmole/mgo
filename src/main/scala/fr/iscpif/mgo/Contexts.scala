@@ -19,6 +19,7 @@ package fr.iscpif.mgo
 import fr.iscpif.mgo.Breedings._
 import fr.iscpif.mgo.Objectives._
 
+import scala.annotation.tailrec
 import scala.language.higherKinds
 import scalaz._
 import Scalaz._
@@ -128,6 +129,24 @@ object Contexts {
           _ <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, Unit](io)
         } yield ()
       }
+
+    def runEAUntilStackless[S, I](
+      stopCondition: Kleisli[EvolutionStateMonad[S]#l, Vector[I], Boolean],
+      stepFunction: Kleisli[EvolutionStateMonad[S]#l, Vector[I], Vector[I]],
+      start: EvolutionData[S]): Kleisli[EvolutionStateMonad[S]#l, Vector[I], Vector[I]] = {
+
+      @tailrec
+      def tailRec(start: EvolutionData[S], population: Vector[I]): EvolutionState[S, Vector[I]] = {
+        val (s1, stop) = stopCondition.run(population).run(start).unsafePerformIO
+        if (stop) StateT.apply[IO, EvolutionData[S], Vector[I]] { _ => IO((s1, population)) }
+        else {
+          val (s2, newpop) = stepFunction.run(population).run(s1).unsafePerformIO
+          tailRec(s2, newpop)
+        }
+      }
+
+      Kleisli.kleisli[EvolutionStateMonad[S]#l, Vector[I], Vector[I]] { population: Vector[I] => tailRec(start, population) }
+    }
   }
 }
 

@@ -34,6 +34,8 @@ import mgo.Expressions._
 import mgo.Objectives._
 import fr.iscpif.mgo.Contexts._
 
+import scala.util.control.TailCalls._
+
 package object mgo {
 
   /**** Running the EA ****/
@@ -78,7 +80,7 @@ package object mgo {
     newpop.point[M]
   }*/
 
-  //TODO: Non-tail recursive function. Make a tail recursive one (Trampoline).
+  /** Non-tail recursive. Will break for long runs. */
   def runEAUntil[M[_]: Monad, I](
     stopCondition: Kleisli[M, Vector[I], Boolean],
     stepFunction: Kleisli[M, Vector[I], Vector[I]]): Kleisli[M, Vector[I], Vector[I]] =
@@ -89,7 +91,24 @@ package object mgo {
       else stepFunction >=> runEAUntil[M, I](stopCondition, stepFunction)
     } yield res
 
-  /**** Stop conditions ****/
+  /*def runEAUntilStackless[M[_]: Traverse: Monad, I](
+    stopCondition: Kleisli[M, Vector[I], Boolean],
+    stepFunction: Kleisli[M, Vector[I], Vector[I]])(population: Vector[I]): Free.Trampoline[M[Vector[I]]] =
+    Traverse.apply[M].sequence[Free.Trampoline, Vector[I]](for {
+      stop <- stopCondition.run(population)
+      newpop <- if (stop) population.point[M] else stepFunction(population)
+    } yield {
+      if (stop) Free.return_[Function0, M[Vector[I]]](newpop.point[M])
+      else Free.suspend[Function0, M[Vector[I]]](runEAUntilStackless(stopCondition, stepFunction)(newpop))
+    })*/
+
+  /*def runEAUntilStackless[S, I](
+    stopCondition: Kleisli[({type l[x]=State[S,x]})#l, Vector[I], Boolean],
+    stepFunction: Kleisli[({type l[x]=State[S,x]})#l, Vector[I], Vector[I]])(population: Vector[I]): Kleisli[({type l[x]=State[S,x]})#l, Vector[I], Vector[I]] = {
+    val (s, stop) = stopCondition.run(population).run()
+  }*/
+
+  /** ** Stop conditions ****/
 
   def anyReaches[M[_]: Monad, I](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
     (population: Vector[I]) => population.exists(goalReached).point[M]
