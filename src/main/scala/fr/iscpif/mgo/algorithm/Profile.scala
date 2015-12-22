@@ -27,6 +27,7 @@ import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.niche._
 
 import scala.math._
+import scala.util.Random
 import scalaz._
 import Scalaz._
 
@@ -206,5 +207,32 @@ object Profile {
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = Profile.Algorithm.unwrap(x)
 
       }
+
+    def algoOpenMOLE(muByNiche: Int, lambda: Int, genomeSize: Int, operatorExploration: Double, x: Int, nX: Int) =
+      new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
+
+        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
+
+        val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
+          set = (e, r) => e.copy(random = r),
+          get = _.random
+        )
+
+        def niche(i: Individual): Int = genomeProfile[Individual](
+          values = (iGenome >=> gValues).get,
+          x = x,
+          nX = nX)(i)
+
+        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = Profile.Algorithm.initialGenomes(n, genomeSize)
+        def breeding(n: Int): Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = Profile.Algorithm.breeding(n, niche, operatorExploration)
+        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = Profile.Algorithm.elitism(muByNiche, niche)
+
+        def initForIsland(i: Individual): Individual = i
+
+        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = Profile.Algorithm.wrap(x)
+        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = Profile.Algorithm.unwrap(x)
+
+      }
+
   }
 }
