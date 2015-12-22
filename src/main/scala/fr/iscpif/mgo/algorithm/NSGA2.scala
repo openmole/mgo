@@ -27,6 +27,7 @@ import fr.iscpif.mgo.Objectives._
 import fr.iscpif.mgo.Contexts._
 
 import scala.math._
+import scala.util.Random
 
 import scalaz._
 import Scalaz._
@@ -202,5 +203,27 @@ object NSGA2 {
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
 
       }
+
+    def algoOpenMOLE(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) =
+      new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
+
+        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
+
+        val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
+          set = (e, r) => e.copy(random = r),
+          get = _.random
+        )
+
+        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(n, genomeSize)
+        def breeding(n: Int): Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = NSGA2.Algorithm.breeding(n, operatorExploration)
+        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NSGA2.Algorithm.elitism(mu)
+
+        def initForIsland(i: Individual): Individual = i
+
+        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
+        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
+
+      }
+
   }
 }
