@@ -204,7 +204,7 @@ object NSGA2 {
 
       }
 
-    def algoOpenMOLE(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) =
+    def algoOpenMOLE(mu: Int, lambda: Int, genomeSize: Int, operatorExploration: Double) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
 
         implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
