@@ -95,7 +95,7 @@ trait Algorithm[M[_], I, G, C[_]] {
     )
 }
 
-/*trait AlgorithmOpenMOLE[M[_], I, G, C] {
+trait AlgorithmOpenMOLE[M[_], I, G, C] {
 
   implicit val m: Monad[M]
 
@@ -117,4 +117,4 @@ trait Algorithm[M[_], I, G, C[_]] {
         b <- action(a)
       } yield b
     )
-}*/
+}
