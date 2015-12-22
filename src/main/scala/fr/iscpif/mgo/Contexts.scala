@@ -64,6 +64,12 @@ object Contexts {
       random: Random = newRNG(System.currentTimeMillis()),
       s: S)
 
+    def evolutionDataRandom[S]: Lens[EvolutionData[S], Random] =
+      Lens.lensu(
+        set = (e, r) => e.copy(random = r),
+        get = _.random
+      )
+
     type EvolutionState[S, T] = StateT[IO, EvolutionData[S], T]
     type EvolutionStateMonad[S] = ({ type l[x] = EvolutionState[S, x] })
 

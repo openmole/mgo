@@ -94,3 +94,28 @@ trait Algorithm[M[_], I, G, C[_]] {
       } yield b
     )
 }
+
+/*trait AlgorithmOpenMOLE[M[_], I, G, C] {
+
+  implicit val m: Monad[M]
+
+  val cRandom: Lens[C, Random]
+  val iAge: Lens[I, Long]
+
+  def initialGenomes(n: Int): M[Vector[G]]
+  def breeding(n: Int): Breeding[M, I, G]
+  def elitism: Objective[M, I]
+
+  def initForIsland(i: I): I
+
+  def wrap[A](m: (C, A)): M[A]
+  def unwrap[A](m: M[A]): (C, A)
+
+  def run[A, B](start: (C, A), action: A => M[B]): (C, B) =
+    unwrap(
+      for {
+        a <- wrap(start)
+        b <- action(a)
+      } yield b
+    )
+}*/
