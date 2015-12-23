@@ -33,10 +33,10 @@ object SphereNSGAII extends App {
 
   import NSGA2.Algorithm.{ Individual, Genome, iGenome, gValues, iFitness }
 
-  val mu = 2
-  val lambda = 2
+  val mu = 10
+  val lambda = 10
   def dimensions = 10
-  val maxiter = 100000
+  val maxiter = 100
   val operatorExploration = 0.1
 
   val fitness: Expression[Vector[Double], Vector[Double]] = { x => Vector(sphere(x)) }

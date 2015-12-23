@@ -31,6 +31,8 @@ import scala.util.Random
 import scalaz._
 import Scalaz._
 
+import scala.language.higherKinds
+
 object NoisyProfile {
 
   def fitnessWithReplications[I](
@@ -163,6 +165,10 @@ object NoisyProfile {
       get = _.fitnessHistory
     )
 
+    implicit val individualHistory = new History[Double, Individual] {
+      val lens = iHistory
+    }
+
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Individual]] = NoisyProfile.initialGenomes[EvolutionStateMonad[Unit]#l, Individual](Individual)(mu, genomeSize)
     def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, Individual] =
       NoisyProfile.breeding[EvolutionStateMonad[Unit]#l, Individual](
@@ -186,8 +192,6 @@ object NoisyProfile {
       operatorExploration: Double,
       cloneProbability: Double) =
       new Algorithm[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual), ({ type l[x] = (EvolutionData[Unit], x) })#l] {
-
-        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
         def initialGenomes: EvolutionState[Unit, Vector[(Random, Individual)]] =
           for {
@@ -219,8 +223,6 @@ object NoisyProfile {
 
     def algoOpenMOLE(muByNiche: Int, lambda: Int, operatorExploration: Double, genomeSize: Int, historySize: Int, cloneProbability: Double, x: Int, nX: Int) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Individual, EvolutionData[Unit]] {
-
-        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
         val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
           set = (e, r) => e.copy(random = r),

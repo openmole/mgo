@@ -32,20 +32,23 @@ import fr.iscpif.mgo.Contexts.default._
 
 import scala.math._
 
+import scala.language.higherKinds
+
 object NoisyNSGA2 {
 
   def fitnessWithReplications[I](
     iHistory: Lens[I, Vector[Vector[Double]]])(i: I): Vector[Double] = iHistory.get(i).transpose.map { vs => vs.sum / vs.size } ++ Vector(1.0 / iHistory.get(i).size.toDouble)
 
-  def initialGenomes[M[_]: Monad: RandomGen, I](
-    iCons: (Vector[Double], Maybe[Int], Long, Vector[Vector[Double]]) => I)(mu: Int, genomeSize: Int): M[Vector[I]] =
+  def initialGenomes[M[_], I](
+    iCons: (Vector[Double], Maybe[Int], Long, Vector[Vector[Double]]) => I)(mu: Int, genomeSize: Int)(
+      implicit MM: Monad[M], MR: RandomGen[M], IH: History[Vector[Double], I]): M[Vector[I]] =
     for {
-      rgs <- implicitly[RandomGen[M]].split.replicateM(mu)
+      rgs <- MR.split.replicateM(mu)
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
       indivs = values.map { vs: Vector[Double] => iCons(vs, Maybe.empty, 1, Vector.empty) }
     } yield indivs
 
-  def breeding[M[_]: Monad: RandomGen: Generational, I](
+  def breeding[M[_], I](
     iHistory: Lens[I, Vector[Vector[Double]]],
     iValues: Lens[I, Vector[Double]],
     iOperator: Lens[I, Maybe[Int]],
@@ -53,7 +56,8 @@ object NoisyNSGA2 {
     iCons: (Vector[Double], Maybe[Int], Long, Vector[Vector[Double]]) => I)(
       lambda: Int,
       operatorExploration: Double,
-      cloneProbability: Double): Breeding[M, I, I] =
+      cloneProbability: Double)(
+        implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, I] =
     for {
       // Select parents with the double objective of minimising fitness and maximising history size with a pareto ranking, and then maximising diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
@@ -104,11 +108,12 @@ object NoisyNSGA2 {
     iHistory: Lens[I, Vector[Vector[Double]]])(fitness: (Random, Vector[Double]) => Vector[Double]): Expression[(Random, I), I] =
     { case (rg, i) => iHistory.mod(_ :+ fitness(rg, iValues.get(i)), i) }
 
-  def elitism[M[_]: Monad: RandomGen, I](
+  def elitism[M[_], I](
     iValues: Lens[I, Vector[Double]],
     iHistory: Lens[I, Vector[Vector[Double]]],
     iOperator: Lens[I, Maybe[Int]],
-    iAge: Lens[I, Long])(mu: Int, historySize: Int): Objective[M, I] =
+    iAge: Lens[I, Long])(mu: Int, historySize: Int)(
+      implicit MM: Monad[M], MR: RandomGen[M]): Objective[M, I] =
     for {
       // Declone
       decloned <- applyCloneStrategy[M, I, Vector[Double]](
@@ -122,10 +127,11 @@ object NoisyNSGA2 {
         mu))(noNaN)
     } yield kept
 
-  def step[M[_]: Monad: Generational: RandomGen, I, G](
+  def step[M[_], I, G](
     breeding: Breeding[M, I, (Random, G)],
     expression: Expression[(Random, G), I],
-    elitism: Objective[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    elitism: Objective[M, I])(
+      implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
     stepEA[M, I, (Random, G)](
       { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
       breeding,
@@ -153,6 +159,14 @@ object NoisyNSGA2 {
       get = _.fitnessHistory
     )
 
+    implicit val individualHistory = new History[Vector[Double], Individual] {
+      val lens = iHistory
+    }
+
+    import ToHistoryOps._
+    val itest = Individual(Vector.empty, Maybe.empty, 0, Vector(Vector(0.0)))
+    itest.get
+
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Individual]] =
       NoisyNSGA2.initialGenomes[EvolutionStateMonad[Unit]#l, Individual](Individual)(mu, genomeSize)
     def breeding(lambda: Int, operatorExploration: Double, cloneProbability: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, Individual] =
@@ -176,8 +190,6 @@ object NoisyNSGA2 {
       historySize: Int,
       cloneProbability: Double) =
       new Algorithm[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual), ({ type l[x] = (EvolutionData[Unit], x) })#l] {
-
-        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
         def initialGenomes: EvolutionState[Unit, Vector[(Random, Individual)]] =
           for {
@@ -209,8 +221,6 @@ object NoisyNSGA2 {
 
     def algoOpenMOLE(mu: Int, lambda: Int, operatorExploration: Double, genomeSize: Int, historySize: Int, cloneProbability: Double) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Individual, EvolutionData[Unit]] {
-
-        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
         val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
           set = (e, r) => e.copy(random = r),

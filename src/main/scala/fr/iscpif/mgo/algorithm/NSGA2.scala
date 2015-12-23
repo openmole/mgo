@@ -190,8 +190,6 @@ object NSGA2 {
     def apply(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) =
       new Algorithm[EvolutionStateMonad[Unit]#l, Individual, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
 
-        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
-
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(mu, genomeSize)
         def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = NSGA2.Algorithm.breeding(lambda, operatorExploration)
         def expression: Expression[Genome, Individual] = NSGA2.Algorithm.expression(fitness)
@@ -206,8 +204,6 @@ object NSGA2 {
 
     def algoOpenMOLE(mu: Int, lambda: Int, genomeSize: Int, operatorExploration: Double) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
-
-        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
 
         val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
           set = (e, r) => e.copy(random = r),

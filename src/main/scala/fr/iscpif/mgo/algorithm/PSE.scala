@@ -270,8 +270,6 @@ object PSE {
       highBound: Vector[Double]) =
       new Algorithm[EvolutionStateMonad[HitMap]#l, Individual, Genome, ({ type l[x] = (EvolutionData[HitMap], x) })#l] {
 
-        implicit val m: Monad[EvolutionStateMonad[HitMap]#l] = implicitly[Monad[EvolutionStateMonad[HitMap]#l]]
-
         val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep, lowBound, highBound)
 
         def initialGenomes: EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(initialPopSize, genomeSize)
@@ -297,8 +295,6 @@ object PSE {
       lowBound: Vector[Double],
       highBound: Vector[Double]) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[HitMap]#l, Individual, Genome, EvolutionData[HitMap]] {
-
-        implicit val m: Monad[EvolutionStateMonad[HitMap]#l] = implicitly[Monad[EvolutionStateMonad[HitMap]#l]]
 
         val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep, lowBound, highBound)
 

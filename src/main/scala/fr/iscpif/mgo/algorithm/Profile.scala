@@ -16,6 +16,8 @@
  */
 package fr.iscpif.mgo.algorithm
 
+import scala.language.higherKinds
+
 import fr.iscpif.mgo.Breedings._
 import fr.iscpif.mgo.Expressions._
 import fr.iscpif.mgo.Contexts._
@@ -194,7 +196,7 @@ object Profile {
       operatorExploration: Double) =
       new Algorithm[EvolutionStateMonad[Unit]#l, Individual, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
 
-        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
+        //implicit lazy val m: Monad[EvolutionStateMonad[Unit]#l] = evolutionStateMonad
 
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = Profile.Algorithm.initialGenomes(muByNiche, genomeSize)
         def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = Profile.Algorithm.breeding(lambda, niche, operatorExploration)
@@ -211,7 +213,7 @@ object Profile {
     def algoOpenMOLE(muByNiche: Int, lambda: Int, genomeSize: Int, operatorExploration: Double, x: Int, nX: Int) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
 
-        implicit val m: Monad[EvolutionStateMonad[Unit]#l] = implicitly[Monad[EvolutionStateMonad[Unit]#l]]
+        //implicit lazy val m: Monad[EvolutionStateMonad[Unit]#l] = evolutionStateMonad
 
         val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
           set = (e, r) => e.copy(random = r),

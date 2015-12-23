@@ -70,6 +70,8 @@ object Contexts {
     def wrap[S, T](x: (EvolutionData[S], T)): EvolutionState[S, T] = StateT.apply[IO, EvolutionData[S], T](_ => IO(x))
     def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, Tag.of[Start](0), Random, s)).unsafePerformIO
 
+    implicit lazy val evolutionStateMonad: Monad[EvolutionStateMonad[Unit]#l] = StateT.stateTMonadState[EvolutionData[Unit], IO]
+
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
       def get: EvolutionState[S, Random] =
         for {

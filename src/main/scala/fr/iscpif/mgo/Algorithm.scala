@@ -75,7 +75,7 @@ trait AlgorithmOld[G, P, S] {
  */
 trait Algorithm[M[_], I, G, C[_]] {
 
-  implicit val m: Monad[M]
+  //implicit def m: Monad[M]
 
   def initialGenomes: M[Vector[G]]
   def breeding: Breeding[M, I, G]
@@ -83,10 +83,10 @@ trait Algorithm[M[_], I, G, C[_]] {
   def elitism: Objective[M, I]
   def step: Kleisli[M, Vector[I], Vector[I]]
   /** Turn a non monadic value into a monadic one. */
-  def wrap[A](m: C[A]): M[A]
+  def wrap[A](ca: C[A]): M[A]
   def unwrap[A](m: M[A]): C[A]
 
-  def run[A, B](start: C[A], action: A => M[B]): C[B] =
+  def run[A, B](start: C[A], action: A => M[B])(implicit M: Monad[M]): C[B] =
     unwrap(
       for {
         a <- wrap(start)
@@ -97,7 +97,7 @@ trait Algorithm[M[_], I, G, C[_]] {
 
 trait AlgorithmOpenMOLE[M[_], I, G, C] {
 
-  implicit val m: Monad[M]
+  //implicit def m: Monad[M]
 
   val cRandom: Lens[C, Random]
 
@@ -107,10 +107,10 @@ trait AlgorithmOpenMOLE[M[_], I, G, C] {
 
   def initForIsland(i: I): I
 
-  def wrap[A](m: (C, A)): M[A]
+  def wrap[A](ca: (C, A)): M[A]
   def unwrap[A](m: M[A]): (C, A)
 
-  def run[A, B](start: (C, A), action: A => M[B]): (C, B) =
+  def run[A, B](start: (C, A), action: A => M[B])(implicit M: Monad[M]): (C, B) =
     unwrap(
       for {
         a <- wrap(start)
