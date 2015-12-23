@@ -99,7 +99,7 @@ trait AlgorithmOpenMOLE[M[_], I, G, C] {
 
   //implicit def m: Monad[M]
 
-  val cRandom: Lens[C, Random]
+  def cRandom: Lens[C, Random]
 
   def initialGenomes(n: Int): M[Vector[G]]
   def breeding(n: Int): Breeding[M, I, G]
@@ -117,4 +117,8 @@ trait AlgorithmOpenMOLE[M[_], I, G, C] {
         b <- action(a)
       } yield b
     )
+}
+
+trait NoisyAlgorithm[I, P] {
+  implicit def individualHistory: History[P, I]
 }

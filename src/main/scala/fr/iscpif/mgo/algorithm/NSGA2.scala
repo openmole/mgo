@@ -44,21 +44,26 @@ object NSGA2 {
       gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty, 0) }
     } yield gs
 
-  def breeding[M[_]: Monad: RandomGen: Generational, I, G](
+  def breeding[M[_], I, G](
     iFitness: Lens[I, Vector[Double]],
     iGenome: Lens[I, G],
     gValues: Lens[G, Vector[Double]],
     gOperator: Lens[G, Maybe[Int]],
     gCons: (Vector[Double], Maybe[Int], Long) => G)(
       lambda: Int,
-      operatorExploration: Double): Breeding[M, I, G] = {
+      operatorExploration: Double)(
+        implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, G] = {
     for {
       // Select lambda parents with minimum pareto rank and maximum crowding diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
         paretoRankingMinAndCrowdingDiversity[M, I] { iFitness.get },
-        lambda)
+        // We need to always draw a even number of parents, otherwise the last parent will be paired with itself,
+        // resulting in no crossover (problem if lambda = 1).
+        if (lambda % 2 == 0) lambda else lambda + 1)
       // Compute the proportion of each operator in the population
-      opstats = parents.map { (iGenome >=> gOperator).get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size)
+      opstats <- Kleisli.kleisli[M, Vector[I], Map[Int, Double]] {
+        is: Vector[I] => is.map { (iGenome >=> gOperator).get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size).point[M]
+      }
       // Get the genome values
       parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { (iGenome >=> gValues).get })(parents)
       // Pair parents together
@@ -85,10 +90,22 @@ object NSGA2 {
       offspringsAndOps <- thenK(flatMapPureB[M, (((Vector[Double], Vector[Double]), Int), Int), (Vector[Double], Int)] {
         case (((g1, g2), op), _) => Vector((g1, op), (g2, op))
       })(pairedOffspringsAndOps)
+      // Since we drew a even number of parents, we got an even number of offsprings. If lambda is odd, delete one
+      // offspring at random.
+      offspringsAndOpsLambdaAdjusted <- thenK(Breeding.apply[M, (Vector[Double], Int), (Vector[Double], Int)] { gs: Vector[(Vector[Double], Int)] =>
+        if (lambda % 2 == 0) gs.point[M]
+        else
+          for {
+            rg <- MR.get
+          } yield {
+            val selected = rg.nextInt(gs.size)
+            gs.take(selected) ++ gs.drop(selected + 1)
+          }
+      })(offspringsAndOps)
       // Clamp genome values between 0 and 1
       clamped <- thenK(mapPureB[M, (Vector[Double], Int), (Vector[Double], Int)] {
         Lens.firstLens[Vector[Double], Int] =>= { _ map { x: Double => max(0.0, min(1.0, x)) } }
-      })(offspringsAndOps)
+      })(offspringsAndOpsLambdaAdjusted)
       // Add the current generation number to new offsprings
       offspringsOpsGens <- thenK(mapB[M, (Vector[Double], Int), (Vector[Double], Int, Long)] {
         case (g, op) => implicitly[Generational[M]].getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }

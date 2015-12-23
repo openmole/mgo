@@ -46,7 +46,7 @@ object NoisyProfile {
       indivs = values.map { (vs: Vector[Double]) => iCons(vs, Maybe.empty, 1, Vector.empty) }
     } yield indivs
 
-  def breeding[M[_]: Monad: RandomGen: Generational, I](
+  def breeding[M[_], I](
     iHistory: Lens[I, Vector[Double]],
     iValues: Lens[I, Vector[Double]],
     iOperator: Lens[I, Maybe[Int]],
@@ -55,12 +55,13 @@ object NoisyProfile {
       lambda: Int,
       niche: Niche[I, Int],
       operatorExploration: Double,
-      cloneProbability: Double): Breeding[M, I, I] =
+      cloneProbability: Double)(
+        implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, I] =
     for {
       // Select parents with the double objective of minimising fitness and maximising history size with a pareto ranking, and then maximising diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
         ranking = paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iHistory) },
-        size = lambda,
+        size = if (lambda % 2 == 0) lambda else lambda + 1,
         rounds = size => math.round(math.log10(size).toInt))
       // Compute the proportion of each operator in the population
       opstats = parents.map { iOperator.get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size)
@@ -90,10 +91,22 @@ object NoisyProfile {
       offspringsAndOps <- thenK(flatMapPureB[M, (((Vector[Double], Vector[Double]), Int), Int), (Vector[Double], Int)] {
         case (((g1, g2), op), _) => Vector((g1, op), (g2, op))
       })(pairedOffspringsAndOps)
+      // Since we drew a even number of parents, we got an even number of offsprings. If lambda is odd, delete one
+      // offspring at random.
+      offspringsAndOpsLambdaAdjusted <- thenK(Breeding.apply[M, (Vector[Double], Int), (Vector[Double], Int)] { gs: Vector[(Vector[Double], Int)] =>
+        if (lambda % 2 == 0) gs.point[M]
+        else
+          for {
+            rg <- MR.get
+          } yield {
+            val selected = rg.nextInt(gs.size)
+            gs.take(selected) ++ gs.drop(selected + 1)
+          }
+      })(offspringsAndOps)
       // Clamp genome values between 0 and 1
       clamped <- thenK(mapPureB[M, (Vector[Double], Int), (Vector[Double], Int)] {
         Lens.firstLens[Vector[Double], Int] =>= { _ map { x: Double => max(0.0, min(1.0, x)) } }
-      })(offspringsAndOps)
+      })(offspringsAndOpsLambdaAdjusted)
       // Construct the final I type
       is <- thenK(mapPureB[M, (Vector[Double], Int), I] { case (g, op) => iCons(g, Maybe.just(op), 0.toLong, Vector.empty) })(clamped)
       // Replace some offsprings by clones from the original population.

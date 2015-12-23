@@ -41,7 +41,7 @@ object PSE {
       gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty, 0) }
     } yield gs
 
-  def breeding[M[_]: Monad: RandomGen: Generational: ({ type l[x[_]] = HitMapper[x, C] })#l, I, G, C](
+  def breeding[M[_]: ({ type l[x[_]] = HitMapper[x, C] })#l, I, G, C](
     iGenome: Lens[I, G],
     gValues: Lens[G, Vector[Double]],
     gOperator: Lens[G, Maybe[Int]],
@@ -49,12 +49,13 @@ object PSE {
     cell: I => C)(
       lambda: Int,
       operatorExploration: Double,
-      cloneProbability: Double): Breeding[M, I, G] = {
+      cloneProbability: Double)(
+        implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, G] = {
     for {
       // Select lambda parents whose corresponding cell has low hit count
       parents <- tournament[M, I, Lazy[Int]](
         ranking = reversedRanking[M, I](hitCountRanking[M, I, C](cell)),
-        size = lambda)
+        size = if (lambda % 2 == 0) lambda else lambda + 1)
       // Compute the proportion of each operator in the population
       opstats = parents.map { (iGenome >=> gOperator).get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size)
       // Get the genome values
@@ -83,10 +84,22 @@ object PSE {
       offspringsAndOps <- thenK(flatMapPureB[M, (((Vector[Double], Vector[Double]), Int), Int), (Vector[Double], Int)] {
         case (((g1, g2), op), _) => Vector((g1, op), (g2, op))
       })(pairedOffspringsAndOps)
+      // Since we drew a even number of parents, we got an even number of offsprings. If lambda is odd, delete one
+      // offspring at random.
+      offspringsAndOpsLambdaAdjusted <- thenK(Breeding.apply[M, (Vector[Double], Int), (Vector[Double], Int)] { gs: Vector[(Vector[Double], Int)] =>
+        if (lambda % 2 == 0) gs.point[M]
+        else
+          for {
+            rg <- MR.get
+          } yield {
+            val selected = rg.nextInt(gs.size)
+            gs.take(selected) ++ gs.drop(selected + 1)
+          }
+      })(offspringsAndOps)
       // Clamp genome values between 0 and 1
       clamped <- thenK(mapPureB[M, (Vector[Double], Int), (Vector[Double], Int)] {
         Lens.firstLens[Vector[Double], Int] =>= { _ map { x: Double => max(0.0, min(1.0, x)) } }
-      })(offspringsAndOps)
+      })(offspringsAndOpsLambdaAdjusted)
       // Add the current generation to new offsprings
       offspringsOpsGens <- thenK(mapB[M, (Vector[Double], Int), (Vector[Double], Int, Long)] {
         case (g, op) => implicitly[Generational[M]].getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
