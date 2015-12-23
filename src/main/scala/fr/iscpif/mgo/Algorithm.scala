@@ -119,6 +119,3 @@ trait AlgorithmOpenMOLE[M[_], I, G, C] {
     )
 }
 
-trait NoisyAlgorithm[I, P] {
-  implicit def individualHistory: History[P, I]
-}
