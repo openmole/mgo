@@ -24,16 +24,3 @@ object fitness {
 
 }
 
-object fitnessOld {
-
-  type Fitness[G, P, F] = (Individual[G, P] => F)
-
-  def Fitness[G, P, F](f: (Individual[G, P] => F)) = new Fitness[G, P, F] {
-    override def apply(v1: Individual[G, P]): F = f(v1)
-  }
-
-  implicit class IndividualFitnessDecorator[G, P](i: Individual[G, P]) {
-    def fitness[F](implicit f: Fitness[G, P, F]): F = f(i)
-  }
-
-}

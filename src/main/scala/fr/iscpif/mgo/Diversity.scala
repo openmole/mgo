@@ -61,30 +61,3 @@ object diversity {
 
 }
 
-object diversityOld {
-  import fitnessOld._
-
-  /** Compute the diversity metric of the values */
-  trait Diversity[G, P] extends (Population[Individual[G, P]] => State[Random, Vector[Lazy[Double]]])
-
-  /* def closedCrowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
-    override def apply(values: Pop) =
-      State.state { ClosedCrowdingDistance(values.map(e => mg(e))) }
-  }*/
-
-  def crowdingDistance[G, P](fitness: Fitness[G, P, Seq[Double]]) = new Diversity[G, P] {
-    override def apply(values: Population[Individual[G, P]]) =
-      State { (rg: Random) => (rg, CrowdingDistance(values.map(e => fitness(e)))(rg)) }
-  }
-
-  def hypervolumeContribution[G, P](referencePoint: ReferencePoint, fitness: Fitness[G, P, Seq[Double]]) = new Diversity[G, P] {
-    override def apply(values: Population[Individual[G, P]]) =
-      State.state { Hypervolume.contributions(values.map(e => fitness(e)), referencePoint) }
-  }
-
-  def KNearestNeighbours[G, P](k: Int, fitness: Fitness[G, P, Seq[Double]]) = new Diversity[G, P] {
-    override def apply(values: Population[Individual[G, P]]) =
-      State.state { KNearestNeighboursAverageDistance(values.map(e => fitness(e)), k) }
-  }
-
-}

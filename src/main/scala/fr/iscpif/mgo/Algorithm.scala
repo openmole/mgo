@@ -29,33 +29,6 @@ import Expressions._
 import Objectives._
 
 /**
- * Represent a state of the evolution algorithm
- */
-@Lenses case class CommonState(
-  generation: Long @@ Generation,
-  startTime: Long @@ Start = System.currentTimeMillis(),
-  random: Random)
-
-case class AlgorithmState[S](
-  common: CommonState,
-  state: S)
-
-trait AlgorithmOld[G, P, S] {
-
-  type Ind = Individual[G, P]
-  type Pop = Population[Ind]
-
-  def initialState: S
-
-  def algorithmState(random: Random, generation: Long = 0) =
-    AlgorithmState(state = initialState, common = CommonState(random = random, generation = generation))
-
-  def breeding(population: Pop, lambda: Int): State[AlgorithmState[S], Vector[G]]
-  def elitism(population: Pop, offspring: Pop): State[AlgorithmState[S], Pop]
-
-}
-
-/**
  * Example:
  * Let type C[A] = (SomeState,A)
  *

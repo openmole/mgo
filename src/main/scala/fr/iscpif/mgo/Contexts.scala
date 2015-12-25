@@ -60,7 +60,7 @@ object Contexts {
 
     case class EvolutionData[S](
       generation: Long = 0,
-      startTime: Long @@ Start = Tag.of[Start](System.currentTimeMillis()),
+      startTime: Long = System.currentTimeMillis(),
       random: Random = newRNG(System.currentTimeMillis()),
       s: S)
 
@@ -68,7 +68,7 @@ object Contexts {
     type EvolutionStateMonad[S] = ({ type l[x] = EvolutionState[S, x] })
 
     def wrap[S, T](x: (EvolutionData[S], T)): EvolutionState[S, T] = StateT.apply[IO, EvolutionData[S], T](_ => IO(x))
-    def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, Tag.of[Start](0), Random, s)).unsafePerformIO
+    def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, 0, Random, s)).unsafePerformIO
 
     implicit def evolutionStateMonad[S]: Monad[EvolutionStateMonad[S]#l] = StateT.stateTMonadState[EvolutionData[S], IO]
     implicit def evolutionStateMonadState[S]: MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]

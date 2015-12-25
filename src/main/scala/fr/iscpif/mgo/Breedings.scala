@@ -204,6 +204,87 @@ object Breedings {
         }
       })
 
+  //  def gaussianMutation[G, S](sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Mutation[G, S] = new Mutation[G, S] {
+  //    override def apply(g: G) =
+  //      for {
+  //        rng <- random[S]
+  //      } yield values.modify(g => g.map(_ + (rng.nextGaussian * sigma)))(g)
+  //  }
+  //
+  //  /**
+  //   * Mutation of a genome based on gaussian distribution around the genome with adaptive sigma values.
+  //   * See on the web : http://www.nashcoding.com/2010/07/07/evolutionary-algorithms-the-little-things-youd-never-guess-part-1/#fnref-28-1
+  //   * See on paper : Gaussian mutation and self adaptation (Hinterding) &&
+  //   * Parameter Control in Evolutionary Algorithms (Agoston Endre Eiben, Robert
+  //   * Hinterding, and Zbigniew Michalewicz, Senior Member, IEEE) + How to Solve It,
+  //   * Modern Heuristics
+  //   */
+  //  def adaptiveCauchy[G, S](minimumSigma: Double = 1e-30)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value], sigma: monocle.Lens[G, Seq[Double] @@ Sigma]): Mutation[G, S] = new Mutation[G, S] {
+  //
+  //    override def apply(g: G) =
+  //      for {
+  //        rng <- random[S]
+  //      } yield {
+  //        val newSigma = sigma.get(g).map { s => math.max(minimumSigma, s * math.exp(rng.nextGaussian)) }
+  //
+  //        val newValues =
+  //          (values.get(g) zip newSigma) map {
+  //            case (v, s) => new CauchyDistribution(rng, v, s).sample //.nextGaussian * s + v
+  //          }
+  //
+  //        newValues.foreach(v => assert(!v.isNaN))
+  //
+  //        (values.set(newValues) compose sigma.set(newSigma))(g)
+  //      }
+  //
+  //  }
+  //
+  //  /**
+  //   * Polynomial mutationolynomial mutation by Deb and Goyal. If is the value of
+  //   * the ith parameter selected for mutation with a probability pm and the result
+  //   * of the mutation is the new value obtained by a polynomial probability
+  //   * distribution.
+  //   * Based on the source code of Jmetal library
+  //   * Author : Antonio J. Nebro <antonio@lcc.uma.es> and Juan J. Durillo <durillo@lcc.uma.es>
+  //   */
+  //  def polynomial[G, S](distributionIndex: Double, mutationRate: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Mutation[G, S] = new Mutation[G, S] {
+  //    override def apply(g: G) =
+  //      for {
+  //        rng <- random[S]
+  //      } yield {
+  //        val newValues = values.get(g) map {
+  //          v =>
+  //            if (rng.nextDouble <= mutationRate) {
+  //              val yl = 0.0 // lower bound
+  //              val yu = 1.0 // upper bound
+  //              val delta1 = (v - yl) / (yu - yl)
+  //              val delta2 = (yu - v) / (yu - yl)
+  //              val mut_pow = 1.0 / (distributionIndex + 1.0)
+  //              val rnd = rng.nextDouble
+  //
+  //              val deltaq: Double = (if (rnd <= 0.5) {
+  //                val xy = 1.0 - delta1
+  //                val value = 2.0 * rnd + (1.0 - 2.0 * rnd) * (math.pow(xy, (distributionIndex + 1.0)))
+  //                math.pow(value, mut_pow) - 1.0
+  //              } else {
+  //                val xy = 1.0 - delta2
+  //                val value = 2.0 * (1.0 - rnd) + 2.0 * (rnd - 0.5) * (math.pow(xy, (distributionIndex + 1.0)))
+  //                1.0 - (math.pow(value, mut_pow))
+  //              })
+  //
+  //              val finalValue = v + deltaq * (yu - yl)
+  //
+  //              if (finalValue < yl) yl
+  //              else if (finalValue > yu) yu
+  //              else finalValue
+  //            }
+  //            v
+  //        }
+  //
+  //        values.set(newValues)(g)
+  //      }
+  //  }
+
   /**** Dynamic breeding ****/
 
   /**
