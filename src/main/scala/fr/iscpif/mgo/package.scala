@@ -120,9 +120,9 @@ package object mgo {
       io <- writeFunction(s).point[M]
     } yield io
 
-  def writeGen[M[_]: Monad: Generational](writeFunction: Long => IO[Unit] = { g => IO.putStrLn(s"Generation ${g.toString}") }): M[IO[Unit]] =
+  def writeGen[M[_]](writeFunction: Long => IO[Unit] = { g => IO.putStrLn(s"Generation ${g.toString}") })(implicit MM: Monad[M], MG: Generational[M]): M[IO[Unit]] =
     for {
-      generation <- implicitly[Generational[M]].getGeneration
+      generation <- MG.getGeneration
       io <- writeFunction(generation).point[M]
     } yield io
 
@@ -181,21 +181,21 @@ package object mgo {
   def flatMapPureB[M[_]: Monad, I, G](op: I => Vector[G]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) => individuals.traverseM[M, G](op(_: I).point[M]))
 
-  def probabilisticOperatorB[M[_]: Monad: RandomGen, I, G](
-    opsAndWeights: Vector[(Kleisli[M, I, G], Double)]): Kleisli[M, I, (G, Int)] =
+  def probabilisticOperatorB[M[_], I, G](
+    opsAndWeights: Vector[(Kleisli[M, I, G], Double)])(implicit MM: Monad[M], MR: RandomGen[M]): Kleisli[M, I, (G, Int)] =
     Kleisli((mates: I) => {
       for {
-        rg <- implicitly[RandomGen[M]].split
+        rg <- MR.split
         op = multinomial[Int](opsAndWeights.zipWithIndex.map { case ((op, w), i) => (i, w) }.toList)(rg)
         g <- opsAndWeights(op)._1.run(mates)
       } yield (g, op)
     })
 
   /** Breed a genome for subsequent stochastic expression */
-  def withRandomGenB[M[_]: Monad: RandomGen, I]: Breeding[M, I, (Random, I)] =
+  def withRandomGenB[M[_], I](implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, I, (Random, I)] =
     Breeding((individuals: Vector[I]) =>
       for {
-        rgs <- implicitly[RandomGen[M]].split.replicateM(individuals.size)
+        rgs <- MR.split.replicateM(individuals.size)
       } yield rgs.toVector zip individuals)
 
   /**** Expression ****/

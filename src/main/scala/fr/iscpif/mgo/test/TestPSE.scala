@@ -64,7 +64,7 @@ object ZDT4PSE extends App {
   val ea: Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] =
     runEAUntilStackless[HitMap, Individual](
       stopCondition = Kleisli.kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
-        implicitly[Generational[EvolutionStateMonad[HitMap]#l]].generationReached(maxiter)
+        evolutionStateGenerational[HitMap].generationReached(maxiter)
       }),
       stepFunction =
         for {

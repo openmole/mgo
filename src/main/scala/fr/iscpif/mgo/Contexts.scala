@@ -70,35 +70,37 @@ object Contexts {
     def wrap[S, T](x: (EvolutionData[S], T)): EvolutionState[S, T] = StateT.apply[IO, EvolutionData[S], T](_ => IO(x))
     def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, Tag.of[Start](0), Random, s)).unsafePerformIO
 
-    implicit lazy val evolutionStateMonad: Monad[EvolutionStateMonad[Unit]#l] = StateT.stateTMonadState[EvolutionData[Unit], IO]
+    implicit def evolutionStateMonad[S]: Monad[EvolutionStateMonad[S]#l] = StateT.stateTMonadState[EvolutionData[S], IO]
+    implicit def evolutionStateMonadState[S]: MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]
+    implicit def evolutionStateMonadTrans[S]: MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L] = StateT.StateMonadTrans[EvolutionData[S]]
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
       def get: EvolutionState[S, Random] =
         for {
-          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
+          s <- evolutionStateMonadState[S].get
         } yield s.random
 
       def split: EvolutionState[S, Random] =
         for {
-          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
+          s <- evolutionStateMonadState[S].get
           rg = s.random
           //TODO: est-ce que c'est une bonne manière de générer 2 nouveaux générateurs aléatoires indépendants?
           rg1 = newRNG(rg.nextLong())
           rg2 = newRNG(rg.nextLong())
-          _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].put(s.copy(random = rg2))
+          _ <- evolutionStateMonadState[S].put(s.copy(random = rg2))
         } yield rg1
     }
 
     implicit def evolutionStateGenerational[S]: Generational[EvolutionStateMonad[S]#l] = new Generational[EvolutionStateMonad[S]#l] {
       def getGeneration: EvolutionState[S, Long] =
         for {
-          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
+          s <- evolutionStateMonadState[S].get
         } yield s.generation
 
       def setGeneration(i: Long): EvolutionState[S, Unit] =
         for {
-          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
-          _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].put(s.copy(generation = i))
+          s <- evolutionStateMonadState[S].get
+          _ <- evolutionStateMonadState[S].put(s.copy(generation = i))
         } yield ()
 
       def incrementGeneration: EvolutionState[S, Unit] =
@@ -113,22 +115,22 @@ object Contexts {
     /*def addIOBefore[S, A, B](mio: EvolutionState[S, IO[A]], action: A => EvolutionState[S, B]): EvolutionState[S, B] =
       for {
         ioa <- mio
-        a <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, A](ioa)
+        a <- evolutionStateMonadTrans[S].liftM[IO, A](ioa)
         res <- action(a)
       } yield res*/
 
     def liftIOValue[S, A](mio: EvolutionState[S, IO[A]]): EvolutionState[S, A] =
       for {
         ioa <- mio
-        a <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, A](ioa)
+        a <- evolutionStateMonadTrans[S].liftM[IO, A](ioa)
       } yield a
 
     def writeS[S, I](writeFun: (EvolutionData[S], Vector[I]) => String, ioFun: String => IO[Unit] = IO.putStrLn): Kleisli[EvolutionStateMonad[S]#l, Vector[I], Unit] =
       Kleisli.kleisli[EvolutionStateMonad[S]#l, Vector[I], Unit] { (is: Vector[I]) =>
         for {
-          s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]]].get
+          s <- evolutionStateMonadState[S].get
           io <- ioFun(writeFun(s, is)).point[EvolutionStateMonad[S]#l]
-          _ <- implicitly[MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L]].liftM[IO, Unit](io)
+          _ <- evolutionStateMonadTrans[S].liftM[IO, Unit](io)
         } yield ()
       }
 

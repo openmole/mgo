@@ -145,7 +145,7 @@ object NoisyNSGA2 {
     elitism: Objective[M, I])(
       implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
     stepEA[M, I, (Random, G)](
-      { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
+      { (_: Vector[I]) => MG.incrementGeneration },
       breeding,
       expression,
       elitism,

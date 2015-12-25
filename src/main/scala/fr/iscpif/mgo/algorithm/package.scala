@@ -27,9 +27,10 @@ import Scalaz._
 package object algorithm {
 
   object GenomeVectorDouble {
-    def randomGenomes[M[_]: Monad: RandomGen](n: Int, genomeLength: Int): M[Vector[Vector[Double]]] =
+    def randomGenomes[M[_]](n: Int, genomeLength: Int)(
+      implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[Vector[Double]]] =
       for {
-        rg <- implicitly[RandomGen[M]].split
+        rg <- MR.split
         values = Vector.fill(n)(Vector.fill(genomeLength)(Random.nextDouble))
       } yield values
   }

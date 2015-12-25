@@ -38,7 +38,8 @@ object NSGA2 {
   // types pour pouvoir être réutilisées ensuite dans d'autres algos. L'algorithme pur (ici NSGA2) est réellement spécifié
   // dans la fonction algorithm tout en bas.
 
-  def initialGenomes[M[_]: Monad: RandomGen, G](cons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
+  def initialGenomes[M[_], G](cons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int)(
+    implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[G]] =
     for {
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
       gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty, 0) }
@@ -108,7 +109,7 @@ object NSGA2 {
       })(offspringsAndOpsLambdaAdjusted)
       // Add the current generation number to new offsprings
       offspringsOpsGens <- thenK(mapB[M, (Vector[Double], Int), (Vector[Double], Int, Long)] {
-        case (g, op) => implicitly[Generational[M]].getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
+        case (g, op) => MG.getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
       })(clamped)
       // Construct the final G type
       gs <- thenK(mapPureB[M, (Vector[Double], Int, Long), G] { case (g, op, gen) => gCons(g, Maybe.just(op), gen) })(offspringsOpsGens)
@@ -121,11 +122,12 @@ object NSGA2 {
       fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
     (g: G) => iCons(g, fitness(gValues.get(g)))
 
-  def elitism[M[_]: Monad: RandomGen, I](
+  def elitism[M[_], I](
     iFitness: Lens[I, Vector[Double]],
     iGenomeValues: Lens[I, Vector[Double]],
     iGeneration: Lens[I, Long])(
-      mu: Int): Objective[M, I] =
+      mu: Int)(
+        implicit MM: Monad[M], MR: RandomGen[M]): Objective[M, I] =
     for {
       // Declone
       decloned <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues.get, keepYoungest[M, I] { iGeneration })
@@ -136,12 +138,13 @@ object NSGA2 {
         paretoRankingMinAndCrowdingDiversity[M, I] { iFitness.get }, mu))(noNaNs)
     } yield is
 
-  def step[M[_]: Monad: RandomGen: Generational, I, G](
+  def step[M[_], I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    elitism: Objective[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    elitism: Objective[M, I])(
+      implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
     stepEA[M, I, G](
-      { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
+      { (_: Vector[I]) => MG.incrementGeneration },
       breeding,
       expression,
       elitism,

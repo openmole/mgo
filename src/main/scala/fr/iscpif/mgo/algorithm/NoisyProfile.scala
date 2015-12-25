@@ -38,10 +38,11 @@ object NoisyProfile {
   def fitnessWithReplications[I](
     iHistory: Lens[I, Vector[Double]])(i: I): Vector[Double] = Vector(iHistory.get(i).sum / iHistory.get(i).size, 1.0 / iHistory.get(i).size)
 
-  def initialGenomes[M[_]: Monad: RandomGen, I](
-    iCons: (Vector[Double], Maybe[Int], Long, Vector[Double]) => I)(mu: Int, genomeSize: Int): M[Vector[I]] =
+  def initialGenomes[M[_], I](
+    iCons: (Vector[Double], Maybe[Int], Long, Vector[Double]) => I)(mu: Int, genomeSize: Int)(
+      implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[I]] =
     for {
-      rgs <- implicitly[RandomGen[M]].split.replicateM(mu)
+      rgs <- MR.split.replicateM(mu)
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
       indivs = values.map { (vs: Vector[Double]) => iCons(vs, Maybe.empty, 1, Vector.empty) }
     } yield indivs
@@ -120,11 +121,12 @@ object NoisyProfile {
     iHistory: Lens[I, Vector[Double]])(fitness: (Random, Vector[Double]) => Double): Expression[(Random, I), I] =
     { case (rg, i) => iHistory.mod(_ :+ fitness(rg, iValues.get(i)), i) }
 
-  def elitism[M[_]: Monad: RandomGen, I](
+  def elitism[M[_], I](
     iValues: Lens[I, Vector[Double]],
     iHistory: Lens[I, Vector[Double]],
     iOperator: Lens[I, Maybe[Int]],
-    iAge: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int], historySize: Int): Objective[M, I] =
+    iAge: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int], historySize: Int)(
+      implicit MM: Monad[M], MR: RandomGen[M]): Objective[M, I] =
     for {
       // Declone
       decloned <- applyCloneStrategy[M, I, Vector[Double]](
@@ -142,12 +144,13 @@ object NoisyProfile {
       )(noNaN)
     } yield kept
 
-  def step[M[_]: Monad: RandomGen: Generational, I](
+  def step[M[_], I](
     breeding: Breeding[M, I, (Random, I)],
     expression: Expression[(Random, I), I],
-    elitism: Objective[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    elitism: Objective[M, I])(
+      implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
     stepEA[M, I, (Random, I)](
-      { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
+      { (_: Vector[I]) => MG.incrementGeneration },
       breeding,
       expression,
       elitism,

@@ -25,8 +25,8 @@ object Lazy {
    */
   implicit def lazyOrdering[T](implicit ord: scala.Ordering[T]): scala.Ordering[Lazy[T]] = scala.Ordering.by(_.apply)
 
-  implicit def lazyOrder[T: Order]: Order[Lazy[T]] = new Order[Lazy[T]] {
-    def order(x: Lazy[T], y: Lazy[T]): scalaz.Ordering = implicitly[Order[T]].order(x(), y())
+  implicit def lazyOrder[T](implicit OT: Order[T]): Order[Lazy[T]] = new Order[Lazy[T]] {
+    def order(x: Lazy[T], y: Lazy[T]): scalaz.Ordering = OT.order(x(), y())
   }
 }
 

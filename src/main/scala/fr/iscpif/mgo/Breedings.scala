@@ -49,7 +49,7 @@ object Breedings {
 
   /**** Selection ****/
 
-  def tournament[M[_]: Monad: RandomGen, I, K: Order](ranking: Kleisli[M, Vector[I], Vector[K]], size: Int, rounds: Int => Int = _ => 1): Breeding[M, I, I] =
+  def tournament[M[_], I, K: Order](ranking: Kleisli[M, Vector[I], Vector[K]], size: Int, rounds: Int => Int = _ => 1)(implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, I, I] =
     Breeding.apply(
       (individuals: Vector[I]) =>
         if (individuals.isEmpty) individuals.point[M]
@@ -65,7 +65,7 @@ object Breedings {
           }
 
           for {
-            rg <- implicitly[RandomGen[M]].get
+            rg <- MR.get
             scores <- ranking(individuals)
             champions = Vector.fill(size)(findOneChampion(scores, rg))
           } yield champions
@@ -111,10 +111,10 @@ object Breedings {
 
   def identityC[M[_]: Monad, I]: Crossover[M, I, I] = Crossover(_.point[M])
 
-  def blxC[M[_]: Monad: RandomGen](alpha: Double = 0.5): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
+  def blxC[M[_]](alpha: Double = 0.5)(implicit MM: Monad[M], MR: RandomGen[M]): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
     Crossover((mates: (Vector[Double], Vector[Double])) =>
       for {
-        rg <- implicitly[RandomGen[M]].split
+        rg <- MR.split
       } yield {
         (mates._1 zip mates._2).map {
           case (c1, c2) =>
@@ -144,7 +144,7 @@ object Breedings {
    * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
    *
    */
-  def sbxC[M[_]: Monad: RandomGen](distributionIndex: Double = 2.0): Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])] =
+  def sbxC[M[_]](distributionIndex: Double = 2.0)(implicit MM: Monad[M], MR: RandomGen[M]): Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])] =
     Crossover((mates: (Vector[Double], Vector[Double])) => {
 
       val exponent = 1.0 / (distributionIndex + 1.0)
@@ -169,7 +169,7 @@ object Breedings {
       val zippedgs = g1 zip g2
 
       for {
-        rgs <- implicitly[RandomGen[M]].split.replicateM(zippedgs.size)
+        rgs <- MR.split.replicateM(zippedgs.size)
       } yield {
         val (o1, o2): (Vector[Double], Vector[Double]) = (zippedgs zip rgs).map {
           case ((g1e, g2e), rg) => elementCrossover(g1e, g2e)(rg)
@@ -188,10 +188,10 @@ object Breedings {
     def apply[M[_]: Monad, G1, G2](f: G1 => M[G2]): Mutation[M, G1, G2] = Kleisli.kleisli[M, G1, G2](f)
   }
 
-  def bgaM[M[_]: Monad: RandomGen](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
+  def bgaM[M[_]](mutationRate: Int => Double, mutationRange: Double)(implicit MM: Monad[M], MR: RandomGen[M]): Mutation[M, Vector[Double], Vector[Double]] =
     Mutation((g: Vector[Double]) =>
       for {
-        rng <- implicitly[RandomGen[M]].split
+        rng <- MR.split
       } yield {
         g.map {
           x =>
@@ -212,11 +212,11 @@ object Breedings {
    * @param mate Used to turn the individuals into a vector of elements that will be input to the selected operator.
    * @param unmate Used to turn a vector of elements output by the operator back into a vector of Gs.
    */
-  def dynamicallyOpB[M[_]: Monad: RandomGen, I, G, OI, OO](
+  def dynamicallyOpB[M[_], I, G, OI, OO](
     mate: Kleisli[M, Vector[I], Vector[OI]],
     unmate: Kleisli[M, OO, Vector[G]],
     ops: Vector[Kleisli[M, OI, OO]],
-    exploration: Double): Breeding[M, (I, Maybe[Int]), (G, Maybe[Int])] =
+    exploration: Double)(implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, (I, Maybe[Int]), (G, Maybe[Int])] =
     Breeding((individuals: Vector[(I, Maybe[Int])]) => {
       val total = individuals.size * 2
       val proportion: Map[Int, Double] = individuals.collect { case (_, Maybe.Just(op)) => op }.groupBy(identity).mapValues(_.length.toDouble / total)
@@ -227,7 +227,7 @@ object Breedings {
 
       for {
         vmates <- mate.run(individuals.map { _._1 })
-        rg <- implicitly[RandomGen[M]].split
+        rg <- MR.split
         offspringsAndOp <- vmates.map { mates => (selectOp(rg), mates) }
           .traverse[M, (OO, Maybe[Int])] { case (selectedop, mates) => ops(selectedop).run(mates).map[(OO, Maybe[Int])] { (_: OO, Maybe.Just(selectedop)) } }
         bred <- offspringsAndOp.traverse[M, Vector[(G, Maybe[Int])]] { case (offsprings, op) => unmate.run(offsprings).map[Vector[(G, Maybe[Int])]] { (gs: Vector[G]) => gs.map((_: G, op)) } }
@@ -236,13 +236,13 @@ object Breedings {
 
   /**** Cloning ****/
   /** Replaces randamly some of the genomes in gs by genomes taken from the original population of Is */
-  def clonesReplace[M[_]: Monad: RandomGen, I, G](
+  def clonesReplace[M[_], I, G](
     cloneF: I => M[G],
-    cloneProbability: Double)(gs: Vector[G]): Breeding[M, I, G] =
+    cloneProbability: Double)(gs: Vector[G])(implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, I, G] =
     Breeding { is: Vector[I] =>
       val isSize = is.size
       for {
-        rg <- implicitly[RandomGen[M]].get
+        rg <- MR.get
         result <- gs.traverse { (g: G) => if (rg.nextDouble < cloneProbability) g.point[M] else cloneF(is(rg.nextInt(isSize))) }
       } yield result
     }

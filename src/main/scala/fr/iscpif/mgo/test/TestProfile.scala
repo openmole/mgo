@@ -63,7 +63,7 @@ object SphereProfile extends App {
   val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
     runEAUntilStackless[Unit, Individual](
       stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
-        implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
+        evolutionStateGenerational[Unit].generationReached(maxiter)
       }),
       stepFunction =
         for {
@@ -134,7 +134,7 @@ object StochasticSphereProfile extends App {
   val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
     runEAUntilStackless[Unit, Individual](
       stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
-        implicitly[Generational[EvolutionStateMonad[Unit]#l]].generationReached(maxiter)
+        evolutionStateGenerational[Unit].generationReached(maxiter)
       }),
       stepFunction =
         for {

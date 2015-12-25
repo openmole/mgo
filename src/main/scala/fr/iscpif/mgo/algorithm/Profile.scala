@@ -35,7 +35,8 @@ import Scalaz._
 
 object Profile {
 
-  def initialGenomes[M[_]: Monad: RandomGen, G](gCons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
+  def initialGenomes[M[_], G](gCons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int)(
+    implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[G]] =
     for {
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
       genomes = values.map { (vs: Vector[Double]) => gCons(vs, Maybe.empty, 0) }
@@ -104,7 +105,7 @@ object Profile {
       })(offspringsAndOpsLambdaAdjusted)
       // Add the current generation to new offsprings
       offspringsOpsGens <- thenK(mapB[M, (Vector[Double], Int), (Vector[Double], Int, Long)] {
-        case (g, op) => implicitly[Generational[M]].getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
+        case (g, op) => MG.getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
       })(clamped)
       // Construct the final G type
       gs <- thenK(mapPureB[M, (Vector[Double], Int, Long), G] { case (g, op, gen) => gCons(g, Maybe.just(op), gen) })(offspringsOpsGens)
@@ -117,10 +118,11 @@ object Profile {
       fitness: Vector[Double] => Double): Expression[G, I] =
     (g: G) => iCons(g, fitness(gValues.get(g)))
 
-  def elitism[M[_]: Monad: RandomGen, I](
+  def elitism[M[_], I](
     iFitness: Lens[I, Double],
     iGenomeValues: Lens[I, Vector[Double]],
-    iGeneration: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int]): Objective[M, I] =
+    iGeneration: Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int])(
+      implicit MM: Monad[M], MR: RandomGen[M]): Objective[M, I] =
     for {
       // Declone
       decloned <- applyCloneStrategy[M, I, Vector[Double]](
@@ -136,12 +138,13 @@ object Profile {
       )(noNaN)
     } yield kept
 
-  def step[M[_]: Monad: RandomGen: Generational, I, G](
+  def step[M[_], I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    elitism: Objective[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    elitism: Objective[M, I])(
+      implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
     stepEA[M, I, G](
-      { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
+      { (_: Vector[I]) => MG.incrementGeneration },
       breeding,
       expression,
       elitism,

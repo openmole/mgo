@@ -35,13 +35,14 @@ import scalaz.effect.IO
 
 object PSE {
 
-  def initialGenomes[M[_]: Monad: RandomGen, G](cons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
+  def initialGenomes[M[_], G](cons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int)(
+    implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[G]] =
     for {
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
       gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty, 0) }
     } yield gs
 
-  def breeding[M[_]: ({ type l[x[_]] = HitMapper[x, C] })#l, I, G, C](
+  def breeding[M[_], I, G, C](
     iGenome: Lens[I, G],
     gValues: Lens[G, Vector[Double]],
     gOperator: Lens[G, Maybe[Int]],
@@ -50,7 +51,7 @@ object PSE {
       lambda: Int,
       operatorExploration: Double,
       cloneProbability: Double)(
-        implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, G] = {
+        implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M], MH: HitMapper[M, C]): Breeding[M, I, G] = {
     for {
       // Select lambda parents whose corresponding cell has low hit count
       parents <- tournament[M, I, Lazy[Int]](
@@ -102,7 +103,7 @@ object PSE {
       })(offspringsAndOpsLambdaAdjusted)
       // Add the current generation to new offsprings
       offspringsOpsGens <- thenK(mapB[M, (Vector[Double], Int), (Vector[Double], Int, Long)] {
-        case (g, op) => implicitly[Generational[M]].getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
+        case (g, op) => MG.getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
       })(clamped)
       // Construct the final G type
       gs <- thenK(mapPureB[M, (Vector[Double], Int, Long), G] { case (g, op, gen) => gCons(g, Maybe.just(op), gen) })(offspringsOpsGens)
@@ -113,7 +114,7 @@ object PSE {
         cloneF = Kleisli.kleisli[M, I, G] { (i: I) =>
           for {
             // decrement the hitcount for the corresponding cell
-            _ <- implicitly[HitMapper[M, C]].removeHit(cell(i))
+            _ <- MH.removeHit(cell(i))
           } yield iGenome.get(i)
         },
         cloneProbability = cloneProbability)(gs))(parents)
@@ -126,14 +127,15 @@ object PSE {
       fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
     (g: G) => iCons(g, fitness(gValues.get(g)))
 
-  def elitism[M[_]: Monad: RandomGen: ({ type l[x[_]] = HitMapper[x, C] })#l, I, C](
+  def elitism[M[_], I, C](
     iGenomeValues: Lens[I, Vector[Double]],
     iGeneration: Lens[I, Long],
     cell: I => C)(
-      muPerCell: Int): Objective[M, I] =
+      muPerCell: Int)(
+        implicit MM: Monad[M], MR: RandomGen[M], MH: HitMapper[M, C]): Objective[M, I] =
     for {
       // Update the hitmap with the newly evaluated individuals
-      _ <- Kleisli.kleisli[M, Vector[I], Unit] { (is: Vector[I]) => implicitly[HitMapper[M, C]].addHits(is.map(cell)) }
+      _ <- Kleisli.kleisli[M, Vector[I], Unit] { (is: Vector[I]) => MH.addHits(is.map(cell)) }
       // Declone
       decloned <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues.get, keepYoungest[M, I] { iGeneration })
       // Filter out NaNs
@@ -143,12 +145,13 @@ object PSE {
       is <- thenK(byNicheO[M, I, C](cell, randomO[M, I](muPerCell)))(noNaNs)
     } yield is
 
-  def step[M[_]: Monad: RandomGen: Generational, I, G](
+  def step[M[_], I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    elitism: Objective[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    elitism: Objective[M, I])(
+      implicit MM: Monad[M], MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
     stepEA[M, I, G](
-      { (_: Vector[I]) => implicitly[Generational[M]].incrementGeneration },
+      { (_: Vector[I]) => MG.incrementGeneration },
       breeding,
       expression,
       elitism,
@@ -195,45 +198,45 @@ object PSE {
       new HitMapper[EvolutionStateMonad[HitMap]#l, Vector[Int]] {
         def get: EvolutionState[HitMap, Map[Vector[Int], Int]] =
           for {
-            s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
+            s <- evolutionStateMonadState[HitMap].get
           } yield s.s
 
         def set(newMap: Map[Vector[Int], Int]): EvolutionState[HitMap, Unit] =
           for {
-            _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].modify {
+            _ <- evolutionStateMonadState[HitMap].modify {
               s => s.copy(s = newMap)
             }
           } yield ()
 
         def hitCount(cell: Vector[Int]): EvolutionState[HitMap, Int] =
           for {
-            s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
+            s <- evolutionStateMonadState[HitMap].get
           } yield s.s.getOrElse(cell, 0)
 
         def addHit(cell: Vector[Int]): EvolutionState[HitMap, Unit] =
           for {
-            s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
+            s <- evolutionStateMonadState[HitMap].get
             currentHitCount = s.s.getOrElse(cell, 0)
             newHitMap = s.s + ((cell, currentHitCount + 1))
             // Modify the hitMap by incrementing the corresponding value
-            _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].put(s.copy(s = newHitMap))
+            _ <- evolutionStateMonadState[HitMap].put(s.copy(s = newHitMap))
           } yield ()
 
         def addHits(cells: Vector[Vector[Int]]): EvolutionState[HitMap, Unit] =
           for {
-            s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
+            s <- evolutionStateMonadState[HitMap].get
             newHitMap = s.s ++ (cells.map { c => (c, s.s.getOrElse(c, 0) + 1) })
             // Modify the hitMap by incrementing the corresponding values
-            _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].put(s.copy(s = newHitMap))
+            _ <- evolutionStateMonadState[HitMap].put(s.copy(s = newHitMap))
           } yield ()
 
         def removeHit(cell: Vector[Int]): EvolutionState[HitMap, Unit] =
           for {
-            s <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].get
+            s <- evolutionStateMonadState[HitMap].get
             currentHitCount = s.s.getOrElse(cell, 0)
             newHitMap = s.s + ((cell, currentHitCount - 1))
             // Modify the hitMap by incrementing the corresponding value
-            _ <- implicitly[MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[HitMap]]].put(s.copy(s = newHitMap))
+            _ <- evolutionStateMonadState[HitMap].put(s.copy(s = newHitMap))
           } yield ()
       }
 
