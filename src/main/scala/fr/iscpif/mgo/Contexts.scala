@@ -71,7 +71,7 @@ object Contexts {
     def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, 0, Random, s)).unsafePerformIO
 
     implicit def evolutionStateMonad[S]: Monad[EvolutionStateMonad[S]#l] = StateT.stateTMonadState[EvolutionData[S], IO]
-    implicit def evolutionStateMonadState[S]: MonadState[({ type T[s, a] = StateT[IO, s, a] })#T, EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]
+    implicit def evolutionStateMonadState[S]: MonadState[EvolutionStateMonad[S]#l, EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]
     implicit def evolutionStateMonadTrans[S]: MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L] = StateT.StateMonadTrans[EvolutionData[S]]
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {

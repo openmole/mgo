@@ -4,10 +4,7 @@ name := "mgo"
 
 scalaVersion := "2.11.7"
 
-//scalacOptions in (Compile,doc) ++= Seq("-diagrams")  //Seq("-groups", /*"-implicits",*/ "-diagrams","-diagrams-max-classes","20")
-//scalacOptions ++= Seq("-feature")
-
-addCompilerPlugin("org.scalamacros" %% "paradise" % "2.0.1" cross CrossVersion.full)
+addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 
 resolvers ++= Seq(
   "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
@@ -17,7 +14,7 @@ libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-core" % "0.4
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5"
 
-val monocleVersion = "1.0.1"
+val monocleVersion = "1.2.0"
 
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 
@@ -25,12 +22,11 @@ libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-generic" % mo
 
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
 
-val scalazVersion = "7.1.5"
+val scalazVersion = "7.2.0"
 
 libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % scalazVersion,
   "org.scalaz" %% "scalaz-effect" % scalazVersion,
-  "org.scalaz" %% "scalaz-typelevel" % scalazVersion,
   "org.scalaz" %% "scalaz-iteratee" % scalazVersion,
   "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
 )
