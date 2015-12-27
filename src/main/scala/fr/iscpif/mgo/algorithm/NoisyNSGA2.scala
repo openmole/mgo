@@ -64,7 +64,9 @@ object NoisyNSGA2 {
         paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iHistory) },
         if (lambda % 2 == 0) lambda else lambda + 1)
       // Compute the proportion of each operator in the population
-      opstats = parents.map { iOperator.get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size)
+      opstats <- Kleisli.kleisli[M, Vector[I], Map[Int, Double]] {
+        is: Vector[I] => is.map { iOperator.get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size).point[M]
+      }
       // Get the genome values
       parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { iValues.get })(parents)
       // Pair parent genomes together

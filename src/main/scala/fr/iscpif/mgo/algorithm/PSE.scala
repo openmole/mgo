@@ -58,7 +58,9 @@ object PSE {
         ranking = reversedRanking[M, I](hitCountRanking[M, I, C](cell)),
         size = if (lambda % 2 == 0) lambda else lambda + 1)
       // Compute the proportion of each operator in the population
-      opstats = parents.map { (iGenome >=> gOperator).get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size)
+      opstats <- Kleisli.kleisli[M, Vector[I], Map[Int, Double]] {
+        is: Vector[I] => is.map { (iGenome >=> gOperator).get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size).point[M]
+      }
       // Get the genome values
       parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { (iGenome >=> gValues).get })(parents)
       // Pair parents together
