@@ -239,7 +239,7 @@ object NoisyProfile {
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
       }
 
-    def algoOpenMOLE(muByNiche: Int, lambda: Int, operatorExploration: Double, genomeSize: Int, historySize: Int, cloneProbability: Double, x: Int, nX: Int) =
+    def algoOpenMOLE(muByNiche: Int, operatorExploration: Double, genomeSize: Int, historySize: Int, cloneProbability: Double, x: Int, nX: Int) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Individual, EvolutionData[Unit]] {
 
         val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(

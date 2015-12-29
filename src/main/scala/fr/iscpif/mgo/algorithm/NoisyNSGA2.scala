@@ -229,7 +229,7 @@ object NoisyNSGA2 {
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
       }
 
-    def algoOpenMOLE(mu: Int, lambda: Int, operatorExploration: Double, genomeSize: Int, historySize: Int, cloneProbability: Double) =
+    def algoOpenMOLE(mu: Int, operatorExploration: Double, genomeSize: Int, historySize: Int, cloneProbability: Double) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Individual, EvolutionData[Unit]] {
 
         lazy val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(

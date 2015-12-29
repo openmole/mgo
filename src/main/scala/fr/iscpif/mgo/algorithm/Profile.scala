@@ -228,7 +228,7 @@ object Profile {
 
       }
 
-    def algoOpenMOLE(muByNiche: Int, lambda: Int, genomeSize: Int, operatorExploration: Double, x: Int, nX: Int) =
+    def algoOpenMOLE(muByNiche: Int, genomeSize: Int, operatorExploration: Double, x: Int, nX: Int) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
 
         //implicit lazy val m: Monad[EvolutionStateMonad[Unit]#l] = evolutionStateMonad

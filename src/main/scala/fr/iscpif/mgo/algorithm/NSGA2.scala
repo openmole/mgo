@@ -222,7 +222,7 @@ object NSGA2 {
 
       }
 
-    def algoOpenMOLE(mu: Int, lambda: Int, genomeSize: Int, operatorExploration: Double) =
+    def algoOpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
 
         val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(

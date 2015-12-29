@@ -304,7 +304,6 @@ object PSE {
 
     def algoOpenMOLE(initialPopSize: Int,
       keepPerCell: Int,
-      lambda: Int,
       genomeSize: Int,
       operatorExploration: Double,
       cloneProbability: Double,
