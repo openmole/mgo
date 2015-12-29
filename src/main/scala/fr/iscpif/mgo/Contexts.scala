@@ -104,7 +104,7 @@ object Contexts {
         } yield ()
 
       def incrementGeneration: EvolutionState[S, Unit] =
-        getGeneration >>= { (generation: Long) => setGeneration(generation + 1) }
+        getGeneration >>= { generation => setGeneration(generation + 1) }
 
       def generationReached(x: Long): EvolutionState[S, Boolean] =
         for {

@@ -66,5 +66,22 @@ package object algorithm {
             m2 <- m.run(crossed._2)
           } yield (m1, m2))
       }
+
+    def selectOperator[M[_]: Monad: RandomGen](opStats: Map[Int, Double], exploration: Double) = probabilisticOperatorB[M, (Vector[Double], Vector[Double]), ((Vector[Double], Vector[Double]), Int)](
+      Vector(
+        // This is the operator with probability distribution equal to the proportion in the population
+        (probabilisticOperatorB[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])](
+          dynamicOperators.crossoversAndMutations[M].zipWithIndex.map {
+            case (op, index) => (op, opStats.getOrElse(index, 0.0))
+          }),
+          1 - exploration),
+        // This is the operator drawn with a uniform probability distribution.
+        (probabilisticOperatorB[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])](
+          dynamicOperators.crossoversAndMutations[M].zipWithIndex.map {
+            case (op, index) => (op, 1.0 / opStats.size.toDouble)
+          }),
+          exploration)
+      )
+    )
   }
 }

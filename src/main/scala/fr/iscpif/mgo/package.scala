@@ -17,6 +17,7 @@
 
 package fr.iscpif
 
+import fr.iscpif.mgo.algorithm.dynamicOperators
 import fr.iscpif.mgo.tools._
 import org.apache.commons.math3.random._
 import scala.annotation.tailrec

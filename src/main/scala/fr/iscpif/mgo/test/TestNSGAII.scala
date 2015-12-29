@@ -34,7 +34,7 @@ object SphereNSGAII extends App {
   import NSGA2.Algorithm.{ Individual, Genome, iGenome, gValues, iFitness }
 
   val mu = 10
-  val lambda = 10
+  val lambda = 9
   def dimensions = 10
   val maxiter = 100
   val operatorExploration = 0.1

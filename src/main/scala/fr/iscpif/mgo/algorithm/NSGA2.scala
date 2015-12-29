@@ -73,20 +73,7 @@ object NSGA2 {
       // There is a chance equal to operatorExploration to select an operator at random uniformly instead.
       pairedOffspringsAndOps <- thenK(
         mapB[M, (Vector[Double], Vector[Double]), (((Vector[Double], Vector[Double]), Int), Int)](
-          probabilisticOperatorB[M, (Vector[Double], Vector[Double]), ((Vector[Double], Vector[Double]), Int)](
-            Vector(
-              // This is the operator with probability distribution equal to the proportion in the population
-              (probabilisticOperatorB[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])](
-                dynamicOperators.crossoversAndMutations[M].zipWithIndex.map {
-                  case (op, index) => (op, opstats.getOrElse(index, 0.0))
-                }),
-                1 - operatorExploration),
-              // This is the operator drawn with a uniform probability distribution.
-              (probabilisticOperatorB[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])](
-                dynamicOperators.crossoversAndMutations[M].zipWithIndex.map {
-                  case (op, index) => (op, 1.0 / opstats.size.toDouble)
-                }),
-                operatorExploration))).run))(couples)
+          dynamicOperators.selectOperator[M](opstats, operatorExploration).run))(couples)
       // Flatten the resulting offsprings and assign their respective operator to each
       offspringsAndOps <- thenK(flatMapPureB[M, (((Vector[Double], Vector[Double]), Int), Int), (Vector[Double], Int)] {
         case (((g1, g2), op), _) => Vector((g1, op), (g2, op))
