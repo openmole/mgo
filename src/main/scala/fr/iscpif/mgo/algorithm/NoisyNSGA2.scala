@@ -80,18 +80,11 @@ object NoisyNSGA2 {
       offspringsAndOps <- thenK(flatMapPureB[M, (((Vector[Double], Vector[Double]), Int), Int), (Vector[Double], Int)] {
         case (((g1, g2), op), _) => Vector((g1, op), (g2, op))
       })(pairedOffspringsAndOps)
-      // Since we drew a even number of parents, we got an even number of offsprings. If lambda is odd, delete one
-      // offspring at random.
-      offspringsAndOpsLambdaAdjusted <- thenK(Breeding.apply[M, (Vector[Double], Int), (Vector[Double], Int)] { gs: Vector[(Vector[Double], Int)] =>
-        if (lambda % 2 == 0) gs.point[M]
-        else
-          for {
-            rg <- MR.get
-          } yield {
-            val selected = rg.nextInt(gs.size)
-            gs.take(selected) ++ gs.drop(selected + 1)
-          }
-      })(offspringsAndOps)
+      offspringsAndOpsLambdaAdjusted <- thenK(
+        Breeding[M, (Vector[Double], Int), (Vector[Double], Int)] { gs: Vector[(Vector[Double], Int)] =>
+          MR.get.map(_.shuffle(gs).take(lambda))
+        }
+      )(offspringsAndOps)
       // Clamp genome values between 0 and 1
       clamped <- thenK(mapPureB[M, (Vector[Double], Int), (Vector[Double], Int)] {
         Lens.firstLens[Vector[Double], Int] =>= { _ map { x: Double => max(0.0, min(1.0, x)) } }
