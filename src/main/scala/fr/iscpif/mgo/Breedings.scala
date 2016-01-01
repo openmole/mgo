@@ -19,8 +19,6 @@ package fr.iscpif.mgo
 import fr.iscpif.mgo.tools.Math._
 import fr.iscpif.mgo.tools._
 
-import scala.annotation.tailrec
-
 import scala.language.higherKinds
 
 import scalaz._
@@ -65,7 +63,7 @@ object Breedings {
           }
 
           for {
-            rg <- MR.get
+            rg <- MR.random
             scores <- ranking(individuals)
             champions = Vector.fill(size)(findOneChampion(scores, rg))
           } yield champions
@@ -114,7 +112,7 @@ object Breedings {
   def blxC[M[_]](alpha: Double = 0.5)(implicit MM: Monad[M], MR: RandomGen[M]): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
     Crossover((mates: (Vector[Double], Vector[Double])) =>
       for {
-        rg <- MR.split
+        rg <- MR.random
       } yield {
         (mates._1 zip mates._2).map {
           case (c1, c2) =>
@@ -169,10 +167,10 @@ object Breedings {
       val zippedgs = g1 zip g2
 
       for {
-        rgs <- MR.split.replicateM(zippedgs.size)
+        rng <- MR.random
       } yield {
-        val (o1, o2): (Vector[Double], Vector[Double]) = (zippedgs zip rgs).map {
-          case ((g1e, g2e), rg) => elementCrossover(g1e, g2e)(rg)
+        val (o1, o2): (Vector[Double], Vector[Double]) = zippedgs.map {
+          case (g1e, g2e) => elementCrossover(g1e, g2e)(rng)
         }.unzip
         assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
         (o1, o2)
@@ -191,7 +189,7 @@ object Breedings {
   def bgaM[M[_]](mutationRate: Int => Double, mutationRange: Double)(implicit MM: Monad[M], MR: RandomGen[M]): Mutation[M, Vector[Double], Vector[Double]] =
     Mutation((g: Vector[Double]) =>
       for {
-        rng <- MR.split
+        rng <- MR.random
       } yield {
         g.map {
           x =>
@@ -308,7 +306,7 @@ object Breedings {
 
       for {
         vmates <- mate.run(individuals.map { _._1 })
-        rg <- MR.split
+        rg <- MR.random
         offspringsAndOp <- vmates.map { mates => (selectOp(rg), mates) }
           .traverse[M, (OO, Maybe[Int])] { case (selectedop, mates) => ops(selectedop).run(mates).map[(OO, Maybe[Int])] { (_: OO, Maybe.Just(selectedop)) } }
         bred <- offspringsAndOp.traverse[M, Vector[(G, Maybe[Int])]] { case (offsprings, op) => unmate.run(offsprings).map[Vector[(G, Maybe[Int])]] { (gs: Vector[G]) => gs.map((_: G, op)) } }
@@ -323,7 +321,7 @@ object Breedings {
     Breeding { is: Vector[I] =>
       val isSize = is.size
       for {
-        rg <- MR.get
+        rg <- MR.random
         result <- gs.traverse { (g: G) => if (rg.nextDouble < cloneProbability) g.point[M] else cloneF(is(rg.nextInt(isSize))) }
       } yield result
     }

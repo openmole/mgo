@@ -186,14 +186,14 @@ package object mgo {
     opsAndWeights: Vector[(Kleisli[M, I, G], Double)])(implicit MM: Monad[M], MR: RandomGen[M]): Kleisli[M, I, (G, Int)] =
     Kleisli((mates: I) => {
       for {
-        rg <- MR.split
+        rg <- MR.random
         op = multinomial[Int](opsAndWeights.zipWithIndex.map { case ((op, w), i) => (i, w) }.toList)(rg)
         g <- opsAndWeights(op)._1.run(mates)
       } yield (g, op)
     })
 
   /** Breed a genome for subsequent stochastic expression */
-  def withRandomGenB[M[_], I](implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, I, (Random, I)] =
+  def withRandomGenB[M[_], I](implicit MM: Monad[M], MR: ParallelRandomGen[M]): Breeding[M, I, (Random, I)] =
     Breeding((individuals: Vector[I]) =>
       for {
         rgs <- MR.split.replicateM(individuals.size)

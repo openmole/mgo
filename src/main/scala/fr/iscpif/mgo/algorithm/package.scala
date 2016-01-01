@@ -28,15 +28,15 @@ package object algorithm {
 
   def randomTakeLambda[M[_], G](lambda: Int)(implicit MR: RandomGen[M], MM: Monad[M]) =
     Breeding[M, G, G] { gs: Vector[G] =>
-      MR.get.map { _.shuffle(gs).take(lambda) }
+      MR.random.map { _.shuffle(gs).take(lambda) }
     }
 
   object GenomeVectorDouble {
     def randomGenomes[M[_]](n: Int, genomeLength: Int)(
       implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[Vector[Double]]] =
       for {
-        rg <- MR.split
-        values = Vector.fill(n)(Vector.fill(genomeLength)(Random.nextDouble))
+        rg <- MR.random
+        values = Vector.fill(n)(Vector.fill(genomeLength)(rg.nextDouble))
       } yield values
   }
 

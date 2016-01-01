@@ -45,7 +45,7 @@ object Objectives {
       (individuals: Vector[I]) => {
         val popSize = individuals.size
         for {
-          rg <- MR.get
+          rg <- MR.random
         } yield Vector.fill(n)(individuals(rg.nextInt(popSize)))
       }
     )

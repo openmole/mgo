@@ -16,9 +16,6 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.Breedings._
-import fr.iscpif.mgo.Objectives._
-
 import scala.annotation.tailrec
 import scala.language.higherKinds
 import scalaz._
@@ -31,7 +28,10 @@ object Contexts {
 
   trait RandomGen[M[_]] {
     /** returns the random number generator in M */
-    def get: M[Random]
+    def random: M[Random]
+  }
+
+  trait ParallelRandomGen[M[_]] {
     /**
      * Returns a new random number generator that is independant from the one in M, useful for parallel computations.
      * Implementations of this function must use a random number generator contained in M in order to produce the Random returned, and update the original
@@ -75,11 +75,13 @@ object Contexts {
     implicit def evolutionStateMonadTrans[S]: MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L] = StateT.StateMonadTrans[EvolutionData[S]]
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
-      def get: EvolutionState[S, Random] =
+      def random: EvolutionState[S, Random] =
         for {
           s <- evolutionStateMonadState[S].get
         } yield s.random
+    }
 
+    implicit def evolutionStateUseParallelRG[S]: ParallelRandomGen[EvolutionStateMonad[S]#l] = new ParallelRandomGen[EvolutionStateMonad[S]#l] {
       def split: EvolutionState[S, Random] =
         for {
           s <- evolutionStateMonadState[S].get

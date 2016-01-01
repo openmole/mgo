@@ -43,7 +43,6 @@ object NoisyNSGA2 {
     iCons: (Vector[Double], Maybe[Int], Long, Vector[Vector[Double]]) => I)(mu: Int, genomeSize: Int)(
       implicit MM: Monad[M], MR: RandomGen[M], IH: History[Vector[Double], I]): M[Vector[I]] =
     for {
-      rgs <- MR.split.replicateM(mu)
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
       indivs = values.map { vs: Vector[Double] => iCons(vs, Maybe.empty, 1, Vector.empty) }
     } yield indivs

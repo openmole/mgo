@@ -48,7 +48,7 @@ object diversity {
   def crowdingDistance[M[_], I](fitness: Fitness[I, Seq[Double]])(implicit MM: Monad[M], MR: RandomGen[M]): Diversity[M, I] =
     Diversity((values: Vector[I]) =>
       for {
-        rg <- MR.get
+        rg <- MR.random
       } yield CrowdingDistance(values.map(e => fitness(e)))(rg))
 
   def hypervolumeContribution[M[_], I](referencePoint: ReferencePoint, fitness: Fitness[I, Seq[Double]])(implicit MM: Monad[M]): Diversity[M, I] =

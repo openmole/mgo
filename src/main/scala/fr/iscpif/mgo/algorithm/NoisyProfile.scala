@@ -42,7 +42,6 @@ object NoisyProfile {
     iCons: (Vector[Double], Maybe[Int], Long, Vector[Double]) => I)(mu: Int, genomeSize: Int)(
       implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[I]] =
     for {
-      rgs <- MR.split.replicateM(mu)
       values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
       indivs = values.map { (vs: Vector[Double]) => iCons(vs, Maybe.empty, 1, Vector.empty) }
     } yield indivs
