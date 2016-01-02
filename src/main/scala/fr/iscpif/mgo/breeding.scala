@@ -28,7 +28,7 @@ import scala.util.Random
 
 import Contexts._
 
-object Breedings {
+object breeding {
 
   //type Breeding[I, M[_], G] = Vector[I] => M[Vector[G]]
   type Breeding[M[_], I, G] = Kleisli[M, Vector[I], Vector[G]]
@@ -315,14 +315,12 @@ object Breedings {
 
   /**** Cloning ****/
   /** Replaces randamly some of the genomes in gs by genomes taken from the original population of Is */
-  def clonesReplace[M[_], I, G](
-    cloneF: I => M[G],
-    cloneProbability: Double)(gs: Vector[G])(implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, I, G] =
+  def clonesReplace[M[_], I, G](cloneProbability: Double)(gs: Vector[G], gLens: I => G)(implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, I, G] =
     Breeding { is: Vector[I] =>
       val isSize = is.size
       for {
         rg <- MR.random
-        result <- gs.traverse { (g: G) => if (rg.nextDouble < cloneProbability) g.point[M] else cloneF(is(rg.nextInt(isSize))) }
+        result <- gs.traverse { (g: G) => if (rg.nextDouble < cloneProbability) gLens(is(rg.nextInt(isSize))).point[M] else g.point[M] }
       } yield result
     }
 

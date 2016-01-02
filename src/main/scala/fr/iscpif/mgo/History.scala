@@ -17,17 +17,15 @@
 package fr.iscpif.mgo
 
 import scala.language.higherKinds
-import scalaz._
-import Scalaz._
 
 trait History[P, I] {
-  val lens: Lens[I, Vector[P]]
+  val lens: monocle.Lens[I, Vector[P]]
 }
 
 case class HistoryOps[P, I](self: I)(implicit I: History[P, I]) {
   def get: Vector[P] = I.lens.get(self)
-  def set(h: Vector[P]): I = I.lens.set(self, h)
-  def mod(f: Vector[P] => Vector[P]): I = I.lens.mod(f, self)
+  def set(h: Vector[P]): I = I.lens.set(h)(self)
+  def mod(f: Vector[P] => Vector[P]): I = I.lens.modify(f)(self)
 }
 
 object ToHistoryOps {

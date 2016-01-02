@@ -24,9 +24,9 @@ import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 
-import Breedings._
+import breeding._
 import Expressions._
-import Objectives._
+import elitism._
 
 /**
  * Example:
@@ -53,7 +53,7 @@ trait Algorithm[M[_], I, G, C[_]] {
   def initialGenomes: M[Vector[G]]
   def breeding: Breeding[M, I, G]
   def expression: Expression[G, I]
-  def elitism: Objective[M, I]
+  def elitism: Elitism[M, I]
   def step: Kleisli[M, Vector[I], Vector[I]]
   /** Turn a non monadic value into a monadic one. */
   def wrap[A](ca: C[A]): M[A]
@@ -76,7 +76,7 @@ trait AlgorithmOpenMOLE[M[_], I, G, C] {
 
   def initialGenomes(n: Int): M[Vector[G]]
   def breeding(n: Int): Breeding[M, I, G]
-  def elitism: Objective[M, I]
+  def elitism: Elitism[M, I]
 
   def initForIsland(i: I): I
 

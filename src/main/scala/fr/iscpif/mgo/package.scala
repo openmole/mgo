@@ -30,9 +30,9 @@ import scalaz._
 import Scalaz._
 import scalaz.effect.IO
 
-import mgo.Breedings._
+import mgo.breeding._
 import mgo.Expressions._
-import mgo.Objectives._
+import mgo.elitism._
 import fr.iscpif.mgo.Contexts._
 
 import scala.util.control.TailCalls._
@@ -45,7 +45,7 @@ package object mgo {
     preStep: Vector[I] => M[Unit],
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    objective: Objective[M, I],
+    objective: Elitism[M, I],
     replacementStrategy: (Vector[I], Vector[I]) => Vector[I]): Kleisli[M, Vector[I], Vector[I]] =
     for {
       population <- Kleisli.ask[M, Vector[I]]
@@ -218,36 +218,36 @@ package object mgo {
 
   /**** Objectives ****/
 
-  def bindO[M[_]: Monad, I](o1: Objective[M, I], o2: Vector[I] => Objective[M, I]): Objective[M, I] =
-    Objective((phenotypes: Vector[I]) =>
+  def bindO[M[_]: Monad, I](o1: Elitism[M, I], o2: Vector[I] => Elitism[M, I]): Elitism[M, I] =
+    Elitism((phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(selected1s)(phenotypes)
       } yield selected2s)
 
-  def andO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
-    Objective((phenotypes: Vector[I]) =>
+  def andO[M[_]: Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+    Elitism((phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(phenotypes)
       } yield selected1s.intersect(selected2s))
 
-  def orO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
-    Objective((phenotypes: Vector[I]) =>
+  def orO[M[_]: Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+    Elitism((phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(phenotypes)
       } yield selected1s.union(selected2s))
 
-  def thenO[M[_]: Monad, I](o1: Objective[M, I], o2: Objective[M, I]): Objective[M, I] =
-    Objective((phenotypes: Vector[I]) =>
+  def thenO[M[_]: Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+    Elitism((phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(selected1s)
       } yield selected2s)
 
-  def byNicheO[M[_]: Monad, I, N](niche: I => N, objective: Objective[M, I]): Objective[M, I] =
-    Objective((individuals: Vector[I]) => {
+  def byNicheO[M[_]: Monad, I, N](niche: I => N, objective: Elitism[M, I]): Elitism[M, I] =
+    Elitism((individuals: Vector[I]) => {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)
     })

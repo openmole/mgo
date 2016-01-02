@@ -16,16 +16,16 @@
  */
 package fr.iscpif.mgo.algorithm
 
-import monocle.macros.GenLens
+import monocle.macros.{ Lenses, GenLens }
 
 import scala.language.higherKinds
 
 import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.Breedings._
+import fr.iscpif.mgo.breeding._
 import fr.iscpif.mgo.Expressions._
-import fr.iscpif.mgo.Objectives._
+import fr.iscpif.mgo.elitism._
 import fr.iscpif.mgo.Contexts._
 import scala.util.Random
 
@@ -39,35 +39,35 @@ object NSGA2 {
   // types pour pouvoir être réutilisées ensuite dans d'autres algos. L'algorithme pur (ici NSGA2) est réellement spécifié
   // dans la fonction algorithm tout en bas.
 
-  def initialGenomes[M[_], G](cons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int)(
+  def initialGenomes[M[_], G](cons: (Vector[Double], Maybe[Int]) => G)(mu: Int, genomeSize: Int)(
     implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[G]] =
     for {
       values <- randomGenomes[M](mu, genomeSize)
-      gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty, 0) }
+      gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty) }
     } yield gs
 
   def breeding[M[_], I, G](
-    iFitness: Lens[I, Vector[Double]],
-    iGenome: Lens[I, G],
-    gValues: Lens[G, Vector[Double]],
-    gOperator: Lens[G, Maybe[Int]],
-    gCons: (Vector[Double], Maybe[Int], Long) => G)(
+    iFitness: I => Vector[Double],
+    iGenome: I => G,
+    gValues: G => Vector[Double],
+    gOperator: G => Maybe[Int],
+    gCons: (Vector[Double], Maybe[Int]) => G)(
       lambda: Int,
       operatorExploration: Double)(
         implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, G] = {
     for {
       // Select lambda parents with minimum pareto rank and maximum crowding diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
-        paretoRankingMinAndCrowdingDiversity[M, I] { iFitness.get },
+        paretoRankingMinAndCrowdingDiversity[M, I] { iFitness },
         // We need to always draw a even number of parents, otherwise the last parent will be paired with itself,
         // resulting in no crossover (problem if lambda = 1).
         if (lambda % 2 == 0) lambda else lambda + 1)
       // Compute the proportion of each operator in the population
       opstats <- Kleisli.kleisli[M, Vector[I], Map[Int, Double]] {
-        is: Vector[I] => is.map { (iGenome >=> gOperator).get }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size).point[M]
+        is: Vector[I] => is.map { (iGenome andThen gOperator) }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size).point[M]
       }
       // Get the genome values
-      parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { (iGenome >=> gValues).get })(parents)
+      parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { iGenome andThen gValues })(parents)
       // Pair parents together
       couples <- thenK(pairConsecutive[M, Vector[Double]])(parentgenomes)
       // Apply a crossover+mutation operator to each couple. The operator is selected with a probability equal to its proportion in the population.
@@ -82,41 +82,36 @@ object NSGA2 {
       offspringsAndOpsLambdaAdjusted <- thenK(randomTakeLambda[M, (Vector[Double], Int)](lambda))(offspringsAndOps)
       // Clamp genome values between 0 and 1
       clamped <- thenK(clamp[M, (Vector[Double], Int)](GenLens[(Vector[Double], Int)](_._1)))(offspringsAndOpsLambdaAdjusted)
-      // Add the current generation number to new offsprings
-      offspringsOpsGens <- thenK(mapB[M, (Vector[Double], Int), (Vector[Double], Int, Long)] {
-        case (g, op) => MG.getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }
-      })(clamped)
       // Construct the final G type
-      gs <- thenK(mapPureB[M, (Vector[Double], Int, Long), G] { case (g, op, gen) => gCons(g, Maybe.just(op), gen) })(offspringsOpsGens)
+      gs <- thenK(mapPureB[M, (Vector[Double], Int), G] { case (g, op) => gCons(g, Maybe.just(op)) })(clamped)
     } yield gs
   }
 
   def expression[G, I](
-    gValues: Lens[G, Vector[Double]],
-    iCons: (G, Vector[Double]) => I)(
-      fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
-    (g: G) => iCons(g, fitness(gValues.get(g)))
+    gValues: G => Vector[Double],
+    iCons: (G, Vector[Double], Long) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
+    (g: G) => iCons(g, fitness(gValues(g)), 0)
 
   def elitism[M[_], I](
-    iFitness: Lens[I, Vector[Double]],
-    iGenomeValues: Lens[I, Vector[Double]],
-    iGeneration: Lens[I, Long])(
+    iFitness: I => Vector[Double],
+    iGenomeValues: I => Vector[Double],
+    iGeneration: monocle.Lens[I, Long])(
       mu: Int)(
-        implicit MM: Monad[M], MR: RandomGen[M]): Objective[M, I] =
+        implicit MM: Monad[M], MR: RandomGen[M]): Elitism[M, I] =
     for {
       // Declone
-      decloned <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues.get, keepYoungest[M, I] { iGeneration })
+      decloned <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues, keepYoungest[M, I] { iGeneration.get })
       // Filter out NaNs
-      noNaNs <- thenK(flatMapPureB[M, I, I] { i: I => if (iGenomeValues.get(i).exists { (_: Double).isNaN }) Vector.empty else Vector(i) })(decloned)
+      noNaNs <- thenK(flatMapPureB[M, I, I] { i: I => if (iGenomeValues(i).exists { (_: Double).isNaN }) Vector.empty else Vector(i) })(decloned)
       // Keep the individuals with lowest fitness (pareto) and highest crowding diversity
-      is <- thenK(keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](
-        paretoRankingMinAndCrowdingDiversity[M, I] { iFitness.get }, mu))(noNaNs)
-    } yield is
+      is <- thenK(keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I] { iFitness }, mu))(noNaNs)
+      iis <- thenK(incrementGeneration[M, I](iGeneration))(is)
+    } yield iis
 
   def step[M[_], I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    elitism: Objective[M, I])(
+    elitism: Elitism[M, I])(
       implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
     stepEA[M, I, G](
       { (_: Vector[I]) => MG.incrementGeneration },
@@ -130,43 +125,24 @@ object NSGA2 {
 
     import fr.iscpif.mgo.Contexts.default._
 
-    type V = Vector[Double]
-    case class Genome(values: V, operator: Maybe[Int], generation: Long)
-    case class Individual(genome: Genome, fitness: Vector[Double])
+    @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
+    @Lenses case class Individual(genome: Genome, fitness: Vector[Double], generation: Long)
 
-    val iFitness: Lens[Individual, Vector[Double]] = Lens.lensu(
-      set = (i, v) => i.copy(fitness = v),
-      get = _.fitness
-    )
-    val iGenome: Lens[Individual, Genome] = Lens.lensu(
-      set = (i, g) => i.copy(genome = g),
-      get = _.genome
-    )
-    val gValues: Lens[Genome, Vector[Double]] = Lens.lensu(
-      set = (g, v) => g.copy(values = v),
-      get = _.values
-    )
-    val gOperator: Lens[Genome, Maybe[Int]] = Lens.lensu(
-      set = (g, o) => g.copy(operator = o),
-      get = _.operator
-    )
-    val gGeneration: Lens[Genome, Long] = Lens.lensu(
-      set = (g, e) => g.copy(generation = e),
-      get = _.generation
-    )
-    val iGenomeValues: Lens[Individual, Vector[Double]] = iGenome >=> gValues
-    val iGeneration: Lens[Individual, Long] = iGenome >=> gGeneration
+    //val iGenomeValues: Lens[Individual, Vector[Double]] = iGenome >=> gValues
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-      NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l, Genome](Genome)(mu, genomeSize)
+      NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l, Genome](Genome.apply)(mu, genomeSize)
+
     def breeding(lambda: Int, operatorExploration: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] =
       NSGA2.breeding[EvolutionStateMonad[Unit]#l, Individual, Genome](
-        iFitness, iGenome, gValues, gOperator, Genome
+        Individual.fitness.get, Individual.genome.get, Genome.values.get, Genome.operator.get, Genome.apply
       )(lambda, operatorExploration)
+
     def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
-      NSGA2.expression[Genome, Individual](gValues, Individual)(fitness)
-    def elitism(mu: Int): Objective[EvolutionStateMonad[Unit]#l, Individual] =
-      NSGA2.elitism[EvolutionStateMonad[Unit]#l, Individual](iFitness, iGenomeValues, iGeneration)(mu)
+      NSGA2.expression[Genome, Individual](Genome.values.get, Individual.apply)(fitness)
+
+    def elitism(mu: Int): Elitism[EvolutionStateMonad[Unit]#l, Individual] =
+      NSGA2.elitism[EvolutionStateMonad[Unit]#l, Individual](Individual.fitness.get, (Individual.genome composeLens Genome.values).get, Individual.generation)(mu)
 
     def step(
       mu: Int,
@@ -188,7 +164,7 @@ object NSGA2 {
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(mu, genomeSize)
         def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = NSGA2.Algorithm.breeding(lambda, operatorExploration)
         def expression: Expression[Genome, Individual] = NSGA2.Algorithm.expression(fitness)
-        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NSGA2.Algorithm.elitism(mu)
+        def elitism: Elitism[EvolutionStateMonad[Unit]#l, Individual] = NSGA2.Algorithm.elitism(mu)
 
         def step: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] = NSGA2.Algorithm.step(mu, lambda, fitness, operatorExploration)
 
@@ -207,7 +183,7 @@ object NSGA2 {
 
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(n, genomeSize)
         def breeding(n: Int): Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = NSGA2.Algorithm.breeding(n, operatorExploration)
-        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NSGA2.Algorithm.elitism(mu)
+        def elitism: Elitism[EvolutionStateMonad[Unit]#l, Individual] = NSGA2.Algorithm.elitism(mu)
 
         def initForIsland(i: Individual): Individual = i
 

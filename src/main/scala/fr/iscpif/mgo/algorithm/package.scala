@@ -16,7 +16,7 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.Breedings._
+import fr.iscpif.mgo.breeding._
 import fr.iscpif.mgo.Contexts._
 
 import scala.util.Random
