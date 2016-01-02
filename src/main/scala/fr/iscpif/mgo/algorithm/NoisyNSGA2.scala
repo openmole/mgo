@@ -16,6 +16,9 @@
  */
 package fr.iscpif.mgo.algorithm
 
+import fr.iscpif.mgo.algorithm.GenomeVectorDouble._
+import monocle.macros.GenLens
+
 import scala.util.Random
 
 import scalaz._
@@ -81,14 +84,10 @@ object NoisyNSGA2 {
       })(pairedOffspringsAndOps)
       offspringsAndOpsLambdaAdjusted <- thenK(randomTakeLambda[M, (Vector[Double], Int)](lambda))(offspringsAndOps)
       // Clamp genome values between 0 and 1
-      clamped <- thenK(mapPureB[M, (Vector[Double], Int), (Vector[Double], Int)] {
-        Lens.firstLens[Vector[Double], Int] =>= { _ map { x: Double => max(0.0, min(1.0, x)) } }
-      })(offspringsAndOpsLambdaAdjusted)
+      clamped <- thenK(clamp[M, (Vector[Double], Int)](GenLens[(Vector[Double], Int)](_._1)))(offspringsAndOpsLambdaAdjusted)
       // Construct the final I type
       is <- thenK(mapPureB[M, (Vector[Double], Int), I] { case (g, op) => iCons(g, Maybe.just(op), 0.toLong, Vector.empty) })(clamped)
       // Replace some offsprings by clones from the original population.
-      // TODO: les clones sont tirés aléatoirement de la population initiale, pas de tirage par tournoi. Est-ce qu'il
-      // faut biaiser le choix des clones par meilleure fitness et historique plus court?
       result <- clonesReplace[M, I, I](Kleisli.kleisli[M, I, I] { (i: I) => iAge.mod({ _ + 1 }, i).point[M] }, cloneProbability)(is)
     } yield result
 

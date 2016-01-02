@@ -16,6 +16,9 @@
  */
 package fr.iscpif.mgo.algorithm
 
+import fr.iscpif.mgo.algorithm.GenomeVectorDouble._
+import monocle.macros.GenLens
+
 import scala.language.higherKinds
 
 import fr.iscpif.mgo.ranking._
@@ -76,9 +79,7 @@ object PSE {
       })(pairedOffspringsAndOps)
       offspringsAndOpsLambdaAdjusted <- thenK(randomTakeLambda[M, (Vector[Double], Int)](lambda))(offspringsAndOps)
       // Clamp genome values between 0 and 1
-      clamped <- thenK(mapPureB[M, (Vector[Double], Int), (Vector[Double], Int)] {
-        Lens.firstLens[Vector[Double], Int] =>= { _ map { x: Double => max(0.0, min(1.0, x)) } }
-      })(offspringsAndOpsLambdaAdjusted)
+      clamped <- thenK(clamp[M, (Vector[Double], Int)](GenLens[(Vector[Double], Int)](_._1)))(offspringsAndOpsLambdaAdjusted)
       // Add the current generation to new offsprings
       offspringsOpsGens <- thenK(mapB[M, (Vector[Double], Int), (Vector[Double], Int, Long)] {
         case (g, op) => MG.getGeneration.>>=[(Vector[Double], Int, Long)] { gen: Long => (g, op, gen).point[M] }

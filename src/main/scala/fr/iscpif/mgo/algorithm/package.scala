@@ -23,6 +23,7 @@ import scala.util.Random
 
 import scalaz._
 import Scalaz._
+import monocle.Lens
 
 package object algorithm {
 
@@ -38,6 +39,11 @@ package object algorithm {
         rg <- MR.random
         values = Vector.fill(n)(Vector.fill(genomeLength)(rg.nextDouble))
       } yield values
+
+    def clamp[M[_]: Monad, G](lens: Lens[G, Vector[Double]]) = mapPureB[M, G, G] {
+      lens.modify(_ map { x: Double => math.max(0.0, math.min(1.0, x)) })
+    }
+
   }
 
   object dynamicOperators {
