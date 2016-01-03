@@ -43,7 +43,6 @@ object SphereNSGAII extends App {
 
   val algo = NSGA2.Algorithm(mu = mu, lambda = lambda, fitness = fitness, genomeSize = dimensions, operatorExploration = operatorExploration)
 
-  def k[A] = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], A] _
   def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
 
   val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =

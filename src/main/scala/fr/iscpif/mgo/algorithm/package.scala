@@ -44,6 +44,9 @@ package object algorithm {
       lens.modify(_ map { x: Double => math.max(0.0, math.min(1.0, x)) })
     }
 
+    def filterNaN[M[_]: Monad, I](genomeValues: I => Vector[Double]) =
+      flatMapPureB[M, I, I] { i => if (genomeValues(i).exists { _.isNaN }) Vector.empty else Vector(i) }
+
   }
 
   object dynamicOperators {

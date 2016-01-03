@@ -70,9 +70,7 @@ trait Algorithm[M[_], I, G, C[_]] {
 
 trait AlgorithmOpenMOLE[M[_], I, G, C] {
 
-  //implicit def m: Monad[M]
-
-  def cRandom: Lens[C, Random]
+  def cRandom: monocle.Lens[C, Random]
 
   def initialGenomes(n: Int): M[Vector[G]]
   def breeding(n: Int): Breeding[M, I, G]

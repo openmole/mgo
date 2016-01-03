@@ -27,7 +27,6 @@ import fr.iscpif.mgo.breeding._
 import fr.iscpif.mgo.Expressions._
 import fr.iscpif.mgo.elitism._
 import fr.iscpif.mgo.Contexts._
-import scala.util.Random
 
 import scalaz._
 import Scalaz._
@@ -100,13 +99,13 @@ object NSGA2 {
         implicit MM: Monad[M], MR: RandomGen[M]): Elitism[M, I] =
     for {
       // Declone
-      decloned <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues, keepYoungest[M, I] { iGeneration.get })
+      p1 <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues, keepYoungest[M, I] { iGeneration.get })
       // Filter out NaNs
-      noNaNs <- thenK(flatMapPureB[M, I, I] { i: I => if (iGenomeValues(i).exists { (_: Double).isNaN }) Vector.empty else Vector(i) })(decloned)
+      p2 <- thenK(filterNaN[M, I](iGenomeValues))(p1)
       // Keep the individuals with lowest fitness (pareto) and highest crowding diversity
-      is <- thenK(keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I] { iFitness }, mu))(noNaNs)
-      iis <- thenK(incrementGeneration[M, I](iGeneration))(is)
-    } yield iis
+      p3 <- thenK(keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I] { iFitness }, mu))(p2)
+      p4 <- thenK(incrementGeneration[M, I](iGeneration))(p3)
+    } yield p4
 
   def step[M[_], I, G](
     breeding: Breeding[M, I, G],
@@ -127,8 +126,6 @@ object NSGA2 {
 
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
     @Lenses case class Individual(genome: Genome, fitness: Vector[Double], generation: Long)
-
-    //val iGenomeValues: Lens[Individual, Vector[Double]] = iGenome >=> gValues
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
       NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l, Genome](Genome.apply)(mu, genomeSize)
@@ -170,16 +167,12 @@ object NSGA2 {
 
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
-
       }
 
     def algoOpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double) =
       new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
 
-        val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
-          set = (e, r) => e.copy(random = r),
-          get = _.random
-        )
+        def cRandom = GenLens[EvolutionData[Unit]](_.random)
 
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(n, genomeSize)
         def breeding(n: Int): Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = NSGA2.Algorithm.breeding(n, operatorExploration)
@@ -189,7 +182,6 @@ object NSGA2 {
 
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
-
       }
 
   }
