@@ -141,16 +141,5 @@ object ranking {
       reversedRanking(paretoRanking[M, I] { (i: I) => fitness(i) }),
       crowdingDistance[M, I] { (i: I) => fitness(i) })
 
-  //TODO: on doit pouvoir supprimer cet instance d'order spécifique à (Lazy[Int],Lazy[Double]) en utilisant une instance
-  //d'Order pour (A,B) et pour Lazy[A]
-  implicit val orderRankAndDiversity: Order[(Lazy[Int], Lazy[Double])] = new Order[(Lazy[Int], Lazy[Double])] {
-    def order(x: (Lazy[Int], Lazy[Double]), y: (Lazy[Int], Lazy[Double])): Ordering =
-      if (x._1() < y._1()) LT
-      else if (x._1() > y._1()) GT
-      else if (x._2() < y._2()) LT
-      else if (x._2() > y._2()) GT
-      else EQ
-  }
-
 }
 

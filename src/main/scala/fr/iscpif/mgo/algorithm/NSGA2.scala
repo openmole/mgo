@@ -100,7 +100,6 @@ object NSGA2 {
     for {
       // Declone
       p1 <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues, keepYoungest[M, I] { iGeneration.get })
-      // Filter out NaNs
       p2 <- thenK(filterNaN[M, I](iGenomeValues))(p1)
       // Keep the individuals with lowest fitness (pareto) and highest crowding diversity
       p3 <- thenK(keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I] { iFitness }, mu))(p2)
