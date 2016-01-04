@@ -19,6 +19,7 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo.algorithm.GenomeVectorDouble._
 import monocle.macros.{ GenLens }
 
+import scala.util.Random
 import scalaz._
 import Scalaz._
 
@@ -74,11 +75,11 @@ object NoisyNSGA2 {
       keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
       incrementGeneration(generation)
 
-  //  def expression[G, I](
-  //    gValues: Lens[G, Vector[Double]],
-  //    iCons: (G, Vector[Double]) => I,
-  //    iHistory: Lens[I, Vector[Vector[Double]]])(fitness: (Random, Vector[Double]) => Vector[Double]): Expression[(Random, G), I] =
-  //    { case (rg, g) => iCons(g, fitness(rg, gValues.get(g))) }
+  def expression[G, I](
+    values: Lens[G, Vector[Double]],
+    builder: (G, Vector[Double]) => I)(fitness: (Random, Vector[Double]) => Vector[Double]): Expression[(Random, G), I] = {
+    case (rg, g) => builder(g, fitness(rg, values.get(g)))
+  }
 
   //
   //  def step[M[_], I, G](

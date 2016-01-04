@@ -66,9 +66,9 @@ object NSGA2 {
     } yield gs
 
   def expression[G, I](
-    gValues: G => Vector[Double],
-    iCons: (G, Vector[Double], Long) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
-    (g: G) => iCons(g, fitness(gValues(g)), 0)
+    values: G => Vector[Double],
+    build: (G, Vector[Double], Long) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
+    (g: G) => build(g, fitness(values(g)), 0)
 
   def elitism[M[_]: Monad: RandomGen, I](
     fitness: I => Vector[Double],
