@@ -46,27 +46,28 @@ object NSGA2 {
     } yield gs
 
   def breeding[M[_], I, G](
-    iFitness: I => Vector[Double],
-    iGenome: I => G,
-    gValues: G => Vector[Double],
-    gOperator: G => Maybe[Int],
-    gCons: (Vector[Double], Maybe[Int]) => G)(
+    fitness: I => Vector[Double],
+    genome: I => G,
+    genomeValues: G => Vector[Double],
+    genomeOperator: G => Maybe[Int],
+    buildGenome: (Vector[Double], Maybe[Int]) => G)(
       lambda: Int,
       operatorExploration: Double)(
         implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, G] = {
     for {
+      // Compute the proportion of each operator in the population
+      opstats <- Kleisli.kleisli[M, Vector[I], Map[Int, Double]] {
+        is: Vector[I] =>
+          is.map { (genome andThen genomeOperator) }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / is.size).point[M]
+      }
       // Select lambda parents with minimum pareto rank and maximum crowding diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
-        paretoRankingMinAndCrowdingDiversity[M, I] { iFitness },
+        paretoRankingMinAndCrowdingDiversity[M, I](fitness),
         // We need to always draw a even number of parents, otherwise the last parent will be paired with itself,
         // resulting in no crossover (problem if lambda = 1).
         if (lambda % 2 == 0) lambda else lambda + 1)
-      // Compute the proportion of each operator in the population
-      opstats <- Kleisli.kleisli[M, Vector[I], Map[Int, Double]] {
-        is: Vector[I] => is.map { (iGenome andThen gOperator) }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / parents.size).point[M]
-      }
       // Get the genome values
-      parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { iGenome andThen gValues })(parents)
+      parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { genome andThen genomeValues })(parents)
       // Pair parents together
       couples <- thenK(pairConsecutive[M, Vector[Double]])(parentgenomes)
       // Apply a crossover+mutation operator to each couple. The operator is selected with a probability equal to its proportion in the population.
@@ -82,7 +83,7 @@ object NSGA2 {
       // Clamp genome values between 0 and 1
       clamped <- thenK(clamp[M, (Vector[Double], Int)](GenLens[(Vector[Double], Int)](_._1)))(offspringsAndOpsLambdaAdjusted)
       // Construct the final G type
-      gs <- thenK(mapPureB[M, (Vector[Double], Int), G] { case (g, op) => gCons(g, Maybe.just(op)) })(clamped)
+      gs <- thenK(mapPureB[M, (Vector[Double], Int), G] { case (g, op) => buildGenome(g, Maybe.just(op)) })(clamped)
     } yield gs
   }
 
@@ -155,7 +156,7 @@ object NSGA2 {
     def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
 
     def apply(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) =
-      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
+      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
 
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(mu, genomeSize)
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = NSGA2.Algorithm.breeding(lambda, operatorExploration)
