@@ -48,8 +48,6 @@ object NoisyNSGA2 {
     genome: I => G,
     genomeValues: G => Vector[Double],
     genomeOperator: G => Maybe[Int],
-    history: I => Vector[Vector[Double]],
-    historyAggregation: Vector[Vector[Double]] => Vector[Double],
     buildGenome: (Vector[Double], Maybe[Int]) => G)(
       lambda: Int,
       operatorExploration: Double,
@@ -57,7 +55,7 @@ object NoisyNSGA2 {
     for {
       population <- Kleisli.ask[M, Vector[I]]
       gs <- NSGA2.breeding[M, I, G](
-        fitnessWithReplications(history, historyAggregation),
+        fitness,
         genome,
         genomeValues,
         genomeOperator,
@@ -70,11 +68,10 @@ object NoisyNSGA2 {
     values: I => Vector[Double],
     generation: monocle.Lens[I, Long],
     age: Lens[I, Long],
-    history: Lens[I, Vector[Vector[Double]]],
-    historyAggregation: Vector[Vector[Double]] => Vector[Double])(mu: Int, historySize: Int): Elitism[M, I] =
+    history: Lens[I, Vector[Vector[Double]]])(mu: Int, historySize: Int): Elitism[M, I] =
     applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](age, history)(historySize)) andThen
       filterNaN(values) andThen
-      keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitnessWithReplications(history.get, historyAggregation)), mu) andThen
+      keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
       incrementGeneration(generation)
 
   //  def expression[G, I](
@@ -82,25 +79,7 @@ object NoisyNSGA2 {
   //    iCons: (G, Vector[Double]) => I,
   //    iHistory: Lens[I, Vector[Vector[Double]]])(fitness: (Random, Vector[Double]) => Vector[Double]): Expression[(Random, G), I] =
   //    { case (rg, g) => iCons(g, fitness(rg, gValues.get(g))) }
-  //
-  //  def elitism[M[_], I](
-  //    iValues: Lens[I, Vector[Double]],
-  //    iHistory: Lens[I, Vector[Vector[Double]]],
-  //    iOperator: Lens[I, Maybe[Int]],
-  //    iAge: Lens[I, Long])(mu: Int, historySize: Int)(
-  //      implicit MM: Monad[M], MR: RandomGen[M]): Elitism[M, I] =
-  //    for {
-  //      // Declone
-  //      decloned <- applyCloneStrategy[M, I, Vector[Double]](
-  //        iValues.get,
-  //        mergeHistories[M, I, Vector[Double]](iAge, iHistory)(historySize))
-  //      // Filter out NaNs
-  //      noNaN = (decloned: Vector[I]).filterNot { iValues.get(_).exists { (_: Double).isNaN } }
-  //      // Keep the individuals with lowest fitness (pareto) and highest crowding diversity
-  //      kept <- thenK(keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](
-  //        paretoRankingMinAndCrowdingDiversity[M, I] { fitnessWithReplications(iHistory) },
-  //        mu))(noNaN)
-  //    } yield kept
+
   //
   //  def step[M[_], I, G](
   //    breeding: Breeding[M, I, (Random, G)],
