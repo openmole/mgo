@@ -8,3 +8,4 @@ pom.xml
 *.iml
 *.sublime*
 *.DS_Store
+tags
