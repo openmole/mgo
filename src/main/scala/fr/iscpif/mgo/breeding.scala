@@ -315,13 +315,9 @@ object breeding {
 
   /**** Cloning ****/
   /** Replaces randamly some of the genomes in gs by genomes taken from the original population of Is */
-  def clonesReplace[M[_], I, G](cloneProbability: Double)(gs: Vector[G], gLens: I => G)(implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, I, G] =
-    Breeding { is: Vector[I] =>
-      val isSize = is.size
-      for {
-        rg <- MR.random
-        result <- gs.traverse { (g: G) => if (rg.nextDouble < cloneProbability) gLens(is(rg.nextInt(isSize))).point[M] else g.point[M] }
-      } yield result
+  def clonesReplace[M[_], I, G](cloneProbability: Double, population: Vector[I], genome: I => G)(implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, G, G] =
+    Breeding { gs: Vector[G] =>
+      for { rg <- MR.random } yield gs.map { g => if (rg.nextDouble < cloneProbability) genome(population.random(rg)) else g }
     }
 
   //  def opOrClone[M[_]: Monad: RandomGen, I, G](
