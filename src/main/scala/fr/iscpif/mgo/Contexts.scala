@@ -71,7 +71,7 @@ object Contexts {
 
     implicit def evolutionStateMonad[S]: Monad[EvolutionState[S, ?]] = StateT.stateTMonadState[EvolutionData[S], IO]
     implicit def evolutionStateMonadState[S]: MonadState[EvolutionState[S, ?], EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]
-    implicit def evolutionStateMonadTrans[S]: MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L] = StateT.StateMonadTrans[EvolutionData[S]]
+    implicit def evolutionStateMonadTrans[S]: MonadTrans[StateT[?[_], EvolutionData[S], ?]] = StateT.StateMonadTrans[EvolutionData[S]]
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionState[S, ?]] = new RandomGen[EvolutionState[S, ?]] {
       def random: EvolutionState[S, Random] =
