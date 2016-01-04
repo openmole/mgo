@@ -324,20 +324,20 @@ object breeding {
       } yield result
     }
 
-  def opOrClone[M[_]: Monad: RandomGen, I, G](
-    clone: I => G,
-    op: I => M[G],
-    cloneProbability: Double): Kleisli[M, I, G] =
-    /*for {
-      _ <- probabilisticOperatorB[ M,I, G](
-        Vector(
-          (Kleisli.kleisli[M,I,G]{i: I => clone(i).point[M]}, cloneProbability),
-          (Kleisli.kleisli[M,I,G]{op(_)}, 1 - cloneProbability)))
-      res <- Kleisli.kleisli[M, (G, Int), G]{case (i, _) => i.point[M]}
-    } yield res*/
-    probabilisticOperatorB[M, I, G](
-      Vector(
-        (Kleisli.kleisli[M, I, G] { i: I => clone(i).point[M] }, cloneProbability),
-        (Kleisli.kleisli[M, I, G] { op(_) }, 1 - cloneProbability))) >=>
-      Kleisli.kleisli[M, (G, Int), G] { case (i, _) => i.point[M] }
+  //  def opOrClone[M[_]: Monad: RandomGen, I, G](
+  //    clone: I => G,
+  //    op: I => M[G],
+  //    cloneProbability: Double): Kleisli[M, I, G] =
+  //    /*for {
+  //      _ <- probabilisticOperatorB[ M,I, G](
+  //        Vector(
+  //          (Kleisli.kleisli[M,I,G]{i: I => clone(i).point[M]}, cloneProbability),
+  //          (Kleisli.kleisli[M,I,G]{op(_)}, 1 - cloneProbability)))
+  //      res <- Kleisli.kleisli[M, (G, Int), G]{case (i, _) => i.point[M]}
+  //    } yield res*/
+  //    probabilisticOperatorB[M, I, G](
+  //      Vector(
+  //        (Kleisli.kleisli[M, I, G] { i: I => clone(i).point[M] }, cloneProbability),
+  //        (Kleisli.kleisli[M, I, G] { op(_) }, 1 - cloneProbability))) >=>
+  //      Kleisli.kleisli[M, (G, Int), G] { case (i, _) => i.point[M] }
 }

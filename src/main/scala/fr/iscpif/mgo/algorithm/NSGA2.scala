@@ -72,11 +72,11 @@ object NSGA2 {
       // Apply a crossover+mutation operator to each couple. The operator is selected with a probability equal to its proportion in the population.
       // There is a chance equal to operatorExploration to select an operator at random uniformly instead.
       pairedOffspringsAndOps <- thenK(
-        mapB[M, (Vector[Double], Vector[Double]), (((Vector[Double], Vector[Double]), Int), Int)](
+        mapB[M, (Vector[Double], Vector[Double]), ((Vector[Double], Vector[Double]), Int)](
           dynamicOperators.selectOperator[M](opstats, operatorExploration).run))(couples)
       // Flatten the resulting offsprings and assign their respective operator to each
-      offspringsAndOps <- thenK(flatMapPureB[M, (((Vector[Double], Vector[Double]), Int), Int), (Vector[Double], Int)] {
-        case (((g1, g2), op), _) => Vector((g1, op), (g2, op))
+      offspringsAndOps <- thenK(flatMapPureB[M, ((Vector[Double], Vector[Double]), Int), (Vector[Double], Int)] {
+        case ((g1, g2), op) => Vector((g1, op), (g2, op))
       })(pairedOffspringsAndOps)
       offspringsAndOpsLambdaAdjusted <- thenK(randomTakeLambda[M, (Vector[Double], Int)](lambda))(offspringsAndOps)
       // Clamp genome values between 0 and 1
