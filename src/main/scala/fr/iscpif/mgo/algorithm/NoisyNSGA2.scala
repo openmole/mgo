@@ -19,7 +19,6 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo.algorithm.GenomeVectorDouble._
 import monocle.macros.{ GenLens }
 
-
 import scalaz._
 import Scalaz._
 
@@ -56,39 +55,25 @@ object NoisyNSGA2 {
       operatorExploration: Double,
       cloneProbability: Double): Breeding[M, I, G] =
     for {
-      operatorStatistics <- operatorProportions[M, I](genome andThen genomeOperator)
       population <- Kleisli.ask[M, Vector[I]]
-      gs <- tournament[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I](fitnessWithReplications(history, historyAggregation)), lambda + 1) andThen
-        pairConsecutive andThen
-        mapPureB { case (i1, i2) => ((genome andThen genomeValues)(i1), (genome andThen genomeValues)(i2)) } andThen
-        applyDynamicOperator(operatorStatistics, operatorExploration) andThen
-        flatMapPureB { case ((g1, g2), op) => Vector((g1, op), (g2, op)) } andThen
-        randomTakeLambda(lambda) andThen
-        clamp(GenLens[(Vector[Double], Int)](_._1)) andThen
-        mapPureB { case (g, op) => buildGenome(g, Maybe.just(op)) } andThen
-        clonesReplace(cloneProbability, population, genome)
+      gs <- NSGA2.breeding[M, I, G](
+        fitnessWithReplications(history, historyAggregation),
+        genome,
+        genomeValues,
+        genomeOperator,
+        buildGenome
+      )(lambda, operatorExploration) andThen clonesReplace(cloneProbability, population, genome)
     } yield gs
 
-  //      // Pair parent genomes together
-  //      couples <- thenK(pairConsecutive[M, Vector[Double]])(parentgenomes)
-  //      // Apply a crossover+mutation operator to each couple. The operator is selected with a probability equal to its proportion in the population.
-  //      // There is a chance equal to operatorExploration to select an operator at random uniformly instead.
-  //      pairedOffspringsAndOps <- thenK(
-  //        mapB[M, (Vector[Double], Vector[Double]), (((Vector[Double], Vector[Double]), Int), Int)](
-  //          dynamicOperators.selectOperator[M](opstats, operatorExploration).run))(couples)
-  //      // Flatten the resulting offsprings and assign their respective operator to each
-  //      offspringsAndOps <- thenK(flatMapPureB[M, (((Vector[Double], Vector[Double]), Int), Int), (Vector[Double], Int)] {
-  //        case (((g1, g2), op), _) => Vector((g1, op), (g2, op))
-  //      })(pairedOffspringsAndOps)
-  //      offspringsAndOpsLambdaAdjusted <- thenK(randomTakeLambda[M, (Vector[Double], Int)](lambda))(offspringsAndOps)
-  //      // Clamp genome values between 0 and 1
-  //      clamped <- thenK(clamp[M, (Vector[Double], Int)](GenLens[(Vector[Double], Int)](_._1)))(offspringsAndOpsLambdaAdjusted)
-  //      // Construct the final I type
-  //      gs <- thenK(mapPureB[M, (Vector[Double], Int), G] { case (g, op) => gCons(g, Maybe.just(op)) })(clamped)
-  //      // Replace some offsprings by clones from the original population.
-  //      result <- clonesReplace[M, I, G](cloneProbability)(gs, iGenome)
-  //    } yield result
-  //
+  /*   def elitism[M[_]: Monad: RandomGen, I](
+    fitness: I => Vector[Double],
+    values: I => Vector[Double],
+    generation: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
+    applyCloneStrategy(values, keepYoungest[M, I](generation.get)) andThen
+      filterNaN(values) andThen
+      keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
+      incrementGeneration(generation)*/
+
   //  def expression[G, I](
   //    gValues: Lens[G, Vector[Double]],
   //    iCons: (G, Vector[Double]) => I,
