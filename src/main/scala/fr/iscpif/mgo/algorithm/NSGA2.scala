@@ -45,26 +45,20 @@ object NSGA2 {
       gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty) }
     } yield gs
 
-  def breeding[M[_], I, G](
+  def breeding[M[_]: Monad: RandomGen: Generational, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
     genomeValues: G => Vector[Double],
     genomeOperator: G => Maybe[Int],
     buildGenome: (Vector[Double], Maybe[Int]) => G)(
       lambda: Int,
-      operatorExploration: Double)(
-        implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, G] = {
+      operatorExploration: Double): Breeding[M, I, G] =
     for {
       operatorStatistics <- operatorProportions[M, I](genome andThen genomeOperator)
       // Select lambda + 1 parents with minimum pareto rank and maximum crowding diversity
-      parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I](fitness), lambda + 1)
-      // Get the genome values
-      parentGenomes <- thenK(mapPureB[M, I, G](genome))(parents)
-      // Pair parents together
-      genomePairs <- thenK(pairConsecutive[M, G])(parentGenomes)
-      // Apply a crossover+mutation operator to each couple. The operator is selected with a probability equal to its proportion in the population.
-      // There is a chance equal to operatorExploration to select an operator at random uniformly instead.
-      pairedOffspringsAndOps <- thenK(
+      gs <- tournament[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I](fitness), lambda + 1) andThen
+        mapPureB[M, I, G](genome) andThen
+        pairConsecutive[M, G] andThen
         mapB[M, (G, G), ((Vector[Double], Vector[Double]), Int)] {
           case (g1, g2) =>
             val values = (genomeValues(g1), genomeValues(g2))
@@ -73,39 +67,28 @@ object NSGA2 {
               operatorStatistics,
               operatorExploration
             ).run(values)
-        }
-      )(genomePairs)
-      // Flatten the resulting offsprings and assign their respective operator to each
-      offspringsAndOps <- thenK(flatMapPureB[M, ((Vector[Double], Vector[Double]), Int), (Vector[Double], Int)] {
-        case ((g1, g2), op) => Vector((g1, op), (g2, op))
-      })(pairedOffspringsAndOps)
-      offspringsAndOpsLambdaAdjusted <- thenK(randomTakeLambda[M, (Vector[Double], Int)](lambda))(offspringsAndOps)
-      // Clamp genome values between 0 and 1
-      clamped <- thenK(clamp[M, (Vector[Double], Int)](GenLens[(Vector[Double], Int)](_._1)))(offspringsAndOpsLambdaAdjusted)
-      // Construct the final G type
-      gs <- thenK(mapPureB[M, (Vector[Double], Int), G] { case (g, op) => buildGenome(g, Maybe.just(op)) })(clamped)
+        } andThen
+        flatMapPureB[M, ((Vector[Double], Vector[Double]), Int), (Vector[Double], Int)] {
+          case ((g1, g2), op) => Vector((g1, op), (g2, op))
+        } andThen
+        randomTakeLambda[M, (Vector[Double], Int)](lambda) andThen
+        clamp[M, (Vector[Double], Int)](GenLens[(Vector[Double], Int)](_._1)) andThen
+        mapPureB[M, (Vector[Double], Int), G] { case (g, op) => buildGenome(g, Maybe.just(op)) }
     } yield gs
-  }
 
   def expression[G, I](
     gValues: G => Vector[Double],
     iCons: (G, Vector[Double], Long) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
     (g: G) => iCons(g, fitness(gValues(g)), 0)
 
-  def elitism[M[_], I](
-    iFitness: I => Vector[Double],
-    iGenomeValues: I => Vector[Double],
-    iGeneration: monocle.Lens[I, Long])(
-      mu: Int)(
-        implicit MM: Monad[M], MR: RandomGen[M]): Elitism[M, I] =
-    for {
-      // Declone
-      p1 <- applyCloneStrategy[M, I, Vector[Double]](iGenomeValues, keepYoungest[M, I] { iGeneration.get })
-      p2 <- thenK(filterNaN[M, I](iGenomeValues))(p1)
-      // Keep the individuals with lowest fitness (pareto) and highest crowding diversity
-      p3 <- thenK(keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I] { iFitness }, mu))(p2)
-      p4 <- thenK(incrementGeneration[M, I](iGeneration))(p3)
-    } yield p4
+  def elitism[M[_]: Monad: RandomGen, I](
+    fitness: I => Vector[Double],
+    values: I => Vector[Double],
+    generation: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
+    applyCloneStrategy[M, I, Vector[Double]](values, keepYoungest[M, I](generation.get)) andThen
+      filterNaN[M, I](values) andThen
+      keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
+      incrementGeneration[M, I](generation)
 
   def step[M[_], I, G](
     breeding: Breeding[M, I, G],
