@@ -75,19 +75,19 @@ object elitism {
         res <- individuals.groupBy(getGenome).valuesIterator.toVector.traverseM[M, I](is => cloneStrategy(is))
       } yield res)
 
-  def keepYoungest[M[_]: Monad, I](iGeneration: I => Long): CloneStrategy[M, I] =
-    (clones: Vector[I]) => clones.maxBy(iGeneration).point[Vector].point[M]
+  def keepYoungest[M[_]: Monad, I](generation: I => Long): CloneStrategy[M, I] =
+    (clones: Vector[I]) => clones.maxBy(generation).point[Vector].point[M]
 
-  def mergeHistories[M[_]: Monad, I, P](iAge: Lens[I, Long], iHistory: Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
+  def mergeHistories[M[_]: Monad, I, P](age: Lens[I, Long], history: Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
     (clones: Vector[I]) => {
-      clones.sortBy { i => -iAge.get(i) }.reduceLeft { (i1, i2) =>
-        val oldAge = iAge.get(i1)
-        val youngAge = iAge.get(i2)
+      clones.sortBy { i => -age.get(i) }.reduceLeft { (i1, i2) =>
+        val oldAge = age.get(i1)
+        val youngAge = age.get(i2)
 
-        def oldH: Vector[P] = iHistory.get(i1)
-        def youngH: Vector[P] = iHistory.get(i2).takeRight(min(youngAge, Int.MaxValue).toInt)
+        def oldH: Vector[P] = history.get(i1)
+        def youngH: Vector[P] = history.get(i2).takeRight(min(youngAge, Int.MaxValue).toInt)
 
-        iAge.set(iHistory.set(i1, (oldH ++ youngH).takeRight(historySize)), oldAge + youngAge)
+        age.set(history.set(i1, (oldH ++ youngH).takeRight(historySize)), oldAge + youngAge)
       }
     }.point[Vector].point[M]
 }

@@ -65,14 +65,17 @@ object NoisyNSGA2 {
       )(lambda, operatorExploration) andThen clonesReplace(cloneProbability, population, genome)
     } yield gs
 
-  /*   def elitism[M[_]: Monad: RandomGen, I](
+  def elitism[M[_]: Monad: RandomGen, I](
     fitness: I => Vector[Double],
     values: I => Vector[Double],
-    generation: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
-    applyCloneStrategy(values, keepYoungest[M, I](generation.get)) andThen
+    generation: monocle.Lens[I, Long],
+    age: Lens[I, Long],
+    history: Lens[I, Vector[Vector[Double]]],
+    historyAggregation: Vector[Vector[Double]] => Vector[Double])(mu: Int, historySize: Int): Elitism[M, I] =
+    applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](age, history)(historySize)) andThen
       filterNaN(values) andThen
-      keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
-      incrementGeneration(generation)*/
+      keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitnessWithReplications(history.get, historyAggregation)), mu) andThen
+      incrementGeneration(generation)
 
   //  def expression[G, I](
   //    gValues: Lens[G, Vector[Double]],
