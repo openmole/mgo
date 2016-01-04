@@ -103,8 +103,8 @@
 //  def expression[G, I](
 //    gValues: Lens[G, Vector[Double]],
 //    iCons: (G, Vector[Double]) => I)(
-//      fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
-//    (g: G) => iCons(g, fitness(gValues.get(g)))
+//      pattern: Vector[Double] => Vector[Double]): Expression[G, I] =
+//    (g: G) => iCons(g, pattern(gValues.get(g)))
 //
 //  def elitism[M[_], I, C](
 //    iGenomeValues: Lens[I, Vector[Double]],
