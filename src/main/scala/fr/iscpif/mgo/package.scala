@@ -168,7 +168,7 @@ package object mgo {
     Breeding((individuals: Vector[I]) => individuals.traverse[M, G](op))
 
   def mapPureB[M[_]: Monad, I, G](op: I => G): Breeding[M, I, G] =
-    Breeding((individuals: Vector[I]) => individuals.traverse[M, G](op(_: I).point[M]))
+    Breeding((individuals: Vector[I]) => individuals.map(op).point[M])
 
   def flatMapB[M[_]: Monad, I, G](op: I => M[Vector[G]]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) => individuals.traverseM[M, G](op))

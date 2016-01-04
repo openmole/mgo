@@ -39,6 +39,25 @@ package object algorithm {
         is.map { operation }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / is.size).point[M]
     }
 
+  def selectOperator[M[_]: Monad, G](operators: Vector[Kleisli[M, G, G]], opStats: Map[Int, Double], exploration: Double)(implicit MR: RandomGen[M]) = {
+    def allOps =
+      operators.zipWithIndex.map {
+        case (op, index) => (op, opStats.getOrElse(index, 0.0))
+      }
+
+    probabilisticOperatorB[M, G](allOps, exploration)
+  }
+
+  def probabilisticOperatorB[M[_], G](opsAndWeights: Vector[(Kleisli[M, G, G], Double)], exploration: Double)(implicit MM: Monad[M], MR: RandomGen[M]): Kleisli[M, G, (G, Int)] =
+    Kleisli((mates: G) => {
+      for {
+        rg <- MR.random
+        op = if (rg.nextDouble < exploration) rg.nextInt(opsAndWeights.size)
+        else multinomial[Int](opsAndWeights.zipWithIndex.map { case ((op, w), i) => (i, w) }.toList)(rg)
+        g <- opsAndWeights(op)._1.run(mates)
+      } yield (g, op)
+    })
+
   object GenomeVectorDouble {
     def randomGenomes[M[_]](n: Int, genomeLength: Int)(
       implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[Vector[Double]]] =
@@ -54,9 +73,6 @@ package object algorithm {
     def filterNaN[M[_]: Monad, I](genomeValues: I => Vector[Double]) =
       flatMapPureB[M, I, I] { i => if (genomeValues(i).exists { _.isNaN }) Vector.empty else Vector(i) }
 
-  }
-
-  object dynamicOperators {
     def crossovers[M[_]: Monad: RandomGen]: Vector[Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
       Vector(
         replicatePairC(blxC(0.1)),
@@ -87,24 +103,9 @@ package object algorithm {
             m2 <- m.run(crossed._2)
           } yield (m1, m2))
       }
+  }
 
-    def selectOperator[M[_]: Monad](opStats: Map[Int, Double], exploration: Double)(implicit MR: RandomGen[M]) = {
-      def allOps =
-        dynamicOperators.crossoversAndMutations[M].zipWithIndex.map {
-          case (op, index) => (op, opStats.getOrElse(index, 0.0))
-        }
+  object dynamicOperators {
 
-      probabilisticOperatorB[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])](allOps, exploration)
-    }
-
-    def probabilisticOperatorB[M[_], I, G](opsAndWeights: Vector[(Kleisli[M, I, G], Double)], exploration: Double)(implicit MM: Monad[M], MR: RandomGen[M]): Kleisli[M, I, (G, Int)] =
-      Kleisli((mates: I) => {
-        for {
-          rg <- MR.random
-          op = if (rg.nextDouble < exploration) rg.nextInt(opsAndWeights.size)
-          else multinomial[Int](opsAndWeights.zipWithIndex.map { case ((op, w), i) => (i, w) }.toList)(rg)
-          g <- opsAndWeights(op)._1.run(mates)
-        } yield (g, op)
-      })
   }
 }

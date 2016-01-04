@@ -55,23 +55,26 @@ object NSGA2 {
       operatorExploration: Double)(
         implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, G] = {
     for {
-      // Compute the proportion of each operator in the population
-      opstats <- operatorProportions[M, I](genome andThen genomeOperator)
-      // Select lambda parents with minimum pareto rank and maximum crowding diversity
-      parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
-        paretoRankingMinAndCrowdingDiversity[M, I](fitness),
-        // We need to always draw a even number of parents, otherwise the last parent will be paired with itself,
-        // resulting in no crossover (problem if lambda = 1).
-        if (lambda % 2 == 0) lambda else lambda + 1)
+      operatorStatistics <- operatorProportions[M, I](genome andThen genomeOperator)
+      // Select lambda + 1 parents with minimum pareto rank and maximum crowding diversity
+      parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I](fitness), lambda + 1)
       // Get the genome values
-      parentgenomes <- thenK(mapPureB[M, I, Vector[Double]] { genome andThen genomeValues })(parents)
+      parentGenomes <- thenK(mapPureB[M, I, G](genome))(parents)
       // Pair parents together
-      couples <- thenK(pairConsecutive[M, Vector[Double]])(parentgenomes)
+      genomePairs <- thenK(pairConsecutive[M, G])(parentGenomes)
       // Apply a crossover+mutation operator to each couple. The operator is selected with a probability equal to its proportion in the population.
       // There is a chance equal to operatorExploration to select an operator at random uniformly instead.
       pairedOffspringsAndOps <- thenK(
-        mapB[M, (Vector[Double], Vector[Double]), ((Vector[Double], Vector[Double]), Int)](
-          dynamicOperators.selectOperator[M](opstats, operatorExploration).run))(couples)
+        mapB[M, (G, G), ((Vector[Double], Vector[Double]), Int)] {
+          case (g1, g2) =>
+            val values = (genomeValues(g1), genomeValues(g2))
+            selectOperator[M, (Vector[Double], Vector[Double])](
+              crossoversAndMutations,
+              operatorStatistics,
+              operatorExploration
+            ).run(values)
+        }
+      )(genomePairs)
       // Flatten the resulting offsprings and assign their respective operator to each
       offspringsAndOps <- thenK(flatMapPureB[M, ((Vector[Double], Vector[Double]), Int), (Vector[Double], Int)] {
         case ((g1, g2), op) => Vector((g1, op), (g2, op))
