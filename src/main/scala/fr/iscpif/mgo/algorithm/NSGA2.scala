@@ -55,11 +55,10 @@ object NSGA2 {
       operatorExploration: Double): Breeding[M, I, G] =
     for {
       operatorStatistics <- operatorProportions[M, I](genome andThen genomeOperator)
-      // Select lambda + 1 parents with minimum pareto rank and maximum crowding diversity
-      gs <- tournament[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I](fitness), lambda + 1) andThen
-        mapPureB[M, I, G](genome) andThen
-        pairConsecutive[M, G] andThen
-        mapB[M, (G, G), ((Vector[Double], Vector[Double]), Int)] {
+      gs <- tournament(paretoRankingMinAndCrowdingDiversity[M, I](fitness), lambda + 1) andThen
+        mapPureB(genome) andThen
+        pairConsecutive andThen
+        mapB {
           case (g1, g2) =>
             val values = (genomeValues(g1), genomeValues(g2))
             selectOperator[M, (Vector[Double], Vector[Double])](
@@ -68,12 +67,12 @@ object NSGA2 {
               operatorExploration
             ).run(values)
         } andThen
-        flatMapPureB[M, ((Vector[Double], Vector[Double]), Int), (Vector[Double], Int)] {
+        flatMapPureB {
           case ((g1, g2), op) => Vector((g1, op), (g2, op))
         } andThen
-        randomTakeLambda[M, (Vector[Double], Int)](lambda) andThen
-        clamp[M, (Vector[Double], Int)](GenLens[(Vector[Double], Int)](_._1)) andThen
-        mapPureB[M, (Vector[Double], Int), G] { case (g, op) => buildGenome(g, Maybe.just(op)) }
+        randomTakeLambda(lambda) andThen
+        clamp(GenLens[(Vector[Double], Int)](_._1)) andThen
+        mapPureB { case (g, op) => buildGenome(g, Maybe.just(op)) }
     } yield gs
 
   def expression[G, I](
@@ -85,10 +84,10 @@ object NSGA2 {
     fitness: I => Vector[Double],
     values: I => Vector[Double],
     generation: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
-    applyCloneStrategy[M, I, Vector[Double]](values, keepYoungest[M, I](generation.get)) andThen
-      filterNaN[M, I](values) andThen
-      keepHighestRankedO[M, I, (Lazy[Int], Lazy[Double])](paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
-      incrementGeneration[M, I](generation)
+    applyCloneStrategy(values, keepYoungest[M, I](generation.get)) andThen
+      filterNaN(values) andThen
+      keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
+      incrementGeneration(generation)
 
   def step[M[_], I, G](
     breeding: Breeding[M, I, G],
