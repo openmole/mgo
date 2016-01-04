@@ -33,6 +33,12 @@ package object algorithm {
       MR.random.map { _.shuffle(gs).take(lambda) }
     }
 
+  def operatorProportions[M[_]: Monad, I](operation: I => Maybe[Int]) =
+    Kleisli.kleisli[M, Vector[I], Map[Int, Double]] {
+      is: Vector[I] =>
+        is.map { operation }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / is.size).point[M]
+    }
+
   object GenomeVectorDouble {
     def randomGenomes[M[_]](n: Int, genomeLength: Int)(
       implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[Vector[Double]]] =

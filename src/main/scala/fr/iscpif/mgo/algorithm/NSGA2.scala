@@ -56,10 +56,7 @@ object NSGA2 {
         implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Breeding[M, I, G] = {
     for {
       // Compute the proportion of each operator in the population
-      opstats <- Kleisli.kleisli[M, Vector[I], Map[Int, Double]] {
-        is: Vector[I] =>
-          is.map { (genome andThen genomeOperator) }.collect { case Maybe.Just(op) => op }.groupBy(identity).mapValues(_.length.toDouble / is.size).point[M]
-      }
+      opstats <- operatorProportions[M, I](genome andThen genomeOperator)
       // Select lambda parents with minimum pareto rank and maximum crowding diversity
       parents <- tournament[M, I, (Lazy[Int], Lazy[Double])](
         paretoRankingMinAndCrowdingDiversity[M, I](fitness),
