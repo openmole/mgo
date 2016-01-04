@@ -58,18 +58,9 @@ object NSGA2 {
       gs <- tournament(paretoRankingMinAndCrowdingDiversity[M, I](fitness), lambda + 1) andThen
         mapPureB(genome) andThen
         pairConsecutive andThen
-        mapB {
-          case (g1, g2) =>
-            val values = (genomeValues(g1), genomeValues(g2))
-            selectOperator[M, (Vector[Double], Vector[Double])](
-              crossoversAndMutations,
-              operatorStatistics,
-              operatorExploration
-            ).run(values)
-        } andThen
-        flatMapPureB {
-          case ((g1, g2), op) => Vector((g1, op), (g2, op))
-        } andThen
+        mapPureB { case (g1, g2) => (genomeValues(g1), genomeValues(g2)) } andThen
+        applyDynamicOperator(operatorStatistics, operatorExploration) andThen
+        flatMapPureB { case ((g1, g2), op) => Vector((g1, op), (g2, op)) } andThen
         randomTakeLambda(lambda) andThen
         clamp(GenLens[(Vector[Double], Int)](_._1)) andThen
         mapPureB { case (g, op) => buildGenome(g, Maybe.just(op)) }

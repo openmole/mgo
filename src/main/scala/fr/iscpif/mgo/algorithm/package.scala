@@ -66,7 +66,7 @@ package object algorithm {
         values = Vector.fill(n)(Vector.fill(genomeLength)(rg.nextDouble))
       } yield values
 
-    def clamp[M[_]: Monad, G](lens: Lens[G, Vector[Double]]) = mapPureB[M, G, G] {
+    def clamp[M[_]: Monad, G](lens: monocle.Lens[G, Vector[Double]]) = mapPureB[M, G, G] {
       lens.modify(_ map { x: Double => math.max(0.0, math.min(1.0, x)) })
     }
 
@@ -102,6 +102,15 @@ package object algorithm {
             m1 <- m.run(crossed._1)
             m2 <- m.run(crossed._2)
           } yield (m1, m2))
+      }
+
+    def applyDynamicOperator[M[_]: Monad: RandomGen](operatorStatistics: Map[Int, Double], operatorExploration: Double) =
+      mapB[M, (Vector[Double], Vector[Double]), ((Vector[Double], Vector[Double]), Int)] { g =>
+        selectOperator[M, (Vector[Double], Vector[Double])](
+          crossoversAndMutations[M],
+          operatorStatistics,
+          operatorExploration
+        ).run(g)
       }
   }
 
