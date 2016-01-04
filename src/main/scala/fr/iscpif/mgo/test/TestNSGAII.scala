@@ -43,13 +43,14 @@ object SphereNSGAII extends App {
 
   val algo = NSGA2.Algorithm(mu = mu, lambda = lambda, fitness = fitness, genomeSize = dimensions, operatorExploration = operatorExploration)
 
-  def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
+  def ka = Kleisli.ask[EvolutionState[Unit, ?], Vector[Individual]]
 
-  val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
+  val ea: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
     runEAUntilStackless[Unit, Individual](
-      stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
-        evolutionStateGenerational[Unit].generationReached(maxiter)
-      }),
+      stopCondition =
+        Kleisli.kleisli[EvolutionState[Unit, ?], Vector[Individual], Boolean] { (individuals: Vector[Individual]) =>
+          evolutionStateGenerational[Unit].generationReached(maxiter)
+        },
       stepFunction =
         for {
           individuals <- ka

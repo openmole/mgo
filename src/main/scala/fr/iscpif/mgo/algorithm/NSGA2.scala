@@ -127,25 +127,25 @@ object NSGA2 {
     @Lenses case class Individual(genome: Genome, fitness: Vector[Double], generation: Long)
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-      NSGA2.initialGenomes[EvolutionStateMonad[Unit]#l, Genome](Genome.apply)(mu, genomeSize)
+      NSGA2.initialGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
 
-    def breeding(lambda: Int, operatorExploration: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] =
-      NSGA2.breeding[EvolutionStateMonad[Unit]#l, Individual, Genome](
+    def breeding(lambda: Int, operatorExploration: Double): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
+      NSGA2.breeding[EvolutionState[Unit, ?], Individual, Genome](
         Individual.fitness.get, Individual.genome.get, Genome.values.get, Genome.operator.get, Genome.apply
       )(lambda, operatorExploration)
 
     def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
       NSGA2.expression[Genome, Individual](Genome.values.get, Individual.apply)(fitness)
 
-    def elitism(mu: Int): Elitism[EvolutionStateMonad[Unit]#l, Individual] =
-      NSGA2.elitism[EvolutionStateMonad[Unit]#l, Individual](Individual.fitness.get, (Individual.genome composeLens Genome.values).get, Individual.generation)(mu)
+    def elitism(mu: Int): Elitism[EvolutionState[Unit, ?], Individual] =
+      NSGA2.elitism[EvolutionState[Unit, ?], Individual](Individual.fitness.get, (Individual.genome composeLens Genome.values).get, Individual.generation)(mu)
 
     def step(
       mu: Int,
       lambda: Int,
       fitness: Expression[Vector[Double], Vector[Double]],
-      operatorExploration: Double): Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
-      NSGA2.step[EvolutionStateMonad[Unit]#l, Individual, Genome](
+      operatorExploration: Double): Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
+      NSGA2.step[EvolutionState[Unit, ?], Individual, Genome](
         breeding(lambda, operatorExploration),
         expression(fitness),
         elitism(mu)
@@ -155,27 +155,27 @@ object NSGA2 {
     def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
 
     def apply(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) =
-      new Algorithm[EvolutionStateMonad[Unit]#l, Individual, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
+      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, ({ type l[x] = (EvolutionData[Unit], x) })#l] {
 
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(mu, genomeSize)
-        def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = NSGA2.Algorithm.breeding(lambda, operatorExploration)
+        def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = NSGA2.Algorithm.breeding(lambda, operatorExploration)
         def expression: Expression[Genome, Individual] = NSGA2.Algorithm.expression(fitness)
-        def elitism: Elitism[EvolutionStateMonad[Unit]#l, Individual] = NSGA2.Algorithm.elitism(mu)
+        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NSGA2.Algorithm.elitism(mu)
 
-        def step: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] = NSGA2.Algorithm.step(mu, lambda, fitness, operatorExploration)
+        def step: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] = NSGA2.Algorithm.step(mu, lambda, fitness, operatorExploration)
 
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
       }
 
     def algoOpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double) =
-      new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Genome, EvolutionData[Unit]] {
+      new AlgorithmOpenMOLE[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
 
         def cRandom = GenLens[EvolutionData[Unit]](_.random)
 
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(n, genomeSize)
-        def breeding(n: Int): Breeding[EvolutionStateMonad[Unit]#l, Individual, Genome] = NSGA2.Algorithm.breeding(n, operatorExploration)
-        def elitism: Elitism[EvolutionStateMonad[Unit]#l, Individual] = NSGA2.Algorithm.elitism(mu)
+        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NSGA2.Algorithm.breeding(n, operatorExploration)
+        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NSGA2.Algorithm.elitism(mu)
 
         def initForIsland(i: Individual): Individual = i
 

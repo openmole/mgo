@@ -65,23 +65,22 @@ object Contexts {
       s: S)
 
     type EvolutionState[S, T] = StateT[IO, EvolutionData[S], T]
-    type EvolutionStateMonad[S] = ({ type l[x] = EvolutionState[S, x] })
 
     def wrap[S, T](x: (EvolutionData[S], T)): EvolutionState[S, T] = StateT.apply[IO, EvolutionData[S], T](_ => IO(x))
     def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, 0, Random, s)).unsafePerformIO
 
-    implicit def evolutionStateMonad[S]: Monad[EvolutionStateMonad[S]#l] = StateT.stateTMonadState[EvolutionData[S], IO]
-    implicit def evolutionStateMonadState[S]: MonadState[EvolutionStateMonad[S]#l, EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]
+    implicit def evolutionStateMonad[S]: Monad[EvolutionState[S, ?]] = StateT.stateTMonadState[EvolutionData[S], IO]
+    implicit def evolutionStateMonadState[S]: MonadState[EvolutionState[S, ?], EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]
     implicit def evolutionStateMonadTrans[S]: MonadTrans[({ type L[f[_], a] = StateT[f, EvolutionData[S], a] })#L] = StateT.StateMonadTrans[EvolutionData[S]]
 
-    implicit def evolutionStateUseRG[S]: RandomGen[EvolutionStateMonad[S]#l] = new RandomGen[EvolutionStateMonad[S]#l] {
+    implicit def evolutionStateUseRG[S]: RandomGen[EvolutionState[S, ?]] = new RandomGen[EvolutionState[S, ?]] {
       def random: EvolutionState[S, Random] =
         for {
           s <- evolutionStateMonadState[S].get
         } yield s.random
     }
 
-    implicit def evolutionStateUseParallelRG[S]: ParallelRandomGen[EvolutionStateMonad[S]#l] = new ParallelRandomGen[EvolutionStateMonad[S]#l] {
+    implicit def evolutionStateUseParallelRG[S]: ParallelRandomGen[EvolutionState[S, ?]] = new ParallelRandomGen[EvolutionState[S, ?]] {
       def split: EvolutionState[S, Random] =
         for {
           s <- evolutionStateMonadState[S].get
@@ -93,7 +92,7 @@ object Contexts {
         } yield rg1
     }
 
-    implicit def evolutionStateGenerational[S]: Generational[EvolutionStateMonad[S]#l] = new Generational[EvolutionStateMonad[S]#l] {
+    implicit def evolutionStateGenerational[S]: Generational[EvolutionState[S, ?]] = new Generational[EvolutionState[S, ?]] {
       def getGeneration: EvolutionState[S, Long] =
         for {
           s <- evolutionStateMonadState[S].get
@@ -127,19 +126,19 @@ object Contexts {
         a <- evolutionStateMonadTrans[S].liftM[IO, A](ioa)
       } yield a
 
-    def writeS[S, I](writeFun: (EvolutionData[S], Vector[I]) => String, ioFun: String => IO[Unit] = IO.putStrLn): Kleisli[EvolutionStateMonad[S]#l, Vector[I], Unit] =
-      Kleisli.kleisli[EvolutionStateMonad[S]#l, Vector[I], Unit] { (is: Vector[I]) =>
+    def writeS[S, I](writeFun: (EvolutionData[S], Vector[I]) => String, ioFun: String => IO[Unit] = IO.putStrLn): Kleisli[EvolutionState[S, ?], Vector[I], Unit] =
+      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Unit] { (is: Vector[I]) =>
         for {
           s <- evolutionStateMonadState[S].get
-          io <- ioFun(writeFun(s, is)).point[EvolutionStateMonad[S]#l]
+          io <- ioFun(writeFun(s, is)).point[EvolutionState[S, ?]]
           _ <- evolutionStateMonadTrans[S].liftM[IO, Unit](io)
         } yield ()
       }
 
     def runEAUntilStackless[S, I](
-      stopCondition: Kleisli[EvolutionStateMonad[S]#l, Vector[I], Boolean],
-      stepFunction: Kleisli[EvolutionStateMonad[S]#l, Vector[I], Vector[I]],
-      start: EvolutionData[S]): Kleisli[EvolutionStateMonad[S]#l, Vector[I], Vector[I]] = {
+      stopCondition: Kleisli[EvolutionState[S, ?], Vector[I], Boolean],
+      stepFunction: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]],
+      start: EvolutionData[S]): Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] = {
 
       @tailrec
       def tailRec(start: EvolutionData[S], population: Vector[I]): EvolutionState[S, Vector[I]] = {
@@ -151,7 +150,7 @@ object Contexts {
         }
       }
 
-      Kleisli.kleisli[EvolutionStateMonad[S]#l, Vector[I], Vector[I]] { population: Vector[I] => tailRec(start, population) }
+      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] { population: Vector[I] => tailRec(start, population) }
     }
   }
 }

@@ -6,6 +6,8 @@ scalaVersion := "2.11.7"
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
+
 resolvers ++= Seq(
   "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 )
