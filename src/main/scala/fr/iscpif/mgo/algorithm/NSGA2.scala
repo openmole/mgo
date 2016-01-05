@@ -79,11 +79,10 @@ object NSGA2 {
       keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
       incrementGeneration(generation)
 
-  def step[M[_], I, G](
+  def step[M[_]: Monad: RandomGen, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    elitism: Elitism[M, I])(
-      implicit MM: Monad[M], MR: RandomGen[M], MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
+    elitism: Elitism[M, I])(implicit MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
     stepEA[M, I, G](
       { (_: Vector[I]) => MG.incrementGeneration },
       breeding,

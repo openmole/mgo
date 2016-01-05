@@ -76,7 +76,7 @@ object breeding {
     Breeding((individuals: Vector[I]) => individuals.grouped(groupSize).toVector.point[M])
 
   def pairConsecutive[M[_]: Monad, I]: Breeding[M, I, (I, I)] =
-    Breeding((individuals: Vector[I]) => individuals.grouped(2).map { case Vector(a, b) => (a, b); case Vector(a) => (a, a) }.toVector.point[M])
+    Breeding((individuals: Vector[I]) => individuals.grouped(2).collect { case Vector(a, b) => (a, b) }.toVector.point[M])
 
   /**** Crossover ****/
 
