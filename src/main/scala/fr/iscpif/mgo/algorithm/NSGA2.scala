@@ -24,9 +24,9 @@ import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.breeding._
-import fr.iscpif.mgo.Expressions._
+import fr.iscpif.mgo.expressions._
 import fr.iscpif.mgo.elitism._
-import fr.iscpif.mgo.Contexts._
+import fr.iscpif.mgo.contexts._
 
 import scalaz._
 import Scalaz._
@@ -76,7 +76,7 @@ object NSGA2 {
     generation: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
     applyCloneStrategy(values, keepYoungest[M, I](generation.get)) andThen
       filterNaN(values) andThen
-      keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
+      keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
       incrementGeneration(generation)
 
   def step[M[_]: Monad: RandomGen: Generational, I, G](
@@ -94,7 +94,7 @@ object NSGA2 {
   /** The default NSGA2 algorithm */
   object Algorithm {
 
-    import fr.iscpif.mgo.Contexts.default._
+    import fr.iscpif.mgo.contexts.default._
 
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
     @Lenses case class Individual(genome: Genome, fitness: Vector[Double], generation: Long)

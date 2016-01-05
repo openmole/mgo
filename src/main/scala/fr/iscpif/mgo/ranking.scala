@@ -16,7 +16,7 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.Contexts._
+import fr.iscpif.mgo.contexts._
 
 import scala.language.higherKinds
 
@@ -138,8 +138,9 @@ object ranking {
 
   def paretoRankingMinAndCrowdingDiversity[M[_]: Monad: RandomGen, I](fitness: I => Vector[Double]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
     rankAndDiversity(
-      reversedRanking(paretoRanking[M, I] { (i: I) => fitness(i) }),
-      crowdingDistance[M, I] { (i: I) => fitness(i) })
+      reversedRanking(paretoRanking[M, I](fitness)),
+      crowdingDistance[M, I] { (i: I) => fitness(i) }
+    )
 
 }
 

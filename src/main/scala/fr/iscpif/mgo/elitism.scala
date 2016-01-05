@@ -20,7 +20,7 @@ import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 
-import Contexts._
+import contexts._
 
 import scala.math.min
 
@@ -58,7 +58,8 @@ object elitism {
     )
 
   /** Returns the mu individuals with the highest ranks. */
-  def keepHighestRankedO[M[_], I, K](f: Kleisli[M, Vector[I], Vector[K]], mu: Int)(implicit MM: Monad[M], KO: Order[K]): Elitism[M, I] =
+  // FIXME: unbiais when several individuals have the exact same rank (random draw)
+  def keepHighestRanked[M[_], I, K](f: Kleisli[M, Vector[I], Vector[K]], mu: Int)(implicit MM: Monad[M], KO: Order[K]): Elitism[M, I] =
     Elitism((individuals: Vector[I]) =>
       if (individuals.size < mu) individuals.point[M]
       else
@@ -82,7 +83,7 @@ object elitism {
   def keepYoungest[M[_]: Monad, I](generation: I => Long): CloneStrategy[M, I] =
     (clones: Vector[I]) => clones.maxBy(generation).point[Vector].point[M]
 
-  def mergeHistories[M[_]: Monad, I, P](age: Lens[I, Long], history: Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
+  def mergeHistories[M[_]: Monad, I, P](age: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
     (clones: Vector[I]) => {
       clones.sortBy { i => -age.get(i) }.reduceLeft { (i1, i2) =>
         val oldAge = age.get(i1)
@@ -91,7 +92,8 @@ object elitism {
         def oldH: Vector[P] = history.get(i1)
         def youngH: Vector[P] = history.get(i2).takeRight(min(youngAge, Int.MaxValue).toInt)
 
-        age.set(history.set(i1, (oldH ++ youngH).takeRight(historySize)), oldAge + youngAge)
+        def updatedHistory = history.set((oldH ++ youngH).takeRight(historySize))(i1)
+        age.set(oldAge + youngAge)(updatedHistory)
       }
     }.point[Vector].point[M]
 }

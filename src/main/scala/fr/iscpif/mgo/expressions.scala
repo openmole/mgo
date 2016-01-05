@@ -22,7 +22,7 @@ import Scalaz._
 
 import scala.util.Random
 
-object Expressions {
+object expressions {
   type Expression[G, P] = G => P
 
   def historyE[G, P](gHistory: Lens[G, Vector[P]])(e: Expression[G, P]): Expression[G, G] =

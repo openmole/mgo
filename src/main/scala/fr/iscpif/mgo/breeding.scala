@@ -26,7 +26,7 @@ import Scalaz._
 
 import scala.util.Random
 
-import Contexts._
+import contexts._
 
 object breeding {
 

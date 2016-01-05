@@ -25,7 +25,7 @@ import scalaz._
 import Scalaz._
 
 import breeding._
-import Expressions._
+import expressions._
 import elitism._
 
 /**
@@ -47,25 +47,12 @@ import elitism._
  * val (s22, selected2) = run((s21, indivs2), elitism)
  */
 trait Algorithm[M[_], I, G, C[_]] {
-
-  //implicit def m: Monad[M]
-
   def initialGenomes: M[Vector[G]]
-  def breeding: Breeding[M, I, G]
-  def expression: Expression[G, I]
-  def elitism: Elitism[M, I]
   def step: Kleisli[M, Vector[I], Vector[I]]
+
   /** Turn a non monadic value into a monadic one. */
   def wrap[A](ca: C[A]): M[A]
   def unwrap[A](m: M[A]): C[A]
-
-  def run[A, B](start: C[A], action: A => M[B])(implicit M: Monad[M]): C[B] =
-    unwrap(
-      for {
-        a <- wrap(start)
-        b <- action(a)
-      } yield b
-    )
 }
 
 trait AlgorithmOpenMOLE[M[_], I, G, C] {

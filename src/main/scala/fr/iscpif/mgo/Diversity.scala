@@ -22,7 +22,7 @@ import scala.language.higherKinds
 import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.tools.metric.Hypervolume.ReferencePoint
 import fr.iscpif.mgo.tools.metric.{ CrowdingDistance, Hypervolume, KNearestNeighboursAverageDistance }
-import fr.iscpif.mgo.Contexts._
+import fr.iscpif.mgo.contexts._
 
 import scala.util.Random
 import scalaz._

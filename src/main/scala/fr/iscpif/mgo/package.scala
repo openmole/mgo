@@ -31,9 +31,9 @@ import Scalaz._
 import scalaz.effect.IO
 
 import mgo.breeding._
-import mgo.Expressions._
+import mgo.expressions._
 import mgo.elitism._
-import fr.iscpif.mgo.Contexts._
+import fr.iscpif.mgo.contexts._
 
 import scala.util.control.TailCalls._
 
@@ -185,8 +185,8 @@ package object mgo {
     Breeding((individuals: Vector[I]) => individuals.traverseM[M, G](op(_: I).point[M]))
 
   /** Breed a genome for subsequent stochastic expression */
-  def withRandomGenB[M[_], I](implicit MM: Monad[M], MR: ParallelRandomGen[M]): Breeding[M, I, (Random, I)] =
-    Breeding((individuals: Vector[I]) =>
+  def withRandomGenB[M[_], G](implicit MM: Monad[M], MR: ParallelRandomGen[M]): Breeding[M, G, (Random, G)] =
+    Breeding((individuals: Vector[G]) =>
       for {
         rgs <- MR.split.replicateM(individuals.size)
       } yield rgs.toVector zip individuals)

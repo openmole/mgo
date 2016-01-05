@@ -24,7 +24,7 @@ import scalaz.effect.IO
 
 import scala.util.Random
 
-object Contexts {
+object contexts {
 
   trait RandomGen[M[_]] {
     /** returns the random number generator in M */

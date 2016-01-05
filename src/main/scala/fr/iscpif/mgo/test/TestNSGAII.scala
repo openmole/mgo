@@ -20,9 +20,9 @@ package fr.iscpif.mgo.test
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.algorithm._
 
-import Contexts.default._
-import Contexts._
-import Expressions._
+import contexts.default._
+import contexts._
+import expressions._
 
 import scala.util.Random
 import scalaz._
@@ -89,58 +89,71 @@ object SphereNSGAII extends App {
   println(finalpop.map { (_: Individual).fitness }.mkString("\n"))
   println("Done")
 }
-//
-//object StochasticSphereNSGAII extends App {
-//
-//  import NoisyNSGA2.Algorithm.{ Individual, iHistory, iValues }
-//
-//  val mu = 10
-//  val lambda = 10
-//  def dimensions = 10
-//  val maxiter = 100
-//  val historySize = 10
-//  val operatorExploration = 0.1
-//  val cloneProbability = 0.1
-//
-//  def express: (Random, Vector[Double]) => Vector[Double] = { case (rg: Random, v: Vector[Double]) => Vector(rg.nextGaussian() * 0.5 * math.sqrt(sphere(v))) }
-//
-//  val algo = NoisyNSGA2.Algorithm(mu = mu, lambda = lambda, fitness = express, operatorExploration = operatorExploration, genomeSize = dimensions, historySize = historySize, cloneProbability = cloneProbability)
-//
-//  def k[A] = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], A] _
-//  def ka = Kleisli.ask[EvolutionStateMonad[Unit]#l, Vector[Individual]]
-//
-//  val ea: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
-//    runEAUntilStackless[Unit, Individual](
-//      stopCondition = Kleisli.kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
-//        evolutionStateGenerational[Unit].generationReached(maxiter)
-//      }),
-//      stepFunction =
-//        for {
-//          _ <- writeS((state: EvolutionData[Unit], individuals: Vector[Individual]) =>
-//            individuals.map {
-//              i: Individual => state.generation.toString ++ "\t" ++ iValues.get(i).mkString("\t") ++ "\t" ++ iHistory.get(i).transpose.map { vs => vs.sum / vs.size }.mkString("\t")
-//            }.mkString("\n"))
-//          res <- algo.step
-//        } yield res,
-//      start = EvolutionData[Unit](random = newRNG(1), s = ())
-//    )
-//
-//  val evolution: EvolutionState[Unit, Vector[Individual]] =
-//    for {
-//      ig <- algo.initialGenomes
-//      initialPop = ig.map { case (rg, i) => iHistory.set(i, Vector(express(rg, i.genome))) }
-//      _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") ++ "\thistoryLength" }.run(Vector.empty)
-//      finalpop <- ea.run(initialPop)
-//    } yield finalpop
-//
-//  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
-//
-//  println("---- Final State ----")
-//  println(finalstate)
-//
-//  println("---- Final Population ----")
-//  println(finalpop.mkString("\n"))
-//
-//  println("---- Fitnesses ----")
-//  println(finalpop.map { (_: Individual).fitnessHistory }.mkString("\n"))
-//}
+
+object StochasticSphereNSGAII extends App {
+
+  import NoisyNSGA2.Algorithm._
+
+  val mu = 100
+  val lambda = 100
+  def dimensions = 2
+  val maxiter = 1000
+  val historySize = 100
+  val operatorExploration = 0.1
+  val cloneProbability = 0.1
+
+  def express: (Random, Vector[Double]) => Vector[Double] = { case (rg: Random, v: Vector[Double]) => Vector(sphere(v) + rg.nextGaussian() * 0.5 * math.sqrt(sphere(v))) }
+  def aggregation(history: Vector[Vector[Double]]) =
+    history.transpose.map { o => o.sum / o.size }
+
+  val algo =
+    NoisyNSGA2.Algorithm(
+      mu = mu,
+      lambda = lambda,
+      fitness = express,
+      aggregation = aggregation,
+      operatorExploration = operatorExploration,
+      genomeSize = dimensions,
+      historySize = historySize,
+      cloneProbability = cloneProbability)
+
+  val ea: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
+    runEAUntilStackless[Unit, Individual](
+      stopCondition = Kleisli.kleisli[EvolutionState[Unit, ?], Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
+        evolutionStateGenerational[Unit].generationReached(maxiter)
+      }),
+      stepFunction =
+        for {
+          /*_ <- writeS((state: EvolutionData[Unit], individuals: Vector[Individual]) =>
+            individuals.map {
+              i: Individual => state.generation.toString ++ "\t" ++ (Individual.genome composeLens Genome.values).get(i).mkString("\t") ++ "\t" ++ aggregation(Individual.fitnessHistory.get(i)).mkString("\t")
+            }.mkString("\n"))*/
+          res <- algo.step
+        } yield res,
+      start = EvolutionData[Unit](random = newRNG(1), s = ())
+    )
+
+  def zipWithRandom[M[_]: Monad, G](gs: Vector[G])(implicit MR: ParallelRandomGen[M]): M[Vector[(Random, G)]] =
+    for {
+      rngs <- MR.split.replicateM(gs.size)
+    } yield rngs.toVector zip gs
+
+  val evolution: EvolutionState[Unit, Vector[Individual]] =
+    for {
+      gs <- algo.initialGenomes
+      gsRNG <- zipWithRandom[EvolutionState[Unit, ?], Genome](gs)
+      initialPop = gsRNG.map { case (rg, g) => buildIndividual(g, express(rg, Genome.values.get(g))) }
+      _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") ++ "\thistoryLength" }.run(Vector.empty)
+      finalpop <- ea.run(initialPop)
+    } yield finalpop
+
+  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
+
+  println("---- Final State ----")
+  println(finalstate)
+
+  println("---- Final Population ----")
+  val maxHistory = finalpop.map(_.fitnessHistory.size).max
+  println(finalpop.filter(_.fitnessHistory.size == maxHistory).mkString("\n"))
+
+}
