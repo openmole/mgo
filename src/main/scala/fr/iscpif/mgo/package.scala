@@ -129,7 +129,9 @@ package object mgo {
 
   /**** Replacement strategies ****/
 
-  def muPlusLambda[I](parents: Vector[I], offsprings: Vector[I]): Vector[I] = parents ++ offsprings
+  def muPlusLambda[M[_]: Monad, I](p2: Vector[I]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { (p1: Vector[I]) =>
+    (p1 ++ p2).point[M]
+  }
 
   def muCommaLambda[I](parents: Vector[I], offsprings: Vector[I]): Vector[I] = offsprings
 

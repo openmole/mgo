@@ -70,7 +70,7 @@ object NSGA2 {
     build: (G, Vector[Double], Long) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
     (g: G) => build(g, fitness(values(g)), 0)
 
-  def elitism[M[_]: Monad: RandomGen, I](
+  def elitism[M[_]: Monad: RandomGen: Generational, I](
     fitness: I => Vector[Double],
     values: I => Vector[Double],
     generation: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
@@ -79,16 +79,17 @@ object NSGA2 {
       keepHighestRankedO(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
       incrementGeneration(generation)
 
-  def step[M[_]: Monad: RandomGen, I, G](
+  def step[M[_]: Monad: RandomGen: Generational, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    elitism: Elitism[M, I])(implicit MG: Generational[M]): Kleisli[M, Vector[I], Vector[I]] =
-    stepEA[M, I, G](
-      { (_: Vector[I]) => MG.incrementGeneration },
-      breeding,
-      expression,
-      elitism,
-      muPlusLambda[I])
+    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    for {
+      population <- Kleisli.ask[M, Vector[I]]
+      newPopulation <- breeding andThen
+        mapPureB(expression) andThen
+        muPlusLambda(population) andThen
+        elitism
+    } yield newPopulation
 
   /** The default NSGA2 algorithm */
   object Algorithm {

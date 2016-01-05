@@ -50,8 +50,12 @@ object elitism {
       }
     )
 
-  def incrementGeneration[M[_]: Monad, I](gLens: monocle.Lens[I, Long]): Elitism[M, I] =
-    Elitism((individuals: Vector[I]) => individuals.map(gLens.modify(_ + 1)).point[M])
+  def incrementGeneration[M[_]: Monad, I](gLens: monocle.Lens[I, Long])(implicit MG: Generational[M]): Elitism[M, I] =
+    Elitism((individuals: Vector[I]) =>
+      for {
+        _ <- MG.incrementGeneration
+      } yield individuals.map(gLens.modify(_ + 1))
+    )
 
   /** Returns the mu individuals with the highest ranks. */
   def keepHighestRankedO[M[_], I, K](f: Kleisli[M, Vector[I], Vector[K]], mu: Int)(implicit MM: Monad[M], KO: Order[K]): Elitism[M, I] =

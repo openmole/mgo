@@ -64,7 +64,7 @@ object NoisyNSGA2 {
       )(lambda, operatorExploration) andThen clonesReplace(cloneProbability, population, genome)
     } yield gs
 
-  def elitism[M[_]: Monad: RandomGen, I](
+  def elitism[M[_]: Monad: RandomGen: Generational, I](
     fitness: I => Vector[Double],
     values: I => Vector[Double],
     generation: monocle.Lens[I, Long],
