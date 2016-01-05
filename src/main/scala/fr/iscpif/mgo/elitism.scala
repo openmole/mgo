@@ -26,7 +26,6 @@ import scala.math.min
 
 object elitism {
 
-  //type Objective[I, M[_]] = Vector[I] => M[Vector[I]]
   type Elitism[M[_], I] = Kleisli[M, Vector[I], Vector[I]]
 
   object Elitism {
@@ -85,12 +84,12 @@ object elitism {
 
   def mergeHistories[M[_]: Monad, I, P](age: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
     (clones: Vector[I]) => {
-      clones.sortBy { i => -age.get(i) }.reduceLeft { (i1, i2) =>
+      clones.sortBy(age.get).reverse.reduceLeft { (i1, i2) =>
         val oldAge = age.get(i1)
         val youngAge = age.get(i2)
 
         def oldH: Vector[P] = history.get(i1)
-        def youngH: Vector[P] = history.get(i2).takeRight(min(youngAge, Int.MaxValue).toInt)
+        def youngH: Vector[P] = history.get(i2).takeRight(min(youngAge, historySize).toInt)
 
         def updatedHistory = history.set((oldH ++ youngH).takeRight(historySize))(i1)
         age.set(oldAge + youngAge)(updatedHistory)

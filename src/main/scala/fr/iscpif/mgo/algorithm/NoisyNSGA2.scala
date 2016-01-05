@@ -143,6 +143,7 @@ object NoisyNSGA2 {
       historySize: Int,
       cloneProbability: Double) =
       new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
+
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(mu, genomeSize)
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyNSGA2.Algorithm.breeding(lambda, operatorExploration, cloneProbability, aggregation)
         def expression: Expression[(Random, Genome), Individual] = NoisyNSGA2.Algorithm.expression(fitness)

@@ -53,8 +53,8 @@ object SphereNSGAII extends App {
         },
       stepFunction =
         for {
-          individuals <- ka
-          _ <- writeS(
+          //individuals <- ka
+          /*_ <- writeS(
             { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
               if (state.generation % 100 == 0)
                 individuals.map {
@@ -63,7 +63,7 @@ object SphereNSGAII extends App {
                 }.mkString("\n") ++ "\n"
               else ""
             },
-            IO.putStr)
+            IO.putStr)*/
           res <- algo.step
         } yield res,
       start = EvolutionData[Unit](random = newRNG(1), s = ())
@@ -73,21 +73,15 @@ object SphereNSGAII extends App {
     for {
       ig <- algo.initialGenomes
       initialPop = ig.map { algo.expression }
-      _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") }.run(Vector.empty)
+      // _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") }.run(Vector.empty)
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
   val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
 
-  println("---- Final State ----")
-  println(finalstate)
-
-  println("---- Final Population ----")
-  println(finalpop.mkString("\n"))
-
   println("---- Fitnesses ----")
-  println(finalpop.map { (_: Individual).fitness }.mkString("\n"))
-  println("Done")
+  println(finalpop.map { i => i.genome -> i.fitness }.mkString("\n"))
+
 }
 
 object StochasticSphereNSGAII extends App {
@@ -97,10 +91,10 @@ object StochasticSphereNSGAII extends App {
   val mu = 100
   val lambda = 100
   def dimensions = 2
-  val maxiter = 1000
+  val maxiter = 10000
   val historySize = 100
   val operatorExploration = 0.1
-  val cloneProbability = 0.1
+  val cloneProbability = 0.2
 
   def express: (Random, Vector[Double]) => Vector[Double] = { case (rg: Random, v: Vector[Double]) => Vector(sphere(v) + rg.nextGaussian() * 0.5 * math.sqrt(sphere(v))) }
   def aggregation(history: Vector[Vector[Double]]) =
@@ -143,17 +137,14 @@ object StochasticSphereNSGAII extends App {
       gs <- algo.initialGenomes
       gsRNG <- zipWithRandom[EvolutionState[Unit, ?], Genome](gs)
       initialPop = gsRNG.map { case (rg, g) => buildIndividual(g, express(rg, Genome.values.get(g))) }
-      _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") ++ "\thistoryLength" }.run(Vector.empty)
+      //_ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") ++ "\thistoryLength" }.run(Vector.empty)
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
   val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
 
-  println("---- Final State ----")
-  println(finalstate)
-
   println("---- Final Population ----")
   val maxHistory = finalpop.map(_.fitnessHistory.size).max
-  println(finalpop.filter(_.fitnessHistory.size == maxHistory).mkString("\n"))
+  println(finalpop.filter(_.fitnessHistory.size == maxHistory).map(i => (i.genome, aggregation(i.fitnessHistory), i.generation)).mkString("\n"))
 
 }
