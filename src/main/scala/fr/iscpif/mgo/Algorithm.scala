@@ -56,24 +56,15 @@ trait Algorithm[M[_], I, G, C[_]] {
 }
 
 trait AlgorithmOpenMOLE[M[_], I, G, C] {
-
-  def cRandom: monocle.Lens[C, Random]
+  def randomLens: monocle.Lens[C, Random]
 
   def initialGenomes(n: Int): M[Vector[G]]
   def breeding(n: Int): Breeding[M, I, G]
   def elitism: Elitism[M, I]
 
-  def initForIsland(i: I): I
+  def migrateToIsland(i: I): I
 
   def wrap[A](ca: (C, A)): M[A]
   def unwrap[A](m: M[A]): (C, A)
-
-  def run[A, B](start: (C, A), action: A => M[B])(implicit M: Monad[M]): (C, B) =
-    unwrap(
-      for {
-        a <- wrap(start)
-        b <- action(a)
-      } yield b
-    )
 }
 
