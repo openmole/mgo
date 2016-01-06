@@ -85,10 +85,7 @@ object contexts {
         for {
           s <- evolutionStateMonadState[S].get
           rg = s.random
-          //TODO: est-ce que c'est une bonne manière de générer 2 nouveaux générateurs aléatoires indépendants?
           rg1 = newRNG(rg.nextLong())
-          rg2 = newRNG(rg.nextLong())
-          _ <- evolutionStateMonadState[S].put(s.copy(random = rg2))
         } yield rg1
     }
 

@@ -160,7 +160,7 @@ object NoisyNSGA2 {
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
       }
 
-    def algoOpenMOLE(
+    def openMOLE(
       mu: Int,
       operatorExploration: Double,
       genomeSize: Int,
