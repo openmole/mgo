@@ -17,6 +17,7 @@
 package fr.iscpif.mgo
 
 import scala.annotation.tailrec
+import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 import scalaz._
 import Scalaz._
@@ -44,7 +45,10 @@ object contexts {
     def getGeneration: M[Long]
     def setGeneration(i: Long): M[Unit]
     def incrementGeneration: M[Unit]
-    def generationReached(x: Long): M[Boolean]
+  }
+
+  trait StartTime[M[_]] {
+    def startTime: M[Long]
   }
 
   trait HitMapper[M[_], C] {
@@ -90,10 +94,7 @@ object contexts {
     }
 
     implicit def evolutionStateGenerational[S]: Generational[EvolutionState[S, ?]] = new Generational[EvolutionState[S, ?]] {
-      def getGeneration: EvolutionState[S, Long] =
-        for {
-          s <- evolutionStateMonadState[S].get
-        } yield s.generation
+      def getGeneration: EvolutionState[S, Long] = evolutionStateMonadState[S].get.map(_.generation)
 
       def setGeneration(i: Long): EvolutionState[S, Unit] =
         for {
@@ -110,12 +111,9 @@ object contexts {
         } yield g >= x
     }
 
-    /*def addIOBefore[S, A, B](mio: EvolutionState[S, IO[A]], action: A => EvolutionState[S, B]): EvolutionState[S, B] =
-      for {
-        ioa <- mio
-        a <- evolutionStateMonadTrans[S].liftM[IO, A](ioa)
-        res <- action(a)
-      } yield res*/
+    implicit def evolutionStartTime[S]: StartTime[EvolutionState[S, ?]] = new StartTime[EvolutionState[S, ?]] {
+      def startTime: EvolutionState[S, Long] = evolutionStateMonadState[S].get.map(_.startTime)
+    }
 
     def liftIOValue[S, A](mio: EvolutionState[S, IO[A]]): EvolutionState[S, A] =
       for {
@@ -132,8 +130,10 @@ object contexts {
         } yield ()
       }
 
+    type StopCondition[S, I] = Kleisli[EvolutionState[S, ?], Vector[I], Boolean]
+
     def runEAUntilStackless[S, I](
-      stopCondition: Kleisli[EvolutionState[S, ?], Vector[I], Boolean],
+      stopCondition: StopCondition[S, I],
       stepFunction: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]],
       start: EvolutionData[S]): Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] = {
 
@@ -149,6 +149,17 @@ object contexts {
 
       Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] { population: Vector[I] => tailRec(start, population) }
     }
+
+    def afterGeneration[S, I](g: Long) =
+      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Boolean] { (individuals: Vector[I]) =>
+        evolutionStateGenerational[S].getGeneration.map { _ >= g }
+      }
+
+    def after[S, I](d: Duration) =
+      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Boolean] { (individuals: Vector[I]) =>
+        evolutionStartTime[S].startTime.map { s => (d.toMillis + s) <= System.currentTimeMillis }
+      }
+
   }
 }
 

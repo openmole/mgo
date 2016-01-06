@@ -36,7 +36,7 @@ object SphereNSGAII extends App {
   val mu = 100
   val lambda = 100
   def dimensions = 10
-  val maxiter = 1000
+  val maxIter = 1000
   val operatorExploration = 0.1
 
   val fitness: Expression[Vector[Double], Vector[Double]] = { x => Vector(sphere(x)) }
@@ -47,10 +47,7 @@ object SphereNSGAII extends App {
 
   val ea: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
     runEAUntilStackless[Unit, Individual](
-      stopCondition =
-        Kleisli.kleisli[EvolutionState[Unit, ?], Vector[Individual], Boolean] { (individuals: Vector[Individual]) =>
-          evolutionStateGenerational[Unit].generationReached(maxiter)
-        },
+      stopCondition = afterGeneration(maxIter),
       stepFunction =
         for {
           //individuals <- ka
@@ -91,7 +88,7 @@ object StochasticSphereNSGAII extends App {
   val mu = 100
   val lambda = 100
   def dimensions = 2
-  val maxiter = 10000
+  val maxIter = 10000
   val historySize = 100
   val operatorExploration = 0.1
   val cloneProbability = 0.2
@@ -113,9 +110,7 @@ object StochasticSphereNSGAII extends App {
 
   val ea: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
     runEAUntilStackless[Unit, Individual](
-      stopCondition = Kleisli.kleisli[EvolutionState[Unit, ?], Vector[Individual], Boolean]({ (individuals: Vector[Individual]) =>
-        evolutionStateGenerational[Unit].generationReached(maxiter)
-      }),
+      stopCondition = afterGeneration(maxIter),
       stepFunction =
         for {
           /*_ <- writeS((state: EvolutionData[Unit], individuals: Vector[Individual]) =>
