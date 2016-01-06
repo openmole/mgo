@@ -167,8 +167,10 @@ object NoisyNSGA2 {
       historySize: Int,
       cloneProbability: Double,
       aggregation: Vector[Vector[Double]] => Vector[Double]) =
-      new AlgorithmOpenMOLE[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+      new OpenMOLEAlgorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
         lazy val randomLens = GenLens[EvolutionData[Unit]](_.random)
+
+        def mMonad = implicitly[Monad[EvolutionState[Unit, ?]]]
 
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(n, genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyNSGA2.Algorithm.breeding(n, operatorExploration, cloneProbability, aggregation)
@@ -176,7 +178,7 @@ object NoisyNSGA2 {
 
         def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
 
-        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyNSGA2.Algorithm.wrap(x)
+        def wrap(x: EvolutionData[Unit]): EvolutionState[Unit, Unit] = NoisyNSGA2.Algorithm.wrap(x -> Unit)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
       }
   }

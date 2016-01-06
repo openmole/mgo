@@ -141,10 +141,12 @@ object NSGA2 {
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
       }
 
-    def algoOpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double) =
-      new AlgorithmOpenMOLE[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+    def openMOLE(mu: Int, genomeSize: Int, operatorExploration: Double) =
+      new OpenMOLEAlgorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
 
         def randomLens = GenLens[EvolutionData[Unit]](_.random)
+
+        def mMonad = implicitly[Monad[EvolutionState[Unit, ?]]]
 
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(n, genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NSGA2.Algorithm.breeding(n, operatorExploration)
@@ -152,7 +154,7 @@ object NSGA2 {
 
         def migrateToIsland(i: Individual): Individual = i
 
-        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
+        def wrap(x: EvolutionData[Unit]): EvolutionState[Unit, Unit] = NSGA2.Algorithm.wrap(x -> Unit)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
       }
 
