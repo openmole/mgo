@@ -16,9 +16,11 @@
  */
 package fr.iscpif.mgo
 
-import fr.iscpif.mgo.breeding._
-import fr.iscpif.mgo.contexts._
-import fr.iscpif.mgo.tools._
+import breeding._
+import contexts._
+import expressions._
+import elitism._
+import tools._
 
 import scala.util.Random
 
@@ -57,6 +59,31 @@ package object algorithm {
         g <- opsAndWeights(op)._1.run(mates)
       } yield (g, op)
     })
+
+  def deterministicStep[M[_]: Monad: RandomGen: Generational, I, G](
+    breeding: Breeding[M, I, G],
+    expression: Expression[G, I],
+    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    for {
+      population <- Kleisli.ask[M, Vector[I]]
+      newPopulation <- breeding andThen
+        mapPureB(expression) andThen
+        muPlusLambda(population) andThen
+        elitism
+    } yield newPopulation
+
+  def noisyStep[M[_]: Monad: RandomGen: Generational: ParallelRandomGen, I, G](
+    breeding: Breeding[M, I, G],
+    expression: Expression[(Random, G), I],
+    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] =
+    for {
+      population <- Kleisli.ask[M, Vector[I]]
+      newPopulation <- breeding andThen
+        withRandomGenB andThen
+        mapPureB(expression) andThen
+        muPlusLambda(population) andThen
+        elitism
+    } yield newPopulation
 
   object GenomeVectorDouble {
     def randomGenomes[M[_]](n: Int, genomeLength: Int)(

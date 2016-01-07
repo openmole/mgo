@@ -238,7 +238,7 @@ package object mgo {
         selected2s <- o2(selected1s)
       } yield selected2s)
 
-  def byNicheO[M[_]: Monad, I, N](niche: I => N, objective: Elitism[M, I]): Elitism[M, I] =
+  def keepNiches[M[_]: Monad, I, N](niche: I => N, objective: Elitism[M, I]): Elitism[M, I] =
     Elitism((individuals: Vector[I]) => {
       val indivsByNiche: Map[N, Vector[I]] = individuals.groupBy(niche)
       indivsByNiche.valuesIterator.toVector.traverse[M, Vector[I]](objective).map[Vector[I]](_.flatten)

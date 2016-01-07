@@ -18,6 +18,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo.algorithm.GenomeVectorDouble._
 import fr.iscpif.mgo.contexts._
+import fr.iscpif.mgo.elitism._
 import monocle.macros.GenLens
 
 import scala.language.higherKinds
@@ -25,7 +26,6 @@ import scala.language.higherKinds
 import fr.iscpif.mgo.breeding._
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.ranking._
-import fr.iscpif.mgo.tools.Lazy
 import fr.iscpif.mgo.niche._
 
 import scala.math._
@@ -34,14 +34,6 @@ import scalaz._
 import Scalaz._
 
 object Profile {
-
-  //  def initialGenomes[M[_], G](gCons: (Vector[Double], Maybe[Int], Long) => G)(mu: Int, genomeSize: Int)(
-  //    implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[G]] =
-  //    for {
-  //      values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
-  //      genomes = values.map { (vs: Vector[Double]) => gCons(vs, Maybe.empty, 0) }
-  //    } yield genomes
-  //
 
   def breeding[M[_]: Monad: RandomGen: Generational, I, G](
     fitness: I => Double,
@@ -120,6 +112,18 @@ object Profile {
   //      fitness: Vector[Double] => Double): Expression[G, I] =
   //    (g: G) => iCons(g, fitness(gValues.get(g)))
   //
+
+  def elitism[M[_]: Monad: RandomGen: Generational, I](
+    fitness: I => Double,
+    values: I => Vector[Double],
+    born: I => Long)(muByNiche: Int, niche: Niche[I, Int]): Elitism[M, I] =
+    applyCloneStrategy(values, keepYoungest[M, I](born)) andThen
+      filterNaN(values) andThen
+      keepNiches(
+        niche = niche,
+        objective = minimiseO[M, I, Double](fitness, muByNiche)
+      ) andThen incrementGeneration
+
   //  def elitism[M[_], I](
   //    iFitness: Lens[I, Double],
   //    iGenomeValues: Lens[I, Vector[Double]],

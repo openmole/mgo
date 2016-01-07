@@ -79,15 +79,7 @@ object NoisyNSGA2 {
   def step[M[_]: Monad: RandomGen: Generational: ParallelRandomGen, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[(Random, G), I],
-    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] =
-    for {
-      population <- Kleisli.ask[M, Vector[I]]
-      newPopulation <- breeding andThen
-        withRandomGenB andThen
-        mapPureB(expression) andThen
-        muPlusLambda(population) andThen
-        elitism
-    } yield newPopulation
+    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = noisyStep(breeding, expression, elitism)
 
   object Algorithm {
     ag =>

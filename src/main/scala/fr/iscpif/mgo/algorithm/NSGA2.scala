@@ -76,14 +76,7 @@ object NSGA2 {
   def step[M[_]: Monad: RandomGen: Generational, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
-    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] =
-    for {
-      population <- Kleisli.ask[M, Vector[I]]
-      newPopulation <- breeding andThen
-        mapPureB(expression) andThen
-        muPlusLambda(population) andThen
-        elitism
-    } yield newPopulation
+    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = deterministicStep(breeding, expression, elitism)
 
   /** The default NSGA2 algorithm */
   object Algorithm {
