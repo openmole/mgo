@@ -141,6 +141,6 @@ object StochasticSphereNSGAII extends App {
 
   println("---- Final Population ----")
   val maxHistory = finalpop.map(_.fitnessHistory.size).max
-  println(finalpop.filter(_.fitnessHistory.size == maxHistory).map(i => (i.genome, aggregation(i.fitnessHistory), i.born)).mkString("\n"))
+  println(finalpop.filter(_.fitnessHistory.size == maxHistory).map(i => (i.genome, aggregation(i.fitnessHistory), i.age)).mkString("\n"))
 
 }

@@ -35,10 +35,6 @@ import GenomeVectorDouble._
 
 object NSGA2 {
 
-  // Les fonctions breeding et elitism définies dans les objets respectifs aux algos doivent être indépendantes des
-  // types pour pouvoir être réutilisées ensuite dans d'autres algos. L'algorithme pur (ici NSGA2) est réellement spécifié
-  // dans la fonction algorithm tout en bas.
-
   def breeding[M[_]: Monad: RandomGen: Generational, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
@@ -67,11 +63,11 @@ object NSGA2 {
   def elitism[M[_]: Monad: RandomGen: Generational, I](
     fitness: I => Vector[Double],
     values: I => Vector[Double],
-    born: I => Long)(mu: Int): Elitism[M, I] =
-    applyCloneStrategy(values, keepYoungest[M, I](born)) andThen
+    age: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
+    applyCloneStrategy(values, keepYoungest[M, I](age.get)) andThen
       filterNaN(values) andThen
       keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
-      incrementGeneration
+      incrementGeneration(age)
 
   def step[M[_]: Monad: RandomGen: Generational, I, G](
     breeding: Breeding[M, I, G],
@@ -84,7 +80,7 @@ object NSGA2 {
     import fr.iscpif.mgo.contexts.default._
 
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
-    @Lenses case class Individual(genome: Genome, fitness: Vector[Double], born: Long)
+    @Lenses case class Individual(genome: Genome, fitness: Vector[Double], age: Long)
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
       GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
@@ -101,18 +97,7 @@ object NSGA2 {
       NSGA2.elitism[EvolutionState[Unit, ?], Individual](
         Individual.fitness.get,
         (Individual.genome composeLens Genome.values).get,
-        Individual.born.get)(mu)
-
-    def step(
-      mu: Int,
-      lambda: Int,
-      fitness: Expression[Vector[Double], Vector[Double]],
-      operatorExploration: Double): Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
-      NSGA2.step[EvolutionState[Unit, ?], Individual, Genome](
-        breeding(lambda, operatorExploration),
-        expression(fitness),
-        elitism(mu)
-      )
+        Individual.age)(mu)
 
     def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
     def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
@@ -125,7 +110,8 @@ object NSGA2 {
         def expression: Expression[Genome, Individual] = NSGA2.Algorithm.expression(fitness)
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NSGA2.Algorithm.elitism(mu)
 
-        def step: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] = NSGA2.Algorithm.step(mu, lambda, fitness, operatorExploration)
+        def step: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
+          NSGA2.step[EvolutionState[Unit, ?], Individual, Genome](breeding, expression, elitism)
 
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)

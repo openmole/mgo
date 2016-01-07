@@ -64,11 +64,12 @@ object NoisyNSGA2 {
     history: monocle.Lens[I, Vector[Vector[Double]]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     values: I => Vector[Double],
+    age: monocle.Lens[I, Long],
     historyAge: monocle.Lens[I, Long])(mu: Int, historySize: Int): Elitism[M, I] =
     applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](historyAge, history)(historySize)) andThen
       filterNaN(values) andThen
       keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](aggregatedFitness(history.get, aggregation)), mu) andThen
-      incrementGeneration
+      incrementGeneration(age)
 
   def expression[G, I](
     values: G => Vector[Double],
@@ -86,7 +87,7 @@ object NoisyNSGA2 {
 
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
 
-    @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Vector[Vector[Double]], born: Long)
+    @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Vector[Vector[Double]], age: Long)
 
     def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, 1, Vector(f), 0)
 
@@ -114,6 +115,7 @@ object NoisyNSGA2 {
         Individual.fitnessHistory,
         aggregation,
         (Individual.genome composeLens Genome.values).get,
+        Individual.age,
         Individual.historyAge
       )(mu, historySize)
 
