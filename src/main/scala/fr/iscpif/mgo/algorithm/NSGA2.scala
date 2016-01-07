@@ -28,6 +28,7 @@ import fr.iscpif.mgo.expressions._
 import fr.iscpif.mgo.elitism._
 import fr.iscpif.mgo.contexts._
 
+import scala.util.Random
 import scalaz._
 import Scalaz._
 import GenomeVectorDouble._
@@ -73,11 +74,11 @@ object NSGA2 {
   def elitism[M[_]: Monad: RandomGen: Generational, I](
     fitness: I => Vector[Double],
     values: I => Vector[Double],
-    generation: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
-    applyCloneStrategy(values, keepYoungest[M, I](generation.get)) andThen
+    born: I => Long)(mu: Int): Elitism[M, I] =
+    applyCloneStrategy(values, keepYoungest[M, I](born)) andThen
       filterNaN(values) andThen
       keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
-      incrementGeneration(generation)
+      incrementGeneration
 
   def step[M[_]: Monad: RandomGen: Generational, I, G](
     breeding: Breeding[M, I, G],
@@ -97,7 +98,7 @@ object NSGA2 {
     import fr.iscpif.mgo.contexts.default._
 
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
-    @Lenses case class Individual(genome: Genome, fitness: Vector[Double], generation: Long)
+    @Lenses case class Individual(genome: Genome, fitness: Vector[Double], born: Long)
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
       NSGA2.initialGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
@@ -111,7 +112,10 @@ object NSGA2 {
       NSGA2.expression[Genome, Individual](Genome.values.get, Individual.apply)(fitness)
 
     def elitism(mu: Int): Elitism[EvolutionState[Unit, ?], Individual] =
-      NSGA2.elitism[EvolutionState[Unit, ?], Individual](Individual.fitness.get, (Individual.genome composeLens Genome.values).get, Individual.generation)(mu)
+      NSGA2.elitism[EvolutionState[Unit, ?], Individual](
+        Individual.fitness.get,
+        (Individual.genome composeLens Genome.values).get,
+        Individual.born.get)(mu)
 
     def step(
       mu: Int,
@@ -140,20 +144,44 @@ object NSGA2 {
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
       }
+  }
 
-    def openMOLE(mu: Int, genomeSize: Int, operatorExploration: Double) =
-      new OpenMOLEAlgorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+  case class OpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double)
+
+  object OpenMOLE {
+    import fr.iscpif.mgo.contexts.default._
+    import Algorithm._
+
+    implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] {
+      type M[A] = EvolutionState[Unit, A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionData[Unit]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+      def mMonad = implicitly
+      def mGenerational = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
         def randomLens = GenLens[EvolutionData[Unit]](_.random)
-
-        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(n, genomeSize)
-        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NSGA2.Algorithm.breeding(n, operatorExploration)
-        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NSGA2.Algorithm.elitism(mu)
-
-        def migrateToIsland(i: Individual): Individual = i
-
-        def wrap(x: EvolutionData[Unit]): EvolutionState[Unit, Unit] = NSGA2.Algorithm.wrap(x -> Unit)
-        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
+        def generation(s: EvolutionData[Unit]) = s.generation
+        def values(genome: G) = Genome.values.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Vector[Double] = Individual.fitness.get(individual)
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
+        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
+        def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = NSGA2.Algorithm.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = NSGA2.Algorithm.breeding(n, om.operatorExploration)
+        def elitism: Elitism[EvolutionState[Unit, ?], I] = NSGA2.Algorithm.elitism(om.mu)
+        def migrateToIsland(i: I): I = i
       }
+
+      def wrap(x: S): EvolutionState[Unit, Unit] = NSGA2.Algorithm.wrap(x -> Unit)
+      def unwrap[A](x: EvolutionState[Unit, A]): (S, A) = NSGA2.Algorithm.unwrap(x)
+    }
 
   }
 }

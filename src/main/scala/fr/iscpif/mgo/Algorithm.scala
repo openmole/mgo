@@ -57,28 +57,3 @@ trait Algorithm[M[_], I, G, C[_]] {
   def unwrap[A](m: M[A]): C[A]
 }
 
-abstract class OpenMOLEAlgorithm[M[_]: Monad: Generational: StartTime, I, G, S] {
-
-  def initialGenomes(n: Int): M[Vector[G]]
-
-  def randomLens: monocle.Lens[S, Random]
-  def breeding(n: Int): Breeding[M, I, G]
-  def elitism: Elitism[M, I]
-
-  def migrateToIsland(i: I): I
-
-  def wrap(ca: S): M[Unit]
-  def unwrap[A](m: M[A]): (S, A)
-
-  def run[A, B](start: S, action: => M[B]): (S, B) =
-    unwrap(
-      for {
-        _ <- wrap(start)
-        b <- action
-      } yield b
-    )
-
-  def afterGeneration(g: Long) = stop.afterGeneration[M, I](g)
-  def afterDuration(d: Duration) = stop.afterDuration[M, I](d)
-}
-

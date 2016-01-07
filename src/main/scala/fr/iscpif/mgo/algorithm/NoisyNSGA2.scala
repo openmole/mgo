@@ -69,12 +69,11 @@ object NoisyNSGA2 {
     history: monocle.Lens[I, Vector[Vector[Double]]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     values: I => Vector[Double],
-    generation: monocle.Lens[I, Long],
     historyAge: monocle.Lens[I, Long])(mu: Int, historySize: Int): Elitism[M, I] =
     applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](historyAge, history)(historySize)) andThen
       filterNaN(values) andThen
       keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](aggregatedFitness(history.get, aggregation)), mu) andThen
-      incrementGeneration(generation)
+      incrementGeneration
 
   def expression[G, I](
     values: G => Vector[Double],
@@ -96,9 +95,11 @@ object NoisyNSGA2 {
     } yield newPopulation
 
   object Algorithm {
+    ag =>
 
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
-    @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Vector[Vector[Double]], generation: Long)
+
+    @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Vector[Vector[Double]], born: Long)
 
     def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, 1, Vector(f), 0)
 
@@ -126,11 +127,11 @@ object NoisyNSGA2 {
         Individual.fitnessHistory,
         aggregation,
         (Individual.genome composeLens Genome.values).get,
-        Individual.generation,
         Individual.historyAge
       )(mu, historySize)
 
     def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
+
     def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
 
     def apply(
@@ -143,9 +144,10 @@ object NoisyNSGA2 {
       historySize: Int,
       cloneProbability: Double) =
       new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
-
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(mu, genomeSize)
+
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyNSGA2.Algorithm.breeding(lambda, operatorExploration, cloneProbability, aggregation)
+
         def expression: Expression[(Random, Genome), Individual] = NoisyNSGA2.Algorithm.expression(fitness)
 
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NoisyNSGA2.Algorithm.elitism(mu, historySize, aggregation)
@@ -157,28 +159,55 @@ object NoisyNSGA2 {
             elitism)
 
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyNSGA2.Algorithm.wrap(x)
-        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
-      }
 
-    def openMOLE(
-      mu: Int,
-      operatorExploration: Double,
-      genomeSize: Int,
-      historySize: Int,
-      cloneProbability: Double,
-      aggregation: Vector[Vector[Double]] => Vector[Double]) =
-      new OpenMOLEAlgorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
-        lazy val randomLens = GenLens[EvolutionData[Unit]](_.random)
-
-        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(n, genomeSize)
-        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyNSGA2.Algorithm.breeding(n, operatorExploration, cloneProbability, aggregation)
-        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NoisyNSGA2.Algorithm.elitism(mu, historySize, aggregation)
-
-        def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
-
-        def wrap(x: EvolutionData[Unit]): EvolutionState[Unit, Unit] = NoisyNSGA2.Algorithm.wrap(x -> Unit)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
       }
   }
+
+  import Algorithm._
+
+  case class OpenMOLE(
+    mu: Int,
+    operatorExploration: Double,
+    genomeSize: Int,
+    historySize: Int,
+    cloneProbability: Double,
+    aggregation: Vector[Vector[Double]] => Vector[Double])
+
+  object OpenMOLE {
+    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] with openmole.Stochastic {
+      type M[A] = EvolutionState[Unit, A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionData[Unit]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+      def mMonad = implicitly
+      def mGenerational = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[EvolutionData[Unit]](_.random)
+        def generation(s: EvolutionData[Unit]) = s.generation
+        def values(genome: G) = Genome.values.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Vector[Double] = om.aggregation(Individual.fitnessHistory.get(individual))
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = Algorithm.buildIndividual(genome, phenotype)
+        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
+        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyNSGA2.Algorithm.breeding(n, om.operatorExploration, om.cloneProbability, om.aggregation)
+        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NoisyNSGA2.Algorithm.elitism(om.mu, om.historySize, om.aggregation)
+        def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
+      }
+
+      def wrap(x: EvolutionData[Unit]): EvolutionState[Unit, Unit] = NoisyNSGA2.Algorithm.wrap(x -> Unit)
+      def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
+
+      def samples(i: I): Long = Individual.historyAge.get(i)
+    }
+  }
+
 }
 

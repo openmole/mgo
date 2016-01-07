@@ -49,11 +49,11 @@ object elitism {
       }
     )
 
-  def incrementGeneration[M[_]: Monad, I](gLens: monocle.Lens[I, Long])(implicit MG: Generational[M]): Elitism[M, I] =
+  def incrementGeneration[M[_]: Monad, I](implicit MG: Generational[M]): Elitism[M, I] =
     Elitism((individuals: Vector[I]) =>
       for {
         _ <- MG.incrementGeneration
-      } yield individuals.map(gLens.modify(_ + 1))
+      } yield individuals
     )
 
   /** Returns the mu individuals with the highest ranks. */
@@ -79,8 +79,8 @@ object elitism {
         res <- individuals.groupBy(getGenome).valuesIterator.toVector.traverseM[M, I](is => cloneStrategy(is))
       } yield res)
 
-  def keepYoungest[M[_]: Monad, I](generation: I => Long): CloneStrategy[M, I] =
-    (clones: Vector[I]) => clones.maxBy(generation).point[Vector].point[M]
+  def keepYoungest[M[_]: Monad, I](born: I => Long): CloneStrategy[M, I] =
+    (clones: Vector[I]) => clones.minBy(born).point[Vector].point[M]
 
   def mergeHistories[M[_]: Monad, I, P](age: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
     (clones: Vector[I]) => {
