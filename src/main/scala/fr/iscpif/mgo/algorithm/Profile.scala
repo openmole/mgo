@@ -110,13 +110,12 @@ object Profile {
     def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
     def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
 
-    def apply(mu: Int, lambda: Int, fitness: Vector[Double] => Double, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double) =
+    def apply(muByNiche: Int, lambda: Int, fitness: Vector[Double] => Double, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double) =
       new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
-
-        def initialGenomes: EvolutionState[Unit, Vector[Genome]] = Profile.Algorithm.initialGenomes(mu, genomeSize)
+        def initialGenomes: EvolutionState[Unit, Vector[Genome]] = Profile.Algorithm.initialGenomes(muByNiche, genomeSize)
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = Profile.Algorithm.breeding(lambda, niche, operatorExploration)
         def expression: Expression[Genome, Individual] = Profile.Algorithm.expression(fitness)
-        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = Profile.Algorithm.elitism(mu, niche)
+        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = Profile.Algorithm.elitism(muByNiche, niche)
 
         def step: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
           Profile.step[EvolutionState[Unit, ?], Individual, Genome](breeding, expression, elitism)
