@@ -23,6 +23,7 @@ import fr.iscpif.mgo.algorithm._
 import contexts.default._
 import contexts._
 import expressions._
+import stop._
 
 import scala.util.Random
 import scalaz._
@@ -47,7 +48,7 @@ object SphereNSGAII extends App {
 
   val ea: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
     runEAUntilStackless[Unit, Individual](
-      stopCondition = afterGeneration(maxIter),
+      stopCondition = afterGeneration[EvolutionState[Unit, ?], Individual](maxIter),
       stepFunction =
         for {
           //individuals <- ka
@@ -110,7 +111,7 @@ object StochasticSphereNSGAII extends App {
 
   val ea: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
     runEAUntilStackless[Unit, Individual](
-      stopCondition = afterGeneration(maxIter),
+      stopCondition = afterGeneration[EvolutionState[Unit, ?], Individual](maxIter),
       stepFunction =
         for {
           /*_ <- writeS((state: EvolutionData[Unit], individuals: Vector[Individual]) =>

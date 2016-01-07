@@ -16,8 +16,10 @@
  */
 package fr.iscpif.mgo
 
+import fr.iscpif.mgo.contexts.{ StartTime, Generational }
 import monocle.macros._
 
+import scala.concurrent.duration.Duration
 import scala.util.Random
 
 import scala.language.higherKinds
@@ -55,8 +57,7 @@ trait Algorithm[M[_], I, G, C[_]] {
   def unwrap[A](m: M[A]): C[A]
 }
 
-trait OpenMOLEAlgorithm[M[_], I, G, S] {
-  implicit def mMonad: Monad[M]
+abstract class OpenMOLEAlgorithm[M[_]: Monad: Generational: StartTime, I, G, S] {
 
   def initialGenomes(n: Int): M[Vector[G]]
 
@@ -76,5 +77,8 @@ trait OpenMOLEAlgorithm[M[_], I, G, S] {
         b <- action
       } yield b
     )
+
+  def afterGeneration(g: Long) = stop.afterGeneration[M, I](g)
+  def afterDuration(d: Duration) = stop.afterDuration[M, I](d)
 }
 

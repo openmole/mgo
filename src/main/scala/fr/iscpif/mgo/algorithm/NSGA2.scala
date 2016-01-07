@@ -143,10 +143,7 @@ object NSGA2 {
 
     def openMOLE(mu: Int, genomeSize: Int, operatorExploration: Double) =
       new OpenMOLEAlgorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
-
         def randomLens = GenLens[EvolutionData[Unit]](_.random)
-
-        def mMonad = implicitly[Monad[EvolutionState[Unit, ?]]]
 
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(n, genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NSGA2.Algorithm.breeding(n, operatorExploration)

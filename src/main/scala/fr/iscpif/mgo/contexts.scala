@@ -16,6 +16,7 @@
  */
 package fr.iscpif.mgo
 
+import stop._
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 import scala.language.higherKinds
@@ -130,10 +131,8 @@ object contexts {
         } yield ()
       }
 
-    type StopCondition[S, I] = Kleisli[EvolutionState[S, ?], Vector[I], Boolean]
-
     def runEAUntilStackless[S, I](
-      stopCondition: StopCondition[S, I],
+      stopCondition: StopCondition[EvolutionState[S, ?], I],
       stepFunction: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]],
       start: EvolutionData[S]): Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] = {
 
@@ -149,16 +148,6 @@ object contexts {
 
       Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] { population: Vector[I] => tailRec(start, population) }
     }
-
-    def afterGeneration[S, I](g: Long) =
-      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Boolean] { (individuals: Vector[I]) =>
-        evolutionStateGenerational[S].getGeneration.map { _ >= g }
-      }
-
-    def after[S, I](d: Duration) =
-      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Boolean] { (individuals: Vector[I]) =>
-        evolutionStartTime[S].startTime.map { s => (d.toMillis + s) <= System.currentTimeMillis }
-      }
 
   }
 }

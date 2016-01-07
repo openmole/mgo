@@ -170,8 +170,6 @@ object NoisyNSGA2 {
       new OpenMOLEAlgorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
         lazy val randomLens = GenLens[EvolutionData[Unit]](_.random)
 
-        def mMonad = implicitly[Monad[EvolutionState[Unit, ?]]]
-
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(n, genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyNSGA2.Algorithm.breeding(n, operatorExploration, cloneProbability, aggregation)
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NoisyNSGA2.Algorithm.elitism(mu, historySize, aggregation)
