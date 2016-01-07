@@ -17,6 +17,7 @@
 package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo._
+import fr.iscpif.mgo.contexts.default._
 import monocle.macros.{ Lenses, GenLens }
 import ranking._
 import niche._
@@ -164,6 +165,52 @@ object NoisyProfile {
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = Profile.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = Profile.Algorithm.unwrap(x)
       }
+  }
+
+  import Algorithm._
+
+  case class OpenMOLE(
+    mu: Int,
+    niche: Niche[Individual, Int],
+    operatorExploration: Double,
+    genomeSize: Int,
+    historySize: Int,
+    cloneProbability: Double,
+    aggregation: Vector[Double] => Double)
+
+  object OpenMOLE {
+    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Stochastic {
+      type M[A] = EvolutionState[Unit, A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionData[Unit]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+      def mMonad = implicitly
+      def mGenerational = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[EvolutionData[Unit]](_.random)
+        def generation(s: EvolutionData[Unit]) = s.generation
+        def values(genome: G) = Genome.values.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Double = om.aggregation(Individual.fitnessHistory.get(individual))
+        def buildIndividual(genome: G, phenotype: Double) = Algorithm.buildIndividual(genome, phenotype)
+        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
+        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = NoisyProfile.Algorithm.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyProfile.Algorithm.breeding(n, om.niche, om.operatorExploration, om.cloneProbability, om.aggregation)
+        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = NoisyProfile.Algorithm.elitism(om.mu, om.niche, om.historySize, om.aggregation)
+        def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
+      }
+
+      def wrap(x: EvolutionData[Unit]): EvolutionState[Unit, Unit] = NoisyProfile.Algorithm.wrap(x -> Unit)
+      def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
+
+      def samples(i: I): Long = Individual.historyAge.get(i)
+    }
   }
 
   //  object Algorithm {

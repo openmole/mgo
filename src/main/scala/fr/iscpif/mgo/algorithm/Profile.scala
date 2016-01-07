@@ -125,6 +125,48 @@ object Profile {
       }
   }
 
+  import Algorithm._
+
+  case class OpenMOLE(mu: Int, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double)
+
+  object OpenMOLE {
+
+    import fr.iscpif.mgo.contexts.default._
+    import Algorithm._
+
+    implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Double] = new openmole.Integration[OpenMOLE, Vector[Double], Double] {
+      type M[A] = EvolutionState[Unit, A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionData[Unit]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+      def mMonad = implicitly
+      def mGenerational = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[EvolutionData[Unit]](_.random)
+        def generation(s: EvolutionData[Unit]) = s.generation
+        def values(genome: G) = Genome.values.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Double = Individual.fitness.get(individual)
+        def buildIndividual(genome: G, phenotype: Double) = Individual(genome, phenotype, 0)
+        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
+        def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = Profile.Algorithm.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = Profile.Algorithm.breeding(n, om.niche, om.operatorExploration)
+        def elitism: Elitism[EvolutionState[Unit, ?], I] = Profile.Algorithm.elitism(om.mu, om.niche)
+        def migrateToIsland(i: I): I = i
+      }
+
+      def wrap(x: S): EvolutionState[Unit, Unit] = Profile.Algorithm.wrap(x -> Unit)
+
+      def unwrap[A](x: EvolutionState[Unit, A]): (S, A) = Profile.Algorithm.unwrap(x)
+    }
+  }
+
   //  object Algorithm {
   //    type V = Vector[Double]
   //    case class Genome(values: V, operator: Maybe[Int], generation: Long)
