@@ -39,11 +39,6 @@ object NoisyNSGA2 {
   def aggregatedFitness[I](fitness: I => Vector[Vector[Double]], aggregation: Vector[Vector[Double]] => Vector[Double])(i: I): Vector[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
 
-  def initialGenomes[M[_]: Monad: RandomGen, G](build: (Vector[Double], Maybe[Int]) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
-    for {
-      values <- GenomeVectorDouble.randomGenomes[M](mu, genomeSize)
-    } yield values.map { vs: Vector[Double] => build(vs, Maybe.empty) }
-
   def breeding[M[_]: Monad: RandomGen: Generational, I, G](
     fitness: I => Vector[Vector[Double]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
@@ -108,7 +103,7 @@ object NoisyNSGA2 {
     }
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-      NoisyNSGA2.initialGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
+      GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
 
     def breeding(lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
       NoisyNSGA2.breeding[EvolutionState[Unit, ?], Individual, Genome](

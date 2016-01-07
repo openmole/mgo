@@ -66,6 +66,12 @@ package object algorithm {
         values = Vector.fill(n)(Vector.fill(genomeLength)(rg.nextDouble))
       } yield values
 
+    def randomGenomes[M[_]: Monad: RandomGen, G](cons: (Vector[Double], Maybe[Int]) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
+      for {
+        values <- randomGenomes[M](mu, genomeSize)
+        gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty) }
+      } yield gs
+
     def clamp[M[_]: Monad, G](lens: monocle.Lens[G, Vector[Double]]) = mapPureB[M, G, G] {
       lens.modify(_ map { x: Double => math.max(0.0, math.min(1.0, x)) })
     }

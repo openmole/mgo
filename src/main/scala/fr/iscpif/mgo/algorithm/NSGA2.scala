@@ -39,13 +39,6 @@ object NSGA2 {
   // types pour pouvoir être réutilisées ensuite dans d'autres algos. L'algorithme pur (ici NSGA2) est réellement spécifié
   // dans la fonction algorithm tout en bas.
 
-  def initialGenomes[M[_], G](cons: (Vector[Double], Maybe[Int]) => G)(mu: Int, genomeSize: Int)(
-    implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[G]] =
-    for {
-      values <- randomGenomes[M](mu, genomeSize)
-      gs = values.map { (vs: Vector[Double]) => cons(vs, Maybe.empty) }
-    } yield gs
-
   def breeding[M[_]: Monad: RandomGen: Generational, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
@@ -101,7 +94,7 @@ object NSGA2 {
     @Lenses case class Individual(genome: Genome, fitness: Vector[Double], born: Long)
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-      NSGA2.initialGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
+      GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
 
     def breeding(lambda: Int, operatorExploration: Double): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
       NSGA2.breeding[EvolutionState[Unit, ?], Individual, Genome](
