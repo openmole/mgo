@@ -82,7 +82,7 @@ object Profile {
     expression: Expression[G, I],
     elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = deterministicStep(breeding, expression, elitism)
 
-  /** The default NSGA2 algorithm */
+  /** The default Profile algorithm */
   object Algorithm {
 
     import fr.iscpif.mgo.contexts.default._
@@ -90,15 +90,15 @@ object Profile {
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
     @Lenses case class Individual(genome: Genome, fitness: Double, age: Long)
 
-    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-      GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
+    def initialGenomes(lambda: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
+      GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(lambda, genomeSize)
 
     def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
       Profile.breeding[EvolutionState[Unit, ?], Individual, Genome](
         Individual.fitness.get, Individual.genome.get, Genome.values.get, Genome.operator.get, Genome.apply
       )(lambda, niche, operatorExploration)
 
-    def expression(fitness: Expression[Vector[Double], Double]): Expression[Genome, Individual] =
+    def expression(fitness: Vector[Double] => Double): Expression[Genome, Individual] =
       Profile.expression[Genome, Individual](Genome.values.get, Individual.apply)(fitness)
 
     def elitism(muByNiche: Int, niche: Niche[Individual, Int]): Elitism[EvolutionState[Unit, ?], Individual] =
@@ -112,7 +112,7 @@ object Profile {
 
     def apply(muByNiche: Int, lambda: Int, fitness: Vector[Double] => Double, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double) =
       new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
-        def initialGenomes: EvolutionState[Unit, Vector[Genome]] = Profile.Algorithm.initialGenomes(muByNiche, genomeSize)
+        def initialGenomes: EvolutionState[Unit, Vector[Genome]] = Profile.Algorithm.initialGenomes(lambda, genomeSize)
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = Profile.Algorithm.breeding(lambda, niche, operatorExploration)
         def expression: Expression[Genome, Individual] = Profile.Algorithm.expression(fitness)
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = Profile.Algorithm.elitism(muByNiche, niche)

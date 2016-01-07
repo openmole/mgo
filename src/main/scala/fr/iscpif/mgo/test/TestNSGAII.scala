@@ -95,8 +95,7 @@ object StochasticSphereNSGAII extends App {
   val cloneProbability = 0.2
 
   def express: (Random, Vector[Double]) => Vector[Double] = { case (rg: Random, v: Vector[Double]) => Vector(sphere(v) + rg.nextGaussian() * 0.5 * math.sqrt(sphere(v))) }
-  def aggregation(history: Vector[Vector[Double]]) =
-    history.transpose.map { o => o.sum / o.size }
+  def aggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
 
   val algo =
     NoisyNSGA2.Algorithm(
@@ -122,11 +121,6 @@ object StochasticSphereNSGAII extends App {
         } yield res,
       start = EvolutionData[Unit](random = newRNG(1), s = ())
     )
-
-  def zipWithRandom[M[_]: Monad, G](gs: Vector[G])(implicit MR: ParallelRandomGen[M]): M[Vector[(Random, G)]] =
-    for {
-      rngs <- MR.split.replicateM(gs.size)
-    } yield rngs.toVector zip gs
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
     for {

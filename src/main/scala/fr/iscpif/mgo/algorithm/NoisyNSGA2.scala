@@ -40,7 +40,7 @@ object NoisyNSGA2 {
     aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
 
   def breeding[M[_]: Monad: RandomGen: Generational, I, G](
-    fitness: I => Vector[Vector[Double]],
+    history: I => Vector[Vector[Double]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     genome: I => G,
     genomeValues: G => Vector[Double],
@@ -52,7 +52,7 @@ object NoisyNSGA2 {
     for {
       population <- Kleisli.ask[M, Vector[I]]
       gs <- NSGA2.breeding[M, I, G](
-        aggregatedFitness(fitness, aggregation),
+        aggregatedFitness(history, aggregation),
         genome,
         genomeValues,
         genomeOperator,
@@ -83,7 +83,6 @@ object NoisyNSGA2 {
     elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = noisyStep(breeding, expression, elitism)
 
   object Algorithm {
-    ag =>
 
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
 
@@ -95,8 +94,8 @@ object NoisyNSGA2 {
       val lens = Individual.fitnessHistory
     }
 
-    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-      GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(mu, genomeSize)
+    def initialGenomes(lambda: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
+      GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(lambda, genomeSize)
 
     def breeding(lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
       NoisyNSGA2.breeding[EvolutionState[Unit, ?], Individual, Genome](
@@ -128,12 +127,12 @@ object NoisyNSGA2 {
       lambda: Int,
       fitness: (Random, Vector[Double]) => Vector[Double],
       aggregation: Vector[Vector[Double]] => Vector[Double],
-      operatorExploration: Double,
       genomeSize: Int,
-      historySize: Int,
-      cloneProbability: Double) =
+      historySize: Int = 100,
+      cloneProbability: Double = 0.2,
+      operatorExploration: Double = 0.1) =
       new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
-        def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(mu, genomeSize)
+        def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(lambda, genomeSize)
 
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyNSGA2.Algorithm.breeding(lambda, operatorExploration, cloneProbability, aggregation)
 

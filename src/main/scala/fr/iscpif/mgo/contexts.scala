@@ -61,6 +61,11 @@ object contexts {
     def removeHit(cell: C): M[Unit]
   }
 
+  def zipWithRandom[M[_]: Monad, G](gs: Vector[G])(implicit MR: ParallelRandomGen[M]): M[Vector[(Random, G)]] =
+    for {
+      rngs <- MR.split.replicateM(gs.size)
+    } yield rngs.toVector zip gs
+
   object default {
 
     case class EvolutionData[S](
