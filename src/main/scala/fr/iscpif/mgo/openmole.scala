@@ -21,6 +21,7 @@ package fr.iscpif.mgo
 import fr.iscpif.mgo.breeding._
 import fr.iscpif.mgo.contexts.{ StartTime, Generational }
 import fr.iscpif.mgo.elitism._
+import fr.iscpif.mgo.niche._
 
 import scala.concurrent.duration.Duration
 import scala.util.Random
@@ -77,5 +78,9 @@ object openmole {
 
   trait Stochastic { self: Integration[_, _, _] =>
     def samples(s: I): Long
+  }
+
+  trait Profile[A] { self: openmole.Integration[A, _, _] =>
+    def profile(a: A)(population: Vector[I]): Vector[I]
   }
 }

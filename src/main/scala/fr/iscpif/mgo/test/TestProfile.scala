@@ -153,13 +153,12 @@ object StochasticSphereProfile extends App {
 
   println("---- Fitnesses ----")
   println(
-    finalpop.groupBy(niche).toList.unzip._2.map {
-      is: Vector[Individual] =>
-        val oldest = is.maxBy(_.historyAge)
+    profile(finalpop, niche).map {
+      i =>
         Vector(
-          oldest.historyAge,
-          (Individual.genome composeLens Genome.values).get(oldest)(0),
-          aggregation(Individual.fitnessHistory.get(oldest))
+          i.historyAge,
+          (Individual.genome composeLens Genome.values).get(i)(0),
+          aggregation(Individual.fitnessHistory.get(i))
         ).mkString(",")
     }.mkString("\n"))
 

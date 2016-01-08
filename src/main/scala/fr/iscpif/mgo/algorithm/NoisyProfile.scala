@@ -94,6 +94,9 @@ object NoisyProfile {
     expression: Expression[(Random, G), I],
     elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = noisyStep(breeding, expression, elitism)
 
+  def profile[I](population: Vector[I], niche: Niche[I, Int], historyAge: I => Long): Vector[I] =
+    population.groupBy(niche).toVector.unzip._2.map { _.maxBy(historyAge) }
+
   /** The default Profile algorithm */
   object Algorithm {
 
@@ -126,6 +129,9 @@ object NoisyProfile {
 
     def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
     def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
+
+    def profile(population: Vector[Individual], niche: Niche[Individual, Int]) =
+      NoisyProfile.profile(population, niche, Individual.historyAge.get)
 
     def apply(
       muByNiche: Int,
@@ -165,6 +171,7 @@ object NoisyProfile {
         def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = Profile.Algorithm.wrap(x)
         def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = Profile.Algorithm.unwrap(x)
       }
+
   }
 
   import Algorithm._
@@ -179,7 +186,7 @@ object NoisyProfile {
     aggregation: Vector[Double] => Double)
 
   object OpenMOLE {
-    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Stochastic {
+    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Stochastic with openmole.Profile[OpenMOLE] {
       type M[A] = EvolutionState[Unit, A]
       type G = Genome
       type I = Individual
@@ -210,112 +217,8 @@ object NoisyProfile {
       def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
 
       def samples(i: I): Long = Individual.historyAge.get(i)
+      def profile(om: OpenMOLE)(population: Vector[I]) = NoisyProfile.Algorithm.profile(population, om.niche)
     }
   }
 
-  //  object Algorithm {
-  //
-  //    case class Individual(
-  //      genome: Vector[Double],
-  //      operator: Maybe[Int],
-  //      age: Long,
-  //      fitnessHistory: Vector[Double])
-  //
-  //    val iValues: Lens[Individual, Vector[Double]] = Lens.lensu(
-  //      set = (i, v) => i.copy(genome = v),
-  //      get = _.genome
-  //    )
-  //    val iOperator: Lens[Individual, Maybe[Int]] = Lens.lensu(
-  //      set = (i, o) => i.copy(operator = o),
-  //      get = _.operator
-  //    )
-  //    val iAge: Lens[Individual, Long] = Lens.lensu(
-  //      set = (i, a) => i.copy(age = a),
-  //      get = _.age
-  //    )
-  //    val iHistory: Lens[Individual, Vector[Double]] = Lens.lensu(
-  //      set = (i, h) => i.copy(fitnessHistory = h),
-  //      get = _.fitnessHistory
-  //    )
-  //
-  //    implicit val individualHistory = new History[Double, Individual] {
-  //      val lens = iHistory
-  //    }
-  //
-  //    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[Unit, Vector[Individual]] = NoisyProfile.initialGenomes[EvolutionStateMonad[Unit]#l, Individual](Individual)(mu, genomeSize)
-  //    def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double): Breeding[EvolutionStateMonad[Unit]#l, Individual, Individual] =
-  //      NoisyProfile.breeding[EvolutionStateMonad[Unit]#l, Individual](
-  //        iHistory, iValues, iOperator, iAge, Individual
-  //      )(lambda, niche, operatorExploration, cloneProbability)
-  //    def expression(fitness: (Random, Vector[Double]) => Double): Expression[(Random, Individual), Individual] =
-  //      NoisyProfile.expression[Individual](iValues, iHistory)(fitness)
-  //    def elitism(muByNiche: Int, niche: Niche[Individual, Int], historySize: Int): Objective[EvolutionStateMonad[Unit]#l, Individual] =
-  //      NoisyProfile.elitism[EvolutionStateMonad[Unit]#l, Individual](iValues, iHistory, iOperator, iAge)(muByNiche, niche, historySize)
-  //
-  //    def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
-  //    def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
-  //
-  //    def apply(
-  //      muByNiche: Int,
-  //      lambda: Int,
-  //      fitness: (Random, Vector[Double]) => Double,
-  //      niche: Niche[Individual, Int],
-  //      genomeSize: Int,
-  //      historySize: Int,
-  //      operatorExploration: Double,
-  //      cloneProbability: Double) =
-  //      new Algorithm[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual), ({ type l[x] = (EvolutionData[Unit], x) })#l] {
-  //
-  //        def initialGenomes: EvolutionState[Unit, Vector[(Random, Individual)]] =
-  //          for {
-  //            ig <- NoisyProfile.Algorithm.initialGenomes(muByNiche, genomeSize)
-  //            //Add an independant random number generator to each individual
-  //            result <- withRandomGenB[EvolutionStateMonad[Unit]#l, Individual].run(ig)
-  //          } yield result
-  //
-  //        def breeding: Breeding[EvolutionStateMonad[Unit]#l, Individual, (Random, Individual)] =
-  //          for {
-  //            bred <- NoisyProfile.Algorithm.breeding(lambda, niche, operatorExploration, cloneProbability)
-  //            //Add an independant random number generator to each individual
-  //            result <- thenK[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual], Vector[(Random, Individual)]](withRandomGenB[EvolutionStateMonad[Unit]#l, Individual])(bred)
-  //          } yield result
-  //
-  //        def expression: Expression[(Random, Individual), Individual] = NoisyProfile.Algorithm.expression(fitness)
-  //
-  //        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NoisyProfile.Algorithm.elitism(muByNiche, niche, historySize)
-  //
-  //        def step: Kleisli[EvolutionStateMonad[Unit]#l, Vector[Individual], Vector[Individual]] =
-  //          NoisyProfile.step[EvolutionStateMonad[Unit]#l, Individual](
-  //            breeding,
-  //            expression,
-  //            elitism)
-  //
-  //        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyProfile.Algorithm.wrap(x)
-  //        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
-  //      }
-  //
-  //    def algoOpenMOLE(muByNiche: Int, operatorExploration: Double, genomeSize: Int, historySize: Int, cloneProbability: Double, x: Int, nX: Int) =
-  //      new AlgorithmOpenMOLE[EvolutionStateMonad[Unit]#l, Individual, Individual, EvolutionData[Unit]] {
-  //
-  //        val cRandom: Lens[EvolutionData[Unit], Random] = Lens.lensu(
-  //          set = (e, r) => e.copy(random = r),
-  //          get = _.random
-  //        )
-  //
-  //        def niche(i: Individual): Int = genomeProfile[Individual](
-  //          values = iValues.get,
-  //          x = x,
-  //          nX = nX)(i)
-  //
-  //        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Individual]] = NoisyProfile.Algorithm.initialGenomes(n, genomeSize)
-  //        def breeding(n: Int): Breeding[EvolutionStateMonad[Unit]#l, Individual, Individual] = NoisyProfile.Algorithm.breeding(n, niche, operatorExploration, cloneProbability)
-  //        def elitism: Objective[EvolutionStateMonad[Unit]#l, Individual] = NoisyProfile.Algorithm.elitism(muByNiche, niche, historySize)
-  //
-  //        def initForIsland(i: Individual): Individual = i.copy(age = 0)
-  //
-  //        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyProfile.Algorithm.wrap(x)
-  //        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
-  //
-  //      }
-  //  }
 }
