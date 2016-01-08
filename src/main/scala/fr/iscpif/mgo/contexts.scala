@@ -56,9 +56,7 @@ object contexts {
     def get: M[Map[C, Int]]
     def set(newMap: Map[Vector[Int], Int]): M[Unit]
     def hitCount(cell: C): M[Int]
-    def addHit(cell: C): M[Unit]
-    def addHits(cells: Vector[C]): M[Unit]
-    def removeHit(cell: C): M[Unit]
+    def hits(cells: Vector[C]): M[Unit]
   }
 
   def zipWithRandom[M[_]: Monad, G](gs: Vector[G])(implicit MR: ParallelRandomGen[M]): M[Vector[(Random, G)]] =
@@ -77,7 +75,7 @@ object contexts {
     type EvolutionState[S, T] = StateT[IO, EvolutionData[S], T]
 
     def wrap[S, T](x: (EvolutionData[S], T)): EvolutionState[S, T] = StateT.apply[IO, EvolutionData[S], T](_ => IO(x))
-    def unwrap[S, T](s: S)(x: EvolutionState[S, T]): (EvolutionData[S], T) = x(EvolutionData[S](0, 0, Random, s)).unsafePerformIO
+    def unwrap[S, T](x: EvolutionState[S, T], s: EvolutionData[S]): (EvolutionData[S], T) = x.run(s).unsafePerformIO
 
     implicit def evolutionStateMonad[S]: Monad[EvolutionState[S, ?]] = StateT.stateTMonadState[EvolutionData[S], IO]
     implicit def evolutionStateMonadState[S]: MonadState[EvolutionState[S, ?], EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]
@@ -138,8 +136,7 @@ object contexts {
 
     def runEAUntilStackless[S, I](
       stopCondition: StopCondition[EvolutionState[S, ?], I],
-      stepFunction: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]],
-      start: EvolutionData[S]): Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] = {
+      stepFunction: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]]): Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] = {
 
       @tailrec
       def tailRec(start: EvolutionData[S], population: Vector[I]): EvolutionState[S, Vector[I]] = {
@@ -151,7 +148,12 @@ object contexts {
         }
       }
 
-      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] { population: Vector[I] => tailRec(start, population) }
+      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] { population: Vector[I] =>
+        for {
+          start <- evolutionStateMonadState[S].get
+          res <- tailRec(start, population)
+        } yield res
+      }
     }
 
   }

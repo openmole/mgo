@@ -57,15 +57,15 @@ object NSGA2 {
 
   def expression[G, I](
     values: G => Vector[Double],
-    build: (G, Vector[Double], Long) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
-    (g: G) => build(g, fitness(values(g)), 0)
+    build: (G, Vector[Double]) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
+    (g: G) => build(g, fitness(values(g)))
 
   def elitism[M[_]: Monad: RandomGen: Generational, I](
     fitness: I => Vector[Double],
     values: I => Vector[Double],
     age: monocle.Lens[I, Long])(mu: Int): Elitism[M, I] =
     applyCloneStrategy(values, keepYoungest[M, I](age.get)) andThen
-      filterNaN(values) andThen
+      filterNaN(fitness) andThen
       keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](fitness), mu) andThen
       incrementGeneration(age)
 
@@ -82,6 +82,8 @@ object NSGA2 {
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
     @Lenses case class Individual(genome: Genome, fitness: Vector[Double], age: Long)
 
+    def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f, 0)
+
     def initialGenomes(lambda: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
       GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(lambda, genomeSize)
 
@@ -91,7 +93,7 @@ object NSGA2 {
       )(lambda, operatorExploration)
 
     def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
-      NSGA2.expression[Genome, Individual](Genome.values.get, Individual.apply)(fitness)
+      NSGA2.expression[Genome, Individual](Genome.values.get, buildIndividual)(fitness)
 
     def elitism(mu: Int): Elitism[EvolutionState[Unit, ?], Individual] =
       NSGA2.elitism[EvolutionState[Unit, ?], Individual](
@@ -99,12 +101,9 @@ object NSGA2 {
         (Individual.genome composeLens Genome.values).get,
         Individual.age)(mu)
 
-    def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
-    def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
-
     def apply(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) =
-      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
-
+      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NSGA2.Algorithm.initialGenomes(lambda, genomeSize)
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = NSGA2.Algorithm.breeding(lambda, operatorExploration)
         def expression: Expression[Genome, Individual] = NSGA2.Algorithm.expression(fitness)
@@ -113,8 +112,7 @@ object NSGA2 {
         def step: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
           NSGA2.step[EvolutionState[Unit, ?], Individual, Genome](breeding, expression, elitism)
 
-        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NSGA2.Algorithm.wrap(x)
-        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NSGA2.Algorithm.unwrap(x)
+        def run[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(x, s)
       }
   }
 
@@ -151,8 +149,7 @@ object NSGA2 {
         def migrateToIsland(i: I): I = i
       }
 
-      def wrap(x: S): EvolutionState[Unit, Unit] = NSGA2.Algorithm.wrap(x -> Unit)
-      def unwrap[A](x: EvolutionState[Unit, A]): (S, A) = NSGA2.Algorithm.unwrap(x)
+      def unwrap[A](x: EvolutionState[Unit, A], s: S): (S, A) = default.unwrap(x, s)
     }
 
   }

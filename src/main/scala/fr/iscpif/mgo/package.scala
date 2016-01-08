@@ -17,7 +17,6 @@
 
 package fr.iscpif
 
-import fr.iscpif.mgo.algorithm.dynamicOperators
 import fr.iscpif.mgo.tools._
 import org.apache.commons.math3.random._
 import scala.annotation.tailrec
@@ -271,4 +270,5 @@ package object mgo {
     def scale(min: Double, max: Double) = changeScale(d, 0, 1, min, max)
     def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
   }
+
 }

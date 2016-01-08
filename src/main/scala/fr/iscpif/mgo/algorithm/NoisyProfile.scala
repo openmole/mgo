@@ -75,7 +75,7 @@ object NoisyProfile {
     age: monocle.Lens[I, Long],
     historyAge: monocle.Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int], historySize: Int): Elitism[M, I] =
     applyCloneStrategy(values, mergeHistories[M, I, Double](historyAge, history)(historySize)) andThen
-      filterNaN(values) andThen
+      filterNaN(aggregatedFitness(history.get, aggregation)) andThen
       keepNiches[M, I, Int](
         niche = niche,
         objective = keepHighestRanked(
@@ -127,9 +127,6 @@ object NoisyProfile {
         Individual.historyAge
       )(muByNiche, niche, historySize)
 
-    def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
-    def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
-
     def profile(population: Vector[Individual], niche: Niche[Individual, Int]) =
       NoisyProfile.profile(population, niche, Individual.historyAge.get)
 
@@ -143,7 +140,8 @@ object NoisyProfile {
       historySize: Int = 100,
       cloneProbability: Double = 0.2,
       operatorExploration: Double = 0.1) =
-      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
+      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
         def initialGenomes = NoisyProfile.Algorithm.initialGenomes(lambda, genomeSize)
 
         def breeding =
@@ -168,8 +166,7 @@ object NoisyProfile {
         def step =
           NoisyProfile.step[EvolutionState[Unit, ?], Individual, Genome](breeding, expression, elitism)
 
-        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = Profile.Algorithm.wrap(x)
-        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = Profile.Algorithm.unwrap(x)
+        def run[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(x, s)
       }
 
   }
@@ -213,8 +210,7 @@ object NoisyProfile {
         def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
       }
 
-      def wrap(x: EvolutionData[Unit]): EvolutionState[Unit, Unit] = NoisyProfile.Algorithm.wrap(x -> Unit)
-      def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyProfile.Algorithm.unwrap(x)
+      def unwrap[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(x, s)
 
       def samples(i: I): Long = Individual.historyAge.get(i)
       def profile(om: OpenMOLE)(population: Vector[I]) = NoisyProfile.Algorithm.profile(population, om.niche)

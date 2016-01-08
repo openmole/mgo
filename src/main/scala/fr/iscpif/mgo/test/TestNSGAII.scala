@@ -63,8 +63,7 @@ object SphereNSGAII extends App {
             },
             IO.putStr)*/
           res <- algo.step
-        } yield res,
-      start = EvolutionData[Unit](random = newRNG(1), s = ())
+        } yield res
     )
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
@@ -75,7 +74,7 @@ object SphereNSGAII extends App {
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
-  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
+  val (finalstate, finalpop) = algo.run(evolution, new Random(42))
 
   println("---- Fitnesses ----")
   println(finalpop.map { i => i.genome -> i.fitness }.mkString("\n"))
@@ -118,8 +117,7 @@ object StochasticSphereNSGAII extends App {
               i: Individual => state.generation.toString ++ "\t" ++ (Individual.genome composeLens Genome.values).get(i).mkString("\t") ++ "\t" ++ aggregation(Individual.fitnessHistory.get(i)).mkString("\t")
             }.mkString("\n"))*/
           res <- algo.step
-        } yield res,
-      start = EvolutionData[Unit](random = newRNG(1), s = ())
+        } yield res
     )
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
@@ -131,7 +129,7 @@ object StochasticSphereNSGAII extends App {
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
-  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
+  val (finalstate, finalpop) = algo.run(evolution, new Random(42))
 
   println("---- Final Population ----")
   val maxHistory = finalpop.map(_.fitnessHistory.size).max

@@ -63,15 +63,15 @@ object Profile {
 
   def expression[G, I](
     values: G => Vector[Double],
-    build: (G, Double, Long) => I)(fitness: Vector[Double] => Double): Expression[G, I] =
-    (g: G) => build(g, fitness(values(g)), 0)
+    build: (G, Double) => I)(fitness: Vector[Double] => Double): Expression[G, I] =
+    (g: G) => build(g, fitness(values(g)))
 
   def elitism[M[_]: Monad: RandomGen: Generational, I](
     fitness: I => Double,
     values: I => Vector[Double],
     age: monocle.Lens[I, Long])(muByNiche: Int, niche: Niche[I, Int]): Elitism[M, I] =
     applyCloneStrategy(values, keepYoungest[M, I](age.get)) andThen
-      filterNaN(values) andThen
+      filterNaN(fitness) andThen
       keepNiches(
         niche = niche,
         objective = minimiseO[M, I, Double](fitness, muByNiche)
@@ -90,6 +90,8 @@ object Profile {
     @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
     @Lenses case class Individual(genome: Genome, fitness: Double, age: Long)
 
+    def buildIndividual(g: Genome, fitness: Double) = Individual(g, fitness, 0)
+
     def initialGenomes(lambda: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
       GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(lambda, genomeSize)
 
@@ -99,7 +101,7 @@ object Profile {
       )(lambda, niche, operatorExploration)
 
     def expression(fitness: Vector[Double] => Double): Expression[Genome, Individual] =
-      Profile.expression[Genome, Individual](Genome.values.get, Individual.apply)(fitness)
+      Profile.expression[Genome, Individual](Genome.values.get, buildIndividual)(fitness)
 
     def elitism(muByNiche: Int, niche: Niche[Individual, Int]): Elitism[EvolutionState[Unit, ?], Individual] =
       Profile.elitism[EvolutionState[Unit, ?], Individual](
@@ -107,11 +109,9 @@ object Profile {
         (Individual.genome composeLens Genome.values).get,
         Individual.age)(muByNiche, niche)
 
-    def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
-    def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
-
     def apply(muByNiche: Int, lambda: Int, fitness: Vector[Double] => Double, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double) =
-      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
+      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = Profile.Algorithm.initialGenomes(lambda, genomeSize)
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = Profile.Algorithm.breeding(lambda, niche, operatorExploration)
         def expression: Expression[Genome, Individual] = Profile.Algorithm.expression(fitness)
@@ -120,8 +120,7 @@ object Profile {
         def step: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
           Profile.step[EvolutionState[Unit, ?], Individual, Genome](breeding, expression, elitism)
 
-        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = Profile.Algorithm.wrap(x)
-        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = Profile.Algorithm.unwrap(x)
+        def run[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(x, s)
       }
   }
 
@@ -161,8 +160,7 @@ object Profile {
         def migrateToIsland(i: I): I = i
       }
 
-      def wrap(x: S): EvolutionState[Unit, Unit] = Profile.Algorithm.wrap(x -> Unit)
-      def unwrap[A](x: EvolutionState[Unit, A]): (S, A) = Profile.Algorithm.unwrap(x)
+      def unwrap[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (S, A) = default.unwrap(x, s)
 
       def profile(om: OpenMOLE)(population: Vector[I]) = population
     }

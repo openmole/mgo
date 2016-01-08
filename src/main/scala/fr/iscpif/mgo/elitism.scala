@@ -56,6 +56,13 @@ object elitism {
       } yield individuals.map(age.modify(_ + 1))
     )
 
+  def addHits[M[_]: Monad, I, C](cell: I => C, age: I => Long)(implicit MH: HitMapper[M, C]) =
+    Kleisli.kleisli[M, Vector[I], Vector[I]] { (is: Vector[I]) =>
+      for {
+        _ <- MH.hits(is.filter(i => age(i) == 0).map(cell))
+      } yield is
+    }
+
   /** Returns the mu individuals with the highest ranks. */
   // FIXME: unbiais when several individuals have the exact same rank (random draw)
   def keepHighestRanked[M[_], I, K](f: Kleisli[M, Vector[I], Vector[K]], mu: Int)(implicit MM: Monad[M], KO: Order[K]): Elitism[M, I] =

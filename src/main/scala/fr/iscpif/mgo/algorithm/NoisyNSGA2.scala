@@ -67,7 +67,7 @@ object NoisyNSGA2 {
     age: monocle.Lens[I, Long],
     historyAge: monocle.Lens[I, Long])(mu: Int, historySize: Int): Elitism[M, I] =
     applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](historyAge, history)(historySize)) andThen
-      filterNaN(values) andThen
+      filterNaN(aggregatedFitness(history.get, aggregation)) andThen
       keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](aggregatedFitness(history.get, aggregation)), mu) andThen
       incrementGeneration(age)
 
@@ -118,10 +118,6 @@ object NoisyNSGA2 {
         Individual.historyAge
       )(mu, historySize)
 
-    def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = default.wrap[Unit, A](x)
-
-    def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = default.unwrap[Unit, A](())(x)
-
     def apply(
       mu: Int,
       lambda: Int,
@@ -131,7 +127,8 @@ object NoisyNSGA2 {
       historySize: Int = 100,
       cloneProbability: Double = 0.2,
       operatorExploration: Double = 0.1) =
-      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, (EvolutionData[Unit], ?)] {
+      new Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
         def initialGenomes: EvolutionState[Unit, Vector[Genome]] = NoisyNSGA2.Algorithm.initialGenomes(lambda, genomeSize)
 
         def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = NoisyNSGA2.Algorithm.breeding(lambda, operatorExploration, cloneProbability, aggregation)
@@ -146,9 +143,7 @@ object NoisyNSGA2 {
             expression,
             elitism)
 
-        def wrap[A](x: (EvolutionData[Unit], A)): EvolutionState[Unit, A] = NoisyNSGA2.Algorithm.wrap(x)
-
-        def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
+        def run[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(x, s)
       }
   }
 
@@ -190,9 +185,7 @@ object NoisyNSGA2 {
         def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
       }
 
-      def wrap(x: EvolutionData[Unit]): EvolutionState[Unit, Unit] = NoisyNSGA2.Algorithm.wrap(x -> Unit)
-      def unwrap[A](x: EvolutionState[Unit, A]): (EvolutionData[Unit], A) = NoisyNSGA2.Algorithm.unwrap(x)
-
+      def unwrap[A](x: EvolutionState[Unit, A], s: S): (EvolutionData[Unit], A) = default.unwrap[Unit, A](x, s)
       def samples(i: I): Long = Individual.historyAge.get(i)
     }
   }

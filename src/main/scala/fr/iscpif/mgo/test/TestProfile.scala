@@ -59,8 +59,8 @@ object SphereProfile extends App {
   val ea =
     runEAUntilStackless[Unit, Individual](
       stopCondition = afterGeneration[EvolutionState[Unit, ?], Individual](maxIterations),
-      stepFunction = algo.step,
-      /* for {
+      stepFunction = algo.step
+    /* for {
           _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
             individuals.map {
               i: Individual => state.generation.toString ++ "\t" ++ (iGenome >=> gValues).get(i).mkString("\t") ++ "\t" ++ iFitness.get(i).toString
@@ -68,7 +68,6 @@ object SphereProfile extends App {
           }
           res <- algo.step
         } yield res,*/
-      start = EvolutionData[Unit](random = newRNG(1), s = ())
     )
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
@@ -79,7 +78,7 @@ object SphereProfile extends App {
       finalpop <- ea.run(initialPop)
     } yield finalpop
 
-  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
+  val (finalstate, finalpop) = algo.run(evolution, new Random(42))
 
   println("---- Fitnesses ----")
   println(
@@ -127,8 +126,8 @@ object StochasticSphereProfile extends App {
   val ea =
     runEAUntilStackless[Unit, Individual](
       stopCondition = afterGeneration[EvolutionState[Unit, ?], Individual](maxIteration),
-      stepFunction = algo.step,
-      /*for {
+      stepFunction = algo.step
+    /*for {
           individuals <- ka
           _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
             individuals.map {
@@ -137,7 +136,6 @@ object StochasticSphereProfile extends App {
           }
           res <- algo.step
         } yield res,*/
-      start = EvolutionData[Unit](random = newRNG(1), s = ())
     )
 
   val evolution: EvolutionState[Unit, Vector[Individual]] =
@@ -149,7 +147,7 @@ object StochasticSphereProfile extends App {
       finalpop <- ea.run(initialPopEval)
     } yield finalpop
 
-  val (finalstate, finalpop) = algo.unwrap[Vector[Individual]](evolution)
+  val (finalstate, finalpop) = algo.run(evolution, new Random(42))
 
   println("---- Fitnesses ----")
   println(

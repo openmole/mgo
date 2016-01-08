@@ -61,16 +61,8 @@ object openmole {
       def migrateToIsland(i: I): I
     }
 
-    def wrap(ca: S): M[Unit]
-    def unwrap[T](m: M[T]): (S, T)
-
-    def run[A, B](start: S, action: => M[B]): (S, B) =
-      unwrap(
-        for {
-          _ <- wrap(start)
-          b <- action
-        } yield b
-      )
+    def unwrap[T](m: M[T], s: S): (S, T)
+    def run[A, B](start: S, action: => M[B]): (S, B) = unwrap(action, start)
 
     def afterGeneration(g: Long) = stop.afterGeneration[M, I](g)
     def afterDuration(d: Duration) = stop.afterDuration[M, I](d)

@@ -103,8 +103,8 @@ package object algorithm {
       lens.modify(_ map { x: Double => math.max(0.0, math.min(1.0, x)) })
     }
 
-    def filterNaN[M[_]: Monad, I](genomeValues: I => Vector[Double]) =
-      flatMapPureB[M, I, I] { i => if (genomeValues(i).exists { _.isNaN }) Vector.empty else Vector(i) }
+    def filterNaN[M[_]: Monad, I, T](genomeValues: I => T)(implicit cbn: CanBeNaN[T]) =
+      flatMapPureB[M, I, I] { i => if (cbn.isNaN(genomeValues(i))) Vector.empty else Vector(i) }
 
     def crossovers[M[_]: Monad: RandomGen]: Vector[Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
       Vector(
@@ -147,7 +147,4 @@ package object algorithm {
       }
   }
 
-  object dynamicOperators {
-
-  }
 }

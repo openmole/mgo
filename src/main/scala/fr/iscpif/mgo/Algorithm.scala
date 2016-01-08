@@ -48,12 +48,11 @@ import elitism._
  * val indivs2 = genomes2.map(express)
  * val (s22, selected2) = run((s21, indivs2), elitism)
  */
-trait Algorithm[M[_], I, G, C[_]] {
+trait Algorithm[M[_], I, G, S] {
+  def initialState(rng: Random): S
   def initialGenomes: M[Vector[G]]
   def step: Kleisli[M, Vector[I], Vector[I]]
-
-  /** Turn a non monadic value into a monadic one. */
-  def wrap[A](ca: C[A]): M[A]
-  def unwrap[A](m: M[A]): C[A]
+  def run[A](m: M[A], ca: S): (S, A)
+  def run[A](m: M[A], rng: Random): (S, A) = run(m, initialState(rng))
 }
 
