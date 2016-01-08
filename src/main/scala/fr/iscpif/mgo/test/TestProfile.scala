@@ -34,7 +34,6 @@ object SphereProfile extends App {
 
   import Profile.Algorithm._
 
-  val muByNiche = 1
   val lambda = 100
   val dimensions = 10
   val maxIterations = 1000
@@ -49,7 +48,6 @@ object SphereProfile extends App {
     nX = 10)
 
   val algo = Profile.Algorithm(
-    muByNiche = muByNiche,
     lambda = lambda,
     fitness = express,
     niche = niche,

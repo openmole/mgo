@@ -66,7 +66,7 @@ package object test {
     Seq(pow(sx, 2), pow(x - 2, 2))
   }
 
-  def zdt4(genome: Seq[Double]) = {
+  def zdt4(genome: Vector[Double]) = {
     val genomeSize = genome.size
     def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
     def f(x: Seq[Double]) = {
@@ -74,7 +74,7 @@ package object test {
       gx * (1 - sqrt(genome(0) / gx))
     }
 
-    Seq(genome(0), f(genome.tail.map(_.scale(0.0, 5.0))))
+    Vector(genome(0), f(genome.tail.map(_.scale(0.0, 5.0))))
   }
 
 }
