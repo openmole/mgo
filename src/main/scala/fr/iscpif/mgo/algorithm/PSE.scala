@@ -68,8 +68,8 @@ object PSE {
 
   def expression[G, I](
     values: G => Vector[Double],
-    build: (G, Vector[Int]) => I)(pattern: Expression[Vector[Double], Vector[Int]]): Expression[G, I] =
-    (g: G) => build(g, pattern(values(g)))
+    build: (G, Vector[Double]) => I)(express: Expression[Vector[Double], Vector[Double]]): Expression[G, I] =
+    (g: G) => build(g, express(values(g)))
 
   trait Hit {
     import fr.iscpif.mgo.contexts.default._
@@ -102,10 +102,9 @@ object PSE {
     type V = Vector[Double]
 
     @Lenses case class Genome(values: V, operator: Maybe[Int])
+    @Lenses case class Individual(genome: Genome, phenotype: Vector[Double], age: Long)
 
-    @Lenses case class Individual(genome: Genome, pattern: Vector[Int], age: Long)
-
-    def pattern(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
+    def patternGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
       (value zip definition zip lowBound zip highBound).map {
         case (((x, d), lb), hb) =>
           val step = (hb - lb) / d
@@ -113,49 +112,91 @@ object PSE {
           max(0, min(d, p))
       }
 
-    def buildIndividual(g: Genome, p: Vector[Int]) = Individual(g, p, 0)
+    def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
 
     def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =
       GenomeVectorDouble.randomGenomes[EvolutionState[HitMap, ?], Genome](Genome.apply)(mu, genomeSize)
 
     def breeding(
       lambda: Int,
+      pattern: Vector[Double] => Vector[Int],
       operatorExploration: Double) =
       PSE.breeding[EvolutionState[HitMap, ?], Individual, Genome](
         Individual.genome.get,
         Genome.values.get,
         Genome.operator.get,
-        Individual.pattern.get,
+        Individual.phenotype.get _ andThen pattern,
         Genome.apply
       )(lambda, operatorExploration)
 
-    def elitism =
+    def elitism(pattern: Vector[Double] => Vector[Int]) =
       PSE.elitism[EvolutionState[HitMap, ?], Individual](
         (Individual.genome composeLens Genome.values).get,
-        Individual.pattern.get,
+        Individual.phenotype.get _ andThen pattern,
         Individual.age
       )
 
-    def expression(pattern: Expression[Vector[Double], Vector[Int]]): Expression[Genome, Individual] =
-      PSE.expression[Genome, Individual](Genome.values.get, buildIndividual)(pattern)
+    def expression(phenotype: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
+      PSE.expression[Genome, Individual](Genome.values.get, buildIndividual)(phenotype)
 
     def apply(
       lambda: Int,
-      pattern: Expression[Vector[Double], Vector[Int]],
+      phenotype: Expression[Vector[Double], Vector[Double]],
+      pattern: Vector[Double] => Vector[Int],
       genomeSize: Int,
       operatorExploration: Double) =
       new Algorithm[EvolutionState[HitMap, ?], Individual, Genome, EvolutionData[HitMap]] {
         def initialState(rng: Random) = EvolutionData[HitMap](random = rng, s = Map.empty)
         def initialGenomes = PSE.Algorithm.initialGenomes(lambda, genomeSize)
-        def breeding = PSE.Algorithm.breeding(lambda, operatorExploration)
-        def expression = PSE.Algorithm.expression(pattern)
-        def elitism = PSE.Algorithm.elitism
+        def breeding = PSE.Algorithm.breeding(lambda, pattern, operatorExploration)
+        def expression = PSE.Algorithm.expression(phenotype)
+        def elitism = PSE.Algorithm.elitism(pattern)
 
         def step = deterministicStep[EvolutionState[HitMap, ?], Individual, Genome](breeding, expression, elitism)
 
         def run[A](x: EvolutionState[HitMap, A], s: EvolutionData[HitMap]): (EvolutionData[HitMap], A) = default.unwrap(x, s)
       }
   }
+
+  //  case class OpenMOLE(
+  //    lambda: Int,
+  //    pattern: Expression[Vector[Double], Vector[Int]],
+  //    genomeSize: Int,
+  //    operatorExploration: Double)
+  //
+  //  object OpenMOLE {
+  //    import fr.iscpif.mgo.contexts.default._
+  //    import Algorithm._
+  //
+  //    implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] {
+  //      type M[A] = EvolutionState[Unit, A]
+  //      type G = Genome
+  //      type I = Individual
+  //      type S = EvolutionData[Unit]
+  //
+  //      def iManifest = implicitly
+  //      def gManifest = implicitly
+  //      def sManifest = implicitly
+  //      def mMonad = implicitly
+  //      def mGenerational = implicitly
+  //      def mStartTime = implicitly
+  //
+  //      def operations(om: OpenMOLE) = new Ops {
+  //        def randomLens = GenLens[EvolutionData[Unit]](_.random)
+  //        def generation(s: EvolutionData[Unit]) = s.generation
+  //        def values(genome: G) = Genome.values.get(genome)
+  //        def genome(i: I) = Individual.genome.get(i)
+  //        def phenotype(individual: I): Vector[Double] = Individual.fitness.get(individual)
+  //        def buildIndividual(genome: G, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
+  //        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
+  //        def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = NSGA2.Algorithm.initialGenomes(n, om.genomeSize)
+  //        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = NSGA2.Algorithm.breeding(n, om.operatorExploration)
+  //        def elitism: Elitism[EvolutionState[Unit, ?], I] = NSGA2.Algorithm.elitism(om.mu)
+  //        def migrateToIsland(i: I): I = i
+  //      }
+  //
+  //      def unwrap[A](x: EvolutionState[Unit, A], s: S): (S, A) = default.unwrap(x, s)
+  //    }
 
   //  /**
   //   * The default PSE algorithm working with Vector[Double] genomes and patterns. (TODO: Can we abstract this to

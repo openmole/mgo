@@ -38,12 +38,13 @@ object ZDT4PSE extends App {
   val highBound: Vector[Double] = Vector(1.0, 200.0)
   val definition: Vector[Int] = Vector(10, 10)
 
-  def express =
-    zdt4 _ andThen pattern(lowBound, highBound, definition)
+  def express = zdt4 _
+  def pattern = patternGrid(lowBound, highBound, definition) _
 
   val algo = PSE.Algorithm(
     lambda = lambda,
-    pattern = express,
+    phenotype = express,
+    pattern = pattern,
     genomeSize = genomeSize,
     operatorExploration = operatorExploration)
 
