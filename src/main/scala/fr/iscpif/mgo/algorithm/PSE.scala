@@ -118,7 +118,6 @@ object pse {
     pseOperations.expression[Genome, Individual](Genome.values.get, buildIndividual)(phenotype)
 
   case class OpenMOLE(
-    lambda: Int,
     pattern: Vector[Double] => Vector[Int],
     genomeSize: Int,
     operatorExploration: Double)

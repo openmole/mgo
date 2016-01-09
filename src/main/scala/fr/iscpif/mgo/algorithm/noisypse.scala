@@ -105,6 +105,60 @@ object noisypse {
       Genome.values.get,
       buildIndividual)(phenotype)
 
+  case class OpenMOLE(
+    pattern: Vector[Double] => Vector[Int],
+    aggregation: Vector[Vector[Double]] => Vector[Double],
+    genomeSize: Int,
+    historySize: Int,
+    cloneProbability: Double,
+    operatorExploration: Double)
+
+  object OpenMOLE {
+    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] with openmole.Stochastic {
+      type M[A] = EvolutionState[pse.HitMap, A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionData[pse.HitMap]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+      def mMonad = implicitly
+      def mGenerational = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[EvolutionData[pse.HitMap]](_.random)
+        def generation(s: EvolutionData[pse.HitMap]) = s.generation
+        def values(genome: G) = Genome.values.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Vector[Double] = om.aggregation(Individual.phenotype.get(individual))
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = noisypse.buildIndividual(genome, phenotype)
+        def initialState(rng: Random) = EvolutionData[pse.HitMap](random = rng, s = Map())
+        def initialGenomes(n: Int) = noisypse.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int) =
+          noisypse.breeding(
+            lambda = n,
+            operatorExploration = om.operatorExploration,
+            cloneProbability = om.cloneProbability,
+            aggregation = om.aggregation,
+            pattern = om.pattern
+          )
+
+        def elitism =
+          noisypse.elitism(
+            pattern = om.pattern,
+            historySize = om.historySize,
+            aggregation = om.aggregation)
+
+        def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
+      }
+
+      def unwrap[A](x: EvolutionState[pse.HitMap, A], s: S): (EvolutionData[pse.HitMap], A) = default.unwrap[pse.HitMap, A](x, s)
+      def samples(i: I): Long = Individual.historyAge.get(i)
+    }
+  }
+
 }
 
 object noisypseOperations {
