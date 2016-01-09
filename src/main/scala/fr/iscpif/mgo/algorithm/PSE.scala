@@ -19,10 +19,10 @@ package fr.iscpif.mgo.algorithm
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.breeding._
 import fr.iscpif.mgo.contexts._
-import fr.iscpif.mgo.expressions._
 import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.elitism._
 import GenomeVectorDouble._
+import fr.iscpif.mgo.tools.CanBeNaN
 
 import monocle.macros.{ Lenses, GenLens }
 import scala.language.higherKinds
@@ -42,7 +42,7 @@ object pse {
       phenotype: Expression[Vector[Double], Vector[Double]],
       pattern: Vector[Double] => Vector[Int],
       genomeSize: Int,
-      operatorExploration: Double) extends Algorithm[EvolutionState[HitMap, ?], Individual, Genome, EvolutionData[HitMap]] {
+      operatorExploration: Double = 0.1) extends Algorithm[EvolutionState[HitMap, ?], Individual, Genome, EvolutionData[HitMap]] {
 
     def initialState(rng: Random) = EvolutionData[HitMap](random = rng, s = Map.empty)
     def initialGenomes = pse.initialGenomes(lambda, genomeSize)
@@ -107,9 +107,10 @@ object pse {
     )(lambda, operatorExploration)
 
   def elitism(pattern: Vector[Double] => Vector[Int]) =
-    pseOperations.elitism[EvolutionState[HitMap, ?], Individual](
+    pseOperations.elitism[EvolutionState[HitMap, ?], Individual, Vector[Double]](
       (Individual.genome composeLens Genome.values).get,
-      Individual.phenotype.get _ andThen pattern,
+      Individual.phenotype.get,
+      pattern,
       Individual.age
     )
 
@@ -156,132 +157,6 @@ object pse {
       def unwrap[A](x: M[A], s: S): (S, A) = default.unwrap(x, s)
     }
   }
-
-  //  /**
-  //   * The default PSE algorithm working with Vector[Double] genomes and patterns. (TODO: Can we abstract this to
-  //   * make a default PSE algorithm for any types for genomes and patterns?)
-  //   */
-  //  object Algorithm {
-  //
-  //    import fr.iscpif.mgo.Contexts.default._
-  //
-  //    type V = Vector[Double]
-  //    case class Genome(values: V, operator: Maybe[Int], generation: Long)
-  //    case class Individual(genome: Genome, pattern: Vector[Double])
-  //    type HitMap = Map[Vector[Int], Int]
-  //
-  //    val iPattern: Lens[Individual, Vector[Double]] = Lens.lensu(
-  //      set = (i, v) => i.copy(pattern = v),
-  //      get = _.pattern
-  //    )
-  //    val iGenome: Lens[Individual, Genome] = Lens.lensu(
-  //      set = (i, g) => i.copy(genome = g),
-  //      get = _.genome
-  //    )
-  //    val gValues: Lens[Genome, Vector[Double]] = Lens.lensu(
-  //      set = (g, v) => g.copy(values = v),
-  //      get = _.values
-  //    )
-  //    val gOperator: Lens[Genome, Maybe[Int]] = Lens.lensu(
-  //      set = (g, o) => g.copy(operator = o),
-  //      get = _.operator
-  //    )
-  //    val gGeneration: Lens[Genome, Long] = Lens.lensu(
-  //      set = (g, e) => g.copy(generation = e),
-  //      get = _.generation
-  //    )
-  //    val iGenomeValues: Lens[Individual, Vector[Double]] = iGenome >=> gValues
-  //    val iGeneration: Lens[Individual, Long] = iGenome >=> gGeneration
-  //
-  //    // HitMapper instance of the default Context
-
-  //
-  //    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =
-  //      PSE.initialGenomes[EvolutionStateMonad[HitMap]#l, Genome](Genome)(mu, genomeSize)
-  //    def breeding(lambda: Int, operatorExploration: Double, cloneProbability: Double, cell: Individual => Vector[Int]): Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] =
-  //      PSE.breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome, Vector[Int]](
-  //        iGenome, gValues, gOperator, Genome, cell
-  //      )(lambda, operatorExploration, cloneProbability)
-  //    def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
-  //      PSE.expression[Genome, Individual](gValues, Individual)(fitness)
-  //    def elitism(muPerCell: Int, cell: Individual => Vector[Int]): Elitism[EvolutionStateMonad[HitMap]#l, Individual] =
-  //      PSE.elitism[EvolutionStateMonad[HitMap]#l, Individual, Vector[Int]](iGenomeValues, iGeneration, cell)(muPerCell)
-  //
-  //    def step(
-  //      mu: Int,
-  //      lambda: Int,
-  //      fitness: Expression[Vector[Double], Vector[Double]],
-  //      operatorExploration: Double,
-  //      cloneProbability: Double,
-  //      cell: Individual => Vector[Int]): Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] =
-  //      PSE.step[EvolutionStateMonad[HitMap]#l, Individual, Genome](
-  //        breeding(lambda, operatorExploration, cloneProbability, cell),
-  //        expression(fitness),
-  //        elitism(mu, cell)
-  //      )
-  //
-  //    def wrap[A](x: (EvolutionData[HitMap], A)): EvolutionState[HitMap, A] = default.wrap[HitMap, A](x)
-  //    def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = default.unwrap[HitMap, A](Map.empty[Vector[Int], Int])(x)
-  //
-  //    def apply(
-  //      initialPopSize: Int,
-  //      keepPerCell: Int,
-  //      lambda: Int,
-  //      express: Vector[Double] => Vector[Double],
-  //      genomeSize: Int,
-  //      operatorExploration: Double,
-  //      cloneProbability: Double,
-  //      anchor: Vector[Double],
-  //      discretisationStep: Vector[Double],
-  //      lowBound: Vector[Double],
-  //      highBound: Vector[Double]) =
-  //      new Algorithm[EvolutionStateMonad[HitMap]#l, Individual, Genome, ({ type l[x] = (EvolutionData[HitMap], x) })#l] {
-  //
-  //        val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep, lowBound, highBound)
-  //
-  //        def initialGenomes: EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(initialPopSize, genomeSize)
-  //        def breeding: Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] = PSE.Algorithm.breeding(lambda, operatorExploration, cloneProbability, cell)
-  //        def expression: Expression[Genome, Individual] = PSE.Algorithm.expression(express)
-  //        def elitism: Elitism[EvolutionStateMonad[HitMap]#l, Individual] = PSE.Algorithm.elitism(keepPerCell, cell)
-  //
-  //        def step: Kleisli[EvolutionStateMonad[HitMap]#l, Vector[Individual], Vector[Individual]] = PSE.Algorithm.step(keepPerCell, lambda, express, operatorExploration, cloneProbability, cell)
-  //
-  //        def wrap[A](x: (EvolutionData[HitMap], A)): EvolutionState[HitMap, A] = PSE.Algorithm.wrap(x)
-  //        def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = PSE.Algorithm.unwrap(x)
-  //
-  //      }
-  //
-  //    def algoOpenMOLE(initialPopSize: Int,
-  //      keepPerCell: Int,
-  //      genomeSize: Int,
-  //      operatorExploration: Double,
-  //      cloneProbability: Double,
-  //      anchor: Vector[Double],
-  //      discretisationStep: Vector[Double],
-  //      lowBound: Vector[Double],
-  //      highBound: Vector[Double]) =
-  //      new AlgorithmOpenMOLE[EvolutionStateMonad[HitMap]#l, Individual, Genome, EvolutionData[HitMap]] {
-  //
-  //        val cell: Individual => Vector[Int] = PSE.Algorithm.cell(anchor, discretisationStep, lowBound, highBound)
-  //
-  //        val cRandom: Lens[EvolutionData[HitMap], Random] = Lens.lensu(
-  //          set = (e, r) => e.copy(random = r),
-  //          get = _.random
-  //        )
-  //
-  //        def initialGenomes(n: Int): EvolutionState[HitMap, Vector[Genome]] = PSE.Algorithm.initialGenomes(n, genomeSize)
-  //        def breeding(n: Int): Breeding[EvolutionStateMonad[HitMap]#l, Individual, Genome] = PSE.Algorithm.breeding(n, operatorExploration, cloneProbability, cell)
-  //        def elitism: Elitism[EvolutionStateMonad[HitMap]#l, Individual] = PSE.Algorithm.elitism(keepPerCell, cell)
-  //
-  //        def initForIsland(i: Individual): Individual = i
-  //
-  //        def wrap[A](x: (EvolutionData[HitMap], A)): EvolutionState[HitMap, A] = PSE.Algorithm.wrap(x)
-  //        def unwrap[A](x: EvolutionState[HitMap, A]): (EvolutionData[HitMap], A) = PSE.Algorithm.unwrap(x)
-  //
-  //      }
-  //
-  //  }
-
 }
 
 object pseOperations {
@@ -306,14 +181,16 @@ object pseOperations {
         mapPureB { case (g, op) => buildGenome(g, Maybe.just(op)) }
     } yield gs
 
-  def elitism[M[_]: Monad: RandomGen: Generational, I](
+  def elitism[M[_]: Monad: RandomGen: Generational, I, P: CanBeNaN](
     values: I => Vector[Double],
-    pattern: I => Vector[Int],
+    phenotype: I => P,
+    pattern: P => Vector[Int],
     age: monocle.Lens[I, Long])(implicit MH: HitMapper[M, Vector[Int]]): Elitism[M, I] =
-    addHits[M, I, Vector[Int]](pattern, age.get) andThen
+    addHits[M, I, Vector[Int]](phenotype andThen pattern, age.get) andThen
       applyCloneStrategy(values, keepYoungest[M, I](age.get)) andThen
+      filterNaN(phenotype) andThen
       keepNiches(
-        niche = pattern,
+        niche = phenotype andThen pattern,
         objective = randomO[M, I](1)
       ) andThen incrementGeneration(age)
 

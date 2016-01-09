@@ -18,7 +18,6 @@ package fr.iscpif.mgo
 
 import breeding._
 import contexts._
-import expressions._
 import elitism._
 import tools._
 

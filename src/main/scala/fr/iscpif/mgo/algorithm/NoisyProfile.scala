@@ -23,7 +23,6 @@ import ranking._
 import niche._
 import contexts._
 import elitism._
-import expressions._
 import breeding._
 import GenomeVectorDouble._
 

@@ -22,7 +22,6 @@ import fr.iscpif.mgo.algorithm._
 
 import contexts.default._
 import contexts._
-import expressions._
 import stop._
 
 import scala.util.Random

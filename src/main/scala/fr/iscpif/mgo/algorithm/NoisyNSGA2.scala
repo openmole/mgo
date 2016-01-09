@@ -27,7 +27,6 @@ import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.breeding._
-import fr.iscpif.mgo.expressions._
 import fr.iscpif.mgo.elitism._
 import fr.iscpif.mgo.contexts._
 import fr.iscpif.mgo.contexts.default._
@@ -141,7 +140,7 @@ object noisynsga2 {
 
 object noisynsga2Operations {
 
-  def aggregatedFitness[I](fitness: I => Vector[Vector[Double]], aggregation: Vector[Vector[Double]] => Vector[Double])(i: I): Vector[Double] =
+  def aggregated[I](fitness: I => Vector[Vector[Double]], aggregation: Vector[Vector[Double]] => Vector[Double])(i: I): Vector[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
 
   def breeding[M[_]: Monad: RandomGen: Generational, I, G](
@@ -157,7 +156,7 @@ object noisynsga2Operations {
     for {
       population <- Kleisli.ask[M, Vector[I]]
       gs <- nsga2Operations.breeding[M, I, G](
-        aggregatedFitness(history, aggregation),
+        aggregated(history, aggregation),
         genome,
         genomeValues,
         genomeOperator,
@@ -172,8 +171,8 @@ object noisynsga2Operations {
     age: monocle.Lens[I, Long],
     historyAge: monocle.Lens[I, Long])(mu: Int, historySize: Int): Elitism[M, I] =
     applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](historyAge, history)(historySize)) andThen
-      filterNaN(aggregatedFitness(history.get, aggregation)) andThen
-      keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](aggregatedFitness(history.get, aggregation)), mu) andThen
+      filterNaN(aggregated(history.get, aggregation)) andThen
+      keepHighestRanked(paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history.get, aggregation)), mu) andThen
       incrementGeneration(age)
 
   def expression[G, I](

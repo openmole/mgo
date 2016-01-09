@@ -30,13 +30,14 @@ import Scalaz._
 import scalaz.effect.IO
 
 import mgo.breeding._
-import mgo.expressions._
 import mgo.elitism._
 import fr.iscpif.mgo.contexts._
 
 import scala.util.control.TailCalls._
 
 package object mgo {
+
+  type Expression[G, P] = G => P
 
   /**** Running the EA ****/
 

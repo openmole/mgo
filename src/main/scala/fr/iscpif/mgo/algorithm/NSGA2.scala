@@ -24,7 +24,6 @@ import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo._
 import fr.iscpif.mgo.breeding._
-import fr.iscpif.mgo.expressions._
 import fr.iscpif.mgo.elitism._
 import fr.iscpif.mgo.contexts._
 
