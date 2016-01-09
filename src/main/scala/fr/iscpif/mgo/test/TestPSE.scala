@@ -21,6 +21,7 @@ import fr.iscpif.mgo._
 import fr.iscpif.mgo.algorithm._
 import contexts.default._
 import stop._
+import niche._
 
 import scala.util.Random
 import scalaz._
@@ -39,7 +40,7 @@ object ZDT4PSE extends App {
   val definition: Vector[Int] = Vector(10, 10)
 
   def express = zdt4 _
-  def pattern = patternGrid(lowBound, highBound, definition) _
+  def pattern = boundedGrid(lowBound, highBound, definition) _
 
   val algo = PSE(
     lambda = lambda,

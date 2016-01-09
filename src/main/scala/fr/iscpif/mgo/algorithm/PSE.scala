@@ -81,14 +81,6 @@ object pse {
         }
     }
 
-  def patternGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
-    (value zip definition zip lowBound zip highBound).map {
-      case (((x, d), lb), hb) =>
-        val step = (hb - lb) / d
-        val p = ((x - lb) / step).floor.toInt
-        max(0, min(d, p))
-    }
-
   def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
 
   def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =

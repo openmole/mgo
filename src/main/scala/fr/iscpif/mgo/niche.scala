@@ -16,16 +16,23 @@
  */
 package fr.iscpif.mgo
 
+import scala.math._
 import scalaz._
 
 object niche {
   type Niche[-I, +T] = (I => T)
 
-  def grid[I](gridSize: Seq[Double], grid: I => Seq[Double]): Niche[I, Seq[Int]] =
-    (individual: I) => {
-      (grid(individual) zip gridSize).map {
-        case (x, g) => (x / g).toInt
-      }.toArray.toSeq
+  def grid(gridSize: Seq[Double])(value: Vector[Double]): Vector[Int] =
+    (value zip gridSize).map {
+      case (x, g) => (x / g).toInt
+    }
+
+  def boundedGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
+    (value zip definition zip lowBound zip highBound).map {
+      case (((x, d), lb), hb) =>
+        val step = (hb - lb) / d
+        val p = ((x - lb) / step).floor.toInt
+        max(0, min(d, p))
     }
 
   def genomeProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
