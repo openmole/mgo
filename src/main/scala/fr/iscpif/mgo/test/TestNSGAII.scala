@@ -27,12 +27,13 @@ import stop._
 
 import scala.util.Random
 import scalaz._
+
 import Scalaz._
 import scalaz.effect.IO
 
 object SphereNSGAII extends App {
 
-  import NSGA2.Algorithm._
+  import nsga2._
 
   val mu = 100
   val lambda = 100
@@ -42,7 +43,7 @@ object SphereNSGAII extends App {
 
   val fitness: Expression[Vector[Double], Vector[Double]] = { x => Vector(sphere(x)) }
 
-  val algo = NSGA2.Algorithm(mu = mu, lambda = lambda, fitness = fitness, genomeSize = dimensions, operatorExploration = operatorExploration)
+  val algo = NSGA2(mu = mu, lambda = lambda, fitness = fitness, genomeSize = dimensions, operatorExploration = operatorExploration)
 
   def ka = Kleisli.ask[EvolutionState[Unit, ?], Vector[Individual]]
 
@@ -83,7 +84,7 @@ object SphereNSGAII extends App {
 
 object StochasticSphereNSGAII extends App {
 
-  import NoisyNSGA2.Algorithm._
+  import noisynsga2._
 
   val mu = 100
   val lambda = 100
@@ -97,7 +98,7 @@ object StochasticSphereNSGAII extends App {
   def aggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
 
   val algo =
-    NoisyNSGA2.Algorithm(
+    NoisyNSGA2(
       mu = mu,
       lambda = lambda,
       fitness = express,

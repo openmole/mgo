@@ -14,21 +14,11 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package fr.iscpif.mgo
-
-import fr.iscpif.mgo.contexts.{ StartTime, Generational }
-import monocle.macros._
-
-import scala.concurrent.duration.Duration
-import scala.util.Random
+package fr.iscpif.mgo.algorithm
 
 import scala.language.higherKinds
+import scala.util.Random
 import scalaz._
-import Scalaz._
-
-import breeding._
-import expressions._
-import elitism._
 
 /**
  * Example:
@@ -55,4 +45,3 @@ trait Algorithm[M[_], I, G, S] {
   def run[A](m: M[A], ca: S): (S, A)
   def run[A](m: M[A], rng: Random): (S, A) = run(m, initialState(rng))
 }
-

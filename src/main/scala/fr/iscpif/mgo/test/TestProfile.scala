@@ -32,7 +32,7 @@ import scalaz.effect.IO
 
 object SphereProfile extends App {
 
-  import Profile.Algorithm._
+  import profile._
 
   val lambda = 100
   val dimensions = 10
@@ -47,7 +47,7 @@ object SphereProfile extends App {
     x = 0,
     nX = 10)
 
-  val algo = Profile.Algorithm(
+  val algo = Profile(
     lambda = lambda,
     fitness = express,
     niche = niche,
@@ -91,7 +91,7 @@ object SphereProfile extends App {
 
 object StochasticSphereProfile extends App {
 
-  import NoisyProfile.Algorithm._
+  import noisyprofile._
 
   val muByNiche = 20
   val lambda = 100
@@ -110,7 +110,7 @@ object StochasticSphereProfile extends App {
     x = 0,
     nX = 10)
 
-  val algo = NoisyProfile.Algorithm(
+  val algo = NoisyProfile(
     muByNiche = muByNiche,
     lambda = lambda,
     fitness = express,

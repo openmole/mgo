@@ -33,130 +33,88 @@ import scala.util.Random
 import scalaz._
 import Scalaz._
 
-object PSE {
+import contexts.default._
 
-  def breeding[M[_]: Monad: RandomGen: Generational, I, G](
-    genome: I => G,
-    genomeValues: G => Vector[Double],
-    genomeOperator: G => Maybe[Int],
-    pattern: I => Vector[Int],
-    buildGenome: (Vector[Double], Maybe[Int]) => G)(
-      lambda: Int,
-      operatorExploration: Double)(implicit MH: HitMapper[M, Vector[Int]]): Breeding[M, I, G] =
-    for {
-      operatorStatistics <- operatorProportions[M, I](genome andThen genomeOperator)
-      gs <- tournament(reversedRanking[M, I](hitCountRanking[M, I, Vector[Int]](pattern)), lambda + 1) andThen
-        pairConsecutive andThen
-        mapPureB { case (g1, g2) => ((genome andThen genomeValues)(g1), (genome andThen genomeValues)(g2)) } andThen
-        applyDynamicOperator(operatorStatistics, operatorExploration) andThen
-        flatMapPureB { case ((g1, g2), op) => Vector((g1, op), (g2, op)) } andThen
-        randomTakeLambda(lambda) andThen
-        clamp(GenLens[(Vector[Double], Int)](_._1)) andThen
-        mapPureB { case (g, op) => buildGenome(g, Maybe.just(op)) }
-    } yield gs
+object pse {
 
-  def elitism[M[_]: Monad: RandomGen: Generational, I](
-    values: I => Vector[Double],
-    pattern: I => Vector[Int],
-    age: monocle.Lens[I, Long])(implicit MH: HitMapper[M, Vector[Int]]): Elitism[M, I] =
-    addHits[M, I, Vector[Int]](pattern, age.get) andThen
-      applyCloneStrategy(values, keepYoungest[M, I](age.get)) andThen
-      keepNiches(
-        niche = pattern,
-        objective = randomO[M, I](1)
-      ) andThen incrementGeneration(age)
-
-  def expression[G, I](
-    values: G => Vector[Double],
-    build: (G, Vector[Double]) => I)(express: Expression[Vector[Double], Vector[Double]]): Expression[G, I] =
-    (g: G) => build(g, express(values(g)))
-
-  trait Hit {
-    import fr.iscpif.mgo.contexts.default._
-
-    type HitMap = Map[Vector[Int], Int]
-
-    implicit def mHitMap: HitMapper[EvolutionState[HitMap, ?], Vector[Int]] =
-      new HitMapper[EvolutionState[HitMap, ?], Vector[Int]] {
-        def get: EvolutionState[HitMap, Map[Vector[Int], Int]] =
-          evolutionStateMonadState[HitMap].get.map(_.s)
-
-        def set(newMap: Map[Vector[Int], Int]): EvolutionState[HitMap, Unit] =
-          evolutionStateMonadState[HitMap].modify { s => s.copy(s = newMap) }
-
-        def hitCount(cell: Vector[Int]): EvolutionState[HitMap, Int] =
-          evolutionStateMonadState[HitMap].get.map { _.s.getOrElse(cell, 0) }
-
-        def hits(cells: Vector[Vector[Int]]): EvolutionState[HitMap, Unit] =
-          evolutionStateMonadState[HitMap].modify { s =>
-            val newS = s.s ++ (cells.map { c => (c, s.s.getOrElse(c, 0) + 1) })
-            s.copy(s = newS)
-          }
-      }
-  }
-
-  object Algorithm extends Hit {
-
-    import fr.iscpif.mgo.contexts.default._
-
-    type V = Vector[Double]
-
-    @Lenses case class Genome(values: V, operator: Maybe[Int])
-    @Lenses case class Individual(genome: Genome, phenotype: Vector[Double], age: Long)
-
-    def patternGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
-      (value zip definition zip lowBound zip highBound).map {
-        case (((x, d), lb), hb) =>
-          val step = (hb - lb) / d
-          val p = ((x - lb) / step).floor.toInt
-          max(0, min(d, p))
-      }
-
-    def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
-
-    def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =
-      GenomeVectorDouble.randomGenomes[EvolutionState[HitMap, ?], Genome](Genome.apply)(mu, genomeSize)
-
-    def breeding(
-      lambda: Int,
-      pattern: Vector[Double] => Vector[Int],
-      operatorExploration: Double) =
-      PSE.breeding[EvolutionState[HitMap, ?], Individual, Genome](
-        Individual.genome.get,
-        Genome.values.get,
-        Genome.operator.get,
-        Individual.phenotype.get _ andThen pattern,
-        Genome.apply
-      )(lambda, operatorExploration)
-
-    def elitism(pattern: Vector[Double] => Vector[Int]) =
-      PSE.elitism[EvolutionState[HitMap, ?], Individual](
-        (Individual.genome composeLens Genome.values).get,
-        Individual.phenotype.get _ andThen pattern,
-        Individual.age
-      )
-
-    def expression(phenotype: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
-      PSE.expression[Genome, Individual](Genome.values.get, buildIndividual)(phenotype)
-
-    def apply(
+  case class PSE(
       lambda: Int,
       phenotype: Expression[Vector[Double], Vector[Double]],
       pattern: Vector[Double] => Vector[Int],
       genomeSize: Int,
-      operatorExploration: Double) =
-      new Algorithm[EvolutionState[HitMap, ?], Individual, Genome, EvolutionData[HitMap]] {
-        def initialState(rng: Random) = EvolutionData[HitMap](random = rng, s = Map.empty)
-        def initialGenomes = PSE.Algorithm.initialGenomes(lambda, genomeSize)
-        def breeding = PSE.Algorithm.breeding(lambda, pattern, operatorExploration)
-        def expression = PSE.Algorithm.expression(phenotype)
-        def elitism = PSE.Algorithm.elitism(pattern)
+      operatorExploration: Double) extends Algorithm[EvolutionState[HitMap, ?], Individual, Genome, EvolutionData[HitMap]] {
 
-        def step = deterministicStep[EvolutionState[HitMap, ?], Individual, Genome](breeding, expression, elitism)
+    def initialState(rng: Random) = EvolutionData[HitMap](random = rng, s = Map.empty)
+    def initialGenomes = pse.initialGenomes(lambda, genomeSize)
+    def breeding = pse.breeding(lambda, pattern, operatorExploration)
+    def expression = pse.expression(phenotype)
+    def elitism = pse.elitism(pattern)
+    def step = deterministicStep[EvolutionState[HitMap, ?], Individual, Genome](breeding, expression, elitism)
 
-        def run[A](x: EvolutionState[HitMap, A], s: EvolutionData[HitMap]): (EvolutionData[HitMap], A) = default.unwrap(x, s)
-      }
+    def run[A](x: EvolutionState[HitMap, A], s: EvolutionData[HitMap]): (EvolutionData[HitMap], A) = default.unwrap(x, s)
   }
+
+  type V = Vector[Double]
+
+  @Lenses case class Genome(values: V, operator: Maybe[Int])
+  @Lenses case class Individual(genome: Genome, phenotype: Vector[Double], age: Long)
+
+  type HitMap = Map[Vector[Int], Int]
+
+  implicit def hitMapper: HitMapper[EvolutionState[HitMap, ?], Vector[Int]] =
+    new HitMapper[EvolutionState[HitMap, ?], Vector[Int]] {
+      def get: EvolutionState[HitMap, Map[Vector[Int], Int]] =
+        evolutionStateMonadState[HitMap].get.map(_.s)
+
+      def set(newMap: Map[Vector[Int], Int]): EvolutionState[HitMap, Unit] =
+        evolutionStateMonadState[HitMap].modify { s => s.copy(s = newMap) }
+
+      def hitCount(cell: Vector[Int]): EvolutionState[HitMap, Int] =
+        evolutionStateMonadState[HitMap].get.map {
+          _.s.getOrElse(cell, 0)
+        }
+
+      def hits(cells: Vector[Vector[Int]]): EvolutionState[HitMap, Unit] =
+        evolutionStateMonadState[HitMap].modify { s =>
+          val newS = s.s ++ (cells.map { c => (c, s.s.getOrElse(c, 0) + 1) })
+          s.copy(s = newS)
+        }
+    }
+
+  def patternGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
+    (value zip definition zip lowBound zip highBound).map {
+      case (((x, d), lb), hb) =>
+        val step = (hb - lb) / d
+        val p = ((x - lb) / step).floor.toInt
+        max(0, min(d, p))
+    }
+
+  def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
+
+  def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =
+    GenomeVectorDouble.randomGenomes[EvolutionState[HitMap, ?], Genome](Genome.apply)(mu, genomeSize)
+
+  def breeding(
+    lambda: Int,
+    pattern: Vector[Double] => Vector[Int],
+    operatorExploration: Double) =
+    pseOperations.breeding[EvolutionState[HitMap, ?], Individual, Genome](
+      Individual.genome.get,
+      Genome.values.get,
+      Genome.operator.get,
+      Individual.phenotype.get _ andThen pattern,
+      Genome.apply
+    )(lambda, operatorExploration)
+
+  def elitism(pattern: Vector[Double] => Vector[Int]) =
+    pseOperations.elitism[EvolutionState[HitMap, ?], Individual](
+      (Individual.genome composeLens Genome.values).get,
+      Individual.phenotype.get _ andThen pattern,
+      Individual.age
+    )
+
+  def expression(phenotype: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
+    pseOperations.expression[Genome, Individual](Genome.values.get, buildIndividual)(phenotype)
 
   //  case class OpenMOLE(
   //    lambda: Int,
@@ -322,4 +280,44 @@ object PSE {
   //      }
   //
   //  }
+
+}
+
+object pseOperations {
+
+  def breeding[M[_]: Monad: RandomGen: Generational, I, G](
+    genome: I => G,
+    genomeValues: G => Vector[Double],
+    genomeOperator: G => Maybe[Int],
+    pattern: I => Vector[Int],
+    buildGenome: (Vector[Double], Maybe[Int]) => G)(
+      lambda: Int,
+      operatorExploration: Double)(implicit MH: HitMapper[M, Vector[Int]]): Breeding[M, I, G] =
+    for {
+      operatorStatistics <- operatorProportions[M, I](genome andThen genomeOperator)
+      gs <- tournament(reversedRanking[M, I](hitCountRanking[M, I, Vector[Int]](pattern)), lambda + 1) andThen
+        pairConsecutive andThen
+        mapPureB { case (g1, g2) => ((genome andThen genomeValues)(g1), (genome andThen genomeValues)(g2)) } andThen
+        applyDynamicOperator(operatorStatistics, operatorExploration) andThen
+        flatMapPureB { case ((g1, g2), op) => Vector((g1, op), (g2, op)) } andThen
+        randomTakeLambda(lambda) andThen
+        clamp(GenLens[(Vector[Double], Int)](_._1)) andThen
+        mapPureB { case (g, op) => buildGenome(g, Maybe.just(op)) }
+    } yield gs
+
+  def elitism[M[_]: Monad: RandomGen: Generational, I](
+    values: I => Vector[Double],
+    pattern: I => Vector[Int],
+    age: monocle.Lens[I, Long])(implicit MH: HitMapper[M, Vector[Int]]): Elitism[M, I] =
+    addHits[M, I, Vector[Int]](pattern, age.get) andThen
+      applyCloneStrategy(values, keepYoungest[M, I](age.get)) andThen
+      keepNiches(
+        niche = pattern,
+        objective = randomO[M, I](1)
+      ) andThen incrementGeneration(age)
+
+  def expression[G, I](
+    values: G => Vector[Double],
+    build: (G, Vector[Double]) => I)(express: Expression[Vector[Double], Vector[Double]]): Expression[G, I] =
+    (g: G) => build(g, express(values(g)))
 }

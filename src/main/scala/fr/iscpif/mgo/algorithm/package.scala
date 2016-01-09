@@ -26,7 +26,6 @@ import scala.util.Random
 
 import scalaz._
 import Scalaz._
-import monocle.Lens
 
 package object algorithm {
 

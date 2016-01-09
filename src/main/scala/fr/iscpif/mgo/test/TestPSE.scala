@@ -25,9 +25,9 @@ import stop._
 import scala.util.Random
 import scalaz._
 import Scalaz._
+import pse._
 
 object ZDT4PSE extends App {
-  import PSE.Algorithm._
 
   val maxIterations: Int = 100
   val lambda: Int = 10
@@ -41,7 +41,7 @@ object ZDT4PSE extends App {
   def express = zdt4 _
   def pattern = patternGrid(lowBound, highBound, definition) _
 
-  val algo = PSE.Algorithm(
+  val algo = PSE(
     lambda = lambda,
     phenotype = express,
     pattern = pattern,
