@@ -16,6 +16,8 @@
  */
 
 package fr.iscpif.mgo.tools
+
+import scala.annotation.tailrec
 import scala.math.{ max, min }
 import math._
 
@@ -109,4 +111,13 @@ object Math {
     val totalWeight = s.unzip._1.sum
     select(s.toList, rng.nextDouble * totalWeight)
   }
+
+  def findInterval(s: Vector[Double], v: Double) = {
+    import scala.collection.Searching._
+    search(s).search(v) match {
+      case InsertionPoint(x) => x - 1
+      case Found(x) => x
+    }
+  }
+
 }

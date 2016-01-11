@@ -35,6 +35,9 @@ object niche {
         max(0, min(d, p))
     }
 
+  def irregularGrid(axes: Vector[Vector[Double]])(values: Vector[Double]): Vector[Int] =
+    axes zip values map { case (axe, v) => tools.Math.findInterval(axe.sorted, v) }
+
   def genomeProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
     (genome: G) => {
       val niche = (values(genome)(x) * nX).toInt
