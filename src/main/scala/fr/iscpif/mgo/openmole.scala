@@ -60,7 +60,7 @@ object openmole {
       def breeding(n: Int): Breeding[M, I, G]
       def elitism: Elitism[M, I]
       def migrateToIsland(i: I): I
-      def migrateFromIsland(i: I): I
+      def migrateFromIsland(population: Vector[I]): Vector[I]
     }
 
     def unwrap[T](m: M[T], s: S): (S, T)

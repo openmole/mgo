@@ -102,7 +102,7 @@ object nsga2 {
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = nsga2.breeding(n, om.operatorExploration)
         def elitism: Elitism[EvolutionState[Unit, ?], I] = nsga2.elitism(om.mu)
         def migrateToIsland(i: I): I = i
-        def migrateFromIsland(i: I) = i
+        def migrateFromIsland(population: Vector[I]) = population
       }
 
       def unwrap[A](x: EvolutionState[Unit, A], s: S): (S, A) = default.unwrap(x, s)

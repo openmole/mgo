@@ -153,7 +153,10 @@ object noisypse {
             aggregation = om.aggregation)
 
         def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
-        def migrateFromIsland(i: I) = Individual.phenotypeHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+        def migrateFromIsland(population: Vector[I]) =
+          population.filter(_.historyAge == 0).map {
+            i => Individual.phenotypeHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+          }
       }
 
       def unwrap[A](x: EvolutionState[pse.HitMap, A], s: S): (EvolutionData[pse.HitMap], A) = default.unwrap[pse.HitMap, A](x, s)

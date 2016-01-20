@@ -139,7 +139,10 @@ object noisyprofile {
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = noisyprofile.breeding(n, om.niche, om.operatorExploration, om.cloneProbability, om.aggregation)
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = noisyprofile.elitism(om.mu, om.niche, om.historySize, om.aggregation)
         def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
-        def migrateFromIsland(i: I) = Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+        def migrateFromIsland(population: Vector[I]) =
+          population.filter(_.historyAge == 0).map {
+            i => Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+          }
       }
 
       def unwrap[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(x, s)

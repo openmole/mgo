@@ -129,8 +129,11 @@ object noisynsga2 {
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = noisynsga2.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = noisynsga2.breeding(n, om.operatorExploration, om.cloneProbability, om.aggregation)
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = noisynsga2.elitism(om.mu, om.historySize, om.aggregation)
-        def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
-        def migrateFromIsland(i: I) = Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+        def migrateToIsland(i: I) = i.copy(historyAge = 0)
+        def migrateFromIsland(population: Vector[I]) =
+          population.filter(_.historyAge == 0).map {
+            i => Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+          }
       }
 
       def unwrap[A](x: EvolutionState[Unit, A], s: S): (EvolutionData[Unit], A) = default.unwrap[Unit, A](x, s)
