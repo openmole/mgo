@@ -133,6 +133,7 @@ object pse {
 
       def operations(om: OpenMOLE) = new Ops {
         def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
         def generation(s: S) = s.generation
         def values(genome: G) = Genome.values.get(genome)
         def genome(i: I) = Individual.genome.get(i)

@@ -128,7 +128,8 @@ object noisypse {
       def mStartTime = implicitly
 
       def operations(om: OpenMOLE) = new Ops {
-        def randomLens = GenLens[EvolutionData[pse.HitMap]](_.random)
+        def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
         def generation(s: EvolutionData[pse.HitMap]) = s.generation
         def values(genome: G) = Genome.values.get(genome)
         def genome(i: I) = Individual.genome.get(i)

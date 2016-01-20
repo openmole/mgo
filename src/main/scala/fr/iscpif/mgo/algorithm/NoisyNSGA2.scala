@@ -118,7 +118,8 @@ object noisynsga2 {
       def mStartTime = implicitly
 
       def operations(om: OpenMOLE) = new Ops {
-        def randomLens = GenLens[EvolutionData[Unit]](_.random)
+        def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
         def generation(s: EvolutionData[Unit]) = s.generation
         def values(genome: G) = Genome.values.get(genome)
         def genome(i: I) = Individual.genome.get(i)

@@ -55,6 +55,7 @@ object openmole {
       def phenotype(individual: I): P
       def genomeValues(individual: I) = values(genome(individual))
       def randomLens: monocle.Lens[S, Random]
+      def startTimeLens: monocle.Lens[S, Long]
       def generation(s: S): Long
       def breeding(n: Int): Breeding[M, I, G]
       def elitism: Elitism[M, I]
