@@ -92,7 +92,7 @@ object elitism {
   def mergeHistories[M[_]: Monad, I, P](age: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
     (clones: Vector[I]) => {
       clones.reduce { (i1, i2) =>
-        val (old, young) = if(age.get(i1) > age.get(i2)) (i1, i2) else (i2, i1)
+        val (old, young) = if (age.get(i1) > age.get(i2)) (i1, i2) else (i2, i1)
 
         val oldAge = age.get(old)
         val youngAge = age.get(young)
