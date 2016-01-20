@@ -69,7 +69,7 @@ object noisypse {
   type V = Vector[Double]
 
   @Lenses case class Genome(values: V, operator: Maybe[Int])
-  @Lenses case class Individual(genome: Genome, historyAge: Long, phenotype: Vector[Vector[Double]], age: Long)
+  @Lenses case class Individual(genome: Genome, historyAge: Long, phenotypeHistory: Vector[Vector[Double]], age: Long)
 
   def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, 1, Vector(phenotype), 0)
 
@@ -86,14 +86,14 @@ object noisypse {
       Individual.genome.get,
       Genome.values.get,
       Genome.operator.get,
-      Individual.phenotype.get _ andThen aggregation andThen pattern,
+      Individual.phenotypeHistory.get _ andThen aggregation andThen pattern,
       Genome.apply
     )(lambda, cloneProbability, operatorExploration)
 
   def elitism(pattern: Vector[Double] => Vector[Int], aggregation: Vector[Vector[Double]] => Vector[Double], historySize: Int) =
     noisypseOperations.elitism[EvolutionState[pse.HitMap, ?], Individual, Vector[Double]](
       (Individual.genome composeLens Genome.values).get,
-      Individual.phenotype,
+      Individual.phenotypeHistory,
       aggregation,
       pattern,
       Individual.age,
@@ -133,7 +133,7 @@ object noisypse {
         def generation(s: EvolutionData[pse.HitMap]) = s.generation
         def values(genome: G) = Genome.values.get(genome)
         def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Vector[Double] = om.aggregation(Individual.phenotype.get(individual))
+        def phenotype(individual: I): Vector[Double] = om.aggregation(Individual.phenotypeHistory.get(individual))
         def buildIndividual(genome: G, phenotype: Vector[Double]) = noisypse.buildIndividual(genome, phenotype)
         def initialState(rng: Random) = EvolutionData[pse.HitMap](random = rng, s = Map())
         def initialGenomes(n: Int) = noisypse.initialGenomes(n, om.genomeSize)
@@ -153,10 +153,11 @@ object noisypse {
             aggregation = om.aggregation)
 
         def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
+        def migrateFromIsland(i: I) = Individual.phenotypeHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
       }
 
       def unwrap[A](x: EvolutionState[pse.HitMap, A], s: S): (EvolutionData[pse.HitMap], A) = default.unwrap[pse.HitMap, A](x, s)
-      def samples(i: I): Long = Individual.historyAge.get(i)
+      def samples(i: I): Long = i.phenotypeHistory.size
     }
   }
 

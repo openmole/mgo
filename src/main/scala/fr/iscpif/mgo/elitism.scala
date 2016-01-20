@@ -84,7 +84,8 @@ object elitism {
     Elitism((individuals: Vector[I]) =>
       for {
         res <- individuals.groupBy(getGenome).valuesIterator.toVector.traverseM[M, I](is => cloneStrategy(is))
-      } yield res)
+      } yield res
+    )
 
   def keepYoungest[M[_]: Monad, I](age: I => Long): CloneStrategy[M, I] =
     (clones: Vector[I]) => clones.minBy(age).point[Vector].point[M]
@@ -104,4 +105,5 @@ object elitism {
         age.set(oldAge + youngAge)(updatedHistory)
       }
     }.point[Vector].point[M]
+
 }

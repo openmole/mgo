@@ -130,10 +130,11 @@ object noisynsga2 {
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = noisynsga2.breeding(n, om.operatorExploration, om.cloneProbability, om.aggregation)
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = noisynsga2.elitism(om.mu, om.historySize, om.aggregation)
         def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
+        def migrateFromIsland(i: I) = Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
       }
 
       def unwrap[A](x: EvolutionState[Unit, A], s: S): (EvolutionData[Unit], A) = default.unwrap[Unit, A](x, s)
-      def samples(i: I): Long = Individual.historyAge.get(i)
+      def samples(i: I): Long = i.fitnessHistory.size
     }
   }
 

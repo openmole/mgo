@@ -104,6 +104,7 @@ object profile {
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = fr.iscpif.mgo.algorithm.profile.breeding(n, om.niche, om.operatorExploration)
         def elitism: Elitism[EvolutionState[Unit, ?], I] = fr.iscpif.mgo.algorithm.profile.elitism(om.niche)
         def migrateToIsland(i: I): I = i
+        def migrateFromIsland(i: I) = i
       }
 
       def unwrap[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (S, A) = default.unwrap(x, s)

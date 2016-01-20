@@ -144,6 +144,7 @@ object pse {
         def breeding(n: Int): Breeding[M, I, G] = pse.breeding(n, om.pattern, om.operatorExploration)
         def elitism: Elitism[M, I] = pse.elitism(om.pattern)
         def migrateToIsland(i: I): I = i
+        def migrateFromIsland(i: I) = i
       }
 
       def unwrap[A](x: M[A], s: S): (S, A) = default.unwrap(x, s)
