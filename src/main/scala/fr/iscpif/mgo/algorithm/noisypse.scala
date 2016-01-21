@@ -66,15 +66,17 @@ object noisypse {
     def run[A](x: EvolutionState[pse.HitMap, A], s: EvolutionData[pse.HitMap]): (EvolutionData[pse.HitMap], A) = default.unwrap(x, s)
   }
 
-  type V = Vector[Double]
+  @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
+  @Lenses case class Individual(genome: Genome, historyAge: Long, phenotypeHistory: Array[Array[Double]], age: Long)
 
-  @Lenses case class Genome(values: V, operator: Maybe[Int])
-  @Lenses case class Individual(genome: Genome, historyAge: Long, phenotypeHistory: Vector[Vector[Double]], age: Long)
+  def buildGenome(values: Vector[Double], operator: Maybe[Int]) = Genome(values.toArray, operator)
+  def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, 1, Array(phenotype.toArray), 0)
 
-  def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, 1, Vector(phenotype), 0)
+  def vectorValues = Genome.values composeLens arrayToVectorLens
+  def vectorPhenotype = Individual.phenotypeHistory composeLens array2ToVectorLens
 
   def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[pse.HitMap, Vector[Genome]] =
-    GenomeVectorDouble.randomGenomes[EvolutionState[pse.HitMap, ?], Genome](Genome.apply)(mu, genomeSize)
+    GenomeVectorDouble.randomGenomes[EvolutionState[pse.HitMap, ?], Genome](buildGenome)(mu, genomeSize)
 
   def breeding(
     lambda: Int,
@@ -84,16 +86,16 @@ object noisypse {
     operatorExploration: Double) =
     noisypseOperations.breeding[EvolutionState[pse.HitMap, ?], Individual, Genome, Vector[Double]](
       Individual.genome.get,
-      Genome.values.get,
+      vectorValues.get,
       Genome.operator.get,
-      Individual.phenotypeHistory.get _ andThen aggregation andThen pattern,
-      Genome.apply
+      vectorPhenotype.get _ andThen aggregation andThen pattern,
+      buildGenome
     )(lambda, cloneProbability, operatorExploration)
 
   def elitism(pattern: Vector[Double] => Vector[Int], aggregation: Vector[Vector[Double]] => Vector[Double], historySize: Int) =
     noisypseOperations.elitism[EvolutionState[pse.HitMap, ?], Individual, Vector[Double]](
-      (Individual.genome composeLens Genome.values).get,
-      Individual.phenotypeHistory,
+      (Individual.genome composeLens vectorValues).get,
+      vectorPhenotype,
       aggregation,
       pattern,
       Individual.age,
@@ -102,7 +104,7 @@ object noisypse {
 
   def expression(phenotype: (Random, Vector[Double]) => Vector[Double]) =
     noisypseOperations.expression[Genome, Individual, Vector[Double]](
-      Genome.values.get,
+      vectorValues.get,
       buildIndividual)(phenotype)
 
   case class OpenMOLE(
@@ -131,9 +133,9 @@ object noisypse {
         def randomLens = GenLens[S](_.random)
         def startTimeLens = GenLens[S](_.startTime)
         def generation(s: EvolutionData[pse.HitMap]) = s.generation
-        def values(genome: G) = Genome.values.get(genome)
+        def values(genome: G) = vectorValues.get(genome)
         def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Vector[Double] = om.aggregation(Individual.phenotypeHistory.get(individual))
+        def phenotype(individual: I): Vector[Double] = om.aggregation(vectorPhenotype.get(individual))
         def buildIndividual(genome: G, phenotype: Vector[Double]) = noisypse.buildIndividual(genome, phenotype)
         def initialState(rng: Random) = EvolutionData[pse.HitMap](random = rng, s = Map())
         def initialGenomes(n: Int) = noisypse.initialGenomes(n, om.genomeSize)

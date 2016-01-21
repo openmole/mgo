@@ -45,3 +45,4 @@ trait Algorithm[M[_], I, G, S] {
   def run[A](m: M[A], ca: S): (S, A)
   def run[A](m: M[A], rng: Random): (S, A) = run(m, initialState(rng))
 }
+

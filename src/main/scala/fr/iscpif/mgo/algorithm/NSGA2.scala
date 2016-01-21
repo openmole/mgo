@@ -36,26 +36,30 @@ object nsga2 {
 
   import fr.iscpif.mgo.contexts.default._
 
-  @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
-  @Lenses case class Individual(genome: Genome, fitness: Vector[Double], age: Long)
+  @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
+  @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
 
-  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f, 0)
+  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
+  def buildGenome(values: Vector[Double], operator: Maybe[Int]) = Genome(values.toArray, operator)
+
+  def vectorFitness = Individual.fitness composeLens arrayToVectorLens
+  def vectorValues = Genome.values composeLens arrayToVectorLens
 
   def initialGenomes(lambda: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-    GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(lambda, genomeSize)
+    GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](buildGenome)(lambda, genomeSize)
 
   def breeding(lambda: Int, operatorExploration: Double): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
     nsga2Operations.breeding[EvolutionState[Unit, ?], Individual, Genome](
-      Individual.fitness.get, Individual.genome.get, Genome.values.get, Genome.operator.get, Genome.apply
+      vectorFitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
     )(lambda, operatorExploration)
 
   def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
-    nsga2Operations.expression[Genome, Individual](Genome.values.get, buildIndividual)(fitness)
+    nsga2Operations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
 
   def elitism(mu: Int): Elitism[EvolutionState[Unit, ?], Individual] =
     nsga2Operations.elitism[EvolutionState[Unit, ?], Individual](
-      Individual.fitness.get,
-      (Individual.genome composeLens Genome.values).get,
+      vectorFitness.get,
+      (Individual.genome composeLens vectorValues).get,
       Individual.age)(mu)
 
   case class NSGA2(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) extends Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
@@ -93,10 +97,10 @@ object nsga2 {
         def randomLens = GenLens[S](_.random)
         def startTimeLens = GenLens[S](_.startTime)
         def generation(s: EvolutionData[Unit]) = s.generation
-        def values(genome: G) = Genome.values.get(genome)
+        def values(genome: G) = vectorValues.get(genome)
         def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Vector[Double] = Individual.fitness.get(individual)
-        def buildIndividual(genome: G, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
+        def phenotype(individual: I): Vector[Double] = vectorFitness.get(individual)
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = buildIndividual(genome, phenotype)
         def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = nsga2.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = nsga2.breeding(n, om.operatorExploration)

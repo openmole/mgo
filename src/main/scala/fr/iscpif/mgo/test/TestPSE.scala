@@ -69,7 +69,7 @@ object ZDT4PSE extends App {
   val evolution: EvolutionState[HitMap, Vector[Individual]] =
     for {
       ig <- algo.initialGenomes
-      initialPop = ig.map { g => buildIndividual(g, express(Genome.values.get(g))) }
+      initialPop = ig.map { g => buildIndividual(g, express(vectorValues.get(g))) }
       //_ <- writeS { (state: EvolutionData[HitMap], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(genomeSize)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(individuals.head.pattern.size)(i => s"p$i").mkString("\t") }.run(initialPop)
       finalpop <- ea.run(initialPop)
     } yield finalpop

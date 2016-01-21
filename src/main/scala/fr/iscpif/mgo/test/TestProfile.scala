@@ -43,7 +43,7 @@ object SphereProfile extends App {
 
   //Niche over the first dimension of the genome
   def niche: Niche[Individual, Int] = genomeProfile[Individual](
-    values = (Individual.genome composeLens Genome.values).get,
+    values = (Individual.genome composeLens vectorValues).get,
     x = 0,
     nX = 10)
 
@@ -71,7 +71,7 @@ object SphereProfile extends App {
   val evolution: EvolutionState[Unit, Vector[Individual]] =
     for {
       ig <- algo.initialGenomes
-      initialPop = ig.map { (g: Genome) => Individual(g, express(Genome.values.get(g)), 0) }
+      initialPop = ig.map { (g: Genome) => Individual(g, express(vectorValues.get(g)), 0) }
       _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ "fitness" }.run(Vector.empty)
       finalpop <- ea.run(initialPop)
     } yield finalpop
@@ -106,7 +106,7 @@ object StochasticSphereProfile extends App {
 
   //Niche over the first dimension of the genome
   def niche = genomeProfile[Individual](
-    values = (Individual.genome composeLens Genome.values).get,
+    values = (Individual.genome composeLens vectorValues).get,
     x = 0,
     nX = 10)
 
@@ -140,7 +140,7 @@ object StochasticSphereProfile extends App {
     for {
       gs <- algo.initialGenomes
       gsRNG <- zipWithRandom[EvolutionState[Unit, ?], Genome](gs)
-      initialPopEval = gsRNG.map { case (rg, g) => buildIndividual(g, express(rg, Genome.values.get(g))) }
+      initialPopEval = gsRNG.map { case (rg, g) => buildIndividual(g, express(rg, vectorValues.get(g))) }
       // _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ "fitness" ++ "\t" ++ "historyLength" }.run(Vector.empty)
       finalpop <- ea.run(initialPopEval)
     } yield finalpop
@@ -154,7 +154,7 @@ object StochasticSphereProfile extends App {
         Vector(
           i.historyAge,
           (Individual.genome composeLens Genome.values).get(i)(0),
-          aggregation(Individual.fitnessHistory.get(i))
+          aggregation(vectorFitness.get(i))
         ).mkString(",")
     }.mkString("\n"))
 

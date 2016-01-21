@@ -37,26 +37,29 @@ object profile {
 
   import fr.iscpif.mgo.contexts.default._
 
-  @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
+  @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
   @Lenses case class Individual(genome: Genome, fitness: Double, age: Long)
 
+  def vectorValues = Genome.values composeLens arrayToVectorLens
+
+  def buildGenome(values: Vector[Double], operator: Maybe[Int]) = Genome(values.toArray, operator)
   def buildIndividual(g: Genome, fitness: Double) = Individual(g, fitness, 0)
 
   def initialGenomes(lambda: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-    GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(lambda, genomeSize)
+    GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](buildGenome)(lambda, genomeSize)
 
   def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
     profileOperations.breeding[EvolutionState[Unit, ?], Individual, Genome](
-      Individual.fitness.get, Individual.genome.get, Genome.values.get, Genome.operator.get, Genome.apply
+      Individual.fitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
     )(lambda, niche, operatorExploration)
 
   def expression(fitness: Vector[Double] => Double): Expression[Genome, Individual] =
-    profileOperations.expression[Genome, Individual](Genome.values.get, buildIndividual)(fitness)
+    profileOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
 
   def elitism(niche: Niche[Individual, Int]): Elitism[EvolutionState[Unit, ?], Individual] =
     profileOperations.elitism[EvolutionState[Unit, ?], Individual](
       Individual.fitness.get,
-      (Individual.genome composeLens Genome.values).get,
+      (Individual.genome composeLens vectorValues).get,
       Individual.age)(niche)
 
   case class Profile(lambda: Int, fitness: Vector[Double] => Double, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double) extends Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
@@ -95,7 +98,7 @@ object profile {
         def randomLens = GenLens[S](_.random)
         def startTimeLens = GenLens[S](_.startTime)
         def generation(s: EvolutionData[Unit]) = s.generation
-        def values(genome: G) = Genome.values.get(genome)
+        def values(genome: G) = vectorValues.get(genome)
         def genome(i: I) = Individual.genome.get(i)
         def phenotype(individual: I): Double = Individual.fitness.get(individual)
         def buildIndividual(genome: G, phenotype: Double) = Individual(genome, phenotype, 0)

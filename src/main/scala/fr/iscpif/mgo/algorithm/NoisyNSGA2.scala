@@ -35,35 +35,35 @@ import scala.language.higherKinds
 
 object noisynsga2 {
 
-  @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
-  @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Vector[Vector[Double]], age: Long)
+  @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
+  @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Array[Double]], age: Long)
 
-  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, 1, Vector(f), 0)
+  def buildGenome(values: Vector[Double], operator: Maybe[Int]) = Genome(values.toArray, operator)
+  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, 1, Array(f.toArray), 0)
 
-  implicit val individualHistory = new History[Vector[Double], Individual] {
-    val lens = Individual.fitnessHistory
-  }
+  def vectorFitness = Individual.fitnessHistory composeLens array2ToVectorLens
+  def vectorValues = Genome.values composeLens arrayToVectorLens
 
   def initialGenomes(lambda: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-    GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(lambda, genomeSize)
+    GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](buildGenome)(lambda, genomeSize)
 
   def breeding(lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
     noisynsga2Operations.breeding[EvolutionState[Unit, ?], Individual, Genome](
-      Individual.fitnessHistory.get,
+      vectorFitness.get,
       aggregation,
       Individual.genome.get,
-      Genome.values.get,
+      vectorValues.get,
       Genome.operator.get,
-      Genome.apply)(lambda, operatorExploration, cloneProbability)
+      buildGenome)(lambda, operatorExploration, cloneProbability)
 
   def expression(fitness: (Random, Vector[Double]) => Vector[Double]): Expression[(Random, Genome), Individual] =
-    noisynsga2Operations.expression[Genome, Individual](Genome.values.get, buildIndividual)(fitness)
+    noisynsga2Operations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
 
   def elitism(mu: Int, historySize: Int, aggregation: Vector[Vector[Double]] => Vector[Double]): Elitism[EvolutionState[Unit, ?], Individual] =
     noisynsga2Operations.elitism[EvolutionState[Unit, ?], Individual](
-      Individual.fitnessHistory,
+      vectorFitness,
       aggregation,
-      (Individual.genome composeLens Genome.values).get,
+      (Individual.genome composeLens vectorValues).get,
       Individual.age,
       Individual.historyAge
     )(mu, historySize)
@@ -121,9 +121,9 @@ object noisynsga2 {
         def randomLens = GenLens[S](_.random)
         def startTimeLens = GenLens[S](_.startTime)
         def generation(s: EvolutionData[Unit]) = s.generation
-        def values(genome: G) = Genome.values.get(genome)
+        def values(genome: G) = vectorValues.get(genome)
         def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Vector[Double] = om.aggregation(Individual.fitnessHistory.get(individual))
+        def phenotype(individual: I): Vector[Double] = om.aggregation(vectorFitness.get(individual))
         def buildIndividual(genome: G, phenotype: Vector[Double]) = noisynsga2.buildIndividual(genome, phenotype)
         def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = noisynsga2.initialGenomes(n, om.genomeSize)

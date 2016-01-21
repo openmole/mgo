@@ -124,7 +124,7 @@ object StochasticSphereNSGAII extends App {
     for {
       gs <- algo.initialGenomes
       gsRNG <- zipWithRandom[EvolutionState[Unit, ?], Genome](gs)
-      initialPop = gsRNG.map { case (rg, g) => buildIndividual(g, express(rg, Genome.values.get(g))) }
+      initialPop = gsRNG.map { case (rg, g) => buildIndividual(g, express(rg, vectorValues.get(g))) }
       //_ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") ++ "\thistoryLength" }.run(Vector.empty)
       finalpop <- ea.run(initialPop)
     } yield finalpop
@@ -133,6 +133,6 @@ object StochasticSphereNSGAII extends App {
 
   println("---- Final Population ----")
   val maxHistory = finalpop.map(_.fitnessHistory.size).max
-  println(finalpop.filter(_.fitnessHistory.size == maxHistory).map(i => (i.genome, aggregation(i.fitnessHistory), i.age)).mkString("\n"))
+  println(finalpop.filter(_.fitnessHistory.size == maxHistory).map(i => (i.genome, aggregation(vectorFitness.get(i)), i.age)).mkString("\n"))
 
 }

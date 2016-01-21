@@ -37,27 +37,31 @@ object noisyprofile {
 
   import fr.iscpif.mgo.contexts.default._
 
-  @Lenses case class Genome(values: Vector[Double], operator: Maybe[Int])
-  @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Vector[Double], age: Long)
+  @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
+  @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Double], age: Long)
 
-  def buildIndividual(g: Genome, f: Double) = Individual(g, 1, Vector(f), 0)
+  def vectorValues = Genome.values composeLens arrayToVectorLens
+  def vectorFitness = Individual.fitnessHistory composeLens arrayToVectorLens
+
+  def buildGenome(values: Vector[Double], operator: Maybe[Int]) = Genome(values.toArray, operator)
+  def buildIndividual(g: Genome, f: Double) = Individual(g, 1, Array(f), 0)
 
   def initialGenomes(lambda: Int, genomeSize: Int): EvolutionState[Unit, Vector[Genome]] =
-    GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](Genome.apply)(lambda, genomeSize)
+    GenomeVectorDouble.randomGenomes[EvolutionState[Unit, ?], Genome](buildGenome)(lambda, genomeSize)
 
   def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Double] => Double): Breeding[EvolutionState[Unit, ?], Individual, Genome] =
     noisyprofileOperations.breeding[EvolutionState[Unit, ?], Individual, Genome](
-      Individual.fitnessHistory.get, aggregation, Individual.genome.get, Genome.values.get, Genome.operator.get, Genome.apply
+      vectorFitness.get, aggregation, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
     )(lambda = lambda, niche = niche, operatorExploration = operatorExploration, cloneProbability = cloneProbability)
 
   def expression(fitness: (Random, Vector[Double]) => Double): Expression[(Random, Genome), Individual] =
-    noisyprofileOperations.expression[Genome, Individual](Genome.values.get, buildIndividual)(fitness)
+    noisyprofileOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
 
   def elitism(muByNiche: Int, niche: Niche[Individual, Int], historySize: Int, aggregation: Vector[Double] => Double): Elitism[EvolutionState[Unit, ?], Individual] =
     noisyprofileOperations.elitism[EvolutionState[Unit, ?], Individual](
-      Individual.fitnessHistory,
+      vectorFitness,
       aggregation,
-      (Individual.genome composeLens Genome.values).get,
+      (Individual.genome composeLens vectorValues).get,
       Individual.age,
       Individual.historyAge
     )(muByNiche, niche, historySize)
@@ -130,9 +134,9 @@ object noisyprofile {
         def randomLens = GenLens[S](_.random)
         def startTimeLens = GenLens[S](_.startTime)
         def generation(s: EvolutionData[Unit]) = s.generation
-        def values(genome: G) = Genome.values.get(genome)
+        def values(genome: G) = vectorValues.get(genome)
         def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Double = om.aggregation(Individual.fitnessHistory.get(individual))
+        def phenotype(individual: I): Double = om.aggregation(vectorFitness.get(individual))
         def buildIndividual(genome: G, phenotype: Double) = noisyprofile.buildIndividual(genome, phenotype)
         def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = noisyprofile.initialGenomes(n, om.genomeSize)

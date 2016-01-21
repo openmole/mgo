@@ -272,4 +272,6 @@ package object mgo {
     def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
   }
 
+  def arrayToVectorLens[A: Manifest] = monocle.Lens[Array[A], Vector[A]](_.toVector)(_ => _.toArray)
+  def array2ToVectorLens[A: Manifest] = monocle.Lens[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(_ => _.map(_.toArray).toArray)
 }

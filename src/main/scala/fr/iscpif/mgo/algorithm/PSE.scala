@@ -54,10 +54,14 @@ object pse {
     def run[A](x: EvolutionState[HitMap, A], s: EvolutionData[HitMap]): (EvolutionData[HitMap], A) = default.unwrap(x, s)
   }
 
-  type V = Vector[Double]
+  @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
+  @Lenses case class Individual(genome: Genome, phenotype: Array[Double], age: Long)
 
-  @Lenses case class Genome(values: V, operator: Maybe[Int])
-  @Lenses case class Individual(genome: Genome, phenotype: Vector[Double], age: Long)
+  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
+  def buildGenome(values: Vector[Double], operator: Maybe[Int]) = Genome(values.toArray, operator)
+
+  def vectorPhenotype = Individual.phenotype composeLens arrayToVectorLens
+  def vectorValues = Genome.values composeLens arrayToVectorLens
 
   type HitMap = Map[Vector[Int], Int]
 
@@ -81,10 +85,8 @@ object pse {
         }
     }
 
-  def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
-
   def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =
-    GenomeVectorDouble.randomGenomes[EvolutionState[HitMap, ?], Genome](Genome.apply)(mu, genomeSize)
+    GenomeVectorDouble.randomGenomes[EvolutionState[HitMap, ?], Genome](buildGenome)(mu, genomeSize)
 
   def breeding(
     lambda: Int,
@@ -92,22 +94,22 @@ object pse {
     operatorExploration: Double) =
     pseOperations.breeding[EvolutionState[HitMap, ?], Individual, Genome](
       Individual.genome.get,
-      Genome.values.get,
+      vectorValues.get,
       Genome.operator.get,
-      Individual.phenotype.get _ andThen pattern,
-      Genome.apply
+      vectorPhenotype.get _ andThen pattern,
+      buildGenome
     )(lambda, operatorExploration)
 
   def elitism(pattern: Vector[Double] => Vector[Int]) =
     pseOperations.elitism[EvolutionState[HitMap, ?], Individual, Vector[Double]](
-      (Individual.genome composeLens Genome.values).get,
-      Individual.phenotype.get,
+      (Individual.genome composeLens vectorValues).get,
+      vectorPhenotype.get,
       pattern,
       Individual.age
     )
 
   def expression(phenotype: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
-    pseOperations.expression[Genome, Individual](Genome.values.get, buildIndividual)(phenotype)
+    pseOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(phenotype)
 
   case class OpenMOLE(
     pattern: Vector[Double] => Vector[Int],
@@ -135,10 +137,10 @@ object pse {
         def randomLens = GenLens[S](_.random)
         def startTimeLens = GenLens[S](_.startTime)
         def generation(s: S) = s.generation
-        def values(genome: G) = Genome.values.get(genome)
+        def values(genome: G) = vectorValues.get(genome)
         def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Vector[Double] = Individual.phenotype.get(individual)
-        def buildIndividual(genome: G, phenotype: Vector[Double]) = Individual(genome, phenotype, 0)
+        def phenotype(individual: I): Vector[Double] = vectorPhenotype.get(individual)
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = buildIndividual(genome, phenotype)
         def initialState(rng: Random) = EvolutionData[HitMap](random = rng, s = Map())
         def initialGenomes(n: Int): M[Vector[G]] = pse.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[M, I, G] = pse.breeding(n, om.pattern, om.operatorExploration)
