@@ -154,7 +154,7 @@ object noisypse {
 
         def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
         def migrateFromIsland(population: Vector[I]) =
-          population.filter(_.historyAge == 0).map {
+          population.filter(_.historyAge != 0).map {
             i => Individual.phenotypeHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
           }
       }
