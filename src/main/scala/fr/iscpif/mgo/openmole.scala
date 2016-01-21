@@ -59,7 +59,7 @@ object openmole {
       def generation(s: S): Long
       def breeding(n: Int): Breeding[M, I, G]
       def elitism: Elitism[M, I]
-      def migrateToIsland(i: I): I
+      def migrateToIsland(i: Vector[I]): Vector[I]
       def migrateFromIsland(population: Vector[I]): Vector[I]
     }
 

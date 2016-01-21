@@ -129,7 +129,8 @@ object noisynsga2 {
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = noisynsga2.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = noisynsga2.breeding(n, om.operatorExploration, om.cloneProbability, om.aggregation)
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = noisynsga2.elitism(om.mu, om.historySize, om.aggregation)
-        def migrateToIsland(i: I) = i.copy(historyAge = 0)
+
+        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
         def migrateFromIsland(population: Vector[I]) =
           population.filter(_.historyAge == 0).map {
             i => Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)

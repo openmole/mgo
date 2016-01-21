@@ -101,7 +101,7 @@ object nsga2 {
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = nsga2.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = nsga2.breeding(n, om.operatorExploration)
         def elitism: Elitism[EvolutionState[Unit, ?], I] = nsga2.elitism(om.mu)
-        def migrateToIsland(i: I): I = i
+        def migrateToIsland(population: Vector[I]) = population
         def migrateFromIsland(population: Vector[I]) = population
       }
 

@@ -143,7 +143,7 @@ object pse {
         def initialGenomes(n: Int): M[Vector[G]] = pse.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[M, I, G] = pse.breeding(n, om.pattern, om.operatorExploration)
         def elitism: Elitism[M, I] = pse.elitism(om.pattern)
-        def migrateToIsland(i: I): I = i
+        def migrateToIsland(population: Vector[I]) = population
         def migrateFromIsland(population: Vector[I]) = population
       }
 

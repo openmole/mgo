@@ -103,7 +103,7 @@ object profile {
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = fr.iscpif.mgo.algorithm.profile.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = fr.iscpif.mgo.algorithm.profile.breeding(n, om.niche, om.operatorExploration)
         def elitism: Elitism[EvolutionState[Unit, ?], I] = fr.iscpif.mgo.algorithm.profile.elitism(om.niche)
-        def migrateToIsland(i: I): I = i
+        def migrateToIsland(population: Vector[I]) = population
         def migrateFromIsland(population: Vector[I]) = population
       }
 

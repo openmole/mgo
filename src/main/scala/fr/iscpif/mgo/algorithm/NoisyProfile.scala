@@ -138,7 +138,8 @@ object noisyprofile {
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = noisyprofile.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = noisyprofile.breeding(n, om.niche, om.operatorExploration, om.cloneProbability, om.aggregation)
         def elitism: Elitism[EvolutionState[Unit, ?], Individual] = noisyprofile.elitism(om.mu, om.niche, om.historySize, om.aggregation)
-        def migrateToIsland(i: Individual): Individual = i.copy(historyAge = 0)
+
+        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
         def migrateFromIsland(population: Vector[I]) =
           population.filter(_.historyAge == 0).map {
             i => Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
