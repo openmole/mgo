@@ -96,7 +96,7 @@ object StochasticSphereProfile extends App {
   val muByNiche = 20
   val lambda = 100
   def dimensions = 5
-  val maxIteration = 10000
+  val maxIteration = 1000
   val operatorExploration = 0.1
   val cloneProbability = 0.2
   val historySize = 100
@@ -154,7 +154,8 @@ object StochasticSphereProfile extends App {
         Vector(
           i.historyAge,
           (Individual.genome composeLens Genome.values).get(i)(0),
-          aggregation(vectorFitness.get(i))
+          aggregation(vectorFitness.get(i)),
+          vectorFitness.get(i).size
         ).mkString(",")
     }.mkString("\n"))
 

@@ -59,11 +59,11 @@ object noisyprofile {
 
   def elitism(muByNiche: Int, niche: Niche[Individual, Int], historySize: Int, aggregation: Vector[Double] => Double): Elitism[EvolutionState[Unit, ?], Individual] =
     noisyprofileOperations.elitism[EvolutionState[Unit, ?], Individual](
-      vectorFitness,
-      aggregation,
-      (Individual.genome composeLens vectorValues).get,
-      Individual.age,
-      Individual.historyAge
+      history = vectorFitness,
+      aggregation = aggregation,
+      values = (Individual.genome composeLens vectorValues).get,
+      age = Individual.age,
+      historyAge = Individual.historyAge
     )(muByNiche, niche, historySize)
 
   def profile(population: Vector[Individual], niche: Niche[Individual, Int]) =

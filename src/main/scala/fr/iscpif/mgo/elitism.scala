@@ -100,7 +100,6 @@ object elitism {
 
         def oldH: Vector[P] = history.get(old)
         def youngH: Vector[P] = history.get(young).takeRight(min(youngAge, historySize).toInt)
-
         def updatedHistory = history.set((oldH ++ youngH).takeRight(historySize))(old)
         age.set(oldAge + youngAge)(updatedHistory)
       }
