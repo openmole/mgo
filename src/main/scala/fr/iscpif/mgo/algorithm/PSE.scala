@@ -140,7 +140,7 @@ object pse {
         def values(genome: G) = vectorValues.get(genome)
         def genome(i: I) = Individual.genome.get(i)
         def phenotype(individual: I): Vector[Double] = vectorPhenotype.get(individual)
-        def buildIndividual(genome: G, phenotype: Vector[Double]) = buildIndividual(genome, phenotype)
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = pse.buildIndividual(genome, phenotype)
         def initialState(rng: Random) = EvolutionData[HitMap](random = rng, s = Map())
         def initialGenomes(n: Int): M[Vector[G]] = pse.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[M, I, G] = pse.breeding(n, om.pattern, om.operatorExploration)

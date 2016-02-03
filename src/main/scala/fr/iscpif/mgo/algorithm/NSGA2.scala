@@ -100,7 +100,7 @@ object nsga2 {
         def values(genome: G) = vectorValues.get(genome)
         def genome(i: I) = Individual.genome.get(i)
         def phenotype(individual: I): Vector[Double] = vectorFitness.get(individual)
-        def buildIndividual(genome: G, phenotype: Vector[Double]) = buildIndividual(genome, phenotype)
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = nsga2.buildIndividual(genome, phenotype)
         def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
         def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = nsga2.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = nsga2.breeding(n, om.operatorExploration)
