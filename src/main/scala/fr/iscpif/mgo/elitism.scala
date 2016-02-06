@@ -56,11 +56,11 @@ object elitism {
       } yield individuals.map(age.modify(_ + 1))
     )
 
-  def addHits[M[_]: Monad, I, C](cell: I => C, age: I => Long)(implicit MH: HitMapper[M, C]) =
+  def addHits[M[_]: Monad, I, C](cell: I => C, mapped: monocle.Lens[I, Boolean])(implicit MH: HitMapper[M, C]) =
     Kleisli.kleisli[M, Vector[I], Vector[I]] { (is: Vector[I]) =>
       for {
-        _ <- MH.hits(is.filter(i => age(i) == 0).map(cell))
-      } yield is
+        _ <- MH.hits(is.filter(i => !mapped.get(i)).map(cell))
+      } yield is.map(mapped.set(true))
     }
 
   /** Returns the mu individuals with the highest ranks. */

@@ -55,7 +55,12 @@ object pse {
   }
 
   @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
-  @Lenses case class Individual(genome: Genome, phenotype: Array[Double], age: Long)
+  @Lenses case class Individual(
+    genome: Genome,
+    phenotype: Array[Double],
+    age: Long,
+    mapped: Boolean = false,
+    foundedIsland: Boolean = false)
 
   def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
   def buildGenome(values: Vector[Double], operator: Maybe[Int]) = Genome(values.toArray, operator)
@@ -105,7 +110,8 @@ object pse {
       (Individual.genome composeLens vectorValues).get,
       vectorPhenotype.get,
       pattern,
-      Individual.age
+      Individual.age,
+      Individual.mapped
     )
 
   def expression(phenotype: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
@@ -145,8 +151,9 @@ object pse {
         def initialGenomes(n: Int): M[Vector[G]] = pse.initialGenomes(n, om.genomeSize)
         def breeding(n: Int): Breeding[M, I, G] = pse.breeding(n, om.pattern, om.operatorExploration)
         def elitism: Elitism[M, I] = pse.elitism(om.pattern)
-        def migrateToIsland(population: Vector[I]) = population
-        def migrateFromIsland(population: Vector[I]) = population
+        def migrateToIsland(population: Vector[I]) = population.map(Individual.foundedIsland.set(true))
+        def migrateFromIsland(population: Vector[I]) =
+          population.filter(i => !Individual.foundedIsland.get(i)).map(Individual.mapped.set(false))
       }
 
       def unwrap[A](x: M[A], s: S): (S, A) = default.unwrap(x, s)
@@ -180,8 +187,9 @@ object pseOperations {
     values: I => Vector[Double],
     phenotype: I => P,
     pattern: P => Vector[Int],
-    age: monocle.Lens[I, Long])(implicit MH: HitMapper[M, Vector[Int]]): Elitism[M, I] =
-    addHits[M, I, Vector[Int]](phenotype andThen pattern, age.get) andThen
+    age: monocle.Lens[I, Long],
+    mapped: monocle.Lens[I, Boolean])(implicit MH: HitMapper[M, Vector[Int]]): Elitism[M, I] =
+    addHits[M, I, Vector[Int]](phenotype andThen pattern, mapped) andThen
       applyCloneStrategy(values, keepYoungest[M, I](age.get)) andThen
       filterNaN(phenotype) andThen
       keepNiches(

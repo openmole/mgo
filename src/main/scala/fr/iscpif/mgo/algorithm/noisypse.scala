@@ -67,7 +67,13 @@ object noisypse {
   }
 
   @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
-  @Lenses case class Individual(genome: Genome, historyAge: Long, phenotypeHistory: Array[Array[Double]], age: Long)
+  @Lenses case class Individual(
+    genome: Genome,
+    historyAge: Long,
+    phenotypeHistory: Array[Array[Double]],
+    age: Long,
+    mapped: Boolean = false,
+    foundedIsland: Boolean = false)
 
   def buildGenome(values: Vector[Double], operator: Maybe[Int]) = Genome(values.toArray, operator)
   def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, 1, Array(phenotype.toArray), 0)
@@ -99,6 +105,7 @@ object noisypse {
       aggregation,
       pattern,
       Individual.age,
+      Individual.mapped,
       Individual.historyAge
     )(historySize)
 
@@ -154,11 +161,18 @@ object noisypse {
             historySize = om.historySize,
             aggregation = om.aggregation)
 
-        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
+        def migrateToIsland(population: Vector[I]) =
+          population.map(Individual.foundedIsland.set(true)).map(Individual.historyAge.set(0))
+
         def migrateFromIsland(population: Vector[I]) =
           population.filter(_.historyAge != 0).map {
-            i => Individual.phenotypeHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+            i =>
+              val i1 = Individual.phenotypeHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+              if (Individual.foundedIsland.get(i1))
+                (Individual.mapped.set(true) andThen Individual.foundedIsland.set(false))(i1)
+              else Individual.mapped.set(false)(i1)
           }
+
       }
 
       def unwrap[A](x: EvolutionState[pse.HitMap, A], s: S): (EvolutionData[pse.HitMap], A) = default.unwrap[pse.HitMap, A](x, s)
@@ -196,8 +210,9 @@ object noisypseOperations {
     aggregation: Vector[P] => P,
     pattern: P => Vector[Int],
     age: monocle.Lens[I, Long],
+    mapped: monocle.Lens[I, Boolean],
     historyAge: monocle.Lens[I, Long])(historySize: Int)(implicit MH: HitMapper[M, Vector[Int]]): Elitism[M, I] =
-    addHits[M, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, age.get) andThen
+    addHits[M, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, mapped) andThen
       applyCloneStrategy(values, mergeHistories[M, I, P](historyAge, history)(historySize)) andThen
       filterNaN(history.get _ andThen aggregation) andThen
       keepNiches(
