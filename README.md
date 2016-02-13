@@ -1,13 +1,14 @@
 MGO
 ===
 
-MGO is a scala library based on the cake pattern for multi-objective evolutionary / genetic algorithms:
+MGO is a purely functionnal scala library based for evolutionary / genetic algorithms:
 * enforcing immutability,
 * exposes a modular and extensible architecture,
 * implements state of the art algorithms,
-* take advantage of multi-core architectures.
+* handles noisy (stochastic) fitness functions,
+* implements auto-adaptatative algortihms.
 
-MGO implements NGSAII, SMSEMOEA, CMAES and other diversity based evolutionary algorithms.
+MGO implements NGSAII, CP (Calibration Profile), PSE (Pattern Search Experiment).
 
 Licence
 -------
