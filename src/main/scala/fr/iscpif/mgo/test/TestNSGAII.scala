@@ -136,3 +136,42 @@ object StochasticSphereNSGAII extends App {
   println(finalpop.filter(_.fitnessHistory.size == maxHistory).map(i => (i.genome, aggregation(vectorFitness.get(i)), i.age)).mkString("\n"))
 
 }
+
+object ZDT4NSGAII extends App {
+
+  import nsga2._
+
+  val mu = 100
+  val lambda = 100
+  def dimensions = 10
+  val maxIterations = 1000
+
+  val fitness = (x: Vector[Double]) => zdt4(x)
+
+  val algorithm =
+    NSGA2(
+      mu = mu,
+      lambda = lambda,
+      fitness = fitness,
+      genomeSize = dimensions)
+
+  val ea =
+    runEAUntilStackless[Unit, Individual](
+      stopCondition = afterGeneration[EvolutionState[Unit, ?], Individual](maxIterations),
+      stepFunction = algorithm.step
+    )
+
+  val evolution: EvolutionState[Unit, Vector[Individual]] =
+    for {
+      ig <- algorithm.initialGenomes
+      pop = ig.map { algorithm.expression }
+      finalpop <- ea.run(pop)
+    } yield finalpop
+
+  val (finalstate, finalpop) = algorithm.run(evolution, new Random(42))
+
+  println("---- Fitnesses ----")
+  println(finalpop.map { i => i.genome -> i.fitness }.mkString("\n"))
+
+}
+

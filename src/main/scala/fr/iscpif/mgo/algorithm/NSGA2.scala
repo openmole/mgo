@@ -62,7 +62,7 @@ object nsga2 {
       (Individual.genome composeLens vectorValues).get,
       Individual.age)(mu)
 
-  case class NSGA2(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double) extends Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+  case class NSGA2(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double = 0.1) extends Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
     def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
     def initialGenomes: EvolutionState[Unit, Vector[Genome]] = nsga2.initialGenomes(lambda, genomeSize)
     def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = nsga2.breeding(lambda, operatorExploration)
