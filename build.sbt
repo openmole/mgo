@@ -2,7 +2,7 @@ organization := "fr.iscpif"
 
 name := "mgo"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.11.8"
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 
