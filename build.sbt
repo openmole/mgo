@@ -5,28 +5,19 @@ name := "mgo"
 scalaVersion := "2.11.8"
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
-
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
+addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
 
-resolvers ++= Seq(
-  "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
-)
+val monocleVersion = "1.2.2"
 
-libraryDependencies += "com.github.scala-incubator.io" %% "scala-io-core" % "0.4.3"
-
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.5"
-
+libraryDependencies += "com.github.pathikrit" %% "better-files" % "2.15.0"
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6"
 libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.5.0"
-
-val monocleVersion = "1.2.0"
-
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
-
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
-
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
 
-val scalazVersion = "7.2.0"
+val scalazVersion = "7.2.4"
 
 libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % scalazVersion,
@@ -34,9 +25,10 @@ libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
 )
 
-resolvers ++= Seq(
-  "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
-)
+
+resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
+resolvers += "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
+
 
 libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.3" % "test"
 
