@@ -16,17 +16,25 @@
  */
 package fr.iscpif.mgo
 
+import monocle.macros.Lenses
 import stop._
+
 import scala.annotation.tailrec
-import scala.concurrent.duration.Duration
 import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 import scalaz.effect.IO
-
 import scala.util.Random
 
 object contexts {
+
+  type Field[M[_], A] = (A => A) => M[A]
+
+  implicit class getSetModDecorator[M[_], A](f: Field[M, A]) {
+    def get = f(identity)
+    def set(a: A) = f(_ => a)
+    def modify(m: A => A) = f(m)
+  }
 
   trait RandomGen[M[_]] {
     /** returns the random number generator in M */
@@ -53,10 +61,7 @@ object contexts {
   }
 
   trait HitMapper[M[_], C] {
-    def get: M[Map[C, Int]]
-    def set(newMap: Map[Vector[Int], Int]): M[Unit]
-    def hitCount(cell: C): M[Int]
-    def hits(cells: Vector[C]): M[Unit]
+    def map: Field[M, Map[C, Int]]
   }
 
   def zipWithRandom[M[_]: Monad, G](gs: Vector[G])(implicit MR: ParallelRandomGen[M]): M[Vector[(Random, G)]] =
@@ -66,7 +71,7 @@ object contexts {
 
   object default {
 
-    case class EvolutionData[S](
+    @Lenses case class EvolutionData[S](
       generation: Long = 0,
       startTime: Long = System.currentTimeMillis(),
       random: Random = newRNG(System.currentTimeMillis()),
@@ -80,6 +85,13 @@ object contexts {
     implicit def evolutionStateMonad[S]: Monad[EvolutionState[S, ?]] = StateT.stateTMonadState[EvolutionData[S], IO]
     implicit def evolutionStateMonadState[S]: MonadState[EvolutionState[S, ?], EvolutionData[S]] = StateT.stateTMonadState[EvolutionData[S], IO]
     implicit def evolutionStateMonadTrans[S]: MonadTrans[StateT[?[_], EvolutionData[S], ?]] = StateT.StateMonadTrans[EvolutionData[S]]
+
+    implicit def lensToField[A, S](l: monocle.Lens[S, A]): Field[EvolutionState[S, ?], A] =
+      (f: A => A) =>
+        for {
+          _ <- evolutionStateMonadState[S].modify((EvolutionData.s composeLens l).modify(f))
+          a <- evolutionStateMonadState[S].gets(s => (EvolutionData.s composeLens l).get(s))
+        } yield a
 
     implicit def evolutionStateUseRG[S]: RandomGen[EvolutionState[S, ?]] = new RandomGen[EvolutionState[S, ?]] {
       def random: EvolutionState[S, Random] =

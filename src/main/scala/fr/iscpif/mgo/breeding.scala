@@ -313,8 +313,7 @@ object breeding {
       } yield bred.toVector.flatten
     })
 
-  /**** Cloning ****/
-  /** Replaces randamly some of the genomes in gs by genomes taken from the original population of Is */
+  /** Randomly replaces some of the genomes in gs by genomes taken from the original population of I */
   def clonesReplace[M[_], I, G](cloneProbability: Double, population: Vector[I], genome: I => G)(implicit MM: Monad[M], MR: RandomGen[M]): Breeding[M, G, G] =
     Breeding { gs: Vector[G] =>
       for { rg <- MR.random } yield gs.map { g => if (rg.nextDouble < cloneProbability) genome(population.random(rg)) else g }

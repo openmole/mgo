@@ -120,8 +120,10 @@ object ranking {
 
   //TODO: Lazy ne sert à rien ici. On pourrait redefinir le type Ranking en Ranking[M,I,K] avec K est de typeclass Order,
   // pour ne pas toujours être obligé d'utiliser Lazy.
-  def hitCountRanking[M[_], I, C](cell: I => C)(implicit MM: Monad[M], MH: HitMapper[M, C]): Ranking[M, I] =
-    Ranking { is: Vector[I] => is.traverse { i: I => MH.hitCount(cell(i)).map[Lazy[Int]] { i => Lazy(i) } } }
+  def hitCountRanking[M[_]: Monad, I, C](cell: I => C)(implicit hm: HitMapper[M, C]): Ranking[M, I] = {
+    def hitCount(cell: C) = hm.map.get.map(m => m.getOrElse(cell, 0))
+    Ranking { is: Vector[I] => is.traverse { i: I => hitCount(cell(i)).map[Lazy[Int]] { i => Lazy(i) } } }
+  }
 
   /**** Generic functions on rankings ****/
 

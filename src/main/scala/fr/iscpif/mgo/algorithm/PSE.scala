@@ -72,22 +72,7 @@ object pse {
 
   implicit def hitMapper: HitMapper[EvolutionState[HitMap, ?], Vector[Int]] =
     new HitMapper[EvolutionState[HitMap, ?], Vector[Int]] {
-      def get: EvolutionState[HitMap, Map[Vector[Int], Int]] =
-        evolutionStateMonadState[HitMap].get.map(_.s)
-
-      def set(newMap: Map[Vector[Int], Int]): EvolutionState[HitMap, Unit] =
-        evolutionStateMonadState[HitMap].modify { s => s.copy(s = newMap) }
-
-      def hitCount(cell: Vector[Int]): EvolutionState[HitMap, Int] =
-        evolutionStateMonadState[HitMap].get.map {
-          _.s.getOrElse(cell, 0)
-        }
-
-      def hits(cells: Vector[Vector[Int]]): EvolutionState[HitMap, Unit] =
-        evolutionStateMonadState[HitMap].modify { s =>
-          val newS = s.s ++ (cells.map { c => (c, s.s.getOrElse(c, 0) + 1) })
-          s.copy(s = newS)
-        }
+      def map = monocle.Lens.id[HitMap]
     }
 
   def initialGenomes(mu: Int, genomeSize: Int): EvolutionState[HitMap, Vector[Genome]] =
