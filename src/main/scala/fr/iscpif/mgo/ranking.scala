@@ -44,7 +44,7 @@ object ranking {
     def apply[M[_]: Monad, I](f: Vector[I] => M[Vector[Lazy[Int]]]): Ranking[M, I] = Kleisli(f)
   }
 
-  implicit def monoObjectiveRanking[M[_]: Monad, I](fitness: Fitness[I, Double]): Ranking[M, I] =
+  def monoObjectiveRanking[M[_]: Monad, I](fitness: Fitness[I, Double]): Ranking[M, I] =
     Ranking((values: Vector[I]) => {
       val byFitness = values.zipWithIndex.sortBy { case (i, id) => fitness(i) }.map { _._2 }
       byFitness.zipWithIndex.sortBy { case (id, _) => id }.map { case (_, rank) => Lazy(rank) }
@@ -143,6 +143,12 @@ object ranking {
       reversedRanking(paretoRanking[M, I](fitness)),
       crowdingDistance[M, I] { (i: I) => fitness(i) }
     )
+
+  def rank[M[_]: Monad, I, K](ranking: Kleisli[M, Vector[I], Vector[K]]) = Kleisli[M, Vector[I], Vector[(I, K)]] { is =>
+    for {
+      rs <- ranking.run(is)
+    } yield is zip rs
+  }
 
 }
 

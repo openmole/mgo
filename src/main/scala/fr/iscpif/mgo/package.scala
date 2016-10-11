@@ -17,23 +17,23 @@
 
 package fr.iscpif
 
-import fr.iscpif.mgo.tools._
 import org.apache.commons.math3.random._
+
 import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 import scala.util.Random
 import scala.concurrent.duration._
-
 import scala.language.higherKinds
 import scalaz._
 import Scalaz._
 import scalaz.effect.IO
-
 import mgo.breeding._
 import mgo.elitism._
+import fr.iscpif.mgo.algorithm._
+import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo.contexts._
-
-import scala.util.control.TailCalls._
+import fr.iscpif.mgo.contexts.default._
+import fr.iscpif.mgo.stop._
 
 package object mgo {
 
@@ -60,26 +60,26 @@ package object mgo {
       Kleisli.kleisli[M, Vector[I], Boolean]({ (_: Vector[I]) => false.point[M] }),
       stepFunction)
 
-  /*def runEAUntilNR[ M[_]: Monad, , IG](
-    stopCondition: Vector[I] => M[Boolean],
-    stepFunction: Vector[I] => M[Vector[I]],
-    stop: Boolean = false)(population:Vector[I]): M[Vector[I]] =
+  case class RunResult[T, I, G, S](t: T, algo: Algorithm[T, EvolutionState[S, ?], I, G, EvolutionData[S]]) {
+    def stop(stopCondition: StopCondition[EvolutionState[S, ?], I]) = {
+      val ea =
+        runEAUntilStackless[S, I](
+          stopCondition,
+          algo.step(t)
+        )
 
-    var stop = false
-    var newpop = population
+      val evolution =
+        for {
+          ig <- algo.initialGenomes(t)
+          initialPop = ig.map { algo.expression(t) }
+          finalpop <- ea.run(initialPop)
+        } yield finalpop
 
-    while(!stop) {
-      for {
-        stop_ <- stopCondition(newpop)
-        newpop_ <- stepFunction(newpop)
-      } yield {
-        stop = stop_
-        newpop = newpop_
-        ()}
+      algo.run(t, evolution)
     }
+  }
 
-    newpop.point[M]
-  }*/
+  def run[T, I, G, S](t: T)(implicit algo: Algorithm[T, EvolutionState[S, ?], I, G, EvolutionData[S]]) = RunResult(t, algo)
 
   /** Non-tail recursive. Will break for long runs. */
   def runEAUntil[M[_]: Monad, I](

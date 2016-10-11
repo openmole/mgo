@@ -16,10 +16,9 @@
  */
 package fr.iscpif.mgo.algorithm
 
-import monocle.macros.{ Lenses, GenLens }
+import monocle.macros.{ GenLens, Lenses }
 
 import scala.language.higherKinds
-
 import fr.iscpif.mgo.ranking._
 import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo._
@@ -62,18 +61,21 @@ object nsga2 {
       (Individual.genome composeLens vectorValues).get,
       Individual.age)(mu)
 
-  case class NSGA2(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double = 0.1) extends Algorithm[EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
-    def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
-    def initialGenomes: EvolutionState[Unit, Vector[Genome]] = nsga2.initialGenomes(lambda, genomeSize)
-    def breeding: Breeding[EvolutionState[Unit, ?], Individual, Genome] = nsga2.breeding(lambda, operatorExploration)
-    def expression: Expression[Genome, Individual] = nsga2.expression(fitness)
-    def elitism: Elitism[EvolutionState[Unit, ?], Individual] = nsga2.elitism(mu)
+  object NSGA2 {
 
-    def step: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
-      nsga2Operations.step[EvolutionState[Unit, ?], Individual, Genome](breeding, expression, elitism)
+    implicit def isAlgorithm: Algorithm[NSGA2, EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] =
+      new Algorithm[NSGA2, EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
+        override def initialState(t: NSGA2, rng: Random): EvolutionData[Unit] = EvolutionData[Unit](random = rng, s = ())
+        override def initialGenomes(t: NSGA2): EvolutionState[Unit, Vector[Genome]] = nsga2.initialGenomes(t.lambda, t.genomeSize)
+        override def expression(t: NSGA2): Expression[Genome, Individual] = nsga2.expression(t.fitness)
+        override def step(t: NSGA2): Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
+          nsga2Operations.step(nsga2.breeding(t.lambda, t.operatorExploration), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
+        override def run[A](t: NSGA2, m: EvolutionState[Unit, A], ca: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(m, ca)
+      }
 
-    def run[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(x, s)
   }
+
+  case class NSGA2(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double = 0.1)
 
   case class OpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double)
 
