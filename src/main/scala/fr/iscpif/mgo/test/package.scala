@@ -16,28 +16,25 @@
  */
 package fr.iscpif.mgo
 
-import tools.Math._
 import math._
+import scala.util.Random
 
 package object test {
 
   def average(s: Seq[Double]) = s.sum / s.size
 
-  trait Problem[I, O] {
-    def scale(s: I): I
-    def compute(i: I): O
-  }
-
-  implicit class ProblemApplication[I, O](p: Problem[I, O]) {
-    def apply(i: I) = p.compute(p.scale(i))
-  }
-
-  def sphere = new Problem[Vector[Double], Double] {
+  object sphere {
     def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-2, 2))
     def compute(i: Vector[Double]): Double = i.map(x => x * x).sum
   }
 
-  def rastrigin = new Problem[Vector[Double], Double] {
+  object noisySphere {
+    def scale(s: Vector[Double]): Vector[Double] = sphere.scale(s)
+    def compute(rng: Random, v: Vector[Double]) =
+      Vector(sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v)))
+  }
+
+  object rastrigin {
     def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-5.12, 5.12))
     def compute(i: Vector[Double]): Double = 10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
   }
@@ -66,7 +63,7 @@ package object test {
     Seq(pow(sx, 2), pow(x - 2, 2))
   }
 
-  def zdt4 = new Problem[Vector[Double], Vector[Double]] {
+  object zdt4 {
 
     def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(0.0, 5.0))
 

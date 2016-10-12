@@ -22,7 +22,7 @@ Define a problem, for instance the multi-modal multi-objective ZDT4 benchmark:
 
 ```scala
 
-  def zdt4 = new Problem[Vector[Double], Vector[Double]] {
+  object zdt4 {
 
     def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(0.0, 5.0))
 
@@ -71,6 +71,48 @@ Run the optimisation:
 
   println(result(finalPopulation, zdt4.scale).mkString("\n"))
 
+```
+
+Noisy fitness functions
+-----------------------
+
+All algorithm in MGO have version to compute on noisy fitness function. MGO handle noisy fitness functions by resampling
+only the most promising individuals. It uses an aggregation function to aggregate the multiple sample when needed.
+
+For instance a version of NSGA2 for noisy fitness functions may be used has follow:
+
+```scala
+  import algorithm.noisynsga2._
+  import scala.util.Random
+
+  object sphere {
+    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-2, 2))
+    def compute(i: Vector[Double]): Double = i.map(x => x * x).sum
+  }
+
+  object noisySphere {
+    def scale(s: Vector[Double]): Vector[Double] = sphere.scale(s)
+    def compute(rng: Random, v: Vector[Double]) =
+      Vector(sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v)))
+  }
+
+  def aggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
+
+  val nsga2 =
+    NoisyNSGA2(
+      mu = 100,
+      lambda = 100,
+      fitness = noisySphere.compute,
+      aggregation = aggregation,
+      genomeSize = 2)
+
+  val (finalState, finalPopulation) =
+    run(nsga2).
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation)).
+      eval(new Random(42))
+
+  println(result(finalPopulation, aggregation, noisySphere.scale).mkString("\n"))
 ```
 
 Diversity only

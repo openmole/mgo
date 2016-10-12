@@ -27,7 +27,7 @@ object SphereNSGAII extends App {
   val nsga2 = NSGA2(
     mu = 100,
     lambda = 100,
-    fitness = x => Vector(sphere(x)),
+    fitness = (v: Vector[Double]) => Vector(sphere.compute(v)),
     genomeSize = 10,
     operatorExploration = 0.1)
 
@@ -46,19 +46,15 @@ object NoisySphereNSGAII extends App {
   import algorithm.noisynsga2._
   import scala.util.Random
 
-  def express(rng: Random, v: Vector[Double]) = Vector(sphere(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere(v)))
   def aggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
 
   val nsga2 =
     NoisyNSGA2(
       mu = 100,
       lambda = 100,
-      fitness = express,
+      fitness = noisySphere.compute,
       aggregation = aggregation,
-      operatorExploration = 0.1,
-      genomeSize = 2,
-      historySize = 100,
-      cloneProbability = 0.2)
+      genomeSize = 2)
 
   val (finalState, finalPopulation) =
     run(nsga2).
@@ -66,7 +62,7 @@ object NoisySphereNSGAII extends App {
       trace((s, is) => println(s.generation)).
       eval(new Random(42))
 
-  println(result(finalPopulation, aggregation, sphere.scale).mkString("\n"))
+  println(result(finalPopulation, aggregation, noisySphere.scale).mkString("\n"))
 
 }
 
