@@ -31,7 +31,7 @@ import scala.util.Random
 import scalaz._
 import Scalaz._
 
-object noisypse {
+object noisypse extends niche.Imports {
 
   implicit def hitMapper = pse.hitMapper
 

@@ -149,6 +149,36 @@ This program explores all the different combination of values that can be produc
 
 For more examples, have a look at the main/scala/fr/iscpif/mgo/test directory in the repository.
 
+Mixed optimisation and diversity
+--------------------------------
+
+The calibration profile algorthim compute the best fitness function for a set of niches. This algorithm is explained [here](http://jasss.soc.surrey.ac.uk/18/1/12.html).
+
+In MGO you can compute profiles of a 10 dimensional hyper-sphere function using the following:
+
+```scala
+
+  import algorithm.profile._
+  import util.Random
+
+  //Profile the first dimension of the genome
+  val algo = Profile(
+    lambda = 100,
+    fitness = sphere.compute,
+    niche = genomeProfile(x = 0, nX = 10),
+    genomeSize = 10)
+
+  val (finalState, finalPopulation) =
+    run(algo).
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation)).
+      eval(new Random(42))
+
+  println(result(finalPopulation, sphere.scale).mkString("\n"))
+```
+
+
+
 Distributed computing
 ---------------------
 
