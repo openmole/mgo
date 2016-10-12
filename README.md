@@ -77,7 +77,7 @@ Diversity only
 --------------
 
 MGO proposes the PSE alorithm that aim a creating diverse solution instead of optimsing a function. The paper about this
-algorithm can be found (here)[http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0138212].
+algorithm can be found [here](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0138212).
 
 ```scala
   import fr.iscpif.mgo._
@@ -109,7 +109,7 @@ For more examples, have a look at the main/scala/fr/iscpif/mgo/test directory in
 Distributed computing
 ---------------------
 
-Algorithms implemented in MGO are also avialiable in the workflow plateform for distributed computing (OpenMOLE)[http://openmole.org].
+Algorithms implemented in MGO are also avialiable in the workflow plateform for distributed computing [OpenMOLE](http://openmole.org).
   
 SBT dependency
 ----------------
