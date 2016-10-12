@@ -18,7 +18,7 @@ MGO is licenced under the GNU Affero GPLv3 software licence. 
 Example
 -------
 
-Define a problem, for instance ZDT4:
+Define a problem, for instance the multi-modal multi-objective ZDT4 benchmark:
 
 ```scala
 
