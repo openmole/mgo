@@ -65,7 +65,7 @@ Run the optimisation:
 
   val (finalState, finalPopulation) =
     run(nsga2).
-      until(stop.afterGeneration(1000)).
+      until(afterGeneration(1000)).
       trace((state, population) => println(state.generation)).
       eval(new Random(42))
 
@@ -73,7 +73,43 @@ Run the optimisation:
 
 ```
 
+Diversity only
+--------------
+
+MGO proposes the PSE alorithm that aim a creating diverse solution instead of optimsing a function. The paper about this
+algorithm can be found (here)[http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0138212].
+
+```scala
+  import fr.iscpif.mgo._
+  import algorithm.pse._
+  import util.Random
+
+  val pse = PSE(
+    lambda = 10,
+    phenotype = zdt4.compute,
+    pattern =
+      boundedGrid(
+        lowBound = Vector(0.0, 0.0),
+        highBound = Vector(1.0, 200.0),
+        definition = Vector(10, 10)),
+    genomeSize = 10)
+
+  val (finalState, finalPopulation) =
+    run(pse).
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation)).
+      eval(new Random(42))
+
+  println(result(finalPopulation, zdt4.scale).mkString("\n"))
+```
+
+
 For more examples, have a look at the main/scala/fr/iscpif/mgo/test directory in the repository.
+
+Distributed computing
+---------------------
+
+Algorithms implemented in MGO are also avialiable in the workflow plateform for distributed computing (OpenMOLE)[http://openmole.org].
   
 SBT dependency
 ----------------

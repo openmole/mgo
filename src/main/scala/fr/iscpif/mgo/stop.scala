@@ -27,21 +27,24 @@ object stop {
 
   type StopCondition[M[_], I] = Kleisli[M, Vector[I], Boolean]
 
-  def afterGeneration[M[_]: Monad, I](g: Long)(implicit mGeneration: Generational[M]): StopCondition[M, I] =
-    Kleisli.kleisli[M, Vector[I], Boolean] { (individuals: Vector[I]) =>
-      for {
-        cg <- mGeneration.getGeneration
-      } yield cg >= g
-    }
+  trait Imports {
 
-  def afterDuration[M[_]: Monad, I](d: Duration)(implicit mStartTime: StartTime[M]): StopCondition[M, I] =
-    Kleisli.kleisli[M, Vector[I], Boolean] { (individuals: Vector[I]) =>
-      for {
-        st <- mStartTime.startTime
-      } yield (d.toMillis + st) <= System.currentTimeMillis
-    }
+    def afterGeneration[M[_]: Monad, I](g: Long)(implicit mGeneration: Generational[M]): StopCondition[M, I] =
+      Kleisli.kleisli[M, Vector[I], Boolean] { (individuals: Vector[I]) =>
+        for {
+          cg <- mGeneration.getGeneration
+        } yield cg >= g
+      }
 
-  def never[M[_]: Monad, I]: StopCondition[M, I] = Kleisli.kleisli[M, Vector[I], Boolean] { _ =>
-    false.point[M]
+    def afterDuration[M[_]: Monad, I](d: Duration)(implicit mStartTime: StartTime[M]): StopCondition[M, I] =
+      Kleisli.kleisli[M, Vector[I], Boolean] { (individuals: Vector[I]) =>
+        for {
+          st <- mStartTime.startTime
+        } yield (d.toMillis + st) <= System.currentTimeMillis
+      }
+
+    def never[M[_]: Monad, I]: StopCondition[M, I] = Kleisli.kleisli[M, Vector[I], Boolean] { _ =>
+      false.point[M]
+    }
   }
 }

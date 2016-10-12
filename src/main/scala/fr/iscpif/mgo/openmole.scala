@@ -18,13 +18,14 @@
 
 package fr.iscpif.mgo
 
+import fr.iscpif.mgo
 import fr.iscpif.mgo.breeding._
-import fr.iscpif.mgo.contexts.{ StartTime, Generational }
+import fr.iscpif.mgo.contexts._
 import fr.iscpif.mgo.elitism._
-import fr.iscpif.mgo.niche._
 
 import scala.concurrent.duration.Duration
 import scala.util.Random
+
 import scalaz._
 import Scalaz._
 
@@ -66,8 +67,8 @@ object openmole {
     def unwrap[T](m: M[T], s: S): (S, T)
     def run[A, B](start: S, action: => M[B]): (S, B) = unwrap(action, start)
 
-    def afterGeneration(g: Long) = stop.afterGeneration[M, I](g)
-    def afterDuration(d: Duration) = stop.afterDuration[M, I](d)
+    def afterGeneration(g: Long) = mgo.afterGeneration[M, I](g)
+    def afterDuration(d: Duration) = mgo.afterDuration[M, I](d)
   }
 
   trait Stochastic { self: Integration[_, _, _] =>

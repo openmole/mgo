@@ -35,7 +35,7 @@ import fr.iscpif.mgo.contexts._
 import fr.iscpif.mgo.stop._
 import monocle.macros.Lenses
 
-package object mgo extends DefaultContext {
+package object mgo extends DefaultContext with stop.Imports {
 
   type Expression[G, P] = G => P
 
@@ -67,7 +67,7 @@ package object mgo extends DefaultContext {
   @Lenses case class RunResult[T, I, G, S](
       t: T,
       algo: Algorithm[T, EvolutionState[S, ?], I, G, EvolutionData[S]],
-      stopCondition: StopCondition[EvolutionState[S, ?], I] = stop.never[EvolutionState[S, ?], I],
+      stopCondition: StopCondition[EvolutionState[S, ?], I] = never[EvolutionState[S, ?], I],
       traceOperation: Kleisli[EvolutionState[S, ?], Vector[I], Unit] = noTrace[S, I]) {
 
     private def evolution(ea: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]]) =

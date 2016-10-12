@@ -31,13 +31,13 @@ object SphereNSGAII extends App {
     genomeSize = 10,
     operatorExploration = 0.1)
 
-  val (finalstate, finalpop) =
+  val (finalState, finalPopulation) =
     run(nsga2).
-      until(stop.afterGeneration(1000)).
+      until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       eval(new Random(42))
 
-  println(result(finalpop, sphere.scale).mkString("\n"))
+  println(result(finalPopulation, sphere.scale).mkString("\n"))
 
 }
 
@@ -60,13 +60,13 @@ object NoisySphereNSGAII extends App {
       historySize = 100,
       cloneProbability = 0.2)
 
-  val (finalstate, finalpop) =
+  val (finalState, finalPopulation) =
     run(nsga2).
-      until(stop.afterGeneration(1000)).
+      until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       eval(new Random(42))
 
-  println(result(finalpop, aggregation, sphere.scale).mkString("\n"))
+  println(result(finalPopulation, aggregation, sphere.scale).mkString("\n"))
 
 }
 
@@ -82,13 +82,13 @@ object ZDT4NSGAII extends App {
       fitness = zdt4.compute,
       genomeSize = 10)
 
-  val (finalstate, finalpop) =
+  val (finalState, finalPopulation) =
     run(nsga2).
-      until(stop.afterGeneration(1000)).
+      until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       eval(new Random(42))
 
-  println(result(finalpop, zdt4.scale).mkString("\n"))
+  println(result(finalPopulation, zdt4.scale).mkString("\n"))
 
 }
 

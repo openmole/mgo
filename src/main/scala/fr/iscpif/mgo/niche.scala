@@ -22,33 +22,35 @@ import scalaz._
 object niche {
   type Niche[-I, +T] = (I => T)
 
-  def grid(gridSize: Seq[Double])(value: Vector[Double]): Vector[Int] =
-    (value zip gridSize).map {
-      case (x, g) => (x / g).toInt
-    }
+  trait Imports {
+    def grid(gridSize: Seq[Double])(value: Vector[Double]): Vector[Int] =
+      (value zip gridSize).map {
+        case (x, g) => (x / g).toInt
+      }
 
-  def boundedGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
-    (value zip definition zip lowBound zip highBound).map {
-      case (((x, d), lb), hb) =>
-        val step = (hb - lb) / d
-        val p = ((x - lb) / step).floor.toInt
-        max(0, min(d, p))
-    }
+    def boundedGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
+      (value zip definition zip lowBound zip highBound).map {
+        case (((x, d), lb), hb) =>
+          val step = (hb - lb) / d
+          val p = ((x - lb) / step).floor.toInt
+          max(0, min(d, p))
+      }
 
-  def irregularGrid(axes: Vector[Vector[Double]])(values: Vector[Double]): Vector[Int] =
-    axes zip values map { case (axe, v) => tools.Math.findInterval(axe.sorted, v) }
+    def irregularGrid(axes: Vector[Vector[Double]])(values: Vector[Double]): Vector[Int] =
+      axes zip values map { case (axe, v) => tools.Math.findInterval(axe.sorted, v) }
 
-  def genomeProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
-    (genome: G) => {
-      val niche = (values(genome)(x) * nX).toInt
-      if (niche == nX) niche - 1 else niche
-    }
+    def genomeProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
+      (genome: G) => {
+        val niche = (values(genome)(x) * nX).toInt
+        if (niche == nX) niche - 1 else niche
+      }
 
-  def mapGenomePlotter[G](x: Int, nX: Int, y: Int, nY: Int)(implicit values: Lens[G, Seq[Double]]): Niche[G, (Int, Int)] =
-    (genome: G) => {
-      val (nicheX, nicheY) = ((values.get(genome)(x) * nX).toInt, (values.get(genome)(y) * nY).toInt)
-      (if (nicheX == nX) nicheX - 1 else nicheX, if (nicheY == nY) nicheY - 1 else nicheY)
-    }
+    def mapGenomePlotter[G](x: Int, nX: Int, y: Int, nY: Int)(implicit values: Lens[G, Seq[Double]]): Niche[G, (Int, Int)] =
+      (genome: G) => {
+        val (nicheX, nicheY) = ((values.get(genome)(x) * nX).toInt, (values.get(genome)(y) * nY).toInt)
+        (if (nicheX == nX) nicheX - 1 else nicheX, if (nicheY == nY) nicheY - 1 else nicheY)
+      }
+  }
 
 }
 
