@@ -66,11 +66,11 @@ object nsga2 {
     implicit def isAlgorithm: Algorithm[NSGA2, EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] =
       new Algorithm[NSGA2, EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
         override def initialState(t: NSGA2, rng: Random): EvolutionData[Unit] = EvolutionData[Unit](random = rng, s = ())
-        override def initialGenomes(t: NSGA2): EvolutionState[Unit, Vector[Genome]] = nsga2.initialGenomes(t.lambda, t.genomeSize)
-        override def expression(t: NSGA2): Expression[Genome, Individual] = nsga2.expression(t.fitness)
+        override def initialPopulation(t: NSGA2): EvolutionState[Unit, Vector[Individual]] =
+          deterministicInitialPopulation[EvolutionState[Unit, ?], Genome, Individual](nsga2.initialGenomes(t.lambda, t.genomeSize), expression(t.fitness))
         override def step(t: NSGA2): Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
           nsga2Operations.step(nsga2.breeding(t.lambda, t.operatorExploration), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
-        override def run[A](t: NSGA2, m: EvolutionState[Unit, A], ca: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(m, ca)
+        override def run[A](m: EvolutionState[Unit, A], ca: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(m, ca)
       }
 
   }

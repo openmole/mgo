@@ -42,10 +42,9 @@ import scalaz._
  */
 trait Algorithm[T, M[_], I, G, S] {
   def initialState(t: T, rng: Random): S
-  def initialGenomes(t: T): M[Vector[G]]
-  def expression(t: T): Expression[G, I]
+  def initialPopulation(t: T): M[Vector[I]]
   def step(t: T): Kleisli[M, Vector[I], Vector[I]]
-  def run[A](t: T, m: M[A], ca: S): (S, A)
-  def run[A](t: T, m: M[A]): State[Random, (S, A)] = State { rng: Random => (rng, run(t, m, initialState(t, rng))) }
+  def run[A](m: M[A], ca: S): (S, A)
+  def run[A](t: T, m: M[A]): State[Random, (S, A)] = State { rng: Random => (rng, run(m, initialState(t, rng))) }
 }
 

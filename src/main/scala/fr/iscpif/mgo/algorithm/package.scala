@@ -83,6 +83,21 @@ package object algorithm {
         elitism
     } yield newPopulation
 
+  def deterministicInitialPopulation[M[_]: Monad, G, I](
+    initialGenomes: M[Vector[G]],
+    expression: Expression[G, I]) =
+    for {
+      gs <- initialGenomes
+    } yield gs.map(expression)
+
+  def stochasticInitialPopulation[M[_]: Monad: ParallelRandomGen, G, I](
+    initialGenomes: M[Vector[G]],
+    expression: Expression[(Random, G), I]) =
+    for {
+      gs <- initialGenomes
+      rngs <- zipWithRandom[M, G](gs)
+    } yield rngs.map { expression }
+
   object GenomeVectorDouble {
     def randomGenomes[M[_]](n: Int, genomeLength: Int)(
       implicit MM: Monad[M], MR: RandomGen[M]): M[Vector[Vector[Double]]] =

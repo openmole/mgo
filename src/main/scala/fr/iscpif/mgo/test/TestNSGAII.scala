@@ -44,64 +44,42 @@ object SphereNSGAII extends App {
       trace((is, s) => println(s.generation)).
       eval(new Random(42))
 
-  println(finalpop.map { i => i.genome.values.mkString(",") -> i.fitness.mkString(",") }.mkString("\n"))
+  println(
+    finalpop.map { i =>
+      s"""(${sphere.scale(i.genome.values).mkString(",")}) -> ${i.fitness.mkString(",")}"""
+    }.mkString("\n")
+  )
 }
 
-//object StochasticSphereNSGAII extends App {
-//
-//  import noisynsga2._
-//
-//  val mu = 100
-//  val lambda = 100
-//  def dimensions = 2
-//  val maxIter = 10000
-//  val historySize = 100
-//  val operatorExploration = 0.1
-//  val cloneProbability = 0.2
-//
-//  def express: (Random, Vector[Double]) => Vector[Double] = { case (rg: Random, v: Vector[Double]) => Vector(sphere(v) + rg.nextGaussian() * 0.5 * math.sqrt(sphere(v))) }
-//  def aggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
-//
-//  val algo =
-//    NoisyNSGA2(
-//      mu = mu,
-//      lambda = lambda,
-//      fitness = express,
-//      aggregation = aggregation,
-//      operatorExploration = operatorExploration,
-//      genomeSize = dimensions,
-//      historySize = historySize,
-//      cloneProbability = cloneProbability)
-//
-//  val ea: Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
-//    runEAUntilStackless[Unit, Individual](
-//      stopCondition = afterGeneration[EvolutionState[Unit, ?], Individual](maxIter),
-//      stepFunction =
-//        for {
-//          /*_ <- writeS((state: EvolutionData[Unit], individuals: Vector[Individual]) =>
-//            individuals.map {
-//              i: Individual => state.generation.toString ++ "\t" ++ (Individual.genome composeLens Genome.values).get(i).mkString("\t") ++ "\t" ++ aggregation(Individual.fitnessHistory.get(i)).mkString("\t")
-//            }.mkString("\n"))*/
-//          res <- algo.step
-//        } yield res
-//    )
-//
-//  val evolution: EvolutionState[Unit, Vector[Individual]] =
-//    for {
-//      gs <- algo.initialGenomes
-//      gsRNG <- zipWithRandom[EvolutionState[Unit, ?], Genome](gs)
-//      initialPop = gsRNG.map { case (rg, g) => buildIndividual(g, express(rg, vectorValues.get(g))) }
-//      //_ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ Vector.tabulate(2)(i => s"f$i").mkString("\t") ++ "\thistoryLength" }.run(Vector.empty)
-//      finalpop <- ea.run(initialPop)
-//    } yield finalpop
-//
-//  val (finalstate, finalpop) = algo.run(evolution, new Random(42))
-//
-//  println("---- Final Population ----")
-//  val maxHistory = finalpop.map(_.fitnessHistory.size).max
-//  println(finalpop.filter(_.fitnessHistory.size == maxHistory).map(i => (i.genome, aggregation(vectorFitness.get(i)), i.age)).mkString("\n"))
-//
-//}
+object StochasticSphereNSGAII extends App {
+
+  import noisynsga2._
+
+  def express(rng: Random, v: Vector[Double]) = Vector(sphere(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere(v)))
+  def aggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
+
+  val algo =
+    NoisyNSGA2(
+      mu = 100,
+      lambda = 100,
+      fitness = express,
+      aggregation = aggregation,
+      operatorExploration = 0.1,
+      genomeSize = 2,
+      historySize = 100,
+      cloneProbability = 0.2)
+
+  val (finalstate, finalpop) =
+    run(algo).
+      until(afterGeneration(1000)).
+      trace((is, s) => println(s.generation)).
+      eval(new Random(42))
+
+  //println("---- Final Population ----")
+  //val maxHistory = finalpop.map(_.fitnessHistory.size).max
+  //println(finalpop.filter(_.fitnessHistory.size == maxHistory).map(i => (i.genome, aggregation(vectorFitness.get(i)), i.age)).mkString("\n"))
+
+}
 
 //object ZDT4NSGAII extends App {
 //

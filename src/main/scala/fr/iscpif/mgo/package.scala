@@ -73,8 +73,7 @@ package object mgo {
 
     private def evolution(ea: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]]) =
       for {
-        ig <- algo.initialGenomes(t)
-        initialPop = ig.map { algo.expression(t) }
+        initialPop <- algo.initialPopulation(t)
         finalPop <- ea.run(initialPop)
       } yield finalPop
 
