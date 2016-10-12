@@ -145,6 +145,7 @@ algorithm can be found [here](http://journals.plos.org/plosone/article?id=10.137
   println(result(finalPopulation, zdt4.scale).mkString("\n"))
 ```
 
+This program explores all the different combination of values that can be produced by the multi-objective function of ZDT4.
 
 For more examples, have a look at the main/scala/fr/iscpif/mgo/test directory in the repository.
 
