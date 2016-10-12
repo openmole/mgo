@@ -177,8 +177,6 @@ In MGO you can compute profiles of a 10 dimensional hyper-sphere function using 
   println(result(finalPopulation, sphere.scale).mkString("\n"))
 ```
 
-
-
 Distributed computing
 ---------------------
 
