@@ -29,7 +29,9 @@ Define a problem, for instance ZDT4:
     def compute(genome: Vector[Double]): Vector[Double] = {
       val genomeSize = genome.size
 
-      def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
+      def g(x: Seq[Double]) =
+        1 + 10 * (genomeSize - 1) +
+          x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
 
       def f(x: Seq[Double]) = {
         val gx = g(x)
