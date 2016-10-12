@@ -30,9 +30,20 @@ import Scalaz._
 
 object SphereNSGAII extends App {
   import nsga2._
-  def fitness(x: Vector[Double]) = Vector(sphere(x))
-  val algo = NSGA2(mu = 100, lambda = 100, fitness = fitness, genomeSize = 10, operatorExploration = 0.1)
-  val (finalstate, finalpop) = run(algo).stop(afterGeneration(1000)).eval(new Random(42))
+
+  val algo = NSGA2(
+    mu = 100,
+    lambda = 100,
+    fitness = x => Vector(sphere(x)),
+    genomeSize = 10,
+    operatorExploration = 0.1)
+
+  val (finalstate, finalpop) =
+    run(algo).
+      until(afterGeneration(1000)).
+      trace((is, s) => println(s.generation)).
+      eval(new Random(42))
+
   println(finalpop.map { i => i.genome.values.mkString(",") -> i.fitness.mkString(",") }.mkString("\n"))
 }
 

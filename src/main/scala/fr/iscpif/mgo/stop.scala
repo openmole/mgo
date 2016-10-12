@@ -40,4 +40,8 @@ object stop {
         st <- mStartTime.startTime
       } yield (d.toMillis + st) <= System.currentTimeMillis
     }
+
+  def never[M[_]: Monad, I]: StopCondition[M, I] = Kleisli.kleisli[M, Vector[I], Boolean] { _ =>
+    false.point[M]
+  }
 }

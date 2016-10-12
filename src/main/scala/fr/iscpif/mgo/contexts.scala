@@ -137,15 +137,6 @@ object contexts {
         a <- evolutionStateMonadTrans[S].liftM[IO, A](ioa)
       } yield a
 
-    def writeS[S, I](writeFun: (EvolutionData[S], Vector[I]) => String, ioFun: String => IO[Unit] = IO.putStrLn): Kleisli[EvolutionState[S, ?], Vector[I], Unit] =
-      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Unit] { (is: Vector[I]) =>
-        for {
-          s <- evolutionStateMonadState[S].get
-          io <- ioFun(writeFun(s, is)).point[EvolutionState[S, ?]]
-          _ <- evolutionStateMonadTrans[S].liftM[IO, Unit](io)
-        } yield ()
-      }
-
     def runEAUntilStackless[S, I](
       stopCondition: StopCondition[EvolutionState[S, ?], I],
       stepFunction: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]]): Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] = {

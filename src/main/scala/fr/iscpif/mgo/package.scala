@@ -34,6 +34,7 @@ import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo.contexts._
 import fr.iscpif.mgo.contexts.default._
 import fr.iscpif.mgo.stop._
+import monocle.macros.Lenses
 
 package object mgo {
 
@@ -60,23 +61,48 @@ package object mgo {
       Kleisli.kleisli[M, Vector[I], Boolean]({ (_: Vector[I]) => false.point[M] }),
       stepFunction)
 
-  case class RunResult[T, I, G, S](t: T, algo: Algorithm[T, EvolutionState[S, ?], I, G, EvolutionData[S]]) {
-    def stop(stopCondition: StopCondition[EvolutionState[S, ?], I]) = {
-      val ea =
-        runEAUntilStackless[S, I](
-          stopCondition,
-          algo.step(t)
-        )
+  def noTrace[S, I] = Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Unit] { is: Vector[I] =>
+    evolutionStateMonadTrans[S].liftM(IO.ioUnit)
+  }
 
-      val evolution =
+  @Lenses case class RunResult[T, I, G, S](
+      t: T,
+      algo: Algorithm[T, EvolutionState[S, ?], I, G, EvolutionData[S]],
+      stopCondition: StopCondition[EvolutionState[S, ?], I] = stop.never[EvolutionState[S, ?], I],
+      traceOperation: Kleisli[EvolutionState[S, ?], Vector[I], Unit] = noTrace[S, I]) {
+
+    private def evolution(ea: Kleisli[EvolutionState[S, ?], Vector[I], Vector[I]]) =
+      for {
+        ig <- algo.initialGenomes(t)
+        initialPop = ig.map { algo.expression(t) }
+        finalPop <- ea.run(initialPop)
+      } yield finalPop
+
+    private def traceStep =
+      Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Vector[I]] { is: Vector[I] =>
+        for { _ <- traceOperation(is) } yield is
+      }
+
+    private def ea =
+      runEAUntilStackless[S, I](
+        stopCondition,
+        traceStep andThen algo.step(t)
+      )
+
+    def until(stopCondition: StopCondition[EvolutionState[S, ?], I]) = copy(stopCondition = stopCondition)
+
+    def trace(f: (Vector[I], EvolutionData[S]) => Unit) = {
+      val t = Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Unit] { is: Vector[I] =>
         for {
-          ig <- algo.initialGenomes(t)
-          initialPop = ig.map { algo.expression(t) }
-          finalpop <- ea.run(initialPop)
-        } yield finalpop
-
-      algo.run(t, evolution)
+          s <- evolutionStateMonadState[S].get
+          _ <- evolutionStateMonadTrans[S].liftM(IO { f(is, s) })
+        } yield ()
+      }
+      RunResult.traceOperation.set(t)(this)
     }
+
+    def eval(rng: Random) = algo.run(t, evolution(ea)).eval(rng)
+
   }
 
   def run[T, I, G, S](t: T)(implicit algo: Algorithm[T, EvolutionState[S, ?], I, G, EvolutionData[S]]) = RunResult(t, algo)
@@ -92,16 +118,18 @@ package object mgo {
       else stepFunction >=> runEAUntil[M, I](stopCondition, stepFunction)
     } yield res
 
-  /*def runEAUntilStackless[M[_]: Traverse: Monad, I](
-    stopCondition: Kleisli[M, Vector[I], Boolean],
-    stepFunction: Kleisli[M, Vector[I], Vector[I]])(population: Vector[I]): Free.Trampoline[M[Vector[I]]] =
-    Traverse.apply[M].sequence[Free.Trampoline, Vector[I]](for {
-      stop <- stopCondition.run(population)
-      newpop <- if (stop) population.point[M] else stepFunction(population)
-    } yield {
-      if (stop) Free.return_[Function0, M[Vector[I]]](newpop.point[M])
-      else Free.suspend[Function0, M[Vector[I]]](runEAUntilStackless(stopCondition, stepFunction)(newpop))
-    })*/
+  //  def runEAUntilStackless[M[_]: Traverse: Monad, I](
+  //    stopCondition: Kleisli[M, Vector[I], Boolean],
+  //    stepFunction: Kleisli[M, Vector[I], Vector[I]])(population: Vector[I]): Free.Trampoline[M[Vector[I]]] =
+  //    Traverse.apply[M].sequence[Free.Trampoline, Vector[I]](
+  //      for {
+  //        stop <- stopCondition.run(population)
+  //        newpop <- (if (stop) population.point[M] else stepFunction(population)): M[Vector[I]]
+  //      } yield {
+  //        if (stop) Free.return_[Function0, M[Vector[I]]](newpop.point[M])
+  //        else Free.suspend[Function0, M[Vector[I]]](runEAUntilStackless(stopCondition, stepFunction)(newpop))
+  //      }
+  //    )
 
   /*def runEAUntilStackless[S, I](
     stopCondition: Kleisli[({type l[x]=State[S,x]})#l, Vector[I], Boolean],
