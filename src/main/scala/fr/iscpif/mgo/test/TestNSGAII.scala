@@ -34,7 +34,7 @@ object SphereNSGAII extends App {
   val (finalstate, finalpop) =
     run(nsga2).
       until(stop.afterGeneration(1000)).
-      trace((is, s) => println(s.generation)).
+      trace((s, is) => println(s.generation)).
       eval(new Random(42))
 
   println(result(finalpop, sphere.scale).mkString("\n"))
@@ -63,7 +63,7 @@ object NoisySphereNSGAII extends App {
   val (finalstate, finalpop) =
     run(nsga2).
       until(stop.afterGeneration(1000)).
-      trace((is, s) => println(s.generation)).
+      trace((s, is) => println(s.generation)).
       eval(new Random(42))
 
   println(result(finalpop, aggregation, sphere.scale).mkString("\n"))
@@ -85,7 +85,7 @@ object ZDT4NSGAII extends App {
   val (finalstate, finalpop) =
     run(nsga2).
       until(stop.afterGeneration(1000)).
-      trace((is, s) => println(s.generation)).
+      trace((s, is) => println(s.generation)).
       eval(new Random(42))
 
   println(result(finalpop, zdt4.scale).mkString("\n"))

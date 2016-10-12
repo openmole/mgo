@@ -63,13 +63,13 @@ Run the optimisation:
 
 ```scala
 
-  val (finalstate, finalpop) =
+  val (finalState, finalPopulation) =
     run(nsga2).
       until(stop.afterGeneration(1000)).
-      trace((is, s) => println(s.generation)).
+      trace((state, population) => println(state.generation)).
       eval(new Random(42))
 
-  println(result(finalpop, zdt4.scale).mkString("\n"))
+  println(result(finalPopulation, zdt4.scale).mkString("\n"))
 
 ```
 

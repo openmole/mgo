@@ -89,11 +89,11 @@ package object mgo extends DefaultContext {
 
     def until(stopCondition: StopCondition[EvolutionState[S, ?], I]) = copy(stopCondition = stopCondition)
 
-    def trace(f: (Vector[I], EvolutionData[S]) => Unit) = {
+    def trace(f: (EvolutionData[S], Vector[I]) => Unit) = {
       val t = Kleisli.kleisli[EvolutionState[S, ?], Vector[I], Unit] { is: Vector[I] =>
         for {
           s <- evolutionStateMonadState[S].get
-          _ <- evolutionStateMonadTrans[S].liftM(IO { f(is, s) })
+          _ <- evolutionStateMonadTrans[S].liftM(IO { f(s, is) })
         } yield ()
       }
       RunResult.traceOperation.set(t)(this)
