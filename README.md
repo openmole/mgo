@@ -22,7 +22,25 @@ Define a problem, for instance ZDT4:
 
 ```scala
 
-MGO is being refactored
+  def zdt4 = new Problem[Vector[Double], Vector[Double]] {
+
+    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(0.0, 5.0))
+
+    def compute(genome: Vector[Double]): Vector[Double] = {
+      val genomeSize = genome.size
+
+      def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
+
+      def f(x: Seq[Double]) = {
+        val gx = g(x)
+        gx * (1 - sqrt(genome(0) / gx))
+      }
+
+      val scaled = scale(genome)
+      Vector(scaled(0), f(scaled.tail))
+    }
+
+  }
 
 ```
 
@@ -30,7 +48,12 @@ Define the optimisation algorithm, for instance NSGAII:
 
 ```scala
 
-MGO is being refactored
+  val nsga2 =
+    NSGA2(
+      mu = 100,
+      lambda = 100,
+      fitness = zdt4.compute,
+      genomeSize = 10)
 
 ```
 
@@ -38,7 +61,13 @@ Run the optimisation:
 
 ```scala
 
-MGO is being refactored
+  val (finalstate, finalpop) =
+    run(nsga2).
+      until(stop.afterGeneration(1000)).
+      trace((is, s) => println(s.generation)).
+      eval(new Random(42))
+
+  println(result(finalpop, zdt4.scale).mkString("\n"))
 
 ```
 

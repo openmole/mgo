@@ -23,13 +23,13 @@ import scala.util.Random
 import scalaz._
 import Scalaz._
 
-import fr.iscpif.mgo.ranking._
-import fr.iscpif.mgo.tools._
-import fr.iscpif.mgo._
-import fr.iscpif.mgo.breeding._
-import fr.iscpif.mgo.elitism._
-import fr.iscpif.mgo.contexts._
-import fr.iscpif.mgo.contexts.default._
+import fr.iscpif.mgo
+import mgo._
+import ranking._
+import tools._
+import breeding._
+import elitism._
+import contexts._
 
 import scala.language.higherKinds
 
@@ -68,6 +68,19 @@ object noisynsga2 {
       Individual.historyAge
     )(mu, historySize)
 
+  def oldest(population: Vector[Individual]) =
+    if (population.isEmpty) population
+    else {
+      val maxHistory = population.map(_.fitnessHistory.size).max
+      population.filter(_.fitnessHistory.size == maxHistory)
+    }
+
+  def aggregate(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], scaling: Vector[Double] => Vector[Double]) =
+    population.map(i => (scaling(i.genome.values.toVector), aggregation(vectorFitness.get(i))))
+
+  def result(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], scaling: Vector[Double] => Vector[Double]) =
+    aggregate(oldest(population), aggregation, scaling)
+
   object NoisyNSGA2 {
 
     implicit def isAlgorithm = new Algorithm[NoisyNSGA2, EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] {
@@ -84,7 +97,7 @@ object noisynsga2 {
           noisynsga2.expression(t.fitness),
           noisynsga2.elitism(t.mu, t.historySize, t.aggregation))
 
-      def run[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(x, s)
+      def run[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = mgo.unwrap(x, s)
     }
   }
 
@@ -140,7 +153,7 @@ object noisynsga2 {
           }
       }
 
-      def unwrap[A](x: EvolutionState[Unit, A], s: S): (EvolutionData[Unit], A) = default.unwrap[Unit, A](x, s)
+      def unwrap[A](x: EvolutionState[Unit, A], s: S): (EvolutionData[Unit], A) = mgo.unwrap[Unit, A](x, s)
       def samples(i: I): Long = i.fitnessHistory.size
     }
   }

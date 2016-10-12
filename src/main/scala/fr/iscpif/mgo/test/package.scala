@@ -32,14 +32,14 @@ package object test {
     def apply(i: I) = p.compute(p.scale(i))
   }
 
-  def sphere = new Problem[Seq[Double], Double] {
-    def scale(s: Seq[Double]): Seq[Double] = s.map(_.scale(-2, 2))
-    def compute(i: Seq[Double]): Double = i.map(x => x * x).sum
+  def sphere = new Problem[Vector[Double], Double] {
+    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-2, 2))
+    def compute(i: Vector[Double]): Double = i.map(x => x * x).sum
   }
 
-  def rastrigin = new Problem[Seq[Double], Double] {
-    def scale(s: Seq[Double]): Seq[Double] = s.map(_.scale(-5.12, 5.12))
-    def compute(i: Seq[Double]): Double = 10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
+  def rastrigin = new Problem[Vector[Double], Double] {
+    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-5.12, 5.12))
+    def compute(i: Vector[Double]): Double = 10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
   }
 
   def himmelblau(x: Double, y: Double) = {
@@ -49,7 +49,7 @@ package object test {
     z(x.scale(-4.5, 4.5), y.scale(-4.5, 4.5))
   }
 
-  def griewangk(g: Seq[Double]) = {
+  def griewangk(g: Vector[Double]) = {
     val values = g.map(_.scale(-600, 600))
     1.0 + values.map(x => math.pow(x, 2.0) / 4000).sum - values.zipWithIndex.map { case (x, i) => x / math.sqrt(i + 1.0) }.map(math.cos).reduce(_ * _)
   }
@@ -66,15 +66,24 @@ package object test {
     Seq(pow(sx, 2), pow(x - 2, 2))
   }
 
-  def zdt4(genome: Vector[Double]) = {
-    val genomeSize = genome.size
-    def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
-    def f(x: Seq[Double]) = {
-      val gx = g(x)
-      gx * (1 - sqrt(genome(0) / gx))
+  def zdt4 = new Problem[Vector[Double], Vector[Double]] {
+
+    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(0.0, 5.0))
+
+    def compute(genome: Vector[Double]): Vector[Double] = {
+      val genomeSize = genome.size
+
+      def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
+
+      def f(x: Seq[Double]) = {
+        val gx = g(x)
+        gx * (1 - sqrt(genome(0) / gx))
+      }
+
+      val scaled = scale(genome)
+      Vector(scaled(0), f(scaled.tail))
     }
 
-    Vector(genome(0), f(genome.tail.map(_.scale(0.0, 5.0))))
   }
 
 }

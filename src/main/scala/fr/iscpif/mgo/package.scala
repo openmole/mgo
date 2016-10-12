@@ -32,11 +32,10 @@ import mgo.elitism._
 import fr.iscpif.mgo.algorithm._
 import fr.iscpif.mgo.tools._
 import fr.iscpif.mgo.contexts._
-import fr.iscpif.mgo.contexts.default._
 import fr.iscpif.mgo.stop._
 import monocle.macros.Lenses
 
-package object mgo {
+package object mgo extends DefaultContext {
 
   type Expression[G, P] = G => P
 

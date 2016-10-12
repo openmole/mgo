@@ -19,12 +19,14 @@ package fr.iscpif.mgo.algorithm
 import monocle.macros.{ GenLens, Lenses }
 
 import scala.language.higherKinds
-import fr.iscpif.mgo.ranking._
-import fr.iscpif.mgo.tools._
+
+import fr.iscpif.mgo
 import fr.iscpif.mgo._
-import fr.iscpif.mgo.breeding._
-import fr.iscpif.mgo.elitism._
-import fr.iscpif.mgo.contexts._
+
+import ranking._
+import breeding._
+import elitism._
+import contexts._
 
 import scala.util.Random
 import scalaz._
@@ -32,8 +34,6 @@ import Scalaz._
 import GenomeVectorDouble._
 
 object nsga2 {
-
-  import fr.iscpif.mgo.contexts.default._
 
   @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
   @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
@@ -61,6 +61,9 @@ object nsga2 {
       (Individual.genome composeLens vectorValues).get,
       Individual.age)(mu)
 
+  def result(population: Vector[Individual], scaling: Vector[Double] => Vector[Double]) =
+    population.map { i => (scaling(i.genome.values.toVector), i.fitness.toVector) }
+
   object NSGA2 {
 
     implicit def isAlgorithm: Algorithm[NSGA2, EvolutionState[Unit, ?], Individual, Genome, EvolutionData[Unit]] =
@@ -70,7 +73,7 @@ object nsga2 {
           deterministicInitialPopulation[EvolutionState[Unit, ?], Genome, Individual](nsga2.initialGenomes(t.lambda, t.genomeSize), expression(t.fitness))
         override def step(t: NSGA2): Kleisli[EvolutionState[Unit, ?], Vector[Individual], Vector[Individual]] =
           nsga2Operations.step(nsga2.breeding(t.lambda, t.operatorExploration), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
-        override def run[A](m: EvolutionState[Unit, A], ca: EvolutionData[Unit]): (EvolutionData[Unit], A) = default.unwrap(m, ca)
+        override def run[A](m: EvolutionState[Unit, A], ca: EvolutionData[Unit]): (EvolutionData[Unit], A) = mgo.unwrap(m, ca)
       }
 
   }
@@ -80,7 +83,6 @@ object nsga2 {
   case class OpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double)
 
   object OpenMOLE {
-    import fr.iscpif.mgo.contexts.default._
 
     implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] {
       type M[A] = EvolutionState[Unit, A]
@@ -111,7 +113,7 @@ object nsga2 {
         def migrateFromIsland(population: Vector[I]) = population
       }
 
-      def unwrap[A](x: EvolutionState[Unit, A], s: S): (S, A) = default.unwrap(x, s)
+      def unwrap[A](x: EvolutionState[Unit, A], s: S): (S, A) = mgo.unwrap(x, s)
     }
 
   }

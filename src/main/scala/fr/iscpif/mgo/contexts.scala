@@ -69,7 +69,7 @@ object contexts {
       rngs <- MR.split.replicateM(gs.size)
     } yield rngs.toVector zip gs
 
-  object default {
+  trait DefaultContext {
 
     @Lenses case class EvolutionData[S](
       generation: Long = 0,
