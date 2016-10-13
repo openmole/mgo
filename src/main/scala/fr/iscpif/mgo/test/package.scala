@@ -31,7 +31,7 @@ package object test {
   object noisySphere {
     def scale(s: Vector[Double]): Vector[Double] = sphere.scale(s)
     def compute(rng: Random, v: Vector[Double]) =
-      Vector(sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v)))
+      sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v))
   }
 
   object rastrigin {

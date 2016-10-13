@@ -93,7 +93,7 @@ For instance a version of NSGA2 for noisy fitness functions may be used has fol
   object noisySphere {
     def scale(s: Vector[Double]): Vector[Double] = sphere.scale(s)
     def compute(rng: Random, v: Vector[Double]) =
-      Vector(sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v)))
+      sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v))
   }
 
   def aggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
@@ -102,7 +102,7 @@ For instance a version of NSGA2 for noisy fitness functions may be used has fol
     NoisyNSGA2(
       mu = 100,
       lambda = 100,
-      fitness = noisySphere.compute,
+      fitness = (rng, v) => Vector(noisySphere.compute(rng, v)),
       aggregation = aggregation,
       genomeSize = 2)
 

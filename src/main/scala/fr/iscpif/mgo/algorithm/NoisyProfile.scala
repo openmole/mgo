@@ -18,7 +18,7 @@ package fr.iscpif.mgo.algorithm
 
 import fr.iscpif.mgo
 import fr.iscpif.mgo._
-import monocle.macros.{ Lenses, GenLens }
+import monocle.macros.{ GenLens, Lenses }
 import ranking._
 import niche._
 import contexts._
@@ -30,10 +30,17 @@ import scala.math._
 import scala.util.Random
 import scalaz._
 import Scalaz._
-
 import scala.language.higherKinds
 
 object noisyprofile extends niche.Imports {
+
+  def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
+    genomeProfile[Individual]((Individual.genome composeLens vectorValues).get _, x, nX)
+
+  def result(population: Vector[Individual], aggregation: Vector[Double] => Double, scaling: Vector[Double] => Vector[Double], niche: Niche[Individual, Int]) =
+    profile(population, niche).map { i =>
+      scaling(i.genome.values.toVector) -> aggregation(i.fitnessHistory.toVector)
+    }
 
   @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
   @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Double], age: Long)

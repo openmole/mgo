@@ -41,75 +41,28 @@ object SphereProfile extends App {
 
 }
 
-//
-//object StochasticSphereProfile extends App {
-//
-//  import noisyprofile._
-//
-//  val muByNiche = 20
-//  val lambda = 100
-//  def dimensions = 5
-//  val maxIteration = 1000
-//  val operatorExploration = 0.1
-//  val cloneProbability = 0.2
-//  val historySize = 100
-//
-//  def express: (Random, Vector[Double]) => Double = { case (rg, v) => sphere(v) + rg.nextGaussian() * 0.5 + math.sqrt(sphere(v)) }
-//  def aggregation(history: Vector[Double]) = history.sum / history.size
-//
-//  //Niche over the first dimension of the genome
-//  def niche = genomeProfile[Individual](
-//    values = (Individual.genome composeLens vectorValues).get,
-//    x = 0,
-//    nX = 10)
-//
-//  val algo = NoisyProfile(
-//    muByNiche = muByNiche,
-//    lambda = lambda,
-//    fitness = express,
-//    aggregation = aggregation,
-//    niche = niche,
-//    genomeSize = dimensions,
-//    historySize = historySize,
-//    operatorExploration = operatorExploration,
-//    cloneProbability = cloneProbability)
-//
-//  val ea =
-//    runEAUntilStackless[Unit, Individual](
-//      stopCondition = afterGeneration[EvolutionState[Unit, ?], Individual](maxIteration),
-//      stepFunction = algo.step
-//    /*for {
-//          individuals <- ka
-//          _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) =>
-//            individuals.map {
-//              i: Individual => state.generation.toString ++ "\t" ++ iValues.get(i).mkString("\t") ++ "\t" ++ (iHistory.get(i).sum / iHistory.get(i).size).toString ++ "\t" ++ iHistory.get(i).length.toString
-//            }.mkString("\n")
-//          }
-//          res <- algo.step
-//        } yield res,*/
-//    )
-//
-//  val evolution: EvolutionState[Unit, Vector[Individual]] =
-//    for {
-//      gs <- algo.initialGenomes
-//      gsRNG <- zipWithRandom[EvolutionState[Unit, ?], Genome](gs)
-//      initialPopEval = gsRNG.map { case (rg, g) => buildIndividual(g, express(rg, vectorValues.get(g))) }
-//      // _ <- writeS { (state: EvolutionData[Unit], individuals: Vector[Individual]) => "generation\t" ++ Vector.tabulate(dimensions)(i => s"g$i").mkString("\t") ++ "\t" ++ "fitness" ++ "\t" ++ "historyLength" }.run(Vector.empty)
-//      finalpop <- ea.run(initialPopEval)
-//    } yield finalpop
-//
-//  val (finalstate, finalpop) = algo.run(evolution, new Random(42))
-//
-//  println("---- Fitnesses ----")
-//  println(
-//    profile(finalpop, niche).map {
-//      i =>
-//        Vector(
-//          i.historyAge,
-//          (Individual.genome composeLens Genome.values).get(i)(0),
-//          aggregation(vectorFitness.get(i)),
-//          vectorFitness.get(i).size
-//        ).mkString(",")
-//    }.mkString("\n"))
-//
-//}
+object NoisySphereProfile extends App {
+
+  import algorithm.noisyprofile._
+  import util.Random
+
+  def aggregation(history: Vector[Double]) = history.sum / history.size
+  def niche = genomeProfile(x = 0, nX = 10)
+
+  val algo = NoisyProfile(
+    muByNiche = 20,
+    lambda = 100,
+    fitness = noisySphere.compute,
+    aggregation = aggregation,
+    niche = niche,
+    genomeSize = 5)
+
+  val (finalState, finalPopulation) =
+    run(algo).
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation)).
+      eval(new Random(42))
+
+  println(result(finalPopulation, aggregation, noisySphere.scale, niche).mkString("\n"))
+
+}

@@ -52,7 +52,7 @@ object NoisySphereNSGAII extends App {
     NoisyNSGA2(
       mu = 100,
       lambda = 100,
-      fitness = noisySphere.compute,
+      fitness = (rng, v) => Vector(noisySphere.compute(rng, v)),
       aggregation = aggregation,
       genomeSize = 2)
 

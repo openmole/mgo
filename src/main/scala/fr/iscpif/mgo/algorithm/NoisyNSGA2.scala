@@ -35,6 +35,19 @@ import scala.language.higherKinds
 
 object noisynsga2 {
 
+  def oldest(population: Vector[Individual]) =
+    if (population.isEmpty) population
+    else {
+      val maxHistory = population.map(_.fitnessHistory.size).max
+      population.filter(_.fitnessHistory.size == maxHistory)
+    }
+
+  def aggregate(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], scaling: Vector[Double] => Vector[Double]) =
+    population.map(i => (scaling(i.genome.values.toVector), aggregation(vectorFitness.get(i))))
+
+  def result(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], scaling: Vector[Double] => Vector[Double]) =
+    aggregate(oldest(population), aggregation, scaling)
+
   @Lenses case class Genome(values: Array[Double], operator: Maybe[Int])
   @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Array[Double]], age: Long)
 
@@ -67,19 +80,6 @@ object noisynsga2 {
       Individual.age,
       Individual.historyAge
     )(mu, historySize)
-
-  def oldest(population: Vector[Individual]) =
-    if (population.isEmpty) population
-    else {
-      val maxHistory = population.map(_.fitnessHistory.size).max
-      population.filter(_.fitnessHistory.size == maxHistory)
-    }
-
-  def aggregate(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], scaling: Vector[Double] => Vector[Double]) =
-    population.map(i => (scaling(i.genome.values.toVector), aggregation(vectorFitness.get(i))))
-
-  def result(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], scaling: Vector[Double] => Vector[Double]) =
-    aggregate(oldest(population), aggregation, scaling)
 
   object NoisyNSGA2 {
 
