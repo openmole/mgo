@@ -177,6 +177,37 @@ In MGO you can compute profiles of a 10 dimensional hyper-sphere function using 
   println(result(finalPopulation, sphere.scale).mkString("\n"))
 ```
 
+Noisy profiles
+--------------
+
+All algorithms in MGO have a pendant for noisy fitness function. Here is an example of a profile computation for a sphere
+function with noise.
+
+```scala
+  import algorithm.noisyprofile._
+  import util.Random
+
+  def aggregation(history: Vector[Double]) = history.sum / history.size
+  def niche = genomeProfile(x = 0, nX = 10)
+
+  val algo = NoisyProfile(
+    muByNiche = 20,
+    lambda = 100,
+    fitness = noisySphere.compute,
+    aggregation = aggregation,
+    niche = niche,
+    genomeSize = 5)
+
+  val (finalState, finalPopulation) =
+    run(algo).
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation)).
+      eval(new Random(42))
+
+  println(result(finalPopulation, aggregation, noisySphere.scale, niche).mkString("\n"))
+
+```
+
 Distributed computing
 ---------------------
 
