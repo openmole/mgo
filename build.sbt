@@ -2,20 +2,22 @@ organization := "fr.iscpif"
 
 name := "mgo"
 
+
+scalaOrganization := "org.typelevel"
 scalaVersion := "2.11.8"
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
-addCompilerPlugin("com.milessabin" % "si2712fix-plugin_2.11.8" % "1.2.0")
+scalacOptions ++= Seq("-Ypartial-unification")
 
-val monocleVersion = "1.2.2"
+val monocleVersion = "1.3.1"
 
 libraryDependencies += "com.github.pathikrit" %% "better-files" % "2.15.0"
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6"
-libraryDependencies += "com.github.mpilquist" %% "simulacrum" % "0.5.0"
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
 libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
+libraryDependencies += "com.projectseptember" %% "freek" % "0.6.0"
 
 val scalazVersion = "7.2.4"
 
