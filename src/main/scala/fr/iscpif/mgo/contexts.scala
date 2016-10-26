@@ -79,7 +79,6 @@ object contexts {
 
     type EvolutionState[S, T] = StateT[IO, EvolutionData[S], T]
 
-    def wrap[S, T](x: (EvolutionData[S], T)): EvolutionState[S, T] = StateT.apply[IO, EvolutionData[S], T](_ => IO(x))
     def unwrap[S, T](x: EvolutionState[S, T], s: EvolutionData[S]): (EvolutionData[S], T) = x.run(s).unsafePerformIO
 
     implicit def evolutionStateMonad[S]: Monad[EvolutionState[S, ?]] = StateT.stateTMonadState[EvolutionData[S], IO]
