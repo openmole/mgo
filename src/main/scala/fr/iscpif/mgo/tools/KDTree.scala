@@ -148,7 +148,7 @@ object KDTree {
    */
   def splitIdArrays(points: Seq[Double], sortedIndices: Vector[Int], splitPoint: Int): (Vector[Int], Vector[Int]) =
     sortedIndices.foldLeft((Vector[Int](), Vector[Int]())) {
-      case (split: (Seq[Int], Seq[Int]), i: Int) =>
+      case (split, i) =>
         if (points(i) < points(splitPoint)) (split._1 :+ i, split._2)
         else if (i == splitPoint) split
         else (split._1, split._2 :+ i)
