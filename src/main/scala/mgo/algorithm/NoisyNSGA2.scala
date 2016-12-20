@@ -95,6 +95,8 @@ object noisynsga2 {
       Individual.historyAge
     )(mu, historySize)
 
+  def state[M[_]: Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
+
   object NoisyNSGA2 {
 
     implicit def isAlgorithm = new Algorithm[NoisyNSGA2, M, Individual, Genome, EvolutionState[Unit]] {
@@ -111,7 +113,7 @@ object noisynsga2 {
           noisynsga2.expression(t.fitness),
           noisynsga2.elitism(t.mu, t.historySize, t.aggregation))
 
-      def state = mgo.algorithm.state[M, Unit](())
+      def state = noisynsga2.state[M]
 
       def run[A](m: M[A], s: EvolutionState[Unit]) = context.result(m, interpreter(s)).right.get
     }
@@ -127,52 +129,61 @@ object noisynsga2 {
     cloneProbability: Double = 0.2,
     operatorExploration: Double = 0.1)
 
-  //  case class OpenMOLE(
-  //    mu: Int,
-  //    operatorExploration: Double,
-  //    genomeSize: Int,
-  //    historySize: Int,
-  //    cloneProbability: Double,
-  //    aggregation: Vector[Vector[Double]] => Vector[Double])
+  case class OpenMOLE(
+    mu: Int,
+    operatorExploration: Double,
+    genomeSize: Int,
+    historySize: Int,
+    cloneProbability: Double,
+    aggregation: Vector[Vector[Double]] => Vector[Double])
 
-  //  object OpenMOLE {
-  //    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] with openmole.Stochastic {
-  //      type M[A] = EvolutionState[Unit, A]
-  //      type G = Genome
-  //      type I = Individual
-  //      type S = EvolutionData[Unit]
-  //
-  //      def iManifest = implicitly
-  //      def gManifest = implicitly
-  //      def sManifest = implicitly
-  //      def mMonad = implicitly
-  //      def mGenerational = implicitly
-  //      def mStartTime = implicitly
-  //
-  //      def operations(om: OpenMOLE) = new Ops {
-  //        def randomLens = GenLens[S](_.random)
-  //        def startTimeLens = GenLens[S](_.startTime)
-  //        def generation(s: EvolutionData[Unit]) = s.generation
-  //        def values(genome: G) = vectorValues.get(genome)
-  //        def genome(i: I) = Individual.genome.get(i)
-  //        def phenotype(individual: I): Vector[Double] = om.aggregation(vectorFitness.get(individual))
-  //        def buildIndividual(genome: G, phenotype: Vector[Double]) = noisynsga2.buildIndividual(genome, phenotype)
-  //        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
-  //        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = noisynsga2.initialGenomes(n, om.genomeSize)
-  //        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = noisynsga2.breeding(n, om.operatorExploration, om.cloneProbability, om.aggregation)
-  //        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = noisynsga2.elitism(om.mu, om.historySize, om.aggregation)
-  //
-  //        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
-  //        def migrateFromIsland(population: Vector[I]) =
-  //          population.filter(_.historyAge != 0).map {
-  //            i => Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
-  //          }
-  //      }
-  //
-  //      def unwrap[A](x: EvolutionState[Unit, A], s: S): (EvolutionData[Unit], A) = mgo.unwrap[Unit, A](x, s)
-  //      def samples(i: I): Long = i.fitnessHistory.size
-  //    }
-  //  }
+  object OpenMOLE {
+    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] with openmole.Stochastic {
+      type M[A] = context.M[A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionState[Unit]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+
+      def mMonad = implicitly
+      def mGeneration = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
+        def generation(s: S) = s.generation
+        def values(genome: G) = vectorValues.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Vector[Double] = om.aggregation(vectorFitness.get(individual))
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = noisynsga2.buildIndividual(genome, phenotype)
+        def initialState(rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
+        def initialGenomes(n: Int) = noisynsga2.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int) = noisynsga2.breeding(n, om.operatorExploration, om.cloneProbability, om.aggregation)
+        def elitism = noisynsga2.elitism(om.mu, om.historySize, om.aggregation)
+
+        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
+        def migrateFromIsland(population: Vector[I]) =
+          population.filter(_.historyAge != 0).map {
+            i => Individual.fitnessHistory.modify(_.take(scala.math.min(i.historyAge, om.historySize).toInt))(i)
+          }
+      }
+
+      def run[A](x: M[A], s: S): (A, S) = {
+        val res =
+          for {
+            xv <- x
+            s <- noisynsga2.state[M]
+          } yield (xv, s)
+        context.result(res, interpreter(s)).right.get
+      }
+
+      def samples(i: I): Long = i.fitnessHistory.size
+    }
+  }
 
 }
 

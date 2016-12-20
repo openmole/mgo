@@ -76,6 +76,8 @@ object nsga2 {
   def result(population: Vector[Individual], scaling: Vector[Double] => Vector[Double]) =
     population.map { i => (scaling(i.genome.values.toVector), i.fitness.toVector) }
 
+  def state[M[_]: Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
+
   object NSGA2 {
 
     implicit def isAlgorithm: Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] =
@@ -85,7 +87,7 @@ object nsga2 {
           deterministicInitialPopulation[M, Genome, Individual](nsga2.initialGenomes(t.lambda, t.genomeSize), expression(t.fitness))
         override def step(t: NSGA2) =
           nsga2Operations.step(nsga2.breeding(t.lambda, t.operatorExploration), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
-        override def state = mgo.algorithm.state[M, Unit](())
+        override def state = nsga2.state[M]
         override def run[A](m: M[A], s: EvolutionState[Unit]) = context.result(m, interpreter(s)).right.get
       }
 
@@ -93,43 +95,52 @@ object nsga2 {
 
   case class NSGA2(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double = 0.1)
 
-  //  case class OpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double)
-  //
-  //  object OpenMOLE {
-  //
-  //    implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] {
-  //      type M[A] = EvolutionState[Unit, A]
-  //      type G = Genome
-  //      type I = Individual
-  //      type S = EvolutionState[Unit]
-  //
-  //      def iManifest = implicitly
-  //      def gManifest = implicitly
-  //      def sManifest = implicitly
-  //      def mMonad = implicitly
-  //      def mGenerational = implicitly
-  //      def mStartTime = implicitly
-  //
-  //      def operations(om: OpenMOLE) = new Ops {
-  //        def randomLens = GenLens[S](_.random)
-  //        def startTimeLens = GenLens[S](_.startTime)
-  //        def generation(s: EvolutionState[Unit]) = s.generation
-  //        def values(genome: G) = vectorValues.get(genome)
-  //        def genome(i: I) = Individual.genome.get(i)
-  //        def phenotype(individual: I): Vector[Double] = vectorFitness.get(individual)
-  //        def buildIndividual(genome: G, phenotype: Vector[Double]) = nsga2.buildIndividual(genome, phenotype)
-  //        def initialState(rng: Random) = start EvolutionState[Unit](random = rng, s = ())
-  //        def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = nsga2.initialGenomes(n, om.genomeSize)
-  //        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = nsga2.breeding(n, om.operatorExploration)
-  //        def elitism: Elitism[EvolutionState[Unit, ?], I] = nsga2.elitism(om.mu)
-  //        def migrateToIsland(population: Vector[I]) = population
-  //        def migrateFromIsland(population: Vector[I]) = population
-  //      }
-  //
-  //      def unwrap[A](x: EvolutionState[Unit, A], s: S): (S, A) = mgo.unwrap(x, s)
-  //    }
-  //
-  //  }
+  case class OpenMOLE(mu: Int, genomeSize: Int, operatorExploration: Double)
+
+  object OpenMOLE {
+
+    implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] {
+      type M[T] = context.M[T]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionState[Unit]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+
+      def mMonad = implicitly
+      def mGeneration = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
+        def generation(s: EvolutionState[Unit]) = s.generation
+        def values(genome: G) = vectorValues.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Vector[Double] = vectorFitness.get(individual)
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = nsga2.buildIndividual(genome, phenotype)
+        def initialState(rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
+        def initialGenomes(n: Int) = nsga2.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int) = nsga2.breeding(n, om.operatorExploration)
+        def elitism = nsga2.elitism(om.mu)
+        def migrateToIsland(population: Vector[I]) = population
+        def migrateFromIsland(population: Vector[I]) = population
+      }
+
+      def run[A](x: M[A], s: S): (A, S) = {
+        val res =
+          for {
+            xv <- x
+            s <- nsga2.state[M]
+          } yield (xv, s)
+        context.result(res, interpreter(s)).right.get
+      }
+
+    }
+
+  }
 }
 
 object nsga2Operations {

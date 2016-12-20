@@ -47,6 +47,8 @@ object noisypse extends niche.Imports {
       IO.interpreter :&:
       pse.VectorHitMap.interpreter(s.s)
 
+  def state[M[_]: Monad: StartTime: Random: Generation](implicit hitmap: mgo.contexts.HitMap[M, Vector[Int]]) = pse.state[M]
+
   object NoisyPSE {
 
     implicit def isAlgorithme = new Algorithm[NoisyPSE, M, Individual, Genome, EvolutionState[HitMap]] {
@@ -72,11 +74,7 @@ object noisypse extends niche.Imports {
             aggregation = t.aggregation)
         )
 
-      def state =
-        for {
-          map <- implicitly[mgo.contexts.HitMap[M, Vector[Int]]].get
-          s <- mgo.algorithm.state[M, HitMap](map)
-        } yield s
+      def state = noisypse.state[M]
 
       def run[A](m: M[A], s: EvolutionState[HitMap]) = context.result(m, interpreter(s)).right.get
     }
@@ -141,71 +139,79 @@ object noisypse extends niche.Imports {
       vectorValues.get,
       buildIndividual)(phenotype)
 
-  //  case class OpenMOLE(
-  //    pattern: Vector[Double] => Vector[Int],
-  //    aggregation: Vector[Vector[Double]] => Vector[Double],
-  //    genomeSize: Int,
-  //    historySize: Int,
-  //    cloneProbability: Double,
-  //    operatorExploration: Double)
-  //
-  //  object OpenMOLE {
-  //    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] with openmole.Stochastic {
-  //      type M[A] = EvolutionState[pse.HitMap, A]
-  //      type G = Genome
-  //      type I = Individual
-  //      type S = EvolutionData[pse.HitMap]
-  //
-  //      def iManifest = implicitly
-  //      def gManifest = implicitly
-  //      def sManifest = implicitly
-  //      def mMonad = implicitly
-  //      def mGenerational = implicitly
-  //      def mStartTime = implicitly
-  //
-  //      def operations(om: OpenMOLE) = new Ops {
-  //        def randomLens = GenLens[S](_.random)
-  //        def startTimeLens = GenLens[S](_.startTime)
-  //        def generation(s: EvolutionData[pse.HitMap]) = s.generation
-  //        def values(genome: G) = vectorValues.get(genome)
-  //        def genome(i: I) = Individual.genome.get(i)
-  //        def phenotype(individual: I): Vector[Double] = om.aggregation(vectorPhenotype.get(individual))
-  //        def buildIndividual(genome: G, phenotype: Vector[Double]) = noisypse.buildIndividual(genome, phenotype)
-  //        def initialState(rng: Random) = EvolutionData[pse.HitMap](random = rng, s = Map())
-  //        def initialGenomes(n: Int) = noisypse.initialGenomes(n, om.genomeSize)
-  //        def breeding(n: Int) =
-  //          noisypse.breeding(
-  //            lambda = n,
-  //            operatorExploration = om.operatorExploration,
-  //            cloneProbability = om.cloneProbability,
-  //            aggregation = om.aggregation,
-  //            pattern = om.pattern
-  //          )
-  //
-  //        def elitism =
-  //          noisypse.elitism(
-  //            pattern = om.pattern,
-  //            historySize = om.historySize,
-  //            aggregation = om.aggregation)
-  //
-  //        def migrateToIsland(population: Vector[I]) =
-  //          population.map(Individual.foundedIsland.set(true)).map(Individual.historyAge.set(0))
-  //
-  //        def migrateFromIsland(population: Vector[I]) =
-  //          population.filter(_.historyAge != 0).map {
-  //            i =>
-  //              val i1 = Individual.phenotypeHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
-  //              if (Individual.foundedIsland.get(i1))
-  //                (Individual.mapped.set(true) andThen Individual.foundedIsland.set(false))(i1)
-  //              else Individual.mapped.set(false)(i1)
-  //          }
-  //
-  //      }
-  //
-  //      def unwrap[A](x: EvolutionState[pse.HitMap, A], s: S): (EvolutionData[pse.HitMap], A) = mgo.unwrap[pse.HitMap, A](x, s)
-  //      def samples(i: I): Long = i.phenotypeHistory.size
-  //    }
-  //  }
+  case class OpenMOLE(
+    pattern: Vector[Double] => Vector[Int],
+    aggregation: Vector[Vector[Double]] => Vector[Double],
+    genomeSize: Int,
+    historySize: Int,
+    cloneProbability: Double,
+    operatorExploration: Double)
+
+  object OpenMOLE {
+    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] with openmole.Stochastic {
+      type M[A] = context.M[A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionState[noisypse.HitMap]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+
+      def mMonad = implicitly
+      def mGeneration = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
+        def generation(s: S) = s.generation
+        def values(genome: G) = vectorValues.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Vector[Double] = om.aggregation(vectorPhenotype.get(individual))
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = noisypse.buildIndividual(genome, phenotype)
+        def initialState(rng: util.Random) = EvolutionState[noisypse.HitMap](random = rng, s = Map())
+        def initialGenomes(n: Int) = noisypse.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int) =
+          noisypse.breeding(
+            lambda = n,
+            operatorExploration = om.operatorExploration,
+            cloneProbability = om.cloneProbability,
+            aggregation = om.aggregation,
+            pattern = om.pattern
+          )
+
+        def elitism =
+          noisypse.elitism(
+            pattern = om.pattern,
+            historySize = om.historySize,
+            aggregation = om.aggregation)
+
+        def migrateToIsland(population: Vector[I]) =
+          population.map(Individual.foundedIsland.set(true)).map(Individual.historyAge.set(0))
+
+        def migrateFromIsland(population: Vector[I]) =
+          population.filter(_.historyAge != 0).map {
+            i =>
+              val i1 = Individual.phenotypeHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+              if (Individual.foundedIsland.get(i1))
+                (Individual.mapped.set(true) andThen Individual.foundedIsland.set(false))(i1)
+              else Individual.mapped.set(false)(i1)
+          }
+      }
+
+      def run[A](x: M[A], s: S): (A, S) = {
+        val res =
+          for {
+            xv <- x
+            s <- pse.state[M]
+          } yield (xv, s)
+        context.result(res, interpreter(s)).right.get
+      }
+
+      def samples(i: I): Long = i.phenotypeHistory.size
+    }
+  }
 
 }
 

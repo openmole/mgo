@@ -81,6 +81,8 @@ object profile extends niche.Imports {
       (Individual.genome composeLens vectorValues).get,
       Individual.age)(niche)
 
+  def state[M[_]: Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
+
   object Profile {
     implicit def isAlgorithm = new Algorithm[Profile, M, Individual, Genome, EvolutionState[Unit]] {
       def initialState(t: Profile, rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
@@ -96,52 +98,60 @@ object profile extends niche.Imports {
           profile.expression(t.fitness),
           profile.elitism(t.niche))
 
-      def state = mgo.algorithm.state[M, Unit](())
+      def state = profile.state[M]
       def run[A](m: M[A], s: EvolutionState[Unit]) = context.result(m, interpreter(s)).right.get
     }
   }
 
   case class Profile(lambda: Int, fitness: Vector[Double] => Double, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double = 0.1)
 
-  //  case class OpenMOLE(niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double)
-  //
-  //  object OpenMOLE {
-  //
-  //    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Profile[OpenMOLE] {
-  //      type M[A] = EvolutionState[Unit, A]
-  //      type G = Genome
-  //      type I = Individual
-  //      type S = EvolutionData[Unit]
-  //
-  //      def iManifest = implicitly
-  //      def gManifest = implicitly
-  //      def sManifest = implicitly
-  //      def mMonad = implicitly
-  //      def mGenerational = implicitly
-  //      def mStartTime = implicitly
-  //
-  //      def operations(om: OpenMOLE) = new Ops {
-  //        def randomLens = GenLens[S](_.random)
-  //        def startTimeLens = GenLens[S](_.startTime)
-  //        def generation(s: EvolutionData[Unit]) = s.generation
-  //        def values(genome: G) = vectorValues.get(genome)
-  //        def genome(i: I) = Individual.genome.get(i)
-  //        def phenotype(individual: I): Double = Individual.fitness.get(individual)
-  //        def buildIndividual(genome: G, phenotype: Double) = Individual(genome, phenotype, 0)
-  //        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
-  //        def initialGenomes(n: Int): EvolutionState[Unit, Vector[G]] = mgo.algorithm.profile.initialGenomes(n, om.genomeSize)
-  //        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], I, G] = mgo.algorithm.profile.breeding(n, om.niche, om.operatorExploration)
-  //        def elitism: Elitism[EvolutionState[Unit, ?], I] = mgo.algorithm.profile.elitism(om.niche)
-  //        def migrateToIsland(population: Vector[I]) = population
-  //        def migrateFromIsland(population: Vector[I]) = population
-  //      }
-  //
-  //      def unwrap[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (S, A) = mgo.unwrap(x, s)
-  //
-  //      def profile(om: OpenMOLE)(population: Vector[I]) = population
-  //    }
-  //  }
-  //
+  case class OpenMOLE(niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double)
+
+  object OpenMOLE {
+
+    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Profile[OpenMOLE] {
+      type M[A] = context.M[A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionState[Unit]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+
+      def mMonad = implicitly
+      def mGeneration = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
+        def generation(s: S) = s.generation
+        def values(genome: G) = vectorValues.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Double = Individual.fitness.get(individual)
+        def buildIndividual(genome: G, phenotype: Double) = Individual(genome, phenotype, 0)
+        def initialState(rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
+        def initialGenomes(n: Int) = mgo.algorithm.profile.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int) = mgo.algorithm.profile.breeding(n, om.niche, om.operatorExploration)
+        def elitism = mgo.algorithm.profile.elitism(om.niche)
+        def migrateToIsland(population: Vector[I]) = population
+        def migrateFromIsland(population: Vector[I]) = population
+      }
+
+      def run[A](x: M[A], s: S): (A, S) = {
+        val res =
+          for {
+            xv <- x
+            s <- mgo.algorithm.profile.state[M]
+          } yield (xv, s)
+        context.result(res, interpreter(s)).right.get
+      }
+
+      def profile(om: OpenMOLE)(population: Vector[I]) = population
+    }
+  }
+
 }
 
 object profileOperations {

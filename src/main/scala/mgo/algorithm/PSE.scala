@@ -70,6 +70,11 @@ object pse extends niche.Imports {
   def result(population: Vector[Individual], scaling: Vector[Double] => Vector[Double]) =
     population.map { i => (scaling(i.genome.values.toVector), i.phenotype.toVector) }
 
+  def state[M[_]: Monad: StartTime: Random: Generation](implicit hitmap: mgo.contexts.HitMap[M, Vector[Int]]) = for {
+    map <- hitmap.get
+    s <- mgo.algorithm.state[M, HitMap](map)
+  } yield s
+
   object PSE {
 
     implicit def isAlgorithm = new Algorithm[PSE, M, Individual, Genome, EvolutionState[HitMap]] {
@@ -85,11 +90,7 @@ object pse extends niche.Imports {
           pse.expression(t.phenotype),
           pse.elitism(t.pattern))
 
-      def state =
-        for {
-          map <- implicitly[mgo.contexts.HitMap[M, Vector[Int]]].get
-          s <- mgo.algorithm.state[M, HitMap](map)
-        } yield s
+      def state = pse.state[M]
 
       def run[A](m: M[A], s: EvolutionState[HitMap]) = context.result(m, interpreter(s)).right.get
     }
@@ -116,12 +117,6 @@ object pse extends niche.Imports {
 
   def vectorPhenotype = Individual.phenotype composeLens arrayToVectorLens
   def vectorValues = Genome.values composeLens arrayToVectorLens
-
-  //
-  //  implicit def hitMapper: HitMapper[EvolutionState[HitMap, ?], Vector[Int]] =
-  //    new HitMapper[EvolutionState[HitMap, ?], Vector[Int]] {
-  //      def map = monocle.Lens.id[HitMap]
-  //    }
 
   def initialGenomes(mu: Int, genomeSize: Int) =
     GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(mu, genomeSize)
@@ -150,46 +145,54 @@ object pse extends niche.Imports {
   def expression(phenotype: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
     pseOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(phenotype)
 
-  //  case class OpenMOLE(
-  //    pattern: Vector[Double] => Vector[Int],
-  //    genomeSize: Int,
-  //    operatorExploration: Double)
-  //
-  //  object OpenMOLE {
-  //
-  //    implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] {
-  //      type M[A] = EvolutionState[HitMap, A]
-  //      type G = Genome
-  //      type I = Individual
-  //      type S = EvolutionData[HitMap]
-  //
-  //      def iManifest = implicitly
-  //      def gManifest = implicitly
-  //      def sManifest = implicitly
-  //      def mMonad = implicitly
-  //      def mGenerational = implicitly
-  //      def mStartTime = implicitly
-  //
-  //      def operations(om: OpenMOLE) = new Ops {
-  //        def randomLens = GenLens[S](_.random)
-  //        def startTimeLens = GenLens[S](_.startTime)
-  //        def generation(s: S) = s.generation
-  //        def values(genome: G) = vectorValues.get(genome)
-  //        def genome(i: I) = Individual.genome.get(i)
-  //        def phenotype(individual: I): Vector[Double] = vectorPhenotype.get(individual)
-  //        def buildIndividual(genome: G, phenotype: Vector[Double]) = pse.buildIndividual(genome, phenotype)
-  //        def initialState(rng: Random) = EvolutionData[HitMap](random = rng, s = Map())
-  //        def initialGenomes(n: Int): M[Vector[G]] = pse.initialGenomes(n, om.genomeSize)
-  //        def breeding(n: Int): Breeding[M, I, G] = pse.breeding(n, om.pattern, om.operatorExploration)
-  //        def elitism: Elitism[M, I] = pse.elitism(om.pattern)
-  //        def migrateToIsland(population: Vector[I]) = population.map(Individual.foundedIsland.set(true))
-  //        def migrateFromIsland(population: Vector[I]) =
-  //          population.filter(i => !Individual.foundedIsland.get(i)).map(Individual.mapped.set(false))
-  //      }
-  //
-  //      def unwrap[A](x: M[A], s: S): (S, A) = mgo.unwrap(x, s)
-  //    }
-  //  }
+  case class OpenMOLE(
+    pattern: Vector[Double] => Vector[Int],
+    genomeSize: Int,
+    operatorExploration: Double)
+
+  object OpenMOLE {
+
+    implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] {
+      type M[A] = context.M[A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionState[HitMap]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+
+      def mMonad = implicitly
+      def mGeneration = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
+        def generation(s: S) = s.generation
+        def values(genome: G) = vectorValues.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Vector[Double] = vectorPhenotype.get(individual)
+        def buildIndividual(genome: G, phenotype: Vector[Double]) = pse.buildIndividual(genome, phenotype)
+        def initialState(rng: util.Random) = EvolutionState[HitMap](random = rng, s = Map())
+        def initialGenomes(n: Int): M[Vector[G]] = pse.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int): Breeding[M, I, G] = pse.breeding(n, om.pattern, om.operatorExploration)
+        def elitism: Elitism[M, I] = pse.elitism(om.pattern)
+        def migrateToIsland(population: Vector[I]) = population.map(Individual.foundedIsland.set(true))
+        def migrateFromIsland(population: Vector[I]) =
+          population.filter(i => !Individual.foundedIsland.get(i)).map(Individual.mapped.set(false))
+      }
+
+      def run[A](x: M[A], s: S): (A, S) = {
+        val res =
+          for {
+            xv <- x
+            s <- pse.state[M]
+          } yield (xv, s)
+        context.result(res, interpreter(s)).right.get
+      }
+    }
+  }
 }
 
 object pseOperations {

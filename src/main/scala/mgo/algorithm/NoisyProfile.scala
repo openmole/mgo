@@ -90,6 +90,8 @@ object noisyprofile extends niche.Imports {
   def profile(population: Vector[Individual], niche: Niche[Individual, Int]) =
     noisyprofileOperations.profile(population, niche, Individual.historyAge.get)
 
+  def state[M[_]: Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
+
   object NoisyProfile {
 
     implicit def isAlgorithm = new Algorithm[NoisyProfile, M, Individual, Genome, EvolutionState[Unit]] {
@@ -124,7 +126,7 @@ object noisyprofile extends niche.Imports {
           elitism)
       }
 
-      def state = mgo.algorithm.state[M, Unit](())
+      def state = noisyprofile.state[M]
 
       def run[A](m: M[A], s: EvolutionState[Unit]) = context.result(m, interpreter(s)).right.get
     }
@@ -142,56 +144,64 @@ object noisyprofile extends niche.Imports {
     cloneProbability: Double = 0.2,
     operatorExploration: Double = 0.1)
 
-  //  case class OpenMOLE(
-  //    mu: Int,
-  //    niche: Niche[Individual, Int],
-  //    operatorExploration: Double,
-  //    genomeSize: Int,
-  //    historySize: Int,
-  //    cloneProbability: Double,
-  //    aggregation: Vector[Double] => Double)
-  //
-  //  object OpenMOLE {
-  //    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Stochastic with openmole.Profile[OpenMOLE] {
-  //      type M[A] = EvolutionState[Unit, A]
-  //      type G = Genome
-  //      type I = Individual
-  //      type S = EvolutionData[Unit]
-  //
-  //      def iManifest = implicitly
-  //      def gManifest = implicitly
-  //      def sManifest = implicitly
-  //      def mMonad = implicitly
-  //      def mGenerational = implicitly
-  //      def mStartTime = implicitly
-  //
-  //      def operations(om: OpenMOLE) = new Ops {
-  //        def randomLens = GenLens[S](_.random)
-  //        def startTimeLens = GenLens[S](_.startTime)
-  //        def generation(s: EvolutionData[Unit]) = s.generation
-  //        def values(genome: G) = vectorValues.get(genome)
-  //        def genome(i: I) = Individual.genome.get(i)
-  //        def phenotype(individual: I): Double = om.aggregation(vectorFitness.get(individual))
-  //        def buildIndividual(genome: G, phenotype: Double) = noisyprofile.buildIndividual(genome, phenotype)
-  //        def initialState(rng: Random) = EvolutionData[Unit](random = rng, s = ())
-  //        def initialGenomes(n: Int): EvolutionState[Unit, Vector[Genome]] = noisyprofile.initialGenomes(n, om.genomeSize)
-  //        def breeding(n: Int): Breeding[EvolutionState[Unit, ?], Individual, Genome] = noisyprofile.breeding(n, om.niche, om.operatorExploration, om.cloneProbability, om.aggregation)
-  //        def elitism: Elitism[EvolutionState[Unit, ?], Individual] = noisyprofile.elitism(om.mu, om.niche, om.historySize, om.aggregation)
-  //
-  //        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
-  //        def migrateFromIsland(population: Vector[I]) =
-  //          population.filter(_.historyAge != 0).map {
-  //            i => Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
-  //          }
-  //      }
-  //
-  //      def unwrap[A](x: EvolutionState[Unit, A], s: EvolutionData[Unit]): (EvolutionData[Unit], A) = mgo.unwrap(x, s)
-  //
-  //      def samples(i: I): Long = i.fitnessHistory.size
-  //      def profile(om: OpenMOLE)(population: Vector[I]) = noisyprofile.profile(population, om.niche)
-  //    }
-  //  }
-  //
+  case class OpenMOLE(
+    mu: Int,
+    niche: Niche[Individual, Int],
+    operatorExploration: Double,
+    genomeSize: Int,
+    historySize: Int,
+    cloneProbability: Double,
+    aggregation: Vector[Double] => Double)
+
+  object OpenMOLE {
+    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Stochastic with openmole.Profile[OpenMOLE] {
+      type M[A] = context.M[A]
+      type G = Genome
+      type I = Individual
+      type S = EvolutionState[Unit]
+
+      def iManifest = implicitly
+      def gManifest = implicitly
+      def sManifest = implicitly
+
+      def mMonad = implicitly
+      def mGeneration = implicitly
+      def mStartTime = implicitly
+
+      def operations(om: OpenMOLE) = new Ops {
+        def randomLens = GenLens[S](_.random)
+        def startTimeLens = GenLens[S](_.startTime)
+        def generation(s: S) = s.generation
+        def values(genome: G) = vectorValues.get(genome)
+        def genome(i: I) = Individual.genome.get(i)
+        def phenotype(individual: I): Double = om.aggregation(vectorFitness.get(individual))
+        def buildIndividual(genome: G, phenotype: Double) = noisyprofile.buildIndividual(genome, phenotype)
+        def initialState(rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
+        def initialGenomes(n: Int) = noisyprofile.initialGenomes(n, om.genomeSize)
+        def breeding(n: Int) = noisyprofile.breeding(n, om.niche, om.operatorExploration, om.cloneProbability, om.aggregation)
+        def elitism = noisyprofile.elitism(om.mu, om.niche, om.historySize, om.aggregation)
+
+        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
+        def migrateFromIsland(population: Vector[I]) =
+          population.filter(_.historyAge != 0).map {
+            i => Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
+          }
+      }
+
+      def run[A](x: M[A], s: S): (A, S) = {
+        val res =
+          for {
+            xv <- x
+            s <- noisyprofile.state[M]
+          } yield (xv, s)
+        context.result(res, interpreter(s)).right.get
+      }
+
+      def samples(i: I): Long = i.fitnessHistory.size
+      def profile(om: OpenMOLE)(population: Vector[I]) = noisyprofile.profile(population, om.niche)
+    }
+  }
+
 }
 
 object noisyprofileOperations {
