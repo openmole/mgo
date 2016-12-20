@@ -67,7 +67,7 @@ Run the optimisation:
     run(nsga2).
       until(afterGeneration(1000)).
       trace((state, population) => println(state.generation)).
-      eval(new Random(42))
+      eval(new util.Random(42))
 
   println(result(finalPopulation, zdt4.scale).mkString("\n"))
 
@@ -82,8 +82,9 @@ only the most promising individuals. It uses an aggregation function to aggregat
 For instance a version of NSGA2 for noisy fitness functions may be used has follow:
 
 ```scala
+  import mgo._
   import algorithm.noisynsga2._
-  import scala.util.Random
+  import context.implicits._
 
   object sphere {
     def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-2, 2))
@@ -92,7 +93,7 @@ For instance a version of NSGA2 for noisy fitness functions may be used has fol
 
   object noisySphere {
     def scale(s: Vector[Double]): Vector[Double] = sphere.scale(s)
-    def compute(rng: Random, v: Vector[Double]) =
+    def compute(rng: util.Random, v: Vector[Double]) =
       sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v))
   }
 
@@ -110,7 +111,7 @@ For instance a version of NSGA2 for noisy fitness functions may be used has fol
     run(nsga2).
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
-      eval(new Random(42))
+      eval(new util.Random(42))
 
   println(result(finalPopulation, aggregation, noisySphere.scale).mkString("\n"))
 ```
@@ -122,9 +123,9 @@ MGO proposes the PSE alorithm that aim a creating diverse solution instead of o
 algorithm can be found [here](http://journals.plos.org/plosone/article?id=10.1371/journal.pone.0138212).
 
 ```scala
-  import fr.iscpif.mgo._
+  import mgo._
   import algorithm.pse._
-  import util.Random
+  import context.implicits._
 
   val pse = PSE(
     lambda = 10,
@@ -140,7 +141,7 @@ algorithm can be found [here](http://journals.plos.org/plosone/article?id=10.137
     run(pse).
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
-      eval(new Random(42))
+      eval(new util.Random(42))
 
   println(result(finalPopulation, zdt4.scale).mkString("\n"))
 ```
@@ -159,7 +160,7 @@ In MGO you can compute profiles of a 10 dimensional hyper-sphere function using 
 ```scala
 
   import algorithm.profile._
-  import util.Random
+  import context.implicits._
 
   //Profile the first dimension of the genome
   val algo = Profile(
@@ -172,7 +173,7 @@ In MGO you can compute profiles of a 10 dimensional hyper-sphere function using 
     run(algo).
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
-      eval(new Random(42))
+      eval(new util.Random(42))
 
   println(result(finalPopulation, sphere.scale).mkString("\n"))
 ```
@@ -185,7 +186,7 @@ function with noise.
 
 ```scala
   import algorithm.noisyprofile._
-  import util.Random
+  import context.implicits._
 
   def aggregation(history: Vector[Double]) = history.sum / history.size
   def niche = genomeProfile(x = 0, nX = 10)
@@ -202,7 +203,7 @@ function with noise.
     run(algo).
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
-      eval(new Random(42))
+      eval(new util.Random(42))
 
   println(result(finalPopulation, aggregation, noisySphere.scale, niche).mkString("\n"))
 

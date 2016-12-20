@@ -1,7 +1,5 @@
 organization := "fr.iscpif"
-
 name := "mgo"
-
 
 scalaOrganization := "org.typelevel"
 scalaVersion := "2.12.0"
@@ -9,31 +7,22 @@ crossScalaVersions := Seq("2.11.8", "2.12.0")
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
-scalacOptions ++= Seq("-Ypartial-unification")
+scalacOptions ++= Seq("-Ypartial-unification") //, "-Ymacro-debug-lite")
+
+//resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
+resolvers += Resolver.sonatypeRepo("public")
+resolvers += Resolver.sonatypeRepo("snapshots")
+
 
 val monocleVersion = "1.3.2"
 
 //libraryDependencies += "com.github.pathikrit" %% "better-files" % "2.15.0"
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6"
-libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
-libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
-libraryDependencies +=  "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
-//libraryDependencies += "com.projectseptember" %% "freek" % "0.6.0"
-
-val scalazVersion = "7.2.7"
-
-libraryDependencies ++= Seq(
-  "org.scalaz" %% "scalaz-core" % scalazVersion,
-  "org.scalaz" %% "scalaz-effect" % scalazVersion,
-  "org.scalaz" %% "scalaz-scalacheck-binding" % scalazVersion % "test"
-)
-
-
-resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
-resolvers += "Sonatype Releases" at "http://oss.sonatype.org/content/repositories/releases"
-
-
-libraryDependencies += "org.scalacheck" %% "scalacheck" % "1.12.3" % "test"
+libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
+libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
+libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
+libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.3-SNAPSHOT"
+libraryDependencies += "org.typelevel"  %% "squants"  % "1.0.0-SNAPSHOT"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
