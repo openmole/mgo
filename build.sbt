@@ -1,22 +1,20 @@
 organization := "fr.iscpif"
 name := "mgo"
 
-scalaOrganization := "org.typelevel"
-scalaVersion := "2.12.0"
-crossScalaVersions := Seq("2.11.8", "2.12.0")
+scalaVersion := "2.12.1"
+crossScalaVersions := Seq("2.11.8", "2.12.1")
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
-scalacOptions ++= Seq("-Ypartial-unification") //, "-Ymacro-debug-lite")
 
-//resolvers += "Scala Tools Snapshots" at "http://scala-tools.org/repo-snapshots/"
 resolvers += Resolver.sonatypeRepo("public")
 resolvers += Resolver.sonatypeRepo("snapshots")
 
+// macro paradise doesn't work with scaladoc
+sources in (Compile, doc) := Nil
 
 val monocleVersion = "1.3.2"
 
-//libraryDependencies += "com.github.pathikrit" %% "better-files" % "2.15.0"
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6"
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
