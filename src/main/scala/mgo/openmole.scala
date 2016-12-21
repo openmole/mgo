@@ -59,7 +59,7 @@ object openmole {
       def migrateFromIsland(population: Vector[I]): Vector[I]
     }
 
-    def run[T](m: M[T], s: S): (T, S)
+    def run[T](s: S, m: M[T]): (S, T)
 
     def afterGeneration(g: Long) = mgo.afterGeneration[M, I](g)
     def afterDuration(d: Time) = mgo.afterDuration[M, I](d)

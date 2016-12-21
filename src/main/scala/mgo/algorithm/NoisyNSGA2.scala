@@ -172,12 +172,12 @@ object noisynsga2 {
           }
       }
 
-      def run[A](x: M[A], s: S): (A, S) = {
+      def run[A](s: S, x: M[A]) = {
         val res =
           for {
             xv <- x
             s <- noisynsga2.state[M]
-          } yield (xv, s)
+          } yield (s, xv)
         context.result(res, interpreter(s)).right.get
       }
 

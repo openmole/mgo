@@ -183,12 +183,12 @@ object pse extends niche.Imports {
           population.filter(i => !Individual.foundedIsland.get(i)).map(Individual.mapped.set(false))
       }
 
-      def run[A](x: M[A], s: S): (A, S) = {
+      def run[A](s: S, x: M[A]) = {
         val res =
           for {
             xv <- x
             s <- pse.state[M]
-          } yield (xv, s)
+          } yield (s, xv)
         context.result(res, interpreter(s)).right.get
       }
     }

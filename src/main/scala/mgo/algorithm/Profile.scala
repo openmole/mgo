@@ -139,12 +139,12 @@ object profile extends niche.Imports {
         def migrateFromIsland(population: Vector[I]) = population
       }
 
-      def run[A](x: M[A], s: S): (A, S) = {
+      def run[A](s: S, x: M[A]) = {
         val res =
           for {
             xv <- x
             s <- mgo.algorithm.profile.state[M]
-          } yield (xv, s)
+          } yield (s, xv)
         context.result(res, interpreter(s)).right.get
       }
 
