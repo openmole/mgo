@@ -20,7 +20,7 @@ libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % mon
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
 libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.3-SNAPSHOT"
-libraryDependencies += "org.typelevel"  %% "squants"  % "1.0.0-SNAPSHOT"
+libraryDependencies += "org.typelevel"  %% "squants"  % "1.0.0"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
