@@ -9,6 +9,7 @@ addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
 
 resolvers += Resolver.sonatypeRepo("public")
 resolvers += Resolver.sonatypeRepo("snapshots")
+resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
 
 // macro paradise doesn't work with scaladoc
 sources in (Compile, doc) := Nil
@@ -19,7 +20,7 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6"
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.3-SNAPSHOT"
+libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.3"
 libraryDependencies += "org.typelevel"  %% "squants"  % "1.0.0"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
