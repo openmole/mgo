@@ -35,7 +35,6 @@ import freedsl.dsl.dsl
 import freedsl.random._
 import freedsl.io._
 import freedsl.tool._
-import freek._
 
 object pse extends niche.Imports {
 
@@ -54,18 +53,20 @@ object pse extends niche.Imports {
     override def set(map: Map[Vector[Int], Int]): M[Unit]
   }
 
-  val context = dsl.merge(Random, StartTime, Generation, IO, VectorHitMap)
-  import context._
-  import context.implicits._
-
   type HitMap = Map[Vector[Int], Int]
 
   def interpreter(s: EvolutionState[HitMap]) =
-    Random.interpreter(s.random) :&:
-      StartTime.interpreter(s.startTime) :&:
-      Generation.interpreter(s.generation) :&:
-      IO.interpreter :&:
+    dsl.merge(
+      Random.interpreter(s.random),
+      StartTime.interpreter(s.startTime),
+      Generation.interpreter(s.generation),
+      IO.interpreter,
       VectorHitMap.interpreter(s.s)
+    )
+
+  val context = dsl.merge(Random, StartTime, Generation, IO, VectorHitMap)
+  import context._
+  import context.implicits._
 
   def result(population: Vector[Individual], scaling: Vector[Double] => Vector[Double]) =
     population.map { i => (scaling(i.genome.values.toVector), i.phenotype.toVector) }
@@ -92,7 +93,7 @@ object pse extends niche.Imports {
 
       def state = pse.state[M]
 
-      def run[A](m: M[A], s: EvolutionState[HitMap]) = context.result(m, interpreter(s)).right.get
+      def run[A](m: M[A], s: EvolutionState[HitMap]) = interpreter(s).run(m).right.get
     }
 
   }
@@ -189,7 +190,7 @@ object pse extends niche.Imports {
             xv <- x
             s <- pse.state[M]
           } yield (s, xv)
-        context.result(res, interpreter(s)).right.get
+        interpreter(s).run(res).right.get
       }
     }
   }

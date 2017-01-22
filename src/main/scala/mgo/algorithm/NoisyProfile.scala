@@ -33,22 +33,23 @@ import freedsl.dsl
 import freedsl.io.IO
 import freedsl.random._
 import freedsl.tool._
-import freek._
 import mgo.niche
 
 import scala.language.higherKinds
 
 object noisyprofile extends niche.Imports {
 
+  def interpreter(s: EvolutionState[Unit]) =
+    dsl.merge(
+      Random.interpreter(s.random),
+      StartTime.interpreter(s.startTime),
+      Generation.interpreter(s.generation),
+      IO.interpreter
+    )
+
   val context = dsl.merge(Random, StartTime, Generation, IO)
   import context._
   import context.implicits._
-
-  def interpreter(s: EvolutionState[Unit]) =
-    Random.interpreter(s.random) :&:
-      StartTime.interpreter(s.startTime) :&:
-      Generation.interpreter(s.generation) :&:
-      IO.interpreter
 
   def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
     genomeProfile[Individual]((Individual.genome composeLens vectorValues).get _, x, nX)
@@ -128,7 +129,7 @@ object noisyprofile extends niche.Imports {
 
       def state = noisyprofile.state[M]
 
-      def run[A](m: M[A], s: EvolutionState[Unit]) = context.result(m, interpreter(s)).right.get
+      def run[A](m: M[A], s: EvolutionState[Unit]) = interpreter(s).run(m).right.get
     }
 
   }
@@ -194,7 +195,7 @@ object noisyprofile extends niche.Imports {
             xv <- x
             s <- noisyprofile.state[M]
           } yield (s, xv)
-        context.result(res, interpreter(s)).right.get
+        interpreter(s).run(res).right.get
       }
 
       def samples(i: I): Long = i.fitnessHistory.size

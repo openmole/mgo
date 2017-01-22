@@ -37,15 +37,17 @@ import freedsl.random._
 
 object nsga2 {
 
+  def interpreter(s: EvolutionState[Unit]) =
+    dsl.merge(
+      Random.interpreter(s.random),
+      StartTime.interpreter(s.startTime),
+      Generation.interpreter(s.generation),
+      IO.interpreter
+    )
+
   val context = dsl.merge(Random, StartTime, Generation, IO)
   import context._
   import context.implicits._
-
-  def interpreter(s: EvolutionState[Unit]) =
-    Random.interpreter(s.random) :&:
-      StartTime.interpreter(s.startTime) :&:
-      Generation.interpreter(s.generation) :&:
-      IO.interpreter
 
   @Lenses case class Genome(values: Array[Double], operator: Option[Int])
   @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
@@ -88,7 +90,7 @@ object nsga2 {
         override def step(t: NSGA2) =
           nsga2Operations.step(nsga2.breeding(t.lambda, t.operatorExploration), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
         override def state = nsga2.state[M]
-        override def run[A](m: M[A], s: EvolutionState[Unit]) = context.result(m, interpreter(s)).right.get
+        override def run[A](m: M[A], s: EvolutionState[Unit]) = interpreter(s).run(m).right.get
       }
 
   }
@@ -135,7 +137,7 @@ object nsga2 {
             xv <- x
             s <- nsga2.state[M]
           } yield (s, xv)
-        context.result(res, interpreter(s)).right.get
+        interpreter(s).run(res).right.get
       }
 
     }

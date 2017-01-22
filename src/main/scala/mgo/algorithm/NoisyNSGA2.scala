@@ -30,7 +30,6 @@ import cats._
 import cats.data._
 import cats.implicits._
 
-import freek._
 import freedsl.dsl
 import freedsl.random._
 import freedsl.io._
@@ -39,15 +38,17 @@ import scala.language.higherKinds
 
 object noisynsga2 {
 
+  def interpreter(s: EvolutionState[Unit]) =
+    dsl.merge(
+      Random.interpreter(s.random),
+      StartTime.interpreter(s.startTime),
+      Generation.interpreter(s.generation),
+      IO.interpreter
+    )
+
   val context = dsl.merge(Random, StartTime, Generation, IO)
   import context._
   import context.implicits._
-
-  def interpreter(s: EvolutionState[Unit]) =
-    Random.interpreter(s.random) :&:
-      StartTime.interpreter(s.startTime) :&:
-      Generation.interpreter(s.generation) :&:
-      IO.interpreter
 
   def oldest(population: Vector[Individual]) =
     if (population.isEmpty) population
@@ -115,7 +116,7 @@ object noisynsga2 {
 
       def state = noisynsga2.state[M]
 
-      def run[A](m: M[A], s: EvolutionState[Unit]) = context.result(m, interpreter(s)).right.get
+      def run[A](m: M[A], s: EvolutionState[Unit]) = interpreter(s).run(m).right.get
     }
   }
 
@@ -178,7 +179,7 @@ object noisynsga2 {
             xv <- x
             s <- noisynsga2.state[M]
           } yield (s, xv)
-        context.result(res, interpreter(s)).right.get
+        interpreter(s).run(res).right.get
       }
 
       def samples(i: I): Long = i.fitnessHistory.size

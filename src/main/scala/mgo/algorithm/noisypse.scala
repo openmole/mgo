@@ -30,22 +30,23 @@ import monocle.macros._
 import freedsl.random._
 import freedsl.io._
 import freedsl.dsl
-import freek._
 
 object noisypse extends niche.Imports {
-
-  val context = dsl.merge(Random, StartTime, Generation, IO, pse.VectorHitMap)
-  import context._
-  import context.implicits._
 
   type HitMap = pse.HitMap
 
   def interpreter(s: EvolutionState[HitMap]) =
-    Random.interpreter(s.random) :&:
-      StartTime.interpreter(s.startTime) :&:
-      Generation.interpreter(s.generation) :&:
-      IO.interpreter :&:
+    dsl.merge(
+      Random.interpreter(s.random),
+      StartTime.interpreter(s.startTime),
+      Generation.interpreter(s.generation),
+      IO.interpreter,
       pse.VectorHitMap.interpreter(s.s)
+    )
+
+  val context = dsl.merge(Random, StartTime, Generation, IO, pse.VectorHitMap)
+  import context._
+  import context.implicits._
 
   def state[M[_]: Monad: StartTime: Random: Generation](implicit hitmap: mgo.contexts.HitMap[M, Vector[Int]]) = pse.state[M]
 
@@ -76,7 +77,7 @@ object noisypse extends niche.Imports {
 
       def state = noisypse.state[M]
 
-      def run[A](m: M[A], s: EvolutionState[HitMap]) = context.result(m, interpreter(s)).right.get
+      def run[A](m: M[A], s: EvolutionState[HitMap]) = interpreter(s).run(m).right.get
     }
 
   }
@@ -206,7 +207,7 @@ object noisypse extends niche.Imports {
             xv <- x
             s <- pse.state[M]
           } yield (s, xv)
-        context.result(res, interpreter(s)).right.get
+        interpreter(s).run(res).right.get
       }
 
       def samples(i: I): Long = i.phenotypeHistory.size
