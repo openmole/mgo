@@ -39,18 +39,18 @@ import freedsl.tool._
 object pse extends niche.Imports {
 
   object VectorHitMap {
-    def interpreter(m: HitMap) = new Interpreter[Id] {
+    import freedsl.dsl._
+
+    def interpreter(m: HitMap) = new Interpreter {
       var map = m
-      def interpret[_] = {
-        case get() => Right(map)
-        case set(m) => Right(map = m)
-      }
+      def get(implicit context: Context) = success(map)
+      def set(m: Map[Vector[Int], Int])(implicit context: Context) = success(map = m)
     }
   }
 
   @dsl trait VectorHitMap[M[_]] extends mgo.contexts.HitMap[M, Vector[Int]] {
-    override def get: M[Map[Vector[Int], Int]]
-    override def set(map: Map[Vector[Int], Int]): M[Unit]
+    def get: M[Map[Vector[Int], Int]]
+    def set(map: Map[Vector[Int], Int]): M[Unit]
   }
 
   type HitMap = Map[Vector[Int], Int]

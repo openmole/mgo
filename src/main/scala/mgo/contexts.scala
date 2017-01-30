@@ -21,13 +21,10 @@ object contexts {
   //  }
 
   object Generation {
-    def interpreter(g: Long) = new Interpreter[Id] {
+    def interpreter(g: Long) = new Interpreter {
       var generation = g
-
-      def interpret[_] = {
-        case get() => Right(generation)
-        case increment() => Right(generation += 1)
-      }
+      def get(implicit context: Context) = success(generation)
+      def increment(implicit context: Context) = success(generation += 1)
     }
   }
 
@@ -37,10 +34,8 @@ object contexts {
   }
 
   object StartTime {
-    def interpreter(startTime: Long) = new Interpreter[Id] {
-      def interpret[_] = {
-        case get() => Right(startTime)
-      }
+    def interpreter(startTime: Long) = new Interpreter {
+      def get(implicit context: Context) = success(startTime)
     }
   }
 
@@ -48,7 +43,7 @@ object contexts {
     def get: M[Long]
   }
 
-  trait HitMap[M[_], C] {
+  @adsl trait HitMap[M[_], C] {
     def get: M[Map[C, Int]]
     def set(map: Map[C, Int]): M[Unit]
   }
