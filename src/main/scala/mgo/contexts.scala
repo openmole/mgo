@@ -43,7 +43,7 @@ object contexts {
     def get: M[Long]
   }
 
-  @adsl trait HitMap[M[_], C] {
+  trait HitMap[M[_], C] {
     def get: M[Map[C, Int]]
     def set(map: Map[C, Int]): M[Unit]
   }

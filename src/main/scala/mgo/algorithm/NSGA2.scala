@@ -29,7 +29,6 @@ import cats._
 import cats.data._
 import cats.implicits._
 import GenomeVectorDouble._
-import freek._
 import freedsl.dsl
 import freedsl.tool._
 import freedsl.io._
