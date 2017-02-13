@@ -20,7 +20,7 @@ libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6"
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.7"
+libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.8"
 libraryDependencies += "org.typelevel"  %% "squants"  % "1.0.0"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
