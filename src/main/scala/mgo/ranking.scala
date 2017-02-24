@@ -44,8 +44,19 @@ object ranking {
 
   def monoObjectiveRanking[M[_]: Monad, I](fitness: I => Double): Ranking[M, I] =
     Ranking((values: Vector[I]) => {
-      val byFitness = values.zipWithIndex.sortBy { case (i, id) => fitness(i) }.map { _._2 }
-      byFitness.zipWithIndex.sortBy { case (id, _) => id }.map { case (_, rank) => Lazy(rank) }
+
+      val byFitness = values.map(fitness).zipWithIndex.sortBy { case (v, _) => v }
+      def ranks(fitnesses: List[Double], lastValue: Double = Double.NegativeInfinity, rank: Int = 0, rs: List[Int] = List()): List[Int] =
+        fitnesses match {
+          case h :: t =>
+            if (h > lastValue) ranks(t, h, rank + 1, rank :: rs)
+            else ranks(t, h, rank, rank :: rs)
+          case Nil => rs.reverse
+        }
+
+      val ranksValue = ranks(byFitness.unzip._1.toList)
+
+      (ranksValue zip byFitness.unzip._2).sortBy { case (_, r) => r }.unzip._1.toVector.map(r => Lazy(r))
     }.pure[M])
 
   def hyperVolumeRanking[M[_]: Monad, I](referencePoint: Vector[Double], fitness: I => Vector[Double]): Ranking[M, I] =
@@ -56,24 +67,19 @@ object ranking {
     Ranking((values: Vector[I]) =>
       HierarchicalRanking.upRank(values.map(v => fitness(v))).pure[M])
 
-  def paretoRanking[M[_]: Monad, I](fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Ranking[M, I] =
-    Ranking((values: Vector[I]) => {
-      val fitnesses = values.map(i => fitness(i))
-
+  def paretoRanking[M[_]: Monad, I](fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Ranking[M, I] = Ranking { (values: Vector[I]) =>
+    val fitnesses = values.map(i => fitness(i))
+    def ranks =
       fitnesses.zipWithIndex.map {
         case (v1, index1) =>
-          Lazy(
-            if (v1.exists(_.isNaN)) Int.MaxValue
-            else {
-              fitnesses.zipWithIndex.filter {
-                case (_, index2) => index1 != index2
-              }.count {
-                case (v2, _) => dominance.isDominated(v1, v2)
-              }
-            }
-          )
+          def containsNaN = v1.exists(_.isNaN)
+          def otherIndividuals = fitnesses.zipWithIndex.filter { case (_, index2) => index1 != index2 }
+          def numberOfDominatingIndividual = otherIndividuals.count { case (v2, _) => dominance.isDominated(v1, v2) }
+          Lazy(if (containsNaN) Int.MaxValue else numberOfDominatingIndividual)
       }
-    }.pure[M])
+
+    ranks.pure[M]
+  }
 
   def profileRanking[M[_]: Monad, I](niche: Niche[I, Int], fitness: I => Double): Ranking[M, I] =
     Ranking((population: Vector[I]) => {
