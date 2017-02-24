@@ -217,5 +217,5 @@ Algorithms implemented in MGO are also avialiable in the workflow plateform for 
 SBT dependency
 ----------------
 
-    libraryDependencies += "fr.iscpif" %% "mgo" % "version"
+    libraryDependencies += "fr.iscpif" %% "mgo" % "2.2"
 
