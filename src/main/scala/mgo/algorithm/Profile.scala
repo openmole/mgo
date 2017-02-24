@@ -157,6 +157,8 @@ object profile extends niche.Imports {
 
 object profileOperations {
 
+  import scala.math._
+
   def breeding[M[_]: Monad: Random: Generation, I, G](
     fitness: I => Double,
     genome: I => G,
@@ -170,7 +172,7 @@ object profileOperations {
       ranks <- profileRanking[M, I](niche, fitness) apply population
       operatorStatistics = operatorProportions(genome andThen genomeOperator, population)
       breeding = applyDynamicOperator[M, I](
-        tournament[M, I, Lazy[Int]](population, ranks, rounds = size => scala.math.round(scala.math.log10(size).toInt)),
+        tournament[M, I, Lazy[Int]](population, ranks, rounds = size => round(log10(size).toInt)),
         genome andThen genomeValues,
         operatorStatistics,
         operatorExploration
