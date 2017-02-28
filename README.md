@@ -219,5 +219,5 @@ SBT dependency
 ```scala
   resolvers += Resolver.sonatypeRepo("public")
   resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
-  libraryDependencies += "fr.iscpif" %% "mgo" % "2.2"  
+  libraryDependencies += "fr.iscpif" %% "mgo" % "2.3"  
 ```
