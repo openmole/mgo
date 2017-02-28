@@ -249,7 +249,7 @@ object noisypseOperations {
     for {
       cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, P](historyAge, history)(historySize)) apply filterNaN(population, values)
       mappedPopulation <- addHits[M, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, mapped) apply cloneRemoved
-      elite <- keepNiches(history.get _ andThen aggregation andThen pattern, randomO[M, I](1)) apply mappedPopulation
+      elite <- keepNiches(history.get _ andThen aggregation andThen pattern, maximiseO[M, I, Long](i => history.get(i).size, 1)) apply mappedPopulation
     } yield elite
   } andThen incrementGeneration[M, I](age)
 
