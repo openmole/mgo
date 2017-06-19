@@ -4,8 +4,8 @@ name := "mgo"
 scalaVersion := "2.12.2"
 crossScalaVersions := Seq("2.11.11", "2.12.2")
 
-addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.0" cross CrossVersion.full)
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full)
+addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 
 resolvers += Resolver.sonatypeRepo("public")
 resolvers += Resolver.sonatypeRepo("snapshots")
@@ -14,14 +14,14 @@ resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
 // macro paradise doesn't work with scaladoc
 sources in (Compile, doc) := Nil
 
-val monocleVersion = "1.3.2"
+val monocleVersion = "1.4.0"
 
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6"
+libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.9"
-libraryDependencies += "org.typelevel"  %% "squants"  % "1.0.0"
+libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.11"
+libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
