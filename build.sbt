@@ -8,6 +8,7 @@ addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.f
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 
 resolvers += Resolver.sonatypeRepo("public")
+resolvers += Resolver.sonatypeRepo("staging")
 resolvers += Resolver.sonatypeRepo("snapshots")
 resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
 
@@ -15,12 +16,17 @@ resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
 sources in (Compile, doc) := Nil
 
 val monocleVersion = "1.4.0"
+val freedslVersion = "0.12"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "all" % "0.11"
+libraryDependencies += "fr.iscpif.freedsl" %% "dsl" % freedslVersion
+libraryDependencies += "fr.iscpif.freedsl" %% "random" % freedslVersion
+libraryDependencies += "fr.iscpif.freedsl" %% "io" % freedslVersion
+libraryDependencies += "fr.iscpif.freedsl" %% "tool" % freedslVersion
+
 libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
