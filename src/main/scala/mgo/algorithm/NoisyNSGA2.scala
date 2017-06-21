@@ -130,62 +130,6 @@ object noisynsga2 {
     cloneProbability: Double = 0.2,
     operatorExploration: Double = 0.1)
 
-  case class OpenMOLE(
-    mu: Int,
-    operatorExploration: Double,
-    genomeSize: Int,
-    historySize: Int,
-    cloneProbability: Double,
-    aggregation: Vector[Vector[Double]] => Vector[Double])
-
-  object OpenMOLE {
-    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] with openmole.Stochastic {
-      type M[A] = context.M[A]
-      type G = Genome
-      type I = Individual
-      type S = EvolutionState[Unit]
-
-      def iManifest = implicitly
-      def gManifest = implicitly
-      def sManifest = implicitly
-
-      def mMonad = implicitly
-      def mGeneration = implicitly
-      def mStartTime = implicitly
-
-      def operations(om: OpenMOLE) = new Ops {
-        def randomLens = GenLens[S](_.random)
-        def startTimeLens = GenLens[S](_.startTime)
-        def generation(s: S) = s.generation
-        def values(genome: G) = vectorValues.get(genome)
-        def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Vector[Double] = om.aggregation(vectorFitness.get(individual))
-        def buildIndividual(genome: G, phenotype: Vector[Double]) = noisynsga2.buildIndividual(genome, phenotype)
-        def initialState(rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
-        def initialGenomes(n: Int) = noisynsga2.initialGenomes(n, om.genomeSize)
-        def breeding(n: Int) = noisynsga2.breeding(n, om.operatorExploration, om.cloneProbability, om.aggregation)
-        def elitism = noisynsga2.elitism(om.mu, om.historySize, om.aggregation)
-
-        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
-        def migrateFromIsland(population: Vector[I]) =
-          population.filter(_.historyAge != 0).map {
-            i => Individual.fitnessHistory.modify(_.take(scala.math.min(i.historyAge, om.historySize).toInt))(i)
-          }
-      }
-
-      def run[A](s: S, x: M[A]) = {
-        val res =
-          for {
-            xv <- x
-            s <- noisynsga2.state[M]
-          } yield (s, xv)
-        interpreter(s).run(res).right.get
-      }
-
-      def samples(i: I): Long = i.fitnessHistory.size
-    }
-  }
-
 }
 
 object noisynsga2Operations {

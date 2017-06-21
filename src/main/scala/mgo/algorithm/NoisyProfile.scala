@@ -145,64 +145,6 @@ object noisyprofile extends niche.Imports {
     cloneProbability: Double = 0.2,
     operatorExploration: Double = 0.1)
 
-  case class OpenMOLE(
-    mu: Int,
-    niche: Niche[Individual, Int],
-    operatorExploration: Double,
-    genomeSize: Int,
-    historySize: Int,
-    cloneProbability: Double,
-    aggregation: Vector[Double] => Double)
-
-  object OpenMOLE {
-    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Stochastic with openmole.Profile[OpenMOLE] {
-      type M[A] = context.M[A]
-      type G = Genome
-      type I = Individual
-      type S = EvolutionState[Unit]
-
-      def iManifest = implicitly
-      def gManifest = implicitly
-      def sManifest = implicitly
-
-      def mMonad = implicitly
-      def mGeneration = implicitly
-      def mStartTime = implicitly
-
-      def operations(om: OpenMOLE) = new Ops {
-        def randomLens = GenLens[S](_.random)
-        def startTimeLens = GenLens[S](_.startTime)
-        def generation(s: S) = s.generation
-        def values(genome: G) = vectorValues.get(genome)
-        def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Double = om.aggregation(vectorFitness.get(individual))
-        def buildIndividual(genome: G, phenotype: Double) = noisyprofile.buildIndividual(genome, phenotype)
-        def initialState(rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
-        def initialGenomes(n: Int) = noisyprofile.initialGenomes(n, om.genomeSize)
-        def breeding(n: Int) = noisyprofile.breeding(n, om.niche, om.operatorExploration, om.cloneProbability, om.aggregation)
-        def elitism = noisyprofile.elitism(om.mu, om.niche, om.historySize, om.aggregation)
-
-        def migrateToIsland(population: Vector[I]) = population.map(_.copy(historyAge = 0))
-        def migrateFromIsland(population: Vector[I]) =
-          population.filter(_.historyAge != 0).map {
-            i => Individual.fitnessHistory.modify(_.take(math.min(i.historyAge, om.historySize).toInt))(i)
-          }
-      }
-
-      def run[A](s: S, x: M[A]) = {
-        val res =
-          for {
-            xv <- x
-            s <- noisyprofile.state[M]
-          } yield (s, xv)
-        interpreter(s).run(res).right.get
-      }
-
-      def samples(i: I): Long = i.fitnessHistory.size
-      def profile(om: OpenMOLE)(population: Vector[I]) = noisyprofile.profile(population, om.niche)
-    }
-  }
-
 }
 
 object noisyprofileOperations {

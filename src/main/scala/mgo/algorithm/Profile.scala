@@ -106,53 +106,6 @@ object profile extends niche.Imports {
 
   case class Profile(lambda: Int, fitness: Vector[Double] => Double, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double = 0.1)
 
-  case class OpenMOLE(niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double)
-
-  object OpenMOLE {
-
-    implicit def integration = new openmole.Integration[OpenMOLE, Vector[Double], Double] with openmole.Profile[OpenMOLE] {
-      type M[A] = context.M[A]
-      type G = Genome
-      type I = Individual
-      type S = EvolutionState[Unit]
-
-      def iManifest = implicitly
-      def gManifest = implicitly
-      def sManifest = implicitly
-
-      def mMonad = implicitly
-      def mGeneration = implicitly
-      def mStartTime = implicitly
-
-      def operations(om: OpenMOLE) = new Ops {
-        def randomLens = GenLens[S](_.random)
-        def startTimeLens = GenLens[S](_.startTime)
-        def generation(s: S) = s.generation
-        def values(genome: G) = vectorValues.get(genome)
-        def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Double = Individual.fitness.get(individual)
-        def buildIndividual(genome: G, phenotype: Double) = Individual(genome, phenotype, 0)
-        def initialState(rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
-        def initialGenomes(n: Int) = mgo.algorithm.profile.initialGenomes(n, om.genomeSize)
-        def breeding(n: Int) = mgo.algorithm.profile.breeding(n, om.niche, om.operatorExploration)
-        def elitism = mgo.algorithm.profile.elitism(om.niche)
-        def migrateToIsland(population: Vector[I]) = population
-        def migrateFromIsland(population: Vector[I]) = population
-      }
-
-      def run[A](s: S, x: M[A]) = {
-        val res =
-          for {
-            xv <- x
-            s <- mgo.algorithm.profile.state[M]
-          } yield (s, xv)
-        interpreter(s).run(res).right.get
-      }
-
-      def profile(om: OpenMOLE)(population: Vector[I]) = population
-    }
-  }
-
 }
 
 object profileOperations {

@@ -146,54 +146,6 @@ object pse extends niche.Imports {
   def expression(phenotype: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
     pseOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(phenotype)
 
-  case class OpenMOLE(
-    pattern: Vector[Double] => Vector[Int],
-    genomeSize: Int,
-    operatorExploration: Double)
-
-  object OpenMOLE {
-
-    implicit def integration: openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] = new openmole.Integration[OpenMOLE, Vector[Double], Vector[Double]] {
-      type M[A] = context.M[A]
-      type G = Genome
-      type I = Individual
-      type S = EvolutionState[HitMap]
-
-      def iManifest = implicitly
-      def gManifest = implicitly
-      def sManifest = implicitly
-
-      def mMonad = implicitly
-      def mGeneration = implicitly
-      def mStartTime = implicitly
-
-      def operations(om: OpenMOLE) = new Ops {
-        def randomLens = GenLens[S](_.random)
-        def startTimeLens = GenLens[S](_.startTime)
-        def generation(s: S) = s.generation
-        def values(genome: G) = vectorValues.get(genome)
-        def genome(i: I) = Individual.genome.get(i)
-        def phenotype(individual: I): Vector[Double] = vectorPhenotype.get(individual)
-        def buildIndividual(genome: G, phenotype: Vector[Double]) = pse.buildIndividual(genome, phenotype)
-        def initialState(rng: util.Random) = EvolutionState[HitMap](random = rng, s = Map())
-        def initialGenomes(n: Int): M[Vector[G]] = pse.initialGenomes(n, om.genomeSize)
-        def breeding(n: Int): Breeding[M, I, G] = pse.breeding(n, om.pattern, om.operatorExploration)
-        def elitism: Elitism[M, I] = pse.elitism(om.pattern)
-        def migrateToIsland(population: Vector[I]) = population.map(Individual.foundedIsland.set(true))
-        def migrateFromIsland(population: Vector[I]) =
-          population.filter(i => !Individual.foundedIsland.get(i)).map(Individual.mapped.set(false))
-      }
-
-      def run[A](s: S, x: M[A]) = {
-        val res =
-          for {
-            xv <- x
-            s <- pse.state[M]
-          } yield (s, xv)
-        interpreter(s).run(res).right.get
-      }
-    }
-  }
 }
 
 object pseOperations {
