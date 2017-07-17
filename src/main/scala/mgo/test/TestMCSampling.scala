@@ -30,7 +30,7 @@ object NormalMCSampling extends App {
   def pdfNormal(x: Double): Double = (1.0 / sqrt(2 * Pi)) * exp(-pow(x, 2) / 2.0)
 
   val mcsampling = MCSampling(
-    getSample = rng => Vector(rng.nextGaussian()),
+    sample = rng => Vector(rng.nextGaussian()),
     probability = x => pdfNormal(x.head)
   )
 
@@ -40,16 +40,16 @@ object NormalMCSampling extends App {
       trace((s, is) => println(s.generation)).
       eval(new util.Random(42))
 
-  val finalSamples = result(finalPopulation)
+  val finalSamples: Vector[Vector[Double]] = result(finalPopulation)
 
   println(finalSamples.mkString("\n"))
 
   val integral = approxIntegrate(
-    x => 1,
+    x => if (x.head < 2 && x.head > -2) 1.0 else 0.0,
     finalSamples)
 
-  println("Integral(1) = " ++ integral.toString)
+  println("Proportion of samples within 2 standard deviation = " ++ integral.toString)
 
-  println("ArgMax = " ++ approxArgMax(x => pdfNormal(x.head), finalSamples).toString)
+  println("Sample with the highest probability = " ++ approxArgMax(x => pdfNormal(x.head), finalSamples).toString)
 }
 

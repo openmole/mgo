@@ -37,7 +37,7 @@ import freedsl.tool._
 import freedsl.io._
 import freedsl.random._
 
-object MCSampling {
+object RejectionSampling {
 
   def interpreter(s: EvolutionState[Unit]) =
     dsl.merge(
@@ -50,20 +50,26 @@ object MCSampling {
   val context = dsl.merge(Random, StartTime, Generation, IO)
   import context.implicits._
 
-  object MCSampling {
+  object RejectionSampling {
 
-    implicit def isAlgorithm = new Algorithm[MCSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
-      def initialState(t: MCSampling, rng: util.Random): EvolutionState[Unit] =
+    implicit def isAlgorithm = new Algorithm[RejectionSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
+      def initialState(t: RejectionSampling, rng: util.Random): EvolutionState[Unit] =
         EvolutionState(random = rng, s = ())
 
-      def initialPopulation(t: MCSampling): context.M[Vector[Evaluated]] = (Vector.empty[Evaluated]).pure[context.M]
+      def initialPopulation(t: RejectionSampling): context.M[Vector[Evaluated]] =
+        (Vector.empty[Evaluated]).pure[context.M]
 
-      def step(t: MCSampling): Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]] =
+      def step(t: RejectionSampling): Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]] =
         Kleisli { samples =>
           for {
-            newsample <- implicitly[Random[context.M]].use(t.sample)
+            newSample <- implicitly[Random[context.M]].use(t.qSample)
+            uniform <- implicitly[Random[context.M]].nextDouble
             _ <- implicitly[Generation[context.M]].increment
-          } yield samples :+ Evaluated(Sample(newsample), t.probability(newsample))
+          } yield if (uniform < t.pPdf(newSample) / (t.m * t.qPdf(newSample))) {
+            samples :+ Evaluated(Sample(newSample), t.pPdf(newSample))
+          } else {
+            samples
+          }
         }
 
       def state: context.M[EvolutionState[Unit]] = mgo.algorithm.state[context.M, Unit](())
@@ -72,9 +78,11 @@ object MCSampling {
     }
   }
 
-  case class MCSampling(
-    sample: util.Random => Vector[Double],
-    probability: Vector[Double] => Double)
+  case class RejectionSampling(
+    qSample: util.Random => Vector[Double],
+    qPdf: Vector[Double] => Double,
+    m: Double,
+    pPdf: Vector[Double] => Double)
 
   @Lenses case class Sample(values: Vector[Double])
   @Lenses case class Evaluated(sample: Sample, value: Double)
