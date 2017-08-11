@@ -39,15 +39,6 @@ object DiskImportanceSampling extends App {
   def inCircle(x: (Double, Double)): Boolean =
     sqrt(pow(x._1, 2) + pow(x._2, 2)) <= 1
 
-  def inBottomLeftQuarter(x: (Double, Double)): Boolean =
-    x._1 < 0.0 && x._2 < 0.0
-  def inTopLeftQuarter(x: (Double, Double)): Boolean =
-    x._1 >= 0.0 && x._2 < 0.0
-  def inTopRightQuarter(x: (Double, Double)): Boolean =
-    x._1 >= 0.0 && x._2 >= 0.0
-  def inBottomRightQuarter(x: (Double, Double)): Boolean =
-    x._1 < 0.0 && x._2 >= 0.0
-
   def vec2Tup(x: Vector[Double]): (Double, Double) = (x(0), x(1))
   def tup2Vec(x: (Double, Double)): Vector[Double] = Vector(x._1, x._2)
   def ifElse[A](yes: A, no: A)(x: Boolean): A = if (x) yes else no
