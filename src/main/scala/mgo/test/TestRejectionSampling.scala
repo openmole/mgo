@@ -1,5 +1,5 @@
 /*
- * Copyright (C) Guillaume Chérel 17/10/17
+ * Copyright (C) Guillaume Chérel 10/07/2017
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -22,7 +22,7 @@ import math._
 import mgo._
 import mgo.tools.MonteCarlo._
 
-object NormalRejectionSampling extends App {
+object DiskRejectionSampling extends App {
 
   import algorithm.monteCarlo.RejectionSampling._
   import context.implicits._
@@ -33,7 +33,7 @@ object NormalRejectionSampling extends App {
     else
       0.0
 
-  def inCircle(x: (Double, Double)): Boolean =
+  def inSquare(x: (Double, Double)): Boolean =
     x._1 >= -1 && x._1 < 1 && x._2 >= -1 && x._2 < 1
 
   def inBottomLeftQuarter(x: (Double, Double)): Boolean =
@@ -51,7 +51,7 @@ object NormalRejectionSampling extends App {
 
   val mcsampling = RejectionSampling(
     qSample = { r => Vector(r.nextDouble * 2 - 1, r.nextDouble * 2 - 1) },
-    qPdf = ifElse(0.25, 0.0) _ compose inCircle compose vec2Tup,
+    qPdf = ifElse(0.25, 0.0) _ compose inSquare compose vec2Tup,
     m = 4.0 / Pi,
     pPdf = pdfUniformCircle _ compose vec2Tup
   )
@@ -67,11 +67,11 @@ object NormalRejectionSampling extends App {
   println(finalSamples.mkString("\n"))
 
   val propSamplesInCircle = approxIntegrate(
-    ifElse(1.0, 0.0) _ compose inCircle _ compose vec2Tup _,
+    ifElse(1.0, 0.0) _ compose inSquare _ compose vec2Tup _,
     finalSamples)
 
   val propSamplesOutsideCircle = approxIntegrate(
-    ifElse(0.0, 1.0) _ compose inCircle _ compose vec2Tup _,
+    ifElse(0.0, 1.0) _ compose inSquare _ compose vec2Tup _,
     finalSamples)
 
   val propSamplesBottomLeftQuarter = approxIntegrate(
