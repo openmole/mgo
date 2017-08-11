@@ -20,7 +20,6 @@ package mgo.test
 import math._
 
 import mgo._
-import mgo.tools.MonteCarlo._
 
 object NormalMCSampling extends App {
 
@@ -44,12 +43,17 @@ object NormalMCSampling extends App {
 
   println(finalSamples.mkString("\n"))
 
-  val integral = approxIntegrate(
-    x => if (x.head < 2 && x.head > -2) 1.0 else 0.0,
-    finalSamples)
+  val integral = finalPopulation.map({
+    e => if (e.sample.values.head < 2 && e.sample.values.head > -2) 1.0 else 0.0
+  }).sum / finalPopulation.size.toDouble
+
+  def approxArgMax(p: Vector[Double] => Double, samples: Vector[Vector[Double]]): Vector[Double] =
+    samples.maxBy(p)
+
+  val argmax = finalPopulation.maxBy({ e => e.sample.values.head })
 
   println("Proportion of samples within 2 standard deviation = " ++ integral.toString)
 
-  println("Sample with the highest probability = " ++ approxArgMax(x => pdfNormal(x.head), finalSamples).toString)
+  println("Sample with the highest probability = " ++ argmax.toString)
 }
 
