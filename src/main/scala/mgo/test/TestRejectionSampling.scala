@@ -28,7 +28,7 @@ object DiskRejectionSampling extends App {
   import context.implicits._
 
   def pdfUniformCircle(x: (Double, Double)): Double =
-    if (sqrt(pow(x._1, 2) + pow(x._2, 2)) <= 1)
+    if (inCircle(x))
       1.0 / Pi
     else
       0.0
@@ -36,14 +36,8 @@ object DiskRejectionSampling extends App {
   def inSquare(x: (Double, Double)): Boolean =
     x._1 >= -1 && x._1 < 1 && x._2 >= -1 && x._2 < 1
 
-  def inBottomLeftQuarter(x: (Double, Double)): Boolean =
-    x._1 < 0.0 && x._2 < 0.0
-  def inTopLeftQuarter(x: (Double, Double)): Boolean =
-    x._1 >= 0.0 && x._2 < 0.0
-  def inTopRightQuarter(x: (Double, Double)): Boolean =
-    x._1 >= 0.0 && x._2 >= 0.0
-  def inBottomRightQuarter(x: (Double, Double)): Boolean =
-    x._1 < 0.0 && x._2 >= 0.0
+  def inCircle(x: (Double, Double)): Boolean =
+    sqrt(pow(x._1, 2) + pow(x._2, 2)) <= 1
 
   def vec2Tup(x: Vector[Double]): (Double, Double) = (x(0), x(1))
   def tup2Vec(x: (Double, Double)): Vector[Double] = Vector(x._1, x._2)
@@ -64,35 +58,16 @@ object DiskRejectionSampling extends App {
 
   val finalSamples: Vector[Vector[Double]] = result(finalPopulation)
 
-  println(finalSamples.mkString("\n"))
+  println(finalPopulation.mkString("\n"))
 
-  val propSamplesInCircle = approxIntegrate(
-    ifElse(1.0, 0.0) _ compose inSquare _ compose vec2Tup _,
-    finalSamples)
-
-  val propSamplesOutsideCircle = approxIntegrate(
-    ifElse(0.0, 1.0) _ compose inSquare _ compose vec2Tup _,
-    finalSamples)
-
-  val propSamplesBottomLeftQuarter = approxIntegrate(
-    ifElse(1.0, 0.0) _ compose inBottomLeftQuarter _ compose vec2Tup _,
-    finalSamples)
-  val propSamplesTopLeftQuarter = approxIntegrate(
-    ifElse(1.0, 0.0) _ compose inTopLeftQuarter _ compose vec2Tup _,
-    finalSamples)
-  val propSamplesBottomRightQuarter = approxIntegrate(
-    ifElse(1.0, 0.0) _ compose inBottomRightQuarter _ compose vec2Tup _,
-    finalSamples)
-  val propSamplesTopRightQuarter = approxIntegrate(
-    ifElse(1.0, 0.0) _ compose inTopRightQuarter _ compose vec2Tup _,
-    finalSamples)
+  val propSamplesInCircle =
+    finalPopulation.foldLeft(0)({
+      case (sum, e) =>
+        sum + { if (inCircle(vec2Tup(e.sample.values))) 1 else 0 }
+    }) /
+      finalPopulation.size.toDouble
 
   println("Proportion of samples in the circle = " ++ propSamplesInCircle.toString)
-  println("Proportion of samples outside the circle = " ++ propSamplesOutsideCircle.toString)
-  println("Proportion of samples in the bottom left quarter = " ++ propSamplesBottomLeftQuarter.toString)
-  println("Proportion of samples in the top left quarter = " ++ propSamplesTopLeftQuarter.toString)
-  println("Proportion of samples in the bottom right quarter = " ++ propSamplesBottomRightQuarter.toString)
-  println("Proportion of samples in the top right quarter = " ++ propSamplesTopRightQuarter.toString)
 
 }
 
