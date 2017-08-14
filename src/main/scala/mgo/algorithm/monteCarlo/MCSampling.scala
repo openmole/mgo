@@ -51,12 +51,13 @@ object MCSampling {
   import context.implicits._
 
   implicit def mcSamplingAlgorithm[MCSampling, Sample, Evaluated](
+    initialSamples: MCSampling => Vector[Evaluated],
     mcstep: MCSampling => Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]]) =
     new Algorithm[MCSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
       def initialState(t: MCSampling, rng: util.Random): EvolutionState[Unit] =
         EvolutionState(random = rng, s = ())
 
-      def initialPopulation(t: MCSampling): context.M[Vector[Evaluated]] = (Vector.empty[Evaluated]).pure[context.M]
+      def initialPopulation(t: MCSampling): context.M[Vector[Evaluated]] = initialSamples(t).pure[context.M]
 
       def step(t: MCSampling): Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]] =
         for {

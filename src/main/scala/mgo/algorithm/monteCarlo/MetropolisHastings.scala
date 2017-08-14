@@ -37,30 +37,43 @@ import freedsl.tool._
 import freedsl.io._
 import freedsl.random._
 
+import scala.math
+
 import MCSampling.context.implicits._
 
-case class ImportanceSampling(
-  qSample: util.Random => Vector[Double],
-  qPdf: Vector[Double] => Double,
+case class MetropolisHastings(
+  initialSample: MetropolisHastings.Evaluated,
+  qSample: Vector[Double] => util.Random => Vector[Double],
+  qPdf: (Vector[Double], Vector[Double]) => Double,
   pPdf: Vector[Double] => Double)
 
-object ImportanceSampling {
+object MetropolisHastings {
 
-  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[ImportanceSampling, Sample, Evaluated](
-    { _: ImportanceSampling => Vector.empty[Evaluated] },
-    step)
+  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[MetropolisHastings, Sample, Evaluated](
+    initialSample, step)
 
-  def step(t: ImportanceSampling): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
+  def initialSample(t: MetropolisHastings): Vector[Evaluated] = Vector(t.initialSample)
+
+  def step(t: MetropolisHastings): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
     Kleisli { samples =>
       for {
-        newSample <- implicitly[Random[MCSampling.context.M]].use(t.qSample)
-        p = t.pPdf(newSample)
-        q = t.qPdf(newSample)
-      } yield samples :+ Evaluated(Sample(newSample), p, p / q)
+        uniform <- implicitly[Random[MCSampling.context.M]].nextDouble
+        lastSample = samples.last
+        proposal <- implicitly[Random[MCSampling.context.M]].use(t.qSample(lastSample.sample.values))
+        pLast = lastSample.probability
+        pNew = t.pPdf(proposal)
+        qJump = t.qPdf(lastSample.sample.values, proposal)
+        qReturn = t.qPdf(proposal, lastSample.sample.values)
+        acceptanceProbability = math.min(1, (pNew * qReturn) / (pLast * qJump))
+      } yield if (uniform < acceptanceProbability) {
+        samples :+ Evaluated(Sample(proposal), pNew)
+      } else {
+        samples :+ lastSample
+      }
     }
 
   @Lenses case class Sample(values: Vector[Double])
-  @Lenses case class Evaluated(sample: Sample, probability: Double, importance: Double)
+  @Lenses case class Evaluated(sample: Sample, probability: Double)
 
   def samples(samples: Vector[Evaluated]): Vector[Vector[Double]] =
     samples.map((Evaluated.sample composeLens Sample.values).get)

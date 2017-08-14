@@ -47,7 +47,9 @@ case class RejectionSampling(
 
 object RejectionSampling {
 
-  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[RejectionSampling, Sample, Evaluated](step)
+  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[RejectionSampling, Sample, Evaluated](
+    { _: RejectionSampling => Vector.empty[Evaluated] },
+    step)
 
   def step(t: RejectionSampling): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
     Kleisli { samples =>
