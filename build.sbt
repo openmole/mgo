@@ -28,6 +28,7 @@ libraryDependencies += "fr.iscpif.freedsl" %% "io" % freedslVersion
 libraryDependencies += "fr.iscpif.freedsl" %% "tool" % freedslVersion
 
 libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0"
+libraryDependencies += "org.typelevel" %% "cats-core" % "1.0.0-MF"
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
@@ -59,7 +60,7 @@ pomExtra := (
     </developer>
     <developer>
       <id>guillaumecherel</id>
-      <name>Guillaume Cherel</name>
+      <name>Guillaume Chérel</name>
     </developer>
   </developers>
 )

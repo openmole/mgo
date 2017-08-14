@@ -50,35 +50,22 @@ object MCSampling {
   val context = dsl.merge(Random, StartTime, Generation, IO)
   import context.implicits._
 
-  object MCSampling {
-
-    implicit def isAlgorithm = new Algorithm[MCSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
+  implicit def mcSamplingAlgorithm[MCSampling, Sample, Evaluated](
+    mcstep: MCSampling => Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]]) =
+    new Algorithm[MCSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
       def initialState(t: MCSampling, rng: util.Random): EvolutionState[Unit] =
         EvolutionState(random = rng, s = ())
 
       def initialPopulation(t: MCSampling): context.M[Vector[Evaluated]] = (Vector.empty[Evaluated]).pure[context.M]
 
       def step(t: MCSampling): Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]] =
-        Kleisli { samples =>
-          for {
-            newsample <- implicitly[Random[context.M]].use(t.sample)
-            _ <- implicitly[Generation[context.M]].increment
-          } yield samples :+ Evaluated(Sample(newsample), t.probability(newsample))
-        }
+        for {
+          result <- mcstep(t)
+          _ <- Kleisli.lift(implicitly[Generation[context.M]].increment)
+        } yield result
 
       def state: context.M[EvolutionState[Unit]] = mgo.algorithm.state[context.M, Unit](())
 
       def run[A](m: context.M[A], s: EvolutionState[Unit]): A = interpreter(s).run(m).right.get
     }
-  }
-
-  case class MCSampling(
-    sample: util.Random => Vector[Double],
-    probability: Vector[Double] => Double)
-
-  @Lenses case class Sample(values: Vector[Double])
-  @Lenses case class Evaluated(sample: Sample, value: Double)
-
-  def result(samples: Vector[Evaluated]): Vector[Vector[Double]] =
-    samples.map((Evaluated.sample composeLens Sample.values).get)
 }

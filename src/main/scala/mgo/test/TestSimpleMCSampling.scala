@@ -21,14 +21,15 @@ import math._
 
 import mgo._
 
-object NormalMCSampling extends App {
+object NormalSimpleMCSampling extends App {
 
-  import algorithm.monteCarlo.MCSampling._
+  import algorithm.monteCarlo.SimpleMCSampling
+  import algorithm.monteCarlo.MCSampling.context
   import context.implicits._
 
   def pdfNormal(x: Double): Double = (1.0 / sqrt(2 * Pi)) * exp(-pow(x, 2) / 2.0)
 
-  val mcsampling = MCSampling(
+  val mcsampling = SimpleMCSampling(
     sample = rng => Vector(rng.nextGaussian()),
     probability = x => pdfNormal(x.head)
   )
@@ -39,7 +40,7 @@ object NormalMCSampling extends App {
       trace((s, is) => println(s.generation)).
       eval(new util.Random(42))
 
-  val finalSamples: Vector[Vector[Double]] = result(finalPopulation)
+  val finalSamples: Vector[Vector[Double]] = SimpleMCSampling.result(finalPopulation)
 
   println(finalSamples.mkString("\n"))
 
