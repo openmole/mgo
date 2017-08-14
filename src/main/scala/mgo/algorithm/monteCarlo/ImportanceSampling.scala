@@ -37,48 +37,25 @@ import freedsl.tool._
 import freedsl.io._
 import freedsl.random._
 
+import MCSampling.context.implicits._
+
+case class ImportanceSampling(
+  qSample: util.Random => Vector[Double],
+  qPdf: Vector[Double] => Double,
+  pPdf: Vector[Double] => Double)
+
 object ImportanceSampling {
 
-  def interpreter(s: EvolutionState[Unit]) =
-    dsl.merge(
-      Random.interpreter(s.random),
-      StartTime.interpreter(s.startTime),
-      Generation.interpreter(s.generation),
-      IO.interpreter
-    )
+  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[ImportanceSampling, Sample, Evaluated](step)
 
-  val context = dsl.merge(Random, StartTime, Generation, IO)
-  import context.implicits._
-
-  object ImportanceSampling {
-
-    implicit def isAlgorithm = new Algorithm[ImportanceSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
-      def initialState(t: ImportanceSampling, rng: util.Random): EvolutionState[Unit] =
-        EvolutionState(random = rng, s = ())
-
-      def initialPopulation(t: ImportanceSampling): context.M[Vector[Evaluated]] =
-        (Vector.empty[Evaluated]).pure[context.M]
-
-      def step(t: ImportanceSampling): Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]] =
-        Kleisli { samples =>
-          for {
-            newSample <- implicitly[Random[context.M]].use(t.qSample)
-            _ <- implicitly[Generation[context.M]].increment
-            p = t.pPdf(newSample)
-            q = t.qPdf(newSample)
-          } yield samples :+ Evaluated(Sample(newSample), p, p / q)
-        }
-
-      def state: context.M[EvolutionState[Unit]] = mgo.algorithm.state[context.M, Unit](())
-
-      def run[A](m: context.M[A], s: EvolutionState[Unit]): A = interpreter(s).run(m).right.get
+  def step(t: ImportanceSampling): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
+    Kleisli { samples =>
+      for {
+        newSample <- implicitly[Random[MCSampling.context.M]].use(t.qSample)
+        p = t.pPdf(newSample)
+        q = t.qPdf(newSample)
+      } yield samples :+ Evaluated(Sample(newSample), p, p / q)
     }
-  }
-
-  case class ImportanceSampling(
-    qSample: util.Random => Vector[Double],
-    qPdf: Vector[Double] => Double,
-    pPdf: Vector[Double] => Double)
 
   @Lenses case class Sample(values: Vector[Double])
   @Lenses case class Evaluated(sample: Sample, probability: Double, importance: Double)

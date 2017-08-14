@@ -20,12 +20,11 @@ package mgo.test
 import math._
 
 import mgo._
-import mgo.tools.MonteCarlo._
+
+import algorithm.monteCarlo.ImportanceSampling
+import algorithm.monteCarlo.MCSampling.context.implicits._
 
 object DiskImportanceSampling extends App {
-
-  import algorithm.monteCarlo.ImportanceSampling._
-  import context.implicits._
 
   def pdfUniformCircle(x: (Double, Double)): Double =
     if (inCircle(x))
