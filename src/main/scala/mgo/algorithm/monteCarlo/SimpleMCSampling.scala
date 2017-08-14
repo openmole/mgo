@@ -37,13 +37,13 @@ import freedsl.tool._
 import freedsl.io._
 import freedsl.random._
 
+import MCSampling.context.implicits._
+
 case class SimpleMCSampling(
   sample: util.Random => Vector[Double],
   probability: Vector[Double] => Double)
 
 object SimpleMCSampling {
-
-  import MCSampling.context.implicits._
 
   implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[SimpleMCSampling, Sample, Evaluated](step)
 

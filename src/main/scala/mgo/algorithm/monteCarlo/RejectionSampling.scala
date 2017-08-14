@@ -37,52 +37,29 @@ import freedsl.tool._
 import freedsl.io._
 import freedsl.random._
 
+import MCSampling.context.implicits._
+
+case class RejectionSampling(
+  qSample: util.Random => Vector[Double],
+  qPdf: Vector[Double] => Double,
+  m: Double,
+  pPdf: Vector[Double] => Double)
+
 object RejectionSampling {
 
-  def interpreter(s: EvolutionState[Unit]) =
-    dsl.merge(
-      Random.interpreter(s.random),
-      StartTime.interpreter(s.startTime),
-      Generation.interpreter(s.generation),
-      IO.interpreter
-    )
+  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[RejectionSampling, Sample, Evaluated](step)
 
-  val context = dsl.merge(Random, StartTime, Generation, IO)
-  import context.implicits._
-
-  object RejectionSampling {
-
-    implicit def isAlgorithm = new Algorithm[RejectionSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
-      def initialState(t: RejectionSampling, rng: util.Random): EvolutionState[Unit] =
-        EvolutionState(random = rng, s = ())
-
-      def initialPopulation(t: RejectionSampling): context.M[Vector[Evaluated]] =
-        (Vector.empty[Evaluated]).pure[context.M]
-
-      def step(t: RejectionSampling): Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]] =
-        Kleisli { samples =>
-          for {
-            newSample <- implicitly[Random[context.M]].use(t.qSample)
-            uniform <- implicitly[Random[context.M]].nextDouble
-            _ <- implicitly[Generation[context.M]].increment
-          } yield if (uniform < t.pPdf(newSample) / (t.m * t.qPdf(newSample))) {
-            samples :+ Evaluated(Sample(newSample), t.pPdf(newSample))
-          } else {
-            samples
-          }
-        }
-
-      def state: context.M[EvolutionState[Unit]] = mgo.algorithm.state[context.M, Unit](())
-
-      def run[A](m: context.M[A], s: EvolutionState[Unit]): A = interpreter(s).run(m).right.get
+  def step(t: RejectionSampling): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
+    Kleisli { samples =>
+      for {
+        newSample <- implicitly[Random[MCSampling.context.M]].use(t.qSample)
+        uniform <- implicitly[Random[MCSampling.context.M]].nextDouble
+      } yield if (uniform < t.pPdf(newSample) / (t.m * t.qPdf(newSample))) {
+        samples :+ Evaluated(Sample(newSample), t.pPdf(newSample))
+      } else {
+        samples
+      }
     }
-  }
-
-  case class RejectionSampling(
-    qSample: util.Random => Vector[Double],
-    qPdf: Vector[Double] => Double,
-    m: Double,
-    pPdf: Vector[Double] => Double)
 
   @Lenses case class Sample(values: Vector[Double])
   @Lenses case class Evaluated(sample: Sample, value: Double)

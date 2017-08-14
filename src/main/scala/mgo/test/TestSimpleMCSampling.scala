@@ -21,11 +21,10 @@ import math._
 
 import mgo._
 
-object NormalSimpleMCSampling extends App {
+import algorithm.monteCarlo.SimpleMCSampling
+import algorithm.monteCarlo.MCSampling.context.implicits._
 
-  import algorithm.monteCarlo.SimpleMCSampling
-  import algorithm.monteCarlo.MCSampling.context
-  import context.implicits._
+object NormalSimpleMCSampling extends App {
 
   def pdfNormal(x: Double): Double = (1.0 / sqrt(2 * Pi)) * exp(-pow(x, 2) / 2.0)
 

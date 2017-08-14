@@ -20,12 +20,11 @@ package mgo.test
 import math._
 
 import mgo._
-import mgo.tools.MonteCarlo._
+
+import algorithm.monteCarlo.RejectionSampling
+import algorithm.monteCarlo.MCSampling.context.implicits._
 
 object DiskRejectionSampling extends App {
-
-  import algorithm.monteCarlo.RejectionSampling._
-  import context.implicits._
 
   def pdfUniformCircle(x: (Double, Double)): Double =
     if (inCircle(x))
@@ -56,7 +55,7 @@ object DiskRejectionSampling extends App {
       trace((s, is) => println(s.generation)).
       eval(new util.Random(42))
 
-  val finalSamples: Vector[Vector[Double]] = result(finalPopulation)
+  val finalSamples: Vector[Vector[Double]] = RejectionSampling.result(finalPopulation)
 
   println(finalPopulation.mkString("\n"))
 
