@@ -1,8 +1,8 @@
 organization := "fr.iscpif"
 name := "mgo"
 
-scalaVersion := "2.12.2"
-crossScalaVersions := Seq("2.11.11", "2.12.2")
+scalaVersion := "2.12.3"
+crossScalaVersions := Seq("2.12.3")
 
 addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full)
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
@@ -16,7 +16,7 @@ resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
 sources in (Compile, doc) := Nil
 
 val monocleVersion = "1.4.0"
-val freedslVersion = "0.12"
+val freedslVersion = "0.13"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
