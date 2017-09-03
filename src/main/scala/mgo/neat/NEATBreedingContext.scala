@@ -36,7 +36,7 @@
 //
 //  type BreedingContext[Z] = State[BreedingState, Z]
 //
-//  override implicit def monadBreedingContext: Monad[BreedingContext] = new Monad[BreedingContext] {
+//  override implicit def monadBreedingContext: cats.Monad[BreedingContext] = new cats.Monad[BreedingContext] {
 //    def bind[A, B](fa: BreedingContext[A])(f: (A) ⇒ BreedingContext[B]): BreedingContext[B] = State({ s1 =>
 //      val (s2, a) = fa.run(s1)
 //      val (s3, b) = f(a).run(s2)

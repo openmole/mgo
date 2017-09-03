@@ -20,9 +20,9 @@ package mgo.test
 import math._
 
 import mgo._
-
-import algorithm.monteCarlo.ImportanceSampling
-import algorithm.monteCarlo.MCSampling.context.implicits._
+import mgo.contexts._
+import freedsl.dsl._
+import algorithm.monteCarlo._
 
 object DiskImportanceSampling extends App {
 
@@ -48,11 +48,16 @@ object DiskImportanceSampling extends App {
     pPdf = pdfUniformCircle _ compose vec2Tup
   )
 
-  val (finalState, finalPopulation) =
-    run(mcsampling).
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+    mcsampling.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      eval(new util.Random(41))
+      trace((s, is) => println(s.generation)).evolution
+
+  val (finalState, finalPopulation) =
+    ImportanceSampling(new util.Random(42)) { impl =>
+      import impl._
+      evolution[DSL].eval
+    }
 
   println(finalPopulation.mkString("\n"))
 

@@ -25,31 +25,15 @@ import mgo.niche._
 import mgo.contexts._
 import mgo.ranking._
 import GenomeVectorDouble._
-import cats._
 import cats.data._
 import cats.implicits._
 import tools.Lazy
-import freedsl.dsl
-import freedsl.io.IO
-import freedsl.random._
 import freedsl.tool._
 import mgo.niche
 
 import scala.language.higherKinds
 
 object noisyprofile extends niche.Imports {
-
-  def interpreter(s: EvolutionState[Unit]) =
-    dsl.merge(
-      Random.interpreter(s.random),
-      StartTime.interpreter(s.startTime),
-      Generation.interpreter(s.generation),
-      IO.interpreter
-    )
-
-  val context = dsl.merge(Random, StartTime, Generation, IO)
-  import context._
-  import context.implicits._
 
   def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
     genomeProfile[Individual]((Individual.genome composeLens vectorValues).get _, x, nX)
@@ -68,10 +52,10 @@ object noisyprofile extends niche.Imports {
   def buildGenome(values: Vector[Double], operator: Option[Int]) = Genome(values.toArray, operator)
   def buildIndividual(g: Genome, f: Double) = Individual(g, 1, Array(f), 0)
 
-  def initialGenomes(lambda: Int, genomeSize: Int): M[Vector[Genome]] =
+  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, genomeSize: Int): M[Vector[Genome]] =
     GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(lambda, genomeSize)
 
-  def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Double] => Double): Breeding[M, Individual, Genome] =
+  def breeding[M[_]: cats.Monad: Random: Generation](lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Double] => Double): Breeding[M, Individual, Genome] =
     noisyprofileOperations.breeding[M, Individual, Genome](
       vectorFitness.get, aggregation, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
     )(lambda = lambda, niche = niche, operatorExploration = operatorExploration, cloneProbability = cloneProbability)
@@ -79,7 +63,7 @@ object noisyprofile extends niche.Imports {
   def expression(fitness: (util.Random, Vector[Double]) => Double): Expression[(util.Random, Genome), Individual] =
     noisyprofileOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
 
-  def elitism(muByNiche: Int, niche: Niche[Individual, Int], historySize: Int, aggregation: Vector[Double] => Double): Elitism[M, Individual] =
+  def elitism[M[_]: cats.Monad: Random: Generation](muByNiche: Int, niche: Niche[Individual, Int], historySize: Int, aggregation: Vector[Double] => Double): Elitism[M, Individual] =
     noisyprofileOperations.elitism[M, Individual](
       history = vectorFitness,
       aggregation = aggregation,
@@ -91,21 +75,23 @@ object noisyprofile extends niche.Imports {
   def profile(population: Vector[Individual], niche: Niche[Individual, Int]) =
     noisyprofileOperations.profile(population, niche, Individual.historyAge.get)
 
-  def state[M[_]: Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
+  def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
 
   object NoisyProfile {
 
-    implicit def isAlgorithm = new Algorithm[NoisyProfile, M, Individual, Genome, EvolutionState[Unit]] {
-      def initialState(t: NoisyProfile, rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
+    import contexts.run
+    def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
+    def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = run(state)(f)
 
+    implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NoisyProfile, M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[NoisyProfile, M, Individual, Genome, EvolutionState[Unit]] {
       def initialPopulation(t: NoisyProfile) =
         stochasticInitialPopulation[M, Genome, Individual](
-          noisyprofile.initialGenomes(t.lambda, t.genomeSize),
+          noisyprofile.initialGenomes[M](t.lambda, t.genomeSize),
           noisyprofile.expression(t.fitness))
 
       def step(t: NoisyProfile) = {
         def breeding =
-          noisyprofile.breeding(
+          noisyprofile.breeding[M](
             lambda = t.lambda,
             niche = t.niche,
             operatorExploration = t.operatorExploration,
@@ -114,7 +100,7 @@ object noisyprofile extends niche.Imports {
           )
 
         def elitism =
-          noisyprofile.elitism(
+          noisyprofile.elitism[M](
             muByNiche = t.muByNiche,
             niche = t.niche,
             historySize = t.historySize,
@@ -128,8 +114,6 @@ object noisyprofile extends niche.Imports {
       }
 
       def state = noisyprofile.state[M]
-
-      def run[A](m: M[A], s: EvolutionState[Unit]) = interpreter(s).run(m).right.get
     }
 
   }
@@ -152,7 +136,7 @@ object noisyprofileOperations {
   def aggregatedFitness[I](fitness: I => Vector[Double], aggregation: Vector[Double] => Double)(i: I): Vector[Double] =
     Vector(aggregation(fitness(i)), 1.0 / fitness(i).size.toDouble)
 
-  def breeding[M[_]: Monad: Random: Generation, I, G](
+  def breeding[M[_]: cats.Monad: Random: Generation, I, G](
     history: I => Vector[Double],
     aggregation: Vector[Double] => Double,
     genome: I => G,
@@ -184,7 +168,7 @@ object noisyprofileOperations {
     } yield withClones
   }
 
-  def elitism[M[_]: Monad: Random: Generation, I](
+  def elitism[M[_]: cats.Monad: Random: Generation, I](
     history: monocle.Lens[I, Vector[Double]],
     aggregation: Vector[Double] => Double,
     values: I => Vector[Double],
@@ -210,7 +194,7 @@ object noisyprofileOperations {
     case (rg, g) => builder(g, fitness(rg, values(g)))
   }
 
-  def step[M[_]: Monad: Random: Generation, I, G](
+  def step[M[_]: cats.Monad: Random: Generation, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[(util.Random, G), I],
     elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = noisyStep(breeding, expression, elitism)

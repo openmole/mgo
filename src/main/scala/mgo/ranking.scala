@@ -16,12 +16,10 @@
  */
 package mgo
 
-import cats._
 import cats.data._
 import cats.implicits._
 import tools.metric._
 import tools.{ HierarchicalRanking, Lazy }
-import freedsl.random._
 import mgo.contexts._
 import mgo.dominance._
 import mgo.niche._
@@ -39,10 +37,10 @@ object ranking {
   type Ranking[M[_], I] = Kleisli[M, Vector[I], Vector[Lazy[Int]]]
 
   object Ranking {
-    def apply[M[_]: Monad, I](f: Vector[I] => M[Vector[Lazy[Int]]]): Ranking[M, I] = Kleisli(f)
+    def apply[M[_]: cats.Monad, I](f: Vector[I] => M[Vector[Lazy[Int]]]): Ranking[M, I] = Kleisli(f)
   }
 
-  def monoObjectiveRanking[M[_]: Monad, I](fitness: I => Double): Ranking[M, I] =
+  def monoObjectiveRanking[M[_]: cats.Monad, I](fitness: I => Double): Ranking[M, I] =
     Ranking((values: Vector[I]) => {
 
       val byFitness = values.map(fitness).zipWithIndex.sortBy { case (v, _) => v }
@@ -59,15 +57,15 @@ object ranking {
       (ranksValue zip byFitness.unzip._2).sortBy { case (_, r) => r }.unzip._1.toVector.map(r => Lazy(r))
     }.pure[M])
 
-  def hyperVolumeRanking[M[_]: Monad, I](referencePoint: Vector[Double], fitness: I => Vector[Double]): Ranking[M, I] =
+  def hyperVolumeRanking[M[_]: cats.Monad, I](referencePoint: Vector[Double], fitness: I => Vector[Double]): Ranking[M, I] =
     Ranking((values: Vector[I]) =>
       HierarchicalRanking.downRank(Hypervolume.contributions(values.map(e => fitness(e)), referencePoint)).pure[M])
 
-  def hierarchicalRanking[M[_]: Monad, I](fitness: I => Vector[Double]): Ranking[M, I] =
+  def hierarchicalRanking[M[_]: cats.Monad, I](fitness: I => Vector[Double]): Ranking[M, I] =
     Ranking((values: Vector[I]) =>
       HierarchicalRanking.upRank(values.map(v => fitness(v))).pure[M])
 
-  def paretoRanking[M[_]: Monad, I](fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Ranking[M, I] = Ranking { (values: Vector[I]) =>
+  def paretoRanking[M[_]: cats.Monad, I](fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Ranking[M, I] = Ranking { (values: Vector[I]) =>
     val fitnesses = values.map(i => fitness(i))
     def ranks =
       fitnesses.zipWithIndex.map {
@@ -81,7 +79,7 @@ object ranking {
     ranks.pure[M]
   }
 
-  def profileRanking[M[_]: Monad, I](niche: Niche[I, Int], fitness: I => Double): Ranking[M, I] =
+  def profileRanking[M[_]: cats.Monad, I](niche: Niche[I, Int], fitness: I => Double): Ranking[M, I] =
     Ranking((population: Vector[I]) => {
       val (points, indexes) =
         population.map {
@@ -124,31 +122,31 @@ object ranking {
 
   //TODO: Lazy ne sert à rien ici. On pourrait redefinir le type Ranking en Ranking[M,I,K] avec K est de typeclass Order,
   // pour ne pas toujours être obligé d'utiliser Lazy.
-  def hitCountRanking[M[_]: Monad, I, C](cell: I => C)(implicit hm: HitMap[M, C]): Ranking[M, I] = {
+  def hitCountRanking[M[_]: cats.Monad, I, C](cell: I => C)(implicit hm: HitMap[M, C]): Ranking[M, I] = {
     def hitCount(cell: C) = hm.get.map(m => m.getOrElse(cell, 0))
     Ranking { is => is.traverse { i: I => hitCount(cell(i)).map[Lazy[Int]] { i => Lazy(i) } } }
   }
 
   /**** Generic functions on rankings ****/
 
-  def reversedRanking[M[_]: Monad, I](ranking: Ranking[M, I]): Ranking[M, I] =
+  def reversedRanking[M[_]: cats.Monad, I](ranking: Ranking[M, I]): Ranking[M, I] =
     Ranking((population: Vector[I]) => ranking(population).map { _.map { x => /*map lazyly*/ Lazy(-x()) } })
 
   //TODO: the following functions don't produce rankings and don't belong here.
-  def rankAndDiversity[M[_]: Monad, I](ranking: Ranking[M, I], diversity: Diversity[M, I]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
+  def rankAndDiversity[M[_]: cats.Monad, I](ranking: Ranking[M, I], diversity: Diversity[M, I]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
     Kleisli((population: Vector[I]) =>
       for {
         r <- ranking(population)
         d <- diversity(population)
       } yield r zip d)
 
-  def paretoRankingMinAndCrowdingDiversity[M[_]: Monad: Random, I](fitness: I => Vector[Double]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
+  def paretoRankingMinAndCrowdingDiversity[M[_]: cats.Monad: Random, I](fitness: I => Vector[Double]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
     rankAndDiversity(
       reversedRanking(paretoRanking[M, I](fitness)),
       crowdingDistance[M, I] { (i: I) => fitness(i) }
     )
 
-  def rank[M[_]: Monad, I, K](ranking: Kleisli[M, Vector[I], Vector[K]]) = Kleisli[M, Vector[I], Vector[(I, K)]] { is =>
+  def rank[M[_]: cats.Monad, I, K](ranking: Kleisli[M, Vector[I], Vector[K]]) = Kleisli[M, Vector[I], Vector[(I, K)]] { is =>
     for {
       rs <- ranking.run(is)
     } yield is zip rs

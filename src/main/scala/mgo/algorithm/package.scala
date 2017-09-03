@@ -21,10 +21,8 @@ import contexts._
 import elitism._
 import tools._
 
-import cats._
 import cats.implicits._
 import cats.data._
-import freedsl.random._
 import freedsl.tool._
 
 package object algorithm {
@@ -35,14 +33,14 @@ package object algorithm {
     random: util.Random = newRNG(System.currentTimeMillis()),
     s: S)
 
-  def state[M[_]: Monad: StartTime: Random: Generation, T](t: T) =
+  def state[M[_]: cats.Monad: StartTime: Random: Generation, T](t: T) =
     for {
       s <- implicitly[StartTime[M]].get
       rng <- implicitly[Random[M]].use(identity)
       g <- implicitly[Generation[M]].get
     } yield EvolutionState[T](g, s, rng, t)
 
-  def randomTake[M[_]: Monad, G](gs: Vector[G], lambda: Int)(implicit randomM: Random[M]) =
+  def randomTake[M[_]: cats.Monad, G](gs: Vector[G], lambda: Int)(implicit randomM: Random[M]) =
     randomM.shuffle(gs).map { _.take(lambda) }
 
   def operatorProportions[I](operation: I => Option[Int], is: Vector[I]) =
@@ -51,7 +49,7 @@ package object algorithm {
       groupBy(identity).
       mapValues(_.length.toDouble / is.size)
 
-  def selectOperator[M[_]: Monad, G](operators: Vector[Kleisli[M, G, G]], opStats: Map[Int, Double], exploration: Double)(implicit MR: Random[M]) = {
+  def selectOperator[M[_]: cats.Monad, G](operators: Vector[Kleisli[M, G, G]], opStats: Map[Int, Double], exploration: Double)(implicit MR: Random[M]) = {
     def allOps =
       operators.zipWithIndex.map {
         case (op, index) => (op, opStats.getOrElse(index, 0.0))
@@ -60,7 +58,7 @@ package object algorithm {
     probabilisticOperatorB[M, G](allOps, exploration)
   }
 
-  def probabilisticOperatorB[M[_]: Monad, G](opsAndWeights: Vector[(Kleisli[M, G, G], Double)], exploration: Double)(implicit randomM: Random[M]): Kleisli[M, G, (G, Int)] =
+  def probabilisticOperatorB[M[_]: cats.Monad, G](opsAndWeights: Vector[(Kleisli[M, G, G], Double)], exploration: Double)(implicit randomM: Random[M]): Kleisli[M, G, (G, Int)] =
     Kleisli((mates: G) => {
       for {
         explore <- randomM.nextDouble
@@ -70,7 +68,7 @@ package object algorithm {
       } yield (g, op)
     })
 
-  def deterministicStep[M[_]: Monad: Random: Generation, I, G](
+  def deterministicStep[M[_]: cats.Monad: Random: Generation, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
     elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { population =>
@@ -82,7 +80,7 @@ package object algorithm {
     } yield elitePopulation
   }
 
-  def noisyStep[M[_]: Monad: Generation, I, G](
+  def noisyStep[M[_]: cats.Monad: Generation, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[(util.Random, G), I],
     elitism: Elitism[M, I])(implicit randomM: Random[M]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { population =>
@@ -97,7 +95,7 @@ package object algorithm {
     } yield elitePopulation
   }
 
-  def deterministicInitialPopulation[M[_]: Monad, G, I](
+  def deterministicInitialPopulation[M[_]: cats.Monad, G, I](
     initialGenomes: M[Vector[G]],
     expression: Expression[G, I]) =
     for {
@@ -113,7 +111,7 @@ package object algorithm {
   //    def split: M[util.Random]
   //  }
 
-  def stochasticInitialPopulation[M[_]: Monad, G, I](
+  def stochasticInitialPopulation[M[_]: cats.Monad, G, I](
     initialGenomes: M[Vector[G]],
     expression: Expression[(util.Random, G), I])(implicit random: Random[M]) =
     for {
@@ -122,13 +120,13 @@ package object algorithm {
     } yield initialIndividuals
 
   object GenomeVectorDouble {
-    def randomGenomes[M[_]: Monad](n: Int, genomeLength: Int)(
+    def randomGenomes[M[_]: cats.Monad](n: Int, genomeLength: Int)(
       implicit randomM: Random[M]): M[Vector[Vector[Double]]] = {
       def genome = randomM.nextDouble.repeat(genomeLength)
       Vector.fill(n)(genome).sequence
     }
 
-    def randomGenomes[M[_]: Monad: Random, G](cons: (Vector[Double], Option[Int]) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
+    def randomGenomes[M[_]: cats.Monad: Random, G](cons: (Vector[Double], Option[Int]) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
       for {
         values <- randomGenomes[M](mu, genomeSize)
         gs = values.map { (vs: Vector[Double]) => cons(vs, None) }
@@ -140,7 +138,7 @@ package object algorithm {
     def filterNaN[I, T](values: Vector[I], value: I => T)(implicit cbn: CanBeNaN[T]) =
       values.filter { i => !cbn.isNaN(value(i)) }
 
-    def crossovers[M[_]: Monad: Random]: Vector[Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
+    def crossovers[M[_]: cats.Monad: Random]: Vector[Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
       Vector(
         replicatePairC(blxC(0.1)),
         replicatePairC(blxC(0.5)),
@@ -150,7 +148,7 @@ package object algorithm {
         sbxC(2.0)
       )
 
-    def mutations[M[_]: Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
+    def mutations[M[_]: cats.Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
       Vector(
         bgaM(mutationRate = 1.0 / _, mutationRange = 0.001),
         bgaM(mutationRate = 1.0 / _, mutationRange = 0.01),
@@ -158,7 +156,7 @@ package object algorithm {
         bgaM(mutationRate = _ => 0.5, mutationRange = 0.5)
       )
 
-    def crossoversAndMutations[M[_]: Monad: Random]: Vector[Kleisli[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
+    def crossoversAndMutations[M[_]: cats.Monad: Random]: Vector[Kleisli[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
       for {
         c <- crossovers[M]
         m <- mutations[M]
@@ -171,7 +169,7 @@ package object algorithm {
           } yield (m1, m2))
       }
 
-    def applyDynamicOperator[M[_]: Monad: Random, I](selection: M[I], genome: I => Vector[Double], operatorStatistics: Map[Int, Double], operatorExploration: Double) = {
+    def applyDynamicOperator[M[_]: cats.Monad: Random, I](selection: M[I], genome: I => Vector[Double], operatorStatistics: Map[Int, Double], operatorExploration: Double) = {
       def applyOperator =
         selectOperator[M, (Vector[Double], Vector[Double])](
           crossoversAndMutations[M],

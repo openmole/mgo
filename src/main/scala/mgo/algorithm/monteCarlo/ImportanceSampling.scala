@@ -32,12 +32,6 @@ import cats.data._
 import cats.implicits._
 import mgo.algorithm.GenomeVectorDouble._
 import freedsl.dsl
-import freedsl.dsl.dsl
-import freedsl.tool._
-import freedsl.io._
-import freedsl.random._
-
-import MCSampling.context.implicits._
 
 case class ImportanceSampling(
   qSample: util.Random => Vector[Double],
@@ -46,14 +40,17 @@ case class ImportanceSampling(
 
 object ImportanceSampling {
 
-  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[ImportanceSampling, Sample, Evaluated](
-    { _: ImportanceSampling => Vector.empty[Evaluated] },
-    step)
+  import contexts.run
+  def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
+  def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = contexts.run(state)(f)
 
-  def step(t: ImportanceSampling): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
+  implicit def isAlgorithm[M[_]: cats.Monad: Generation: StartTime: Random] = MCSampling.mcSamplingAlgorithm[M, ImportanceSampling, Sample, Evaluated](
+    { _: ImportanceSampling => Vector.empty[Evaluated] }, step)
+
+  def step[M[_]: cats.Monad: Random](t: ImportanceSampling): Kleisli[M, Vector[Evaluated], Vector[Evaluated]] =
     Kleisli { samples =>
       for {
-        newSample <- implicitly[Random[MCSampling.context.M]].use(t.qSample)
+        newSample <- implicitly[Random[M]].use(t.qSample)
         p = t.pPdf(newSample)
         q = t.qPdf(newSample)
       } yield samples :+ Evaluated(Sample(newSample), p, p / q)

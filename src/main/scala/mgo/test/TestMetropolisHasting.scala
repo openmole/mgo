@@ -20,9 +20,9 @@ package mgo.test
 import math._
 
 import mgo._
-
-import algorithm.monteCarlo.MetropolisHastings
-import algorithm.monteCarlo.MCSampling.context.implicits._
+import mgo.contexts._
+import freedsl.dsl._
+import algorithm.monteCarlo._
 
 object BimodalMetropolisHastings extends App {
 
@@ -44,11 +44,16 @@ object BimodalMetropolisHastings extends App {
     pPdf = bimodalPdfProportional
   )
 
-  val (finalState, finalPopulation) =
-    run(mh).
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+    mh.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      eval(new util.Random(42))
+      trace((s, is) => println(s.generation)).evolution
+
+  val (finalState, finalPopulation) =
+    MetropolisHastings(new util.Random(42)) { impl =>
+      import impl._
+      evolution[DSL].eval
+    }
 
   println(finalPopulation.mkString("\n"))
 

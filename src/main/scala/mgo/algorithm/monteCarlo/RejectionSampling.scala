@@ -32,12 +32,7 @@ import cats.data._
 import cats.implicits._
 import mgo.algorithm.GenomeVectorDouble._
 import freedsl.dsl
-import freedsl.dsl.dsl
 import freedsl.tool._
-import freedsl.io._
-import freedsl.random._
-
-import MCSampling.context.implicits._
 
 case class RejectionSampling(
   qSample: util.Random => Vector[Double],
@@ -47,15 +42,19 @@ case class RejectionSampling(
 
 object RejectionSampling {
 
-  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[RejectionSampling, Sample, Evaluated](
+  import contexts.run
+  def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
+  def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = contexts.run(state)(f)
+
+  implicit def isAlgorithm[M[_]: cats.Monad: Generation: StartTime: Random] = MCSampling.mcSamplingAlgorithm[M, RejectionSampling, Sample, Evaluated](
     { _: RejectionSampling => Vector.empty[Evaluated] },
     step)
 
-  def step(t: RejectionSampling): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
+  def step[M[_]: Random: cats.Monad](t: RejectionSampling): Kleisli[M, Vector[Evaluated], Vector[Evaluated]] =
     Kleisli { samples =>
       for {
-        newSample <- implicitly[Random[MCSampling.context.M]].use(t.qSample)
-        uniform <- implicitly[Random[MCSampling.context.M]].nextDouble
+        newSample <- implicitly[Random[M]].use(t.qSample)
+        uniform <- implicitly[Random[M]].nextDouble
       } yield if (uniform < t.pPdf(newSample) / (t.m * t.qPdf(newSample))) {
         samples :+ Evaluated(Sample(newSample), t.pPdf(newSample))
       } else {

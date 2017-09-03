@@ -36,7 +36,7 @@ object CrowdingDistance {
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
-  def apply[M[_]: Monad](data: Vector[Vector[Double]])(implicit randomM: Random[M]): M[Vector[Lazy[Double]]] = {
+  def apply[M[_]: cats.Monad](data: Vector[Vector[Double]])(implicit randomM: Random[M]): M[Vector[Lazy[Double]]] = {
     def res = data.transpose.map {
       d: Vector[Double] =>
         val grouped: Map[Double, Seq[Int]] =
