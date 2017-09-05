@@ -6,6 +6,7 @@ crossScalaVersions := Seq("2.12.3")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full)
+scalacOptions += "-Xplugin-require:macroparadise"
 
 resolvers += Resolver.sonatypeRepo("public")
 resolvers += Resolver.sonatypeRepo("staging")

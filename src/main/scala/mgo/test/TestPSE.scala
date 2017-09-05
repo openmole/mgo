@@ -35,7 +35,7 @@ object ZDT4PSE extends App {
         definition = Vector(10, 10)),
     genomeSize = 10)
 
-  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO](implicit hitmap: HitMap[M, Vector[Int]]) =
+  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMapM] =
     pse.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).

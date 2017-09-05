@@ -58,7 +58,7 @@ object contexts {
         Implicits()(GenerationInterpreter(state.generation), RandomInterpreter(state.random), StartTimeInterpreter(state.startTime), IOInterpreter())
 
     }
-    case class Implicits(implicit val generation: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter)
+    case class Implicits(implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter)
 
     def apply[T](rng: util.Random)(f: Implicits => T): T = {
       val state = EvolutionState[Unit](random = rng, s = ())
