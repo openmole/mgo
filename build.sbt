@@ -66,6 +66,7 @@ pomExtra := (
   </developers>
 )
 
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
+
 scalariformSettings
 
-releaseSettings
