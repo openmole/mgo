@@ -1,19 +1,17 @@
 package mgo
 
+import freedsl.dsl._
 import freedsl.io.IOInterpreter
 import freedsl.random.RandomInterpreter
 import freestyle.tagless._
 import mgo.algorithm.EvolutionState
 
-import scala.runtime.Nothing$
-import scala.util._
-
 object contexts {
 
-  case class GenerationInterpreter(g: Long) extends Generation.Handler[Try] {
+  case class GenerationInterpreter(g: Long) extends Generation.Handler[Evaluated] {
     var generation = g
-    def get() = Success(generation)
-    def increment() = Success(generation += 1)
+    def get() = result(generation)
+    def increment() = result(generation += 1)
   }
 
   @tagless trait Generation {
@@ -21,8 +19,8 @@ object contexts {
     def increment(): FS[Unit]
   }
 
-  case class StartTimeInterpreter(startTime: Long) extends StartTime.Handler[Try] {
-    def get() = Success(startTime)
+  case class StartTimeInterpreter(startTime: Long) extends StartTime.Handler[Evaluated] {
+    def get() = result(startTime)
   }
 
   @tagless trait StartTime {
@@ -39,9 +37,9 @@ object contexts {
     def set(map: Map[Vector[Int], Int]): FS[Unit]
   }
 
-  case class VectorHitMapInterpreter(var map: Map[Vector[Int], Int]) extends VectorHitMap.Handler[util.Try] {
-    def get() = util.Success(map)
-    def set(m: Map[Vector[Int], Int]) = util.Success(map = m)
+  case class VectorHitMapInterpreter(var map: Map[Vector[Int], Int]) extends VectorHitMap.Handler[Evaluated] {
+    def get() = result(map)
+    def set(m: Map[Vector[Int], Int]) = result(map = m)
   }
 
   implicit def convert[M[_]](implicit vhm: VectorHitMap[M]) = new HitMap[M, Vector[Int]] {
