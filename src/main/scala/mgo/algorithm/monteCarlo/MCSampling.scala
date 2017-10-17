@@ -50,7 +50,7 @@ object MCSampling {
   val context = dsl.merge(Random, StartTime, Generation, IO)
   import context.implicits._
 
-  implicit def mcSamplingAlgorithm[MCSampling, Sample, Evaluated](
+  def mcSamplingAlgorithm[MCSampling, Sample, Evaluated](
     initialSamples: MCSampling => Vector[Evaluated],
     mcstep: MCSampling => Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]]) =
     new Algorithm[MCSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
