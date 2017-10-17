@@ -41,10 +41,10 @@ import cats.data._
  * val (s22, selected2) = run((s21, indivs2), elitism)
  */
 trait Algorithm[T, M[_], I, G, S] {
-  def initialState(t: T, rng: Random): S
+  //def initialState(t: T, rng: Random): S
   def initialPopulation(t: T): M[Vector[I]]
   def step(t: T): Kleisli[M, Vector[I], Vector[I]]
   def state: M[S]
-  def run[A](m: M[A], s: S): A
+  // def run[A](m: M[A], s: S): A
 }
 

@@ -11,20 +11,20 @@ object breeding {
   type Breeding[M[_], I, G] = Kleisli[M, Vector[I], Vector[G]]
 
   object Breeding {
-    def apply[M[_]: Monad, I, G](f: Vector[I] => M[Vector[G]]): Breeding[M, I, G] = Kleisli[M, Vector[I], Vector[G]](f)
+    def apply[M[_]: cats.Monad, I, G](f: Vector[I] => M[Vector[G]]): Breeding[M, I, G] = Kleisli[M, Vector[I], Vector[G]](f)
   }
 
-  //implicit def breedingToFunction[I, M[_]: Monad, G](b: Breeding[I, M, G]): Vector[I] => M[Vector[G]] = b.run
-  //implicit def functionToBreeding[I, M[_]: Monad, G](f: Vector[I] => M[Vector[G]]): Breeding[I, M, G] = Kleisli.kleisli[M, Vector[I], Vector[G]](f)
+  //implicit def breedingToFunction[I, M[_]: cats.Monad, G](b: Breeding[I, M, G]): Vector[I] => M[Vector[G]] = b.run
+  //implicit def functionToBreeding[I, M[_]: cats.Monad, G](f: Vector[I] => M[Vector[G]]): Breeding[I, M, G] = Kleisli.kleisli[M, Vector[I], Vector[G]](f)
 
-  /*implicit def breedingMonad[I, M[_]: Monad]: Monad[BreedingMonad[I, M]#l] = new Monad[BreedingMonad[I, M]#l] {
+  /*implicit def breedingcats.Monad[I, M[_]: cats.Monad]: cats.Monad[Breedingcats.Monad[I, M]#l] = new cats.Monad[Breedingcats.Monad[I, M]#l] {
     def point[A](a: => A): Breeding[I, M, A] = { _ => a.point[M] }
     def bind[A, B](fa: Breeding[I, M, A])(f: (A) ⇒ Breeding[I, M, B]): Breeding[I, M, B] = ???
   }*/
 
   /**** Selection ****/
 
-  def tournament[M[_]: Monad, I, K: Order](
+  def tournament[M[_]: cats.Monad, I, K: Order](
     individuals: Vector[I],
     ranks: Vector[K],
     rounds: Int => Int = _ => 1)(implicit randomM: Random[M]): M[I] = {
@@ -37,10 +37,10 @@ object breeding {
 
   /**** Mating ****/
 
-  //  def groupConsecutive[M[_]: Monad, I](groupSize: Int): Breeding[M, I, Vector[I]] =
+  //  def groupConsecutive[M[_]: cats.Monad, I](groupSize: Int): Breeding[M, I, Vector[I]] =
   //    (individuals: Vector[I]) => individuals.grouped(groupSize).toVector.pure[M]
 
-  def pairConsecutive[M[_]: Monad, I] =
+  def pairConsecutive[M[_]: cats.Monad, I] =
     (individuals: Vector[I]) => individuals.grouped(2).collect { case Vector(a, b) => (a, b) }.toVector
 
   /**** Crossover ****/
@@ -56,25 +56,25 @@ object breeding {
   type Crossover[M[_], P, O] = Kleisli[M, P, O]
 
   object Crossover {
-    def apply[M[_]: Monad, P, O](f: P => M[O]): Crossover[M, P, O] = Kleisli[M, P, O](f)
+    def apply[M[_]: cats.Monad, P, O](f: P => M[O]): Crossover[M, P, O] = Kleisli[M, P, O](f)
   }
 
-  //  def replicateC[M[_]: Monad, P, O](n: Int, c: Crossover[M, P, O]): Crossover[M, P, Vector[O]] =
+  //  def replicateC[M[_]: cats.Monad, P, O](n: Int, c: Crossover[M, P, O]): Crossover[M, P, Vector[O]] =
   //    Crossover((mates: P) =>
   //      for {
   //        gs <- c(mates).replicateM(n)
   //      } yield gs.toVector)
   //
-  def replicatePairC[M[_]: Monad, P, O](c: Crossover[M, P, O]): Crossover[M, P, (O, O)] =
+  def replicatePairC[M[_]: cats.Monad, P, O](c: Crossover[M, P, O]): Crossover[M, P, (O, O)] =
     Crossover((mates: P) =>
       for {
         g1 <- c(mates)
         g2 <- c(mates)
       } yield (g1, g2))
 
-  //def identityC[M[_]: Monad, I]: Crossover[M, I, I] = Crossover(_.point[M])
+  //def identityC[M[_]: cats.Monad, I]: Crossover[M, I, I] = Crossover(_.point[M])
 
-  def blxC[M[_]: Monad](alpha: Double = 0.5)(implicit randomM: Random[M]): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
+  def blxC[M[_]: cats.Monad](alpha: Double = 0.5)(implicit randomM: Random[M]): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
     Crossover((mates: (Vector[Double], Vector[Double])) =>
       (mates._1 zip mates._2).traverse {
         case (c1, c2) =>
@@ -104,7 +104,7 @@ object breeding {
    * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
    *
    */
-  def sbxC[M[_]: Monad](distributionIndex: Double = 2.0)(implicit randomM: Random[M]): Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])] =
+  def sbxC[M[_]: cats.Monad](distributionIndex: Double = 2.0)(implicit randomM: Random[M]): Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])] =
     Crossover((mates: (Vector[Double], Vector[Double])) => {
       val exponent = 1.0 / (distributionIndex + 1.0)
 
@@ -141,10 +141,10 @@ object breeding {
   type Mutation[M[_], G1, G2] = Kleisli[M, G1, G2]
 
   object Mutation {
-    def apply[M[_]: Monad, G1, G2](f: G1 => M[G2]): Mutation[M, G1, G2] = Kleisli[M, G1, G2](f)
+    def apply[M[_]: cats.Monad, G1, G2](f: G1 => M[G2]): Mutation[M, G1, G2] = Kleisli[M, G1, G2](f)
   }
 
-  def bgaM[M[_]: Monad](mutationRate: Int => Double, mutationRange: Double)(implicit randomM: Random[M]): Mutation[M, Vector[Double], Vector[Double]] =
+  def bgaM[M[_]: cats.Monad](mutationRate: Int => Double, mutationRange: Double)(implicit randomM: Random[M]): Mutation[M, Vector[Double], Vector[Double]] =
     Mutation((g: Vector[Double]) =>
       g.traverse { x =>
         randomM.nextDouble.map(_ < mutationRate(g.size)).flatMap { mutate =>
@@ -265,7 +265,7 @@ object breeding {
   //  }
 
   /** Randomly replaces some of the genomes in gs by genomes taken from the original population of I */
-  def clonesReplace[M[_]: Monad, I, G](cloneProbability: Double, population: Vector[I], genome: I => G)(implicit randomM: Random[M]): Breeding[M, G, G] =
+  def clonesReplace[M[_]: cats.Monad, I, G](cloneProbability: Double, population: Vector[I], genome: I => G)(implicit randomM: Random[M]): Breeding[M, G, G] =
     Breeding { gs: Vector[G] =>
       def cloneOrKeep(g: G): M[G] =
         for {
@@ -276,7 +276,7 @@ object breeding {
       gs traverse cloneOrKeep
     }
 
-  //  def opOrClone[M[_]: Monad: RandomGen, I, G](
+  //  def opOrClone[M[_]: cats.Monad: RandomGen, I, G](
   //    clone: I => G,
   //    op: I => M[G],
   //    cloneProbability: Double): Kleisli[M, I, G] =

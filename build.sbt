@@ -1,31 +1,33 @@
 organization := "fr.iscpif"
 name := "mgo"
 
-scalaVersion := "2.12.2"
-crossScalaVersions := Seq("2.11.11", "2.12.2")
+scalaVersion := "2.12.3"
+crossScalaVersions := Seq("2.12.3")
 
-addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full)
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
+addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full)
+scalacOptions += "-Xplugin-require:macroparadise"
 
 resolvers += Resolver.sonatypeRepo("public")
 resolvers += Resolver.sonatypeRepo("staging")
 resolvers += Resolver.sonatypeRepo("snapshots")
-resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
 
 // macro paradise doesn't work with scaladoc
 sources in (Compile, doc) := Nil
 
 val monocleVersion = "1.4.0"
-val freedslVersion = "0.12"
+val freedslVersion = "0.19"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
+
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
 libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "dsl" % freedslVersion
+
 libraryDependencies += "fr.iscpif.freedsl" %% "random" % freedslVersion
 libraryDependencies += "fr.iscpif.freedsl" %% "io" % freedslVersion
 libraryDependencies += "fr.iscpif.freedsl" %% "tool" % freedslVersion
+libraryDependencies += "fr.iscpif.freedsl" %% "dsl" % freedslVersion
 
 libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0"
 
@@ -64,6 +66,7 @@ pomExtra := (
   </developers>
 )
 
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
+
 scalariformSettings
 
-releaseSettings

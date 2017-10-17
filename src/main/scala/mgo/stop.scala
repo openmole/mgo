@@ -18,7 +18,6 @@
 
 package mgo
 
-import cats._
 import cats.data._
 import cats.implicits._
 import mgo.contexts._
@@ -30,20 +29,20 @@ object stop {
 
   trait Imports {
 
-    def afterGeneration[M[_]: Monad, I](g: Long)(implicit mGeneration: Generation[M]): StopCondition[M, I] =
+    def afterGeneration[M[_]: cats.Monad, I](g: Long)(implicit mGeneration: Generation[M]): StopCondition[M, I] =
       Kleisli { (individuals: Vector[I]) =>
         for {
           cg <- mGeneration.get
         } yield cg >= g
       }
 
-    def afterDuration[M[_]: Monad, I](d: Time)(implicit mStartTime: StartTime[M]): StopCondition[M, I] =
+    def afterDuration[M[_]: cats.Monad, I](d: Time)(implicit mStartTime: StartTime[M]): StopCondition[M, I] =
       Kleisli { (individuals: Vector[I]) =>
         for {
           st <- mStartTime.get
         } yield (d.millis + st) <= System.currentTimeMillis
       }
 
-    def never[M[_]: Monad, I]: StopCondition[M, I] = Kleisli { _ => false.pure[M] }
+    def never[M[_]: cats.Monad, I]: StopCondition[M, I] = Kleisli { _ => false.pure[M] }
   }
 }

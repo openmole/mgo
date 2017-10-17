@@ -18,11 +18,12 @@
 package mgo.test
 
 import mgo._
+import mgo.contexts._
+import freedsl.dsl._
 
 object ZDT4PSE extends App {
 
   import algorithm.pse._
-  import context.implicits._
 
   val pse = PSE(
     lambda = 10,
@@ -34,11 +35,16 @@ object ZDT4PSE extends App {
         definition = Vector(10, 10)),
     genomeSize = 10)
 
-  val (finalState, finalPopulation) =
-    run(pse).
+  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMapM] =
+    pse.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
-      eval(new util.Random(42))
+      evolution
+
+  val (finalState, finalPopulation) = PSE(new util.Random(42)) { imp =>
+    import imp._
+    evolution[DSL].eval
+  }
 
   println(result(finalPopulation, zdt4.scale).mkString("\n"))
 

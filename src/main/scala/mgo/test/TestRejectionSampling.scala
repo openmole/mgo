@@ -20,9 +20,10 @@ package mgo.test
 import math._
 
 import mgo._
+import mgo.contexts._
+import freedsl.dsl._
 
-import algorithm.monteCarlo.RejectionSampling
-import algorithm.monteCarlo.MCSampling.context.implicits._
+import algorithm.monteCarlo._
 
 object DiskRejectionSampling extends App {
 
@@ -49,11 +50,16 @@ object DiskRejectionSampling extends App {
     pPdf = pdfUniformCircle _ compose vec2Tup
   )
 
-  val (finalState, finalPopulation) =
-    run(mcsampling).
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+    mcsampling.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      eval(new util.Random(42))
+      trace((s, is) => println(s.generation)).evolution
+
+  val (finalState, finalPopulation) =
+    RejectionSampling(new util.Random(42)) { impl =>
+      import impl._
+      evolution[DSL].eval
+    }
 
   val finalSamples: Vector[Vector[Double]] = RejectionSampling.result(finalPopulation)
 

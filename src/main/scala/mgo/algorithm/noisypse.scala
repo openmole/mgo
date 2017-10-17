@@ -27,49 +27,35 @@ import cats._
 import cats.data._
 import cats.implicits._
 import monocle.macros._
-import freedsl.random._
-import freedsl.io._
 import freedsl.dsl
 
 object noisypse extends niche.Imports {
 
-  type HitMap = pse.HitMap
-
-  def interpreter(s: EvolutionState[HitMap]) =
-    dsl.merge(
-      Random.interpreter(s.random),
-      StartTime.interpreter(s.startTime),
-      Generation.interpreter(s.generation),
-      IO.interpreter,
-      pse.VectorHitMap.interpreter(s.s)
-    )
-
-  val context = dsl.merge(Random, StartTime, Generation, IO, pse.VectorHitMap)
-  import context._
-  import context.implicits._
-
-  def state[M[_]: Monad: StartTime: Random: Generation](implicit hitmap: mgo.contexts.HitMap[M, Vector[Int]]) = pse.state[M]
+  def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: mgo.contexts.HitMap[M, Vector[Int]]) = pse.state[M]
 
   object NoisyPSE {
 
-    implicit def isAlgorithme = new Algorithm[NoisyPSE, M, Individual, Genome, EvolutionState[HitMap]] {
-      def initialState(t: NoisyPSE, rng: util.Random) = EvolutionState[HitMap](random = rng, s = Map())
+    import pse.{ PSE }
+    def apply[T](rng: util.Random)(f: PSE.PSEImplicits => T): T = PSE(rng)(f)
+    def apply[T](state: EvolutionState[Map[Vector[Int], Int]])(f: PSE.PSEImplicits => T): T = PSE(state)(f)
+
+    implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: HitMap[M, Vector[Int]]) = new Algorithm[NoisyPSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] {
 
       def initialPopulation(t: NoisyPSE) =
         stochasticInitialPopulation[M, Genome, Individual](
-          noisypse.initialGenomes(t.lambda, t.genomeSize),
+          noisypse.initialGenomes[M](t.lambda, t.genomeSize),
           noisypse.expression(t.phenotype))
 
       def step(t: NoisyPSE) =
         noisypseOperations.step[M, Individual, Genome](
-          noisypse.breeding(
+          noisypse.breeding[M](
             lambda = t.lambda,
             pattern = t.pattern,
             cloneProbability = t.cloneProbability,
             operatorExploration = t.operatorExploration,
             aggregation = t.aggregation),
           noisypse.expression(t.phenotype),
-          noisypse.elitism(
+          noisypse.elitism[M](
             pattern = t.pattern,
             historySize = t.historySize,
             aggregation = t.aggregation)
@@ -77,7 +63,6 @@ object noisypse extends niche.Imports {
 
       def state = noisypse.state[M]
 
-      def run[A](m: M[A], s: EvolutionState[HitMap]) = interpreter(s).run(m).right.get
     }
 
   }
@@ -107,15 +92,15 @@ object noisypse extends niche.Imports {
   def vectorValues = Genome.values composeLens arrayToVectorLens
   def vectorPhenotype = Individual.phenotypeHistory composeLens array2ToVectorLens
 
-  def initialGenomes(mu: Int, genomeSize: Int) =
+  def initialGenomes[M[_]: cats.Monad: Random](mu: Int, genomeSize: Int) =
     GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(mu, genomeSize)
 
-  def breeding(
+  def breeding[M[_]: cats.Monad: Random: Generation](
     lambda: Int,
     aggregation: Vector[Vector[Double]] => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
     cloneProbability: Double,
-    operatorExploration: Double) =
+    operatorExploration: Double)(implicit MH: HitMap[M, Vector[Int]]) =
     noisypseOperations.breeding[M, Individual, Genome](
       Individual.genome.get,
       vectorValues.get,
@@ -124,7 +109,7 @@ object noisypse extends niche.Imports {
       buildGenome
     )(lambda, cloneProbability, operatorExploration)
 
-  def elitism(pattern: Vector[Double] => Vector[Int], aggregation: Vector[Vector[Double]] => Vector[Double], historySize: Int) =
+  def elitism[M[_]: cats.Monad: Random: Generation](pattern: Vector[Double] => Vector[Int], aggregation: Vector[Vector[Double]] => Vector[Double], historySize: Int)(implicit MH: HitMap[M, Vector[Int]]) =
     noisypseOperations.elitism[M, Individual, Vector[Double]](
       (Individual.genome composeLens vectorValues).get,
       vectorPhenotype,
@@ -144,7 +129,7 @@ object noisypse extends niche.Imports {
 
 object noisypseOperations {
 
-  def breeding[M[_]: Monad: Random: Generation, I, G](
+  def breeding[M[_]: cats.Monad: Random: Generation, I, G](
     genome: I => G,
     genomeValues: G => Vector[Double],
     genomeOperator: G => Option[Int],
@@ -164,7 +149,7 @@ object noisypseOperations {
       )(lambda, operatorExploration) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
     } yield gs
 
-  def elitism[M[_]: Monad: Random: Generation, I, P: CanBeNaN](
+  def elitism[M[_]: cats.Monad: Random: Generation, I, P: CanBeNaN](
     values: I => Vector[Double],
     history: monocle.Lens[I, Vector[P]],
     aggregation: Vector[P] => P,
@@ -185,7 +170,7 @@ object noisypseOperations {
     case (rg, g) => builder(g, phenotype(rg, values(g)))
   }
 
-  def step[M[_]: Monad: Random: Generation, I, G](
+  def step[M[_]: cats.Monad: Random: Generation, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[(util.Random, G), I],
     elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = noisyStep(breeding, expression, elitism)

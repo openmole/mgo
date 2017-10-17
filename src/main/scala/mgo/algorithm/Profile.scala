@@ -27,29 +27,13 @@ import mgo.elitism._
 import mgo.ranking._
 import mgo.tools.math.clamp
 import GenomeVectorDouble._
-import freedsl.random._
-import freedsl.tool._
-import cats._
 import cats.data._
 import cats.implicits._
 import mgo.tools.{ Lazy, math }
-import freedsl.dsl
-import freedsl.io._
+import freedsl.tool._
 import mgo.niche
 
 object profile extends niche.Imports {
-
-  def interpreter(s: EvolutionState[Unit]) =
-    dsl.merge(
-      Random.interpreter(s.random),
-      StartTime.interpreter(s.startTime),
-      Generation.interpreter(s.generation),
-      IO.interpreter
-    )
-
-  val context = dsl.merge(Random, StartTime, Generation, IO)
-  import context._
-  import context.implicits._
 
   def result(population: Vector[Individual], scaling: Vector[Double] => Vector[Double]) =
     population.map { i => (scaling(i.genome.values.toVector), i.fitness) }
@@ -65,10 +49,10 @@ object profile extends niche.Imports {
   def buildGenome(values: Vector[Double], operator: Option[Int]) = Genome(values.toArray, operator)
   def buildIndividual(g: Genome, fitness: Double) = Individual(g, fitness, 0)
 
-  def initialGenomes(lambda: Int, genomeSize: Int) =
+  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, genomeSize: Int) =
     GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(lambda, genomeSize)
 
-  def breeding(lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double): Breeding[M, Individual, Genome] =
+  def breeding[M[_]: cats.Monad: Random: Generation](lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double): Breeding[M, Individual, Genome] =
     profileOperations.breeding[M, Individual, Genome](
       Individual.fitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
     )(lambda, niche, operatorExploration)
@@ -76,21 +60,24 @@ object profile extends niche.Imports {
   def expression(fitness: Vector[Double] => Double): Expression[Genome, Individual] =
     profileOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
 
-  def elitism(niche: Niche[Individual, Int]): Elitism[M, Individual] =
+  def elitism[M[_]: cats.Monad: Random: Generation](niche: Niche[Individual, Int]): Elitism[M, Individual] =
     profileOperations.elitism[M, Individual](
       Individual.fitness.get,
       (Individual.genome composeLens vectorValues).get,
       Individual.age)(niche)
 
-  def state[M[_]: Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
+  def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
 
   object Profile {
-    implicit def isAlgorithm = new Algorithm[Profile, M, Individual, Genome, EvolutionState[Unit]] {
-      def initialState(t: Profile, rng: util.Random) = EvolutionState[Unit](random = rng, s = ())
 
+    import contexts.run
+    def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
+    def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = run(state)(f)
+
+    implicit def isAlgorithm[M[_]: cats.Monad: Generation: Random: StartTime]: Algorithm[Profile, M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[Profile, M, Individual, Genome, EvolutionState[Unit]] {
       def initialPopulation(t: Profile) =
         deterministicInitialPopulation[M, Genome, Individual](
-          profile.initialGenomes(t.lambda, t.genomeSize),
+          profile.initialGenomes[M](t.lambda, t.genomeSize),
           profile.expression(t.fitness))
 
       def step(t: Profile) =
@@ -100,7 +87,6 @@ object profile extends niche.Imports {
           profile.elitism(t.niche))
 
       def state = profile.state[M]
-      def run[A](m: M[A], s: EvolutionState[Unit]) = interpreter(s).run(m).right.get
     }
   }
 
@@ -112,7 +98,7 @@ object profileOperations {
 
   import scala.math._
 
-  def breeding[M[_]: Monad: Random: Generation, I, G](
+  def breeding[M[_]: cats.Monad: Random: Generation, I, G](
     fitness: I => Double,
     genome: I => G,
     genomeValues: G => Vector[Double],
@@ -146,7 +132,7 @@ object profileOperations {
     build: (G, Double) => I)(fitness: Vector[Double] => Double): Expression[G, I] =
     (g: G) => build(g, fitness(values(g)))
 
-  def elitism[M[_]: Monad: Random: Generation, I](
+  def elitism[M[_]: cats.Monad: Random: Generation, I](
     fitness: I => Double,
     values: I => Vector[Double],
     age: monocle.Lens[I, Long])(niche: Niche[I, Int]): Elitism[M, I] = Elitism[M, I] { population =>
@@ -156,7 +142,7 @@ object profileOperations {
     } yield elite
   } andThen incrementGeneration[M, I](age)
 
-  def step[M[_]: Monad: Random: Generation, I, G](
+  def step[M[_]: cats.Monad: Random: Generation, I, G](
     breeding: Breeding[M, I, G],
     expression: Expression[G, I],
     elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = deterministicStep(breeding, expression, elitism)

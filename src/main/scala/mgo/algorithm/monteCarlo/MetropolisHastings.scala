@@ -32,14 +32,9 @@ import cats.data._
 import cats.implicits._
 import mgo.algorithm.GenomeVectorDouble._
 import freedsl.dsl
-import freedsl.dsl.dsl
 import freedsl.tool._
-import freedsl.io._
-import freedsl.random._
 
 import scala.math
-
-import MCSampling.context.implicits._
 
 case class MetropolisHastings(
   initialSample: MetropolisHastings.Evaluated,
@@ -49,17 +44,21 @@ case class MetropolisHastings(
 
 object MetropolisHastings {
 
-  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[MetropolisHastings, Sample, Evaluated](
+  import contexts.run
+  def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
+  def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = contexts.run(state)(f)
+
+  implicit def isAlgorithm[M[_]: cats.Monad: Generation: StartTime: Random] = MCSampling.mcSamplingAlgorithm[M, MetropolisHastings, Sample, Evaluated](
     initialSample, step)
 
   def initialSample(t: MetropolisHastings): Vector[Evaluated] = Vector(t.initialSample)
 
-  def step(t: MetropolisHastings): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
+  def step[M[_]: Monad: Random](t: MetropolisHastings): Kleisli[M, Vector[Evaluated], Vector[Evaluated]] =
     Kleisli { samples =>
       for {
-        uniform <- implicitly[Random[MCSampling.context.M]].nextDouble
+        uniform <- implicitly[Random[M]].nextDouble
         lastSample = samples.last
-        proposal <- implicitly[Random[MCSampling.context.M]].use(t.qSample(lastSample.sample.values))
+        proposal <- implicitly[Random[M]].use(t.qSample(lastSample.sample.values))
         pLast = lastSample.probability
         pNew = t.pPdf(proposal)
         qJump = t.qPdf(lastSample.sample.values, proposal)

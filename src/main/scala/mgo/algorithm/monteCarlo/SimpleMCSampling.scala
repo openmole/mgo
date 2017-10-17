@@ -32,12 +32,7 @@ import cats.data._
 import cats.implicits._
 import mgo.algorithm.GenomeVectorDouble._
 import freedsl.dsl
-import freedsl.dsl.dsl
 import freedsl.tool._
-import freedsl.io._
-import freedsl.random._
-
-import MCSampling.context.implicits._
 
 case class SimpleMCSampling(
   sample: util.Random => Vector[Double],
@@ -45,14 +40,18 @@ case class SimpleMCSampling(
 
 object SimpleMCSampling {
 
-  implicit def isAlgorithm = MCSampling.mcSamplingAlgorithm[SimpleMCSampling, Sample, Evaluated](
+  import contexts.run
+  def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
+  def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = contexts.run(state)(f)
+
+  implicit def isAlgorithm[M[_]: cats.Monad: Generation: StartTime: Random] = MCSampling.mcSamplingAlgorithm[M, SimpleMCSampling, Sample, Evaluated](
     { _: SimpleMCSampling => Vector.empty[Evaluated] },
     step)
 
-  def step(t: SimpleMCSampling): Kleisli[MCSampling.context.M, Vector[Evaluated], Vector[Evaluated]] =
+  def step[M[_]: cats.Monad: Random](t: SimpleMCSampling): Kleisli[M, Vector[Evaluated], Vector[Evaluated]] =
     Kleisli { samples =>
       for {
-        newsample <- implicitly[Random[MCSampling.context.M]].use(t.sample)
+        newsample <- implicitly[Random[M]].use(t.sample)
       } yield samples :+ Evaluated(Sample(newsample), t.probability(newsample))
     }
 

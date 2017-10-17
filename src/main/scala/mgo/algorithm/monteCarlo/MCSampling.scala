@@ -32,41 +32,36 @@ import cats.data._
 import cats.implicits._
 import mgo.algorithm.GenomeVectorDouble._
 import freedsl.dsl
-import freedsl.dsl.dsl
 import freedsl.tool._
-import freedsl.io._
-import freedsl.random._
 
 object MCSampling {
 
-  def interpreter(s: EvolutionState[Unit]) =
-    dsl.merge(
-      Random.interpreter(s.random),
-      StartTime.interpreter(s.startTime),
-      Generation.interpreter(s.generation),
-      IO.interpreter
-    )
+  //  def interpreter(s: EvolutionState[Unit]) =
+  //    dsl.merge(
+  //      Random.interpreter(s.random),
+  //      StartTime.interpreter(s.startTime),
+  //      Generation.interpreter(s.generation),
+  //      IO.interpreter
+  //    )
+  //
+  //  val context = dsl.merge(Random, StartTime, Generation, IO)
+  //  import context.implicits._
 
-  val context = dsl.merge(Random, StartTime, Generation, IO)
-  import context.implicits._
-
-  def mcSamplingAlgorithm[MCSampling, Sample, Evaluated](
+  implicit def mcSamplingAlgorithm[M[_]: Monad: Generation: StartTime: Random, MCSampling, Sample, Evaluated](
     initialSamples: MCSampling => Vector[Evaluated],
-    mcstep: MCSampling => Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]]) =
-    new Algorithm[MCSampling, context.M, Evaluated, Sample, EvolutionState[Unit]] {
-      def initialState(t: MCSampling, rng: util.Random): EvolutionState[Unit] =
-        EvolutionState(random = rng, s = ())
+    mcstep: MCSampling => Kleisli[M, Vector[Evaluated], Vector[Evaluated]]) =
+    new Algorithm[MCSampling, M, Evaluated, Sample, EvolutionState[Unit]] {
+      //      def initialState(t: MCSampling, rng: util.Random): EvolutionState[Unit] =
+      //        EvolutionState(random = rng, s = ())
 
-      def initialPopulation(t: MCSampling): context.M[Vector[Evaluated]] = initialSamples(t).pure[context.M]
+      def initialPopulation(t: MCSampling): M[Vector[Evaluated]] = initialSamples(t).pure[M]
 
-      def step(t: MCSampling): Kleisli[context.M, Vector[Evaluated], Vector[Evaluated]] =
+      def step(t: MCSampling): Kleisli[M, Vector[Evaluated], Vector[Evaluated]] =
         for {
           result <- mcstep(t)
-          _ <- Kleisli.lift(implicitly[Generation[context.M]].increment)
+          _ <- Kleisli.lift(implicitly[Generation[M]].increment)
         } yield result
 
-      def state: context.M[EvolutionState[Unit]] = mgo.algorithm.state[context.M, Unit](())
-
-      def run[A](m: context.M[A], s: EvolutionState[Unit]): A = interpreter(s).run(m).right.get
+      def state: M[EvolutionState[Unit]] = mgo.algorithm.state[M, Unit](())
     }
 }

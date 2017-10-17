@@ -18,11 +18,12 @@
 package mgo.test
 
 import mgo._
+import mgo.contexts._
+import freedsl.dsl._
 
 object SphereProfile extends App {
 
   import algorithm.profile._
-  import context.implicits._
 
   //Profile the first dimension of the genome
   val algo = Profile(
@@ -31,11 +32,16 @@ object SphereProfile extends App {
     niche = genomeProfile(x = 0, nX = 10),
     genomeSize = 10)
 
-  val (finalState, finalPopulation) =
-    run(algo).
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+    algo.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      eval(new util.Random(42))
+      trace((s, is) => println(s.generation)).evolution
+
+  val (finalState, finalPopulation) =
+    Profile(new util.Random(42)) { imp =>
+      import imp._
+      evolution[DSL].eval
+    }
 
   println(
     result(finalPopulation, sphere.scale).map {
@@ -48,7 +54,6 @@ object SphereProfile extends App {
 object NoisySphereProfile extends App {
 
   import algorithm.noisyprofile._
-  import context.implicits._
 
   def aggregation(history: Vector[Double]) = history.sum / history.size
   def niche = genomeProfile(x = 0, nX = 10)
@@ -61,11 +66,17 @@ object NoisySphereProfile extends App {
     niche = niche,
     genomeSize = 5)
 
-  val (finalState, finalPopulation) =
-    run(algo).
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+    algo.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
-      eval(new util.Random(42))
+      evolution
+
+  val (finalState, finalPopulation) =
+    NoisyProfile(new util.Random(42)) { imp =>
+      import imp._
+      evolution[DSL].eval
+    }
 
   println(
     result(finalPopulation, aggregation, noisySphere.scale, niche).map {

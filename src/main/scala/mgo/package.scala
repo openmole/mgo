@@ -15,11 +15,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import cats._
 import cats.data._
 import cats.implicits._
 import mgo.algorithm._
-import freedsl.io._
+import mgo.contexts._
 import freedsl.tool._
 import mgo.stop._
 import mgo.breeding._
@@ -37,22 +36,22 @@ package object mgo extends stop.Imports {
 
   type Trace[M[_], I] = Kleisli[M, Vector[I], Unit]
 
-  def noTrace[M[_]: Monad, I] = Kleisli[M, Vector[I], Unit](_ => ().pure[M])
+  def noTrace[M[_]: cats.Monad, I] = Kleisli[M, Vector[I], Unit](_ => ().pure[M])
 
-  case class RunResult[T, M[_], I, G, S](
+  case class RunAlgorithm[T, M[_], I, G, S](
       t: T,
       algo: Algorithm[T, M, I, G, S],
       stopCondition: Option[StopCondition[M, I]] = None,
       traceOperation: Option[Trace[M, I]] = None) {
 
-    def evolution(implicit monadM: Monad[M]) =
+    def evolution(implicit monadM: cats.Monad[M]) =
       for {
         initialPop <- algo.initialPopulation(t)
         finalPop <- step.fold(initialPop)(stopCondition.getOrElse(never[M, I]))
         s <- algo.state
       } yield (s, finalPop)
 
-    def step(implicit monadM: Monad[M]) =
+    def step(implicit monadM: cats.Monad[M]) =
       for {
         _ <- traceOperation.getOrElse(noTrace[M, I])
         vi <- algo.step(t)
@@ -60,26 +59,26 @@ package object mgo extends stop.Imports {
 
     def until(stopCondition: StopCondition[M, I]) = copy(stopCondition = Some(stopCondition))
 
-    def trace(f: (S, Vector[I]) => Unit)(implicit ioM: IO[M], monadM: Monad[M]) = {
+    def trace(f: (S, Vector[I]) => Unit)(implicit ioM: IO[M], monadM: cats.Monad[M]) = {
       val trace: Trace[M, I] =
         Kleisli { is: Vector[I] =>
           for {
             s <- algo.state
-            r <- ioM(f(s, is))
+            r <- ioM(() => f(s, is))
           } yield r
         }
       copy(traceOperation = Some(trace))
     }
 
-    def eval(rng: Random)(implicit monadM: Monad[M]) = algo.run(evolution, algo.initialState(t, rng))
+    // def eval(rng: Random)(implicit monadM: cats.Monad[M]) = algo.run(evolution, algo.initialState(t, rng))
 
   }
 
-  def run[T, M[_], I, G, S](t: T)(implicit algo: Algorithm[T, M, I, G, S]) = RunResult(t, algo)
+  implicit def algorithmDecorator[T, M[_], I, G, S](t: T)(implicit algo: Algorithm[T, M, I, G, S]) = RunAlgorithm(t, algo)
 
   /** ** Stop conditions ****/
 
-  def anyReaches[M[_]: Monad, I](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
+  def anyReaches[M[_]: cats.Monad, I](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
     (population: Vector[I]) => population.exists(goalReached).pure[M]
 
   /**** Replacement strategies ****/
@@ -89,34 +88,34 @@ package object mgo extends stop.Imports {
 
   /**** Breeding ****/
 
-  def bindB[M[_]: Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: Vector[G1] => Breeding[M, I, G2]): Breeding[M, I, G2] =
+  def bindB[M[_]: cats.Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: Vector[G1] => Breeding[M, I, G2]): Breeding[M, I, G2] =
     Breeding((individuals: Vector[I]) => for {
       g1s <- b1(individuals)
       g2s <- b2(g1s)(individuals)
     } yield g2s)
 
-  def zipB[M[_]: Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: Breeding[M, I, G2]): Breeding[M, I, (G1, G2)] = zipWithB { (g1: G1, g2: G2) => (g1, g2) }(b1, b2)
+  def zipB[M[_]: cats.Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: Breeding[M, I, G2]): Breeding[M, I, (G1, G2)] = zipWithB { (g1: G1, g2: G2) => (g1, g2) }(b1, b2)
 
-  def zipWithB[M[_]: Monad, I, G1, G2, G3](f: ((G1, G2) => G3))(b1: Breeding[M, I, G1], b2: Breeding[M, I, G2]): Breeding[M, I, G3] =
+  def zipWithB[M[_]: cats.Monad, I, G1, G2, G3](f: ((G1, G2) => G3))(b1: Breeding[M, I, G1], b2: Breeding[M, I, G2]): Breeding[M, I, G3] =
     Breeding((individuals: Vector[I]) =>
       for {
         g1s <- b1(individuals)
         g2s <- b2(individuals)
       } yield (g1s, g2s).zipped.map(f))
 
-  def mapB[M[_]: Monad, I, G](op: I => M[G]): Breeding[M, I, G] =
+  def mapB[M[_]: cats.Monad, I, G](op: I => M[G]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) => individuals.traverse[M, G](op))
 
-  def flatMapB[M[_]: Monad, I, G](op: I => M[Vector[G]]): Breeding[M, I, G] =
+  def flatMapB[M[_]: cats.Monad, I, G](op: I => M[Vector[G]]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) => individuals.flatTraverse(op))
 
-  def byNicheB[I, N, M[_]: Monad, G](niche: I => N)(breeding: Breeding[M, I, G]): Breeding[M, I, G] =
+  def byNicheB[I, N, M[_]: cats.Monad, G](niche: I => N)(breeding: Breeding[M, I, G]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) => {
       val indivsByNiche = individuals.groupBy(niche)
       indivsByNiche.valuesIterator.toVector.traverse(breeding.apply).map(_.flatten)
     })
 
-  def flatMapPureB[M[_]: Monad, I, G](op: I => Vector[G]): Breeding[M, I, G] =
+  def flatMapPureB[M[_]: cats.Monad, I, G](op: I => Vector[G]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) => individuals.flatTraverse(op(_: I).pure[M]))
 
   /**** Expression ****/
@@ -138,35 +137,35 @@ package object mgo extends stop.Imports {
 
   /**** Objectives ****/
 
-  def bindO[M[_]: Monad, I](o1: Elitism[M, I], o2: Vector[I] => Elitism[M, I]): Elitism[M, I] =
+  def bindO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Vector[I] => Elitism[M, I]): Elitism[M, I] =
     Elitism((phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(selected1s)(phenotypes)
       } yield selected2s)
 
-  def andO[M[_]: Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+  def andO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
     Elitism((phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(phenotypes)
       } yield selected1s.intersect(selected2s))
 
-  def orO[M[_]: Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+  def orO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
     Elitism((phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(phenotypes)
       } yield selected1s.union(selected2s))
 
-  def thenO[M[_]: Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+  def thenO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
     Elitism((phenotypes: Vector[I]) =>
       for {
         selected1s <- o1(phenotypes)
         selected2s <- o2(selected1s)
       } yield selected2s)
 
-  def keepNiches[M[_]: Monad, I, N](niche: I => N, objective: Elitism[M, I]): Elitism[M, I] =
+  def keepNiches[M[_]: cats.Monad, I, N](niche: I => N, objective: Elitism[M, I]): Elitism[M, I] =
     Elitism((individuals: Vector[I]) => {
       val indivsByNiche = individuals.groupBy(niche)
       val res = indivsByNiche.values.toVector.traverse(objective.apply)
@@ -189,7 +188,7 @@ package object mgo extends stop.Imports {
    *   b <- thenK(l)(a)
    * } yield b
    */
-  def thenK[M[_]: Monad, R, A, B](k: Kleisli[M, A, B])(a: A): Kleisli[M, R, B] =
+  def thenK[M[_]: cats.Monad, R, A, B](k: Kleisli[M, A, B])(a: A): Kleisli[M, R, B] =
     Kleisli[M, R, B](_ => k.run(a))
 
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
