@@ -104,3 +104,46 @@ object ZDT4NSGAII extends App {
   println(result(finalPopulation, zdt4.scale).mkString("\n"))
 
 }
+
+object DropWaveNSGAII extends App {
+
+  import breeding._
+  import algorithm._
+  import algorithm.nsga2._
+  import better.files._
+
+  val directory = File("/tmp/dropwave/")
+  directory.createDirectories()
+
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
+    val (nsga2, source) = sourceOf {
+      NSGA2[M](
+        mu = 50,
+        lambda = 50,
+        fitness = (x: Vector[Double]) => Vector(dropWave.compute(x)),
+        genomeSize = 2,
+        operators = ManualOperators[M](sbxC(0.5), bga(mutationRate = _ => 1.0, mutationRange = 0.1))
+      )
+    }
+
+    def save(generation: Long, population: Vector[Individual]) = {
+      val lines = result(population, dropWave.scale).map { case (g, v) => g ++ v }.map(_.mkString(","))
+      (directory / s"$generation.csv") overwrite lines.mkString("\n")
+    }
+
+    (directory / "source") overwrite source
+
+    nsga2.
+      until(afterGeneration(1000)).
+      trace((s, is) => save(s.generation, is)).
+      evolution
+  }
+
+  val (finalState, finalPopulation) = NSGA2(new util.Random(42)) { impl =>
+    import impl._
+    evolution[DSL].eval
+  }
+
+  println(result(finalPopulation, zdt4.scale).mkString("\n"))
+
+}

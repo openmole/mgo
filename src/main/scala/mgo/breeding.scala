@@ -147,7 +147,7 @@ object breeding {
     def apply[M[_]: cats.Monad, G1, G2](f: G1 => M[G2]): Mutation[M, G1, G2] = Kleisli[M, G1, G2](f)
   }
 
-  def bgaM[M[_]: cats.Monad: Random](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
+  def bga[M[_]: cats.Monad: Random](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
     Mutation { (g: Vector[Double]) =>
       g.traverse { x =>
         Random[M].nextDouble.map(_ < mutationRate(g.size)).flatMap { mutate =>

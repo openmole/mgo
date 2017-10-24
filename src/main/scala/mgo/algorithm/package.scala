@@ -154,10 +154,10 @@ package object algorithm {
 
     def mutations[M[_]: cats.Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
       Vector(
-        bgaM(mutationRate = 1.0 / _, mutationRange = 0.001),
-        bgaM(mutationRate = 1.0 / _, mutationRange = 0.01),
-        bgaM(mutationRate = 2.0 / _, mutationRange = 0.1),
-        bgaM(mutationRate = _ => 0.5, mutationRange = 0.5)
+        bga(mutationRate = 1.0 / _, mutationRange = 0.001),
+        bga(mutationRate = 1.0 / _, mutationRange = 0.01),
+        bga(mutationRate = 2.0 / _, mutationRange = 0.1),
+        bga(mutationRate = _ => 0.5, mutationRange = 0.5)
       )
 
     def crossoversAndMutations[M[_]: cats.Monad: Random]: Vector[Kleisli[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =

@@ -91,4 +91,22 @@ package object test {
 
   }
 
+  object dropWave {
+    def dropWave(x1: Double, x2: Double) = {
+      val dist = pow(x1, 2) + pow(x2, 2)
+      val top = 1 + cos(12 * sqrt(dist))
+      val bottom = 0.5 * dist + 2
+      -1 * top / bottom
+    }
+
+    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-5.12, 5.12))
+
+    def compute(genome: Vector[Double]) = {
+      val s = scale(genome)
+      dropWave(s(0), s(1))
+    }
+  }
+
+  def sourceOf[T](v: sourcecode.Text[T]) = (v.value, v.source)
+
 }
