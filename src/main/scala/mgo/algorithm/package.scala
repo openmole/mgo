@@ -214,4 +214,6 @@ package object algorithm {
   case class AdaptiveOperators[M[_]](operatorExploration: Double = 0.1) extends Operators[M]
   case class ManualOperators[M[_]](crossover: GACrossover[M], mutation: GAMutation[M]) extends Operators[M]
 
+  def averageAggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
+
 }

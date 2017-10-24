@@ -93,9 +93,10 @@ object noisynsga2 {
 
   object NoisyNSGA2 {
 
-    import contexts.run
-    def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
-    def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = run(state)(f)
+    def apply[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
+    def apply[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
+    def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
+    def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
 
     implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NoisyNSGA2[M], M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[NoisyNSGA2[M], M, Individual, Genome, EvolutionState[Unit]] {
       def initialPopulation(t: NoisyNSGA2[M]) =
