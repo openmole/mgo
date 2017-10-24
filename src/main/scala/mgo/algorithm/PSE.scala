@@ -149,12 +149,12 @@ object pseOperations {
     for {
       ranks <- reversedRanking(hitCountRanking[M, I, Vector[Int]](pattern)) apply population
       operatorStatistics = operatorProportions(genome andThen genomeOperator, population)
-      breeding = applyDynamicOperator[M, I](
-        tournament[M, I, Lazy[Int]](population, ranks, rounds = size => math.round(math.log10(size).toInt)),
+      breeding = applyDynamicOperators[M, I](
+        tournament[M, I, Lazy[Int]](ranks, rounds = size => math.round(math.log10(size).toInt)),
         genome andThen genomeValues,
         operatorStatistics,
         operatorExploration
-      )
+      ) apply population
       offspring <- breeding repeat ((lambda + 1) / 2)
       offspringGenomes = offspring.flatMap {
         case ((o1, o2), op) =>

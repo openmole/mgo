@@ -60,8 +60,8 @@ object noisynsga2 {
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, genomeSize: Int) =
     GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(lambda, genomeSize)
 
-  def breeding[M[_]: cats.Monad: Random: Generation](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
-    noisynsga2Operations.breeding[M, Individual, Genome](
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
+    noisynsga2Operations.adaptiveBreeding[M, Individual, Genome](
       vectorFitness.get,
       aggregation,
       Individual.genome.get,
@@ -97,7 +97,7 @@ object noisynsga2 {
 
       def step(t: NoisyNSGA2): Kleisli[M, Vector[Individual], Vector[Individual]] =
         noisynsga2Operations.step[M, Individual, Genome](
-          noisynsga2.breeding[M](t.lambda, t.operatorExploration, t.cloneProbability, t.aggregation),
+          noisynsga2.adaptiveBreeding[M](t.lambda, t.operatorExploration, t.cloneProbability, t.aggregation),
           noisynsga2.expression(t.fitness),
           noisynsga2.elitism[M](t.mu, t.historySize, t.aggregation))
 
@@ -122,7 +122,7 @@ object noisynsga2Operations {
   def aggregated[I](fitness: I => Vector[Vector[Double]], aggregation: Vector[Vector[Double]] => Vector[Double])(i: I): Vector[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
 
-  def breeding[M[_]: cats.Monad: Random: Generation, I, G](
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, I, G](
     history: I => Vector[Vector[Double]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     genome: I => G,
@@ -134,7 +134,7 @@ object noisynsga2Operations {
       cloneProbability: Double): Breeding[M, I, G] =
     for {
       population <- Kleisli.ask[M, Vector[I]]
-      gs <- nsga2Operations.breeding[M, I, G](
+      gs <- nsga2Operations.adaptiveBreeding[M, I, G](
         aggregated(history, aggregation),
         genome,
         genomeValues,

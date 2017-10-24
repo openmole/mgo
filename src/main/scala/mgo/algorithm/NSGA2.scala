@@ -47,8 +47,13 @@ object nsga2 {
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, genomeSize: Int): M[Vector[Genome]] =
     GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(lambda, genomeSize)
 
-  def breeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double): Breeding[M, Individual, Genome] =
+  def breeding[M[_]: Generation: Random: cats.Monad](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int): Breeding[M, Individual, Genome] =
     nsga2Operations.breeding[M, Individual, Genome](
+      vectorFitness.get, Individual.genome.get, vectorValues.get, buildGenome(_, None)
+    )(crossover, mutation, lambda)
+
+  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double): Breeding[M, Individual, Genome] =
+    nsga2Operations.adaptiveBreeding[M, Individual, Genome](
       vectorFitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
     )(lambda, operatorExploration)
 
@@ -72,18 +77,25 @@ object nsga2 {
     def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
     def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = contexts.run(state)(f)
 
-    implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] =
-      new Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] {
-        override def initialPopulation(t: NSGA2) =
+    implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NSGA2[M], M, Individual, Genome, EvolutionState[Unit]] =
+      new Algorithm[NSGA2[M], M, Individual, Genome, EvolutionState[Unit]] {
+        override def initialPopulation(t: NSGA2[M]) =
           deterministicInitialPopulation[M, Genome, Individual](nsga2.initialGenomes[M](t.lambda, t.genomeSize), expression(t.fitness))
-        override def step(t: NSGA2) =
-          nsga2Operations.step[M, Individual, Genome](nsga2.breeding[M](t.lambda, t.operatorExploration), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
+        override def step(t: NSGA2[M]) =
+          t.operators match {
+            case AdaptiveOperators(operatorExploration) => nsga2Operations.step[M, Individual, Genome](nsga2.adaptiveBreeding[M](t.lambda, operatorExploration), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
+            case ManualOperators(crossover, mutation) => nsga2Operations.step[M, Individual, Genome](nsga2.breeding[M](crossover, mutation, t.lambda), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
+          }
         override def state = nsga2.state[M]
       }
-
   }
 
-  case class NSGA2(mu: Int, lambda: Int, fitness: Vector[Double] => Vector[Double], genomeSize: Int, operatorExploration: Double = 0.1)
+  case class NSGA2[M[_]](
+    mu: Int,
+    lambda: Int,
+    fitness: Vector[Double] => Vector[Double],
+    genomeSize: Int,
+    operators: Operators[M] = AdaptiveOperators[M](0.1))
 
 }
 
@@ -93,19 +105,36 @@ object nsga2Operations {
     fitness: I => Vector[Double],
     genome: I => G,
     genomeValues: G => Vector[Double],
+    buildGenome: Vector[Double] => G)(crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int): Breeding[M, I, G] = Breeding { population =>
+    for {
+      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply population
+      breeding = applyOperators[M, I, Vector[Double]](crossover, mutation, tournament[M, I, (Lazy[Int], Lazy[Double])](ranks), genome andThen genomeValues) apply population
+      offspring <- breeding repeat ((lambda + 1) / 2)
+      offspringGenomes = offspring.flatMap {
+        case (o1, o2) =>
+          def gv1 = o1.map(math.clamp(_))
+          def gv2 = o2.map(math.clamp(_))
+          Vector(buildGenome(gv1), buildGenome(gv2))
+      }
+      sizedOffspringGenomes <- randomTake[M, G](offspringGenomes, lambda)
+    } yield sizedOffspringGenomes
+  }
+
+  def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G](
+    fitness: I => Vector[Double],
+    genome: I => G,
+    genomeValues: G => Vector[Double],
     genomeOperator: G => Option[Int],
-    buildGenome: (Vector[Double], Option[Int]) => G)(
-      lambda: Int,
-      operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
+    buildGenome: (Vector[Double], Option[Int]) => G)(lambda: Int, operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
     for {
       ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply population
       operatorStatistics = operatorProportions(genome andThen genomeOperator, population)
-      breeding = applyDynamicOperator[M, I](
-        tournament[M, I, (Lazy[Int], Lazy[Double])](population, ranks),
+      breeding = applyDynamicOperators[M, I](
+        tournament[M, I, (Lazy[Int], Lazy[Double])](ranks),
         genome andThen genomeValues,
         operatorStatistics,
         operatorExploration
-      )
+      ) apply population
       offspring <- breeding repeat ((lambda + 1) / 2)
       offspringGenomes = offspring.flatMap {
         case ((o1, o2), op) =>

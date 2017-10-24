@@ -49,7 +49,11 @@ package object algorithm {
       groupBy(identity).
       mapValues(_.length.toDouble / is.size)
 
-  def selectOperator[M[_]: cats.Monad, G](operators: Vector[Kleisli[M, G, G]], opStats: Map[Int, Double], exploration: Double)(implicit MR: Random[M]) = {
+  def selectOperator[M[_]: cats.Monad, G](
+    operators: Vector[Kleisli[M, G, G]],
+    opStats: Map[Int, Double],
+    exploration: Double)(implicit MR: Random[M]) = {
+
     def allOps =
       operators.zipWithIndex.map {
         case (op, index) => (op, opStats.getOrElse(index, 0.0))
@@ -160,16 +164,31 @@ package object algorithm {
       for {
         c <- crossovers[M]
         m <- mutations[M]
-      } yield {
-        Kleisli((mates: (Vector[Double], Vector[Double])) =>
-          for {
-            crossed <- c.run(mates)
-            m1 <- m.run(crossed._1)
-            m2 <- m.run(crossed._2)
-          } yield (m1, m2))
+      } yield crossoverAndMutation(c, m)
+
+    def crossoverAndMutation[M[_]: cats.Monad, G](crossover: Crossover[M, (G, G), (G, G)], mutation: Mutation[M, G, G]) =
+      Kleisli[M, (G, G), (G, G)] { mates =>
+        for {
+          crossed <- crossover.run(mates)
+          m1 <- mutation.run(crossed._1)
+          m2 <- mutation.run(crossed._2)
+        } yield (m1, m2)
       }
 
-    def applyDynamicOperator[M[_]: cats.Monad: Random, I](selection: M[I], genome: I => Vector[Double], operatorStatistics: Map[Int, Double], operatorExploration: Double) = {
+    def applyOperators[M[_]: cats.Monad: Random, I, G](
+      crossover: Crossover[M, (G, G), (G, G)],
+      mutation: Mutation[M, G, G],
+      selection: Selection[M, I],
+      genome: I => G) =
+      Kleisli { population: Vector[I] =>
+        for {
+          m1 <- selection apply population
+          m2 <- selection apply population
+          offspring <- crossoverAndMutation[M, G](crossover, mutation) apply ((genome(m1), genome(m2)))
+        } yield offspring
+      }
+
+    def applyDynamicOperators[M[_]: cats.Monad: Random, I](selection: Selection[M, I], genome: I => Vector[Double], operatorStatistics: Map[Int, Double], operatorExploration: Double) = {
       def applyOperator =
         selectOperator[M, (Vector[Double], Vector[Double])](
           crossoversAndMutations[M],
@@ -177,13 +196,22 @@ package object algorithm {
           operatorExploration
         )
 
-      for {
-        m1 <- selection
-        m2 <- selection
-        offspring <- applyOperator apply ((genome(m1), genome(m2)))
-      } yield offspring
-
+      Kleisli { population: Vector[I] =>
+        for {
+          m1 <- selection apply population
+          m2 <- selection apply population
+          offspring <- applyOperator apply ((genome(m1), genome(m2)))
+        } yield offspring
+      }
     }
   }
+
+  object Operators {
+    implicit def pairToManual[M[_]](crossover: GACrossover[M], mutation: GAMutation[M]) = ManualOperators(crossover, mutation)
+  }
+
+  sealed trait Operators[M[_]]
+  case class AdaptiveOperators[M[_]](operatorExploration: Double = 0.1) extends Operators[M]
+  case class ManualOperators[M[_]](crossover: GACrossover[M], mutation: GAMutation[M]) extends Operators[M]
 
 }

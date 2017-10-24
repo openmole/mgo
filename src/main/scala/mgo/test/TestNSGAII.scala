@@ -25,18 +25,18 @@ object SphereNSGAII extends App {
 
   import algorithm.nsga2._
 
-  val nsga2 = NSGA2(
-    mu = 100,
-    lambda = 100,
-    fitness = (v: Vector[Double]) => Vector(sphere.compute(v)),
-    genomeSize = 2,
-    operatorExploration = 0.1)
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
+    val nsga2 = NSGA2[M](
+      mu = 100,
+      lambda = 100,
+      fitness = (v: Vector[Double]) => Vector(sphere.compute(v)),
+      genomeSize = 2)
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       evolution
+  }
 
   val (finalState, finalPopulation) =
     NSGA2(new util.Random(42)) { imp =>
@@ -82,18 +82,19 @@ object ZDT4NSGAII extends App {
 
   import algorithm.nsga2._
 
-  val nsga2 =
-    NSGA2(
-      mu = 100,
-      lambda = 100,
-      fitness = zdt4.compute,
-      genomeSize = 10)
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
+    val nsga2 =
+      NSGA2[M](
+        mu = 100,
+        lambda = 100,
+        fitness = zdt4.compute(_),
+        genomeSize = 10)
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       evolution
+  }
 
   val (finalState, finalPopulation) = NSGA2(new util.Random(42)) { impl =>
     import impl._

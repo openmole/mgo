@@ -24,13 +24,14 @@ object breeding {
 
   /**** Selection ****/
 
-  def tournament[M[_]: cats.Monad, I, K: Order](
-    individuals: Vector[I],
+  type Selection[M[_], I] = Kleisli[M, Vector[I], I]
+
+  def tournament[M[_]: cats.Monad: Random, I, K: Order](
     ranks: Vector[K],
-    rounds: Int => Int = _ => 1)(implicit randomM: Random[M]): M[I] = {
+    rounds: Int => Int = _ => 1): Selection[M, I] = Kleisli { individuals: Vector[I] =>
     val populationSize = individuals.size
     for {
-      challengersIndices <- Vector.fill(math.max(rounds(populationSize), 1))(randomM.nextInt(populationSize)).sequence
+      challengersIndices <- Vector.fill(math.max(rounds(populationSize), 1))(Random[M].nextInt(populationSize)).sequence
     } yield // Unbiased since individual are placed in random order in the vector
     individuals(challengersIndices.maxBy(i => ranks(i))(implicitly[Order[K]].toOrdering))
   }
@@ -54,6 +55,7 @@ object breeding {
    * The type G can also represent more than one genome.
    */
   type Crossover[M[_], P, O] = Kleisli[M, P, O]
+  type GACrossover[M[_]] = Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]
 
   object Crossover {
     def apply[M[_]: cats.Monad, P, O](f: P => M[O]): Crossover[M, P, O] = Kleisli[M, P, O](f)
@@ -74,14 +76,14 @@ object breeding {
 
   //def identityC[M[_]: cats.Monad, I]: Crossover[M, I, I] = Crossover(_.point[M])
 
-  def blxC[M[_]: cats.Monad](alpha: Double = 0.5)(implicit randomM: Random[M]): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
+  def blxC[M[_]: cats.Monad: Random](alpha: Double = 0.5): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
     Crossover((mates: (Vector[Double], Vector[Double])) =>
       (mates._1 zip mates._2).traverse {
         case (c1, c2) =>
           val cmin = math.min(c1, c2)
           val cmax = math.max(c1, c2)
           val range = cmax - cmin
-          randomM.nextDouble.map(_.scale(cmin - alpha * range, cmax + alpha * range))
+          Random[M].nextDouble.map(_.scale(cmin - alpha * range, cmax + alpha * range))
       }
     )
 
@@ -104,12 +106,12 @@ object breeding {
    * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
    *
    */
-  def sbxC[M[_]: cats.Monad](distributionIndex: Double = 2.0)(implicit randomM: Random[M]): Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])] =
+  def sbxC[M[_]: cats.Monad: Random](distributionIndex: Double = 2.0): Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])] =
     Crossover((mates: (Vector[Double], Vector[Double])) => {
       val exponent = 1.0 / (distributionIndex + 1.0)
 
       def elementCrossover(x0i: Double, x1i: Double): M[(Double, Double)] =
-        for { u <- randomM.nextDouble } yield {
+        for { u <- Random[M].nextDouble } yield {
           val bq =
             if (u <= 0.5) math.pow(2 * u, exponent)
             else math.pow(1.0 / (2.0 * (1.0 - u)), exponent)
@@ -139,25 +141,26 @@ object breeding {
 
   /** A mutation is a function from a single genome to another single genome */
   type Mutation[M[_], G1, G2] = Kleisli[M, G1, G2]
+  type GAMutation[M[_]] = Mutation[M, Vector[Double], Vector[Double]]
 
   object Mutation {
     def apply[M[_]: cats.Monad, G1, G2](f: G1 => M[G2]): Mutation[M, G1, G2] = Kleisli[M, G1, G2](f)
   }
 
-  def bgaM[M[_]: cats.Monad](mutationRate: Int => Double, mutationRange: Double)(implicit randomM: Random[M]): Mutation[M, Vector[Double], Vector[Double]] =
-    Mutation((g: Vector[Double]) =>
+  def bgaM[M[_]: cats.Monad: Random](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
+    Mutation { (g: Vector[Double]) =>
       g.traverse { x =>
-        randomM.nextDouble.map(_ < mutationRate(g.size)).flatMap { mutate =>
+        Random[M].nextDouble.map(_ < mutationRate(g.size)).flatMap { mutate =>
           if (mutate)
             for {
-              alphai <- randomM.nextDouble.map(d => if (d < (1.0 / 16)) 1.0 else 0.0)
+              alphai <- Random[M].nextDouble.map(d => if (d < (1.0 / 16)) 1.0 else 0.0)
               ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
-              sign <- randomM.nextBoolean.map(b => if (b) 1.0 else -1.0)
+              sign <- Random[M].nextBoolean.map(b => if (b) 1.0 else -1.0)
             } yield x + (sign * mutationRange * ro)
           else x.pure[M]
         }
       }
-    )
+    }
 
   //  def gaussianMutation[G, S](sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Mutation[G, S] = new Mutation[G, S] {
   //    override def apply(g: G) =
@@ -265,12 +268,12 @@ object breeding {
   //  }
 
   /** Randomly replaces some of the genomes in gs by genomes taken from the original population of I */
-  def clonesReplace[M[_]: cats.Monad, I, G](cloneProbability: Double, population: Vector[I], genome: I => G)(implicit randomM: Random[M]): Breeding[M, G, G] =
+  def clonesReplace[M[_]: cats.Monad: Random, I, G](cloneProbability: Double, population: Vector[I], genome: I => G): Breeding[M, G, G] =
     Breeding { gs: Vector[G] =>
       def cloneOrKeep(g: G): M[G] =
         for {
-          clone <- randomM.nextDouble.map(_ < cloneProbability)
-          newG <- if (clone) randomM.randomElement(population).map(genome) else g.pure[M]
+          clone <- Random[M].nextDouble.map(_ < cloneProbability)
+          newG <- if (clone) Random[M].randomElement(population).map(genome) else g.pure[M]
         } yield newG
 
       gs traverse cloneOrKeep
