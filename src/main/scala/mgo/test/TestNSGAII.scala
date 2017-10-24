@@ -54,19 +54,21 @@ object NoisySphereNSGAII extends App {
 
   def aggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
 
-  val nsga2 =
-    NoisyNSGA2(
-      mu = 100,
-      lambda = 100,
-      fitness = (rng, v) => Vector(noisySphere.compute(rng, v)),
-      aggregation = aggregation,
-      genomeSize = 2)
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
+    val nsga2 =
+      NoisyNSGA2[M](
+        mu = 100,
+        lambda = 100,
+        fitness = (rng: util.Random, v: Vector[Double]) => Vector(noisySphere.compute(rng, v)),
+        aggregation = aggregation(_),
+        genomeSize = 2)
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       evolution
+
+  }
 
   val (finalState, finalPopulation) =
     NoisyNSGA2(new util.Random(42)) { imp =>
