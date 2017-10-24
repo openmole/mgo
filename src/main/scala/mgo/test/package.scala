@@ -21,6 +21,8 @@ import scala.util.Random
 
 package object test {
 
+  def twoVarInter(x1: Double, x2: Double) = x1 + x2 + x1 * x2
+
   def average(s: Seq[Double]) = s.sum / s.size
 
   object sphere {
@@ -59,6 +61,9 @@ package object test {
     val sy = y.scale(-2048.0, 2048.0)
     pow(1 - sx, 2) + 100 * pow(sy - pow(sx, 2), 2)
   }
+
+  def saltelliB(x: Vector[Double], omega: Vector[Double]): Double =
+    (0 to (x.size - 1)).map(i => x(i) * omega(i)).sum
 
   // Simple MG Function created by Schaffer for 1985 VEGA paper
   def schaffer(x: Double) = {
