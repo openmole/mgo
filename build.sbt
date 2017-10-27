@@ -31,9 +31,6 @@ libraryDependencies += "fr.iscpif.freedsl" %% "dsl" % freedslVersion
 
 libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0"
 
-libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.2.0"
-libraryDependencies += "com.lihaoyi" %% "sourcecode" % "0.1.4"
-
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
 publishMavenStyle := true
