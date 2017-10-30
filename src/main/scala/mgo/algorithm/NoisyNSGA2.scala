@@ -60,8 +60,16 @@ object noisynsga2 {
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, genomeSize: Int) =
     GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(lambda, genomeSize)
 
-  def breeding[M[_]: cats.Monad: Random: Generation](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
+  def breeding[M[_]: cats.Monad: Random: Generation](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
     noisynsga2Operations.breeding[M, Individual, Genome](
+      vectorFitness.get,
+      aggregation,
+      Individual.genome.get,
+      vectorValues.get,
+      buildGenome(_, None))(crossover, mutation, lambda, cloneProbability)
+
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
+    noisynsga2Operations.adaptiveBreeding[M, Individual, Genome](
       vectorFitness.get,
       aggregation,
       Individual.genome.get,
@@ -85,27 +93,36 @@ object noisynsga2 {
 
   object NoisyNSGA2 {
 
-    import contexts.run
-    def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
-    def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = run(state)(f)
+    def apply[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
+    def apply[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
+    def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
+    def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
 
-    implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NoisyNSGA2, M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[NoisyNSGA2, M, Individual, Genome, EvolutionState[Unit]] {
-      def initialPopulation(t: NoisyNSGA2) =
+    implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NoisyNSGA2[M], M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[NoisyNSGA2[M], M, Individual, Genome, EvolutionState[Unit]] {
+      def initialPopulation(t: NoisyNSGA2[M]) =
         stochasticInitialPopulation[M, Genome, Individual](
           noisynsga2.initialGenomes[M](t.lambda, t.genomeSize),
           noisynsga2.expression(t.fitness))
 
-      def step(t: NoisyNSGA2): Kleisli[M, Vector[Individual], Vector[Individual]] =
-        noisynsga2Operations.step[M, Individual, Genome](
-          noisynsga2.breeding[M](t.lambda, t.operatorExploration, t.cloneProbability, t.aggregation),
-          noisynsga2.expression(t.fitness),
-          noisynsga2.elitism[M](t.mu, t.historySize, t.aggregation))
+      def step(t: NoisyNSGA2[M]): Kleisli[M, Vector[Individual], Vector[Individual]] =
+        t.operators match {
+          case AdaptiveOperators(operatorExploration) =>
+            noisynsga2Operations.step[M, Individual, Genome](
+              noisynsga2.adaptiveBreeding[M](t.lambda, operatorExploration, t.cloneProbability, t.aggregation),
+              noisynsga2.expression(t.fitness),
+              noisynsga2.elitism[M](t.mu, t.historySize, t.aggregation))
+          case ManualOperators(crossover, mutation) =>
+            noisynsga2Operations.step[M, Individual, Genome](
+              noisynsga2.breeding[M](crossover, mutation, t.lambda, t.cloneProbability, t.aggregation),
+              noisynsga2.expression(t.fitness),
+              noisynsga2.elitism[M](t.mu, t.historySize, t.aggregation))
+        }
 
       def state = noisynsga2.state[M]
     }
   }
 
-  case class NoisyNSGA2(
+  case class NoisyNSGA2[M[_]](
     mu: Int,
     lambda: Int,
     fitness: (util.Random, Vector[Double]) => Vector[Double],
@@ -113,7 +130,7 @@ object noisynsga2 {
     genomeSize: Int,
     historySize: Int = 100,
     cloneProbability: Double = 0.2,
-    operatorExploration: Double = 0.1)
+    operators: Operators[M] = AdaptiveOperators[M](0.1))
 
 }
 
@@ -127,6 +144,22 @@ object noisynsga2Operations {
     aggregation: Vector[Vector[Double]] => Vector[Double],
     genome: I => G,
     genomeValues: G => Vector[Double],
+    buildGenome: Vector[Double] => G)(crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int, cloneProbability: Double): Breeding[M, I, G] =
+    for {
+      population <- Kleisli.ask[M, Vector[I]]
+      gs <- nsga2Operations.breeding[M, I, G](
+        aggregated(history, aggregation),
+        genome,
+        genomeValues,
+        buildGenome
+      )(crossover, mutation, lambda) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
+    } yield gs
+
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, I, G](
+    history: I => Vector[Vector[Double]],
+    aggregation: Vector[Vector[Double]] => Vector[Double],
+    genome: I => G,
+    genomeValues: G => Vector[Double],
     genomeOperator: G => Option[Int],
     buildGenome: (Vector[Double], Option[Int]) => G)(
       lambda: Int,
@@ -134,7 +167,7 @@ object noisynsga2Operations {
       cloneProbability: Double): Breeding[M, I, G] =
     for {
       population <- Kleisli.ask[M, Vector[I]]
-      gs <- nsga2Operations.breeding[M, I, G](
+      gs <- nsga2Operations.adaptiveBreeding[M, I, G](
         aggregated(history, aggregation),
         genome,
         genomeValues,
