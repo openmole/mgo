@@ -27,7 +27,7 @@ import util.Random
 
 object GlobalSensitivityAnalysis extends App {
 
-  implicit val rng = new Random(45)
+  implicit val rng = new Random()
 
   object testTwoVarAdd {
     val sampleUnit = (0.0 to 1.0 by 0.0001).toVector
@@ -63,6 +63,8 @@ object GlobalSensitivityAnalysis extends App {
 
     val k = 2
 
+    val expectedRes = Vector((7.0 / 36.0) / (40.0 / 144.0), (13.0 / 144.0) / (40.0 / 144.0))
+
     val res = for { replications <- (0 to 50) } yield {
       // Matrices A and B by columns.
       val Acol = Vector.fill(k)(rng.shuffle(sampleUnit))
@@ -82,6 +84,7 @@ object GlobalSensitivityAnalysis extends App {
     }
 
     println("2VarAddInter:\t" ++ res.transpose.map(x => x.sum / x.size).toString)
+    println("2VarAddInter:\tExpected: " ++ expectedRes.toString)
   }
 
   testTwoVarAddInter
