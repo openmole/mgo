@@ -93,8 +93,6 @@ object noisynsga2 {
 
   object NoisyNSGA2 {
 
-    def apply[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
-    def apply[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
     def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
     def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
 

@@ -36,8 +36,8 @@ object noisypse extends niche.Imports {
   object NoisyPSE {
 
     import pse.{ PSE }
-    def apply[T](rng: util.Random)(f: PSE.PSEImplicits => T): T = PSE(rng)(f)
-    def apply[T](state: EvolutionState[Map[Vector[Int], Int]])(f: PSE.PSEImplicits => T): T = PSE(state)(f)
+    def run[T](rng: util.Random)(f: PSE.PSEImplicits => T): T = PSE.run(rng)(f)
+    def run[T](state: EvolutionState[Map[Vector[Int], Int]])(f: PSE.PSEImplicits => T): T = PSE.run(state)(f)
 
     implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: HitMap[M, Vector[Int]]) = new Algorithm[NoisyPSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] {
 

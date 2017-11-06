@@ -38,7 +38,7 @@ object SphereProfile extends App {
       trace((s, is) => println(s.generation)).evolution
 
   val (finalState, finalPopulation) =
-    Profile(new util.Random(42)) { imp =>
+    Profile.run(new util.Random(42)) { imp =>
       import imp._
       evolution[DSL].eval
     }
@@ -73,7 +73,7 @@ object NoisySphereProfile extends App {
       evolution
 
   val (finalState, finalPopulation) =
-    NoisyProfile(new util.Random(42)) { imp =>
+    NoisyProfile.run(new util.Random(42)) { imp =>
       import imp._
       evolution[DSL].eval
     }

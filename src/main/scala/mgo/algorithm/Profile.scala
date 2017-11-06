@@ -70,9 +70,8 @@ object profile extends niche.Imports {
 
   object Profile {
 
-    import contexts.run
-    def apply[T](rng: util.Random)(f: run.Implicits => T): T = run(rng)(f)
-    def apply[T](state: EvolutionState[Unit])(f: run.Implicits => T): T = run(state)(f)
+    def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
+    def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
 
     implicit def isAlgorithm[M[_]: cats.Monad: Generation: Random: StartTime]: Algorithm[Profile, M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[Profile, M, Individual, Genome, EvolutionState[Unit]] {
       def initialPopulation(t: Profile) =
