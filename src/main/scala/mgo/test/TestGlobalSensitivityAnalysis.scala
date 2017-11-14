@@ -45,8 +45,8 @@ object GlobalSensitivityAnalysis extends App {
       val C = Ccol.map(_.transpose)
 
       // Precompute output
-      val fB = B.map(row => row(0) + 0.5 * row(1))
-      val fC = C.map(Ci => Ci.map(row => row(0) + 0.5 * row(1)))
+      val fB = B.map(row => Some(row(0) + 0.5 * row(1)))
+      val fC = C.map(Ci => Ci.map(row => Some(row(0) + 0.5 * row(1))))
 
       val result = fromPrecomputed_Rn_R(fB, fC)
       result.run({ (i: Unit) => () })
@@ -76,8 +76,8 @@ object GlobalSensitivityAnalysis extends App {
       val C = Ccol.map(_.transpose)
 
       // Precompute output
-      val fB = B.map(row => row(0) + 0.5 * row(1) + row(0) * row(1))
-      val fC = C.map(Ci => Ci.map(row => row(0) + 0.5 * row(1) + row(0) * row(1)))
+      val fB = B.map(row => Some(row(0) + 0.5 * row(1) + row(0) * row(1)))
+      val fC = C.map(Ci => Ci.map(row => Some(row(0) + 0.5 * row(1) + row(0) * row(1))))
 
       val result = fromPrecomputed_Rn_R(fB, fC)
       result.run({ (i: Unit) => () })

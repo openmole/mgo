@@ -24,29 +24,39 @@ object globalSensitivityAnalysis {
   //def independantInputs_Rn_R()
 
   /**
-   * Create a total order effect sensitivity analysis when the output values of the function being analysed are already known and can be provided.
+   * Create a total order effect sensitivity analysis object when the output values of the function being analysed are already known and can be provided.
    * fB(j) contains the model output value for the j-th row of B, f(B_j). fC(i)(j) contains the model output for the j-th row of matrix C^i (the matrix where all columns are from B except the i-th which is from A).
-   * Rows of matrices A and B represent individual inputs to the function f and the columns are sampled independantly from one another.
+   * Rows of matrices A and B represent individual inputs to the function f and the columns are sampled uniformly.
    */
-  def fromPrecomputed_Rn_R(fB: Vector[Double], fC: Vector[Vector[Double]]): SATotalOrder[Unit, Unit, Vector[Double]] =
+  def fromPrecomputed_Rn_R(fB: Vector[Option[Double]], fC: Vector[Vector[Option[Double]]]): SATotalOrder[Unit, Unit, Vector[Double]] =
     SATotalOrder(
       run = _ => totalOrderIndex(fB, fC),
       sT = (i, s) => s(i)
     )
 
   /**
-   * Compute the total order effect from the given output values of a model.
+   * Compute the total order effect from the given output values of a model. From Saltelli 2008 Global Sensitivity Analysis.
    * fA(j) contains the model output value for the j-th row of A, f(A_j). fC(i)(j) contains the model output for the j-th row of matrix C^i (the matrix where all columns are from B except the i-th which is from A).
    */
-  def totalOrderIndex(fB: Vector[Double], fC: Vector[Vector[Double]]): Vector[Double] = {
-    val N = fB.size
+  def totalOrderIndex(fB: Vector[Option[Double]], fC: Vector[Vector[Option[Double]]]): Vector[Double] = {
+    val fBSome = fB.collect { case Some(i) => i }
+    val NB = fBSome.size
     val k = fC.size //Number of parameters
-    val f02 = math.pow(fB.sum / N.toDouble, 2)
-    //println((fB.map(fBj => math.pow(fBj, 2)).sum / N.toDouble - f02))
-    (1 to k).map(i =>
-      1 -
-        ((fB zip fC(i - 1)).map({ case (fBj, fCij) => fBj * fCij }).sum / N.toDouble - f02) /
-        (fB.map(fBj => math.pow(fBj, 2)).sum / N.toDouble - f02)).toVector
+    val f02 = math.pow(fBSome.sum / NB.toDouble, 2)
+    val varY = fBSome.map(fBj => math.pow(fBj, 2)).sum / NB.toDouble - f02
+    def avgProduct(fB: Vector[Option[Double]], fCi: Vector[Option[Double]]): Double = {
+      val prods = (fB zip fCi).collect({ case (Some(fBj), Some(fCij)) => fBj * fCij })
+      prods.sum / prods.size.toDouble
+    }
+
+    (1 to k).map { i =>
+      {
+        val innerJoin = (fB zip fC(i - 1)).collect { case (Some(fBj), Some(fCij)) => (fBj, fCij) }
+        val N = innerJoin.size
+        val sumSquaredDiff = innerJoin.map { case (fBj, fCij) => math.pow(fBj - fCij, 2) }.sum
+        (sumSquaredDiff / (2.0 * innerJoin.size)) / varY
+      }
+    }.toVector
   }
 
 }
