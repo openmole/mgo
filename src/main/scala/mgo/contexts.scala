@@ -3,6 +3,7 @@ package mgo
 import freedsl.dsl._
 import freedsl.io.IOInterpreter
 import freedsl.random.RandomInterpreter
+import freedsl.system.SystemInterpreter
 import freestyle.tagless._
 import mgo.algorithm.EvolutionState
 
@@ -53,10 +54,10 @@ object contexts {
   object run {
     object Implicits {
       def apply[S](state: EvolutionState[S]): Implicits =
-        Implicits()(GenerationInterpreter(state.generation), RandomInterpreter(state.random), StartTimeInterpreter(state.startTime), IOInterpreter())
+        Implicits()(GenerationInterpreter(state.generation), RandomInterpreter(state.random), StartTimeInterpreter(state.startTime), IOInterpreter(), SystemInterpreter())
 
     }
-    case class Implicits(implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter)
+    case class Implicits(implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, systemInterpreter: SystemInterpreter)
 
     def apply[T](rng: util.Random)(f: Implicits => T): T = {
       val state = EvolutionState[Unit](random = rng, s = ())

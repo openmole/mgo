@@ -22,6 +22,7 @@ import cats.data._
 import cats.implicits._
 import mgo.contexts._
 import squants.time._
+import freedsl.system._
 
 object stop {
 
@@ -36,11 +37,12 @@ object stop {
         } yield cg >= g
       }
 
-    def afterDuration[M[_]: cats.Monad, I](d: Time)(implicit mStartTime: StartTime[M]): StopCondition[M, I] =
+    def afterDuration[M[_]: cats.Monad: System, I](d: Time)(implicit mStartTime: StartTime[M]): StopCondition[M, I] =
       Kleisli { (individuals: Vector[I]) =>
         for {
           st <- mStartTime.get
-        } yield (d.millis + st) <= System.currentTimeMillis
+          now <- System[M].currentTime()
+        } yield (d.millis + st) <= now
       }
 
     def never[M[_]: cats.Monad, I]: StopCondition[M, I] = Kleisli { _ => false.pure[M] }

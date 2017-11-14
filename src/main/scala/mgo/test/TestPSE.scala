@@ -41,7 +41,7 @@ object ZDT4PSE extends App {
       trace((s, is) => println(s.generation)).
       evolution
 
-  val (finalState, finalPopulation) = PSE(new util.Random(42)) { imp =>
+  val (finalState, finalPopulation) = PSE.run(new util.Random(42)) { imp =>
     import imp._
     evolution[DSL].eval
   }

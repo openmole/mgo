@@ -33,6 +33,7 @@ import cats.implicits._
 import freedsl.dsl
 import freedsl.io.IOInterpreter
 import freedsl.random.RandomInterpreter
+import freedsl.system.SystemInterpreter
 import freedsl.tool._
 import freestyle.tagless._
 
@@ -53,17 +54,17 @@ object pse extends niche.Imports {
 
     object PSEImplicits {
       def apply(state: EvolutionState[Map[Vector[Int], Int]]): PSEImplicits =
-        PSEImplicits()(GenerationInterpreter(state.generation), RandomInterpreter(state.random), StartTimeInterpreter(state.startTime), IOInterpreter(), VectorHitMapInterpreter(state.s))
+        PSEImplicits()(GenerationInterpreter(state.generation), RandomInterpreter(state.random), StartTimeInterpreter(state.startTime), IOInterpreter(), VectorHitMapInterpreter(state.s), SystemInterpreter())
     }
 
-    case class PSEImplicits(implicit generation: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, hitMapInterpreter: VectorHitMapInterpreter)
+    case class PSEImplicits(implicit generation: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, hitMapInterpreter: VectorHitMapInterpreter, systemInterpreter: SystemInterpreter)
 
-    def apply[T](rng: util.Random)(f: PSEImplicits => T): T = {
+    def run[T](rng: util.Random)(f: PSEImplicits => T): T = {
       val state = EvolutionState[Map[Vector[Int], Int]](random = rng, s = Map.empty)
-      apply(state)(f)
+      run(state)(f)
     }
 
-    def apply[T, S](state: EvolutionState[HitMapState])(f: PSEImplicits => T): T = f(PSEImplicits(state))
+    def run[T, S](state: EvolutionState[HitMapState])(f: PSEImplicits => T): T = f(PSEImplicits(state))
 
     implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: Generation: HitMapM]: Algorithm[PSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] = new Algorithm[PSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] {
 

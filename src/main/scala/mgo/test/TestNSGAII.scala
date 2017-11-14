@@ -39,7 +39,7 @@ object SphereNSGAII extends App {
   }
 
   val (finalState, finalPopulation) =
-    NSGA2(new util.Random(42)) { imp =>
+    NSGA2.run(new util.Random(42)) { imp =>
       import imp._
       evolution[DSL].eval
     }
@@ -70,7 +70,7 @@ object NoisySphereNSGAII extends App {
   }
 
   val (finalState, finalPopulation) =
-    NoisyNSGA2(new util.Random(42)) { imp =>
+    NoisyNSGA2.run(new util.Random(42)) { imp =>
       import imp._
       evolution[DSL].eval
     }
@@ -97,7 +97,7 @@ object ZDT4NSGAII extends App {
       evolution
   }
 
-  val (finalState, finalPopulation) = NSGA2(new util.Random(42)) { impl =>
+  val (finalState, finalPopulation) = NSGA2.run(new util.Random(42)) { impl =>
     import impl._
     evolution[DSL].eval
   }
