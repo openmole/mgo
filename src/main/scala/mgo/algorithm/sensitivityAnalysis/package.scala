@@ -22,11 +22,18 @@ package object sensitivityAnalysis {
   /**
    * Total order effect sensitivity analysis.
    *
-   * With `s` an instance of this case class, `s.run(f)` performs the sensitivity analysis of model `f` and returns it as a value of type `S`. The return value must then be passed to the function sT such that `s.run(i, s.run(f))` gives the sensitivity index for the model i-th parameter.
+   * With `s` an instance of this case class, `s.run(f)` performs the
+   * sensitivity analysis of model `f` and returns it as a value of type
+   * `S`. The return value must then be passed to the function sT such
+   * that `s.run(i, s.run(f))` gives the sensitivity index for the model
+   * i-th parameter.
    *
-   * Instances of this case class are used to compute the total order effect of each model parameter on the model output, i.e. first order effect and interactions. They respect the following equation:
+   * Instances of this case class are used to compute the total order
+   * effect of each model parameter on the model output, i.e. first
+   * order effect and interactions. They respect the following equation:
    *
-   * s.sT(i, s.run(f)) ≃ E_{X_{~i}}[Var_{X_i}(f(X_1, ..., X_k) | X_{~i})]
+   * s.sT(i, s.run(f)) ≃ 
+   *   E_{X_{~i}}[Var_{X_i}(f(X_1, ..., X_k) | X_{~i})]
    */
   case class SATotalOrder[X, Y](run: (X => Y) => Vector[Double])
 
