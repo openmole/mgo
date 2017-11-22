@@ -20,10 +20,15 @@ import sensitivityAnalysis.SATotalOrder
 import mgo.sampling.{ lhs, replaceColumnsOneByOne }
 import util.Random
 
-/** This package provides functions to build sensitivity analyses (SATotalOrder) as described by Saltelli (see Saltelli et al. 2010 Variance based sensitivity analysis of model output. Design and estimator for the total sensitivity index.) */
+/** This package provides functions to build sensitivity analyses
+  * (SATotalOrder) as described by Saltelli (see Saltelli et al. 2010
+  * Variance based sensitivity analysis of model output. Design and
+  * estimator for the total sensitivity index.) */
 object globalSensitivityAnalysis {
 
-  /** Total order effect sensitivity analysis of a function from R^n to R where inputs are sampled uniformly within the subspace delimited by the given bounds. */
+  /** Total order effect sensitivity analysis of a function from R^n to
+    * R where inputs are sampled uniformly within the subspace delimited
+    * by the given bounds. */
   def uniformInputs_Rn_R(minmax: Vector[(Double, Double)], numberOfSamples: Int)(implicit rng: Random) =
     SATotalOrder[Vector[Double], Double](
       run = f => {
@@ -49,9 +54,13 @@ object globalSensitivityAnalysis {
     )
 
   /**
-   * Total order effect sensitivity analysis when the output values of the function being analysed are already known and can be provided.
-   * fB(j) contains the model output value for the j-th row of B, f(B_j). fC(i)(j) contains the model output for the j-th row of matrix C^i (the matrix where all columns are from B except the i-th which is from A).
-   * Rows of matrices A and B represent individual inputs to the function f and the columns are sampled uniformly.
+   * Total order effect sensitivity analysis when the output values of
+   * the function being analysed are already known and can be provided.
+   * fB(j) contains the model output value for the j-th row of B,
+   * f(B_j). fC(i)(j) contains the model output for the j-th row of matrix
+   * C^i (the matrix where all columns are from B except the i-th which
+   * is from A).  Rows of matrices A and B represent individual inputs
+   * to the function f and the columns are sampled uniformly.
    */
   def fromPrecomputed_Rn_R(fB: Vector[Option[Double]], fC: Vector[Vector[Option[Double]]]): SATotalOrder[Unit, Unit] =
     SATotalOrder(
@@ -59,8 +68,12 @@ object globalSensitivityAnalysis {
     )
 
   /**
-   * Compute the total order effect from the given output values of a model. From Saltelli 2008 Global Sensitivity Analysis.
-   * fA(j) contains the model output value for the j-th row of A, f(A_j). fC(i)(j) contains the model output for the j-th row of matrix C^i (the matrix where all columns are from B except the i-th which is from A).
+   * Compute the total order effect from the given output values
+   * of a model. From Saltelli 2008 Global Sensitivity Analysis.
+   * fA(j) contains the model output value for the j-th row of A,
+   * f(A_j). fC(i)(j) contains the model output for the j-th row of matrix
+   * C^i (the matrix where all columns are from B except the i-th which
+   * is from A).
    */
   def totalOrderIndex(fB: Vector[Option[Double]], fC: Vector[Vector[Option[Double]]]): Vector[Double] = {
     val fBSome = fB.collect { case Some(i) => i }

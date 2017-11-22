@@ -21,6 +21,11 @@ import util.Random
 
 package object sampling {
 
+  /** Latin hypercube sampling in a unit hypercube.
+    * 
+    * Returns a vector of samples from the unit hypercube with the number
+    * of required dimensions.
+    */
   def lhs(dimensions: Int, samples: Int)(implicit rng: Random): Vector[Vector[Double]] =
     Vector.fill(dimensions) {
       rng.shuffle((0 until samples).toIterator).map {
@@ -28,11 +33,12 @@ package object sampling {
       }.toVector
     }.transpose
 
-  /**
-   * Returns as many matrices as there are colums in a (a and b must be the
-   * same size), such that in the i-th matrice, all elements are from a except
-   * the i-th column which is from b.
-   */
+  /** Replace colums from `a` by columns from `b`, one at a time.
+    * 
+    * Returns as many matrices as there are colums in a (a and b must be the
+    * same size), such that in the i-th matrice, all elements are from a except
+    * the i-th column which is from b.
+    */
   def replaceColumnsOneByOne[A](a: Vector[Vector[A]], b: Vector[Vector[A]]): Vector[Vector[Vector[A]]] = {
     val aT = a.transpose
     val bT = b.transpose
