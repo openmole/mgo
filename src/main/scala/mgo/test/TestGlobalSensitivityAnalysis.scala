@@ -29,65 +29,57 @@ object GlobalSensitivityAnalysis extends App {
 
   implicit val rng = new Random()
 
-  object testTwoVarAdd {
-    val sampleUnit = (0.0 to 1.0 by 0.0001).toVector
+  val nReplications = 50
 
-    val k = 2
+  val k = 2
 
-    val res = for { replications <- (0 to 50) } yield {
-      // Matrices A and B by columns.
-      val Acol = Vector.fill(k)(rng.shuffle(sampleUnit))
-      val Bcol = Vector.fill(k)(rng.shuffle(sampleUnit))
-      val Ccol = (1 to k).map(i => Bcol.take(i - 1) ++ Vector(Acol(i - 1)) ++ Bcol.takeRight(k - i)).toVector
+  def fTwoVarAdd(row: Vector[Double]) = row(0) + 0.5 * row(1)
+  def fTwoVarAddInter(row: Vector[Double]) = row(0) + 0.5 * row(1) + row(0) * row(1)
 
-      // Matrices by rows.
-      val B = Bcol.transpose
-      val C = Ccol.map(_.transpose)
+  val sampleUnit = (0.0 to 1.0 by 0.0001).toVector
 
+  // Matrices A and B by columns.
+  def sampleMat(implicit rng: Random) = {
+    val Acol = Vector.fill(k)(rng.shuffle(sampleUnit))
+    val Bcol = Vector.fill(k)(rng.shuffle(sampleUnit))
+    val Ccol = (1 to k).map(i =>
+      Bcol.take(i - 1) ++ Vector(Acol(i - 1)) ++ Bcol.takeRight(k - i)
+    ).toVector
+
+    // Matrices by rows.
+    val B = Bcol.transpose
+    val C = Ccol.map(_.transpose)
+
+    (B, C)
+  }
+
+  // Precomputed
+  def replicationsFromPrecomputed(f: Vector[Double] => Double)(implicit rng: Random) =
+    for { replications <- (0 to nReplications) } yield {
+      val BC = sampleMat
+      val B = BC._1
+      val C = BC._2
       // Precompute output
-      val fB = B.map(row => Some(row(0) + 0.5 * row(1)))
-      val fC = C.map(Ci => Ci.map(row => Some(row(0) + 0.5 * row(1))))
+      val fB = B.map(f.andThen(Option.apply))
+      val fC = C.map(Ci => Ci.map(f.andThen(Option.apply)))
 
       val result = fromPrecomputed_Rn_R(fB, fC)
       result.run({ (i: Unit) => () })
     }
 
-    println("2VarAdd:\t" ++ res.transpose.map(x => x.sum / x.size).toString)
-
-  }
-
-  testTwoVarAdd
-
-  object testTwoVarAddInter {
-    val sampleUnit = (0.0 to 1.0 by 0.0001).toVector
-
-    val k = 2
-
-    val expectedRes = Vector((7.0 / 36.0) / (40.0 / 144.0), (13.0 / 144.0) / (40.0 / 144.0))
-
-    val res = for { replications <- (0 to 50) } yield {
-      // Matrices A and B by columns.
-      val Acol = Vector.fill(k)(rng.shuffle(sampleUnit))
-      val Bcol = Vector.fill(k)(rng.shuffle(sampleUnit))
-      val Ccol = (1 to k).map(i => Bcol.take(i - 1) ++ Vector(Acol(i - 1)) ++ Bcol.takeRight(k - i)).toVector
-
-      // Matrices by rows.
-      val B = Bcol.transpose
-      val C = Ccol.map(_.transpose)
-
-      // Precompute output
-      val fB = B.map(row => Some(row(0) + 0.5 * row(1) + row(0) * row(1)))
-      val fC = C.map(Ci => Ci.map(row => Some(row(0) + 0.5 * row(1) + row(0) * row(1))))
-
-      val result = fromPrecomputed_Rn_R(fB, fC)
-      result.run({ (i: Unit) => () })
+  def replicationsUniformInputs(f: Vector[Double] => Double)(implicit rng: Random) =
+    for { replications <- (0 to nReplications) } yield {
+      uniformInputs_Rn_R(
+        minmax = Vector.fill(k)((-10.0, 4.0)),
+        numberOfSamples = 1000
+      ).run(fTwoVarAdd _)
     }
 
-    println("2VarAddInter:\t" ++ res.transpose.map(x => x.sum / x.size).toString)
-    println("2VarAddInter:\tExpected: " ++ expectedRes.toString)
-  }
+  println("fromPrecomputed VarAdd:\t" ++ replicationsFromPrecomputed(fTwoVarAdd _).transpose.map(x => x.sum / x.size).toString)
+  println("uniformInputs VarAdd:\t" ++ replicationsFromPrecomputed(fTwoVarAdd _).transpose.map(x => x.sum / x.size).toString)
+  println("fromPrecomputed VarAddInter:\t" ++ replicationsFromPrecomputed(fTwoVarAddInter _).transpose.map(x => x.sum / x.size).toString)
+  println("uniformInputs VarAddInter:\t" ++ replicationsFromPrecomputed(fTwoVarAddInter _).transpose.map(x => x.sum / x.size).toString)
 
-  testTwoVarAddInter
-
+  println("Expected VarAddInter: " ++ Vector((7.0 / 36.0) / (40.0 / 144.0), (13.0 / 144.0) / (40.0 / 144.0)).toString)
 }
 

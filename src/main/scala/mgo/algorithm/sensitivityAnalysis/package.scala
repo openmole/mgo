@@ -28,6 +28,6 @@ package object sensitivityAnalysis {
    *
    * s.sT(i, s.run(f)) ≃ E_{X_{~i}}[Var_{X_i}(f(X_1, ..., X_k) | X_{~i})]
    */
-  case class SATotalOrder[X, Y, S](run: (X => Y) => S, sT: (Int, S) => Double)
+  case class SATotalOrder[X, Y](run: (X => Y) => Vector[Double])
 
 }
