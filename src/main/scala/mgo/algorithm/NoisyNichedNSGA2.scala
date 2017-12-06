@@ -16,7 +16,7 @@ import freedsl.tool._
 import monocle.macros._
 
 object noisyNichedNSGA2 {
-  
+
   import algorithm.noisynsga2._
 
   def elitism[M[_]: cats.Monad: Random: Generation, N](mu: Int, historySize: Int, aggregation: Vector[Vector[Double]] => Vector[Double], niche: Individual => N): Elitism[M, Individual] =
