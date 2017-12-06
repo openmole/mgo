@@ -1,8 +1,8 @@
 organization := "fr.iscpif"
 name := "mgo"
 
-scalaVersion := "2.12.3"
-crossScalaVersions := Seq("2.12.3")
+scalaVersion := "2.12.4"
+crossScalaVersions := Seq("2.12.4")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full)
@@ -69,5 +69,5 @@ pomExtra := (
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
-scalariformSettings
+scalariformSettings(true)
 
