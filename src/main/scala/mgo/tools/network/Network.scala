@@ -32,7 +32,8 @@ trait Network[N, E] {
   /** Either digraph or graph */
   def dotGraphType: String
 
-  def toDot(graphId: String,
+  def toDot(
+    graphId: String,
     nodeAttr: N => Seq[(String, String)],
     edgeAttr: E => Seq[(String, String)],
     additionalStatements: String): String =

@@ -22,7 +22,7 @@ object breeding {
     def bind[A, B](fa: Breeding[I, M, A])(f: (A) ⇒ Breeding[I, M, B]): Breeding[I, M, B] = ???
   }*/
 
-  /**** Selection ****/
+/**** Selection ****/
 
   type Selection[M[_], I] = Kleisli[M, Vector[I], I]
 
@@ -36,7 +36,7 @@ object breeding {
     individuals(challengersIndices.maxBy(i => ranks(i))(implicitly[Order[K]].toOrdering))
   }
 
-  /**** Mating ****/
+/**** Mating ****/
 
   //  def groupConsecutive[M[_]: cats.Monad, I](groupSize: Int): Breeding[M, I, Vector[I]] =
   //    (individuals: Vector[I]) => individuals.grouped(groupSize).toVector.pure[M]
@@ -44,7 +44,7 @@ object breeding {
   def pairConsecutive[M[_]: cats.Monad, I] =
     (individuals: Vector[I]) => individuals.grouped(2).collect { case Vector(a, b) => (a, b) }.toVector
 
-  /**** Crossover ****/
+/**** Crossover ****/
 
   /**
    * A crossover is a function from some individuals (parents or mates, can be a single individual, a pair or a vector)
@@ -84,8 +84,7 @@ object breeding {
           val cmax = math.max(c1, c2)
           val range = cmax - cmin
           Random[M].nextDouble.map(_.scale(cmin - alpha * range, cmax + alpha * range))
-      }
-    )
+      })
 
   /**
    * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :
@@ -137,7 +136,7 @@ object breeding {
       }
     })
 
-  /**** Mutation ****/
+/**** Mutation ****/
 
   /** A mutation is a function from a single genome to another single genome */
   type Mutation[M[_], G1, G2] = Kleisli[M, G1, G2]
@@ -243,7 +242,7 @@ object breeding {
   //      }
   //  }
 
-  /**** Dynamic breeding ****/
+/**** Dynamic breeding ****/
 
   //  def breed[OI, OO](
   //    tournament: Kleisli[State[util.Random, ?], Vector[OI], OI],

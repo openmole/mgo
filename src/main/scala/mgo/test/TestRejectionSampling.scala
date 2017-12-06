@@ -47,8 +47,7 @@ object DiskRejectionSampling extends App {
     qSample = { r => Vector(r.nextDouble * 2 - 1, r.nextDouble * 2 - 1) },
     qPdf = ifElse(0.25, 0.0) _ compose inSquare compose vec2Tup,
     m = 4.0 / Pi,
-    pPdf = pdfUniformCircle _ compose vec2Tup
-  )
+    pPdf = pdfUniformCircle _ compose vec2Tup)
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     mcsampling.

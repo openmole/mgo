@@ -127,7 +127,7 @@ object ranking {
     Ranking { is => is.traverse { i: I => hitCount(cell(i)).map[Lazy[Int]] { i => Lazy(i) } } }
   }
 
-  /**** Generic functions on rankings ****/
+/**** Generic functions on rankings ****/
 
   def reversedRanking[M[_]: cats.Monad, I](ranking: Ranking[M, I]): Ranking[M, I] =
     Ranking((population: Vector[I]) => ranking(population).map { _.map { x => /*map lazyly*/ Lazy(-x()) } })
@@ -143,8 +143,7 @@ object ranking {
   def paretoRankingMinAndCrowdingDiversity[M[_]: cats.Monad: Random, I](fitness: I => Vector[Double]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
     rankAndDiversity(
       reversedRanking(paretoRanking[M, I](fitness)),
-      crowdingDistance[M, I] { (i: I) => fitness(i) }
-    )
+      crowdingDistance[M, I] { (i: I) => fitness(i) })
 
   def rank[M[_]: cats.Monad, I, K](ranking: Kleisli[M, Vector[I], Vector[K]]) = Kleisli[M, Vector[I], Vector[(I, K)]] { is =>
     for {

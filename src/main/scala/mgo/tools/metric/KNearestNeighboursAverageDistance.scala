@@ -35,8 +35,7 @@ object KNearestNeighboursAverageDistance {
         Lazy({
           val neighbours: Seq[Seq[Double]] = tree.knearest(k, v)
           neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur, v) } / neighbours.size
-        }
-        )
+        })
     }
   }
 }

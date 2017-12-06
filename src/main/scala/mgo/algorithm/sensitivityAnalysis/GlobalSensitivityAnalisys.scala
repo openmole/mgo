@@ -31,8 +31,7 @@ object globalSensitivityAnalysis {
   def fromPrecomputed_Rn_R(fB: Vector[Double], fC: Vector[Vector[Double]]): SATotalOrder[Unit, Unit, Vector[Double]] =
     SATotalOrder(
       run = _ => totalOrderIndex(fB, fC),
-      sT = (i, s) => s(i)
-    )
+      sT = (i, s) => s(i))
 
   /**
    * Compute the total order effect from the given output values of a model.

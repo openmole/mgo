@@ -58,8 +58,7 @@ object noisypse extends niche.Imports {
           noisypse.elitism[M](
             pattern = t.pattern,
             historySize = t.historySize,
-            aggregation = t.aggregation)
-        )
+            aggregation = t.aggregation))
 
       def state = noisypse.state[M]
 
@@ -106,8 +105,7 @@ object noisypse extends niche.Imports {
       vectorValues.get,
       Genome.operator.get,
       vectorPhenotype.get _ andThen aggregation andThen pattern,
-      buildGenome
-    )(lambda, cloneProbability, operatorExploration)
+      buildGenome)(lambda, cloneProbability, operatorExploration)
 
   def elitism[M[_]: cats.Monad: Random: Generation](pattern: Vector[Double] => Vector[Int], aggregation: Vector[Vector[Double]] => Vector[Double], historySize: Int)(implicit MH: HitMap[M, Vector[Int]]) =
     noisypseOperations.elitism[M, Individual, Vector[Double]](
@@ -117,8 +115,7 @@ object noisypse extends niche.Imports {
       pattern,
       Individual.age,
       Individual.mapped,
-      Individual.historyAge
-    )(historySize)
+      Individual.historyAge)(historySize)
 
   def expression(phenotype: (util.Random, Vector[Double]) => Vector[Double]) =
     noisypseOperations.expression[Genome, Individual, Vector[Double]](
@@ -135,9 +132,9 @@ object noisypseOperations {
     genomeOperator: G => Option[Int],
     pattern: I => Vector[Int],
     buildGenome: (Vector[Double], Option[Int]) => G)(
-      lambda: Int,
-      cloneProbability: Double,
-      operatorExploration: Double)(implicit MH: HitMap[M, Vector[Int]]): Breeding[M, I, G] =
+    lambda: Int,
+    cloneProbability: Double,
+    operatorExploration: Double)(implicit MH: HitMap[M, Vector[Int]]): Breeding[M, I, G] =
     for {
       population <- Kleisli.ask[M, Vector[I]]
       gs <- pseOperations.breeding[M, I, G](
@@ -145,8 +142,7 @@ object noisypseOperations {
         genomeValues = genomeValues,
         pattern = pattern,
         genomeOperator = genomeOperator,
-        buildGenome = buildGenome
-      )(lambda, operatorExploration) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
+        buildGenome = buildGenome)(lambda, operatorExploration) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
     } yield gs
 
   def elitism[M[_]: cats.Monad: Random: Generation, I, P: CanBeNaN](

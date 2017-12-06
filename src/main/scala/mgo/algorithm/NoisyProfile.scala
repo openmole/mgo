@@ -57,8 +57,7 @@ object noisyprofile extends niche.Imports {
 
   def breeding[M[_]: cats.Monad: Random: Generation](lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Double] => Double): Breeding[M, Individual, Genome] =
     noisyprofileOperations.breeding[M, Individual, Genome](
-      vectorFitness.get, aggregation, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
-    )(lambda = lambda, niche = niche, operatorExploration = operatorExploration, cloneProbability = cloneProbability)
+      vectorFitness.get, aggregation, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda = lambda, niche = niche, operatorExploration = operatorExploration, cloneProbability = cloneProbability)
 
   def expression(fitness: (util.Random, Vector[Double]) => Double): Expression[(util.Random, Genome), Individual] =
     noisyprofileOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
@@ -69,8 +68,7 @@ object noisyprofile extends niche.Imports {
       aggregation = aggregation,
       values = (Individual.genome composeLens vectorValues).get,
       age = Individual.age,
-      historyAge = Individual.historyAge
-    )(muByNiche, niche, historySize)
+      historyAge = Individual.historyAge)(muByNiche, niche, historySize)
 
   def profile(population: Vector[Individual], niche: Niche[Individual, Int]) =
     noisyprofileOperations.profile(population, niche, Individual.historyAge.get)
@@ -95,16 +93,14 @@ object noisyprofile extends niche.Imports {
             niche = t.niche,
             operatorExploration = t.operatorExploration,
             cloneProbability = t.cloneProbability,
-            aggregation = t.aggregation
-          )
+            aggregation = t.aggregation)
 
         def elitism =
           noisyprofile.elitism[M](
             muByNiche = t.muByNiche,
             niche = t.niche,
             historySize = t.historySize,
-            aggregation = t.aggregation
-          )
+            aggregation = t.aggregation)
 
         noisyprofileOperations.step[M, Individual, Genome](
           breeding,
@@ -142,10 +138,10 @@ object noisyprofileOperations {
     genomeValues: G => Vector[Double],
     genomeOperator: G => Option[Int],
     buildGenome: (Vector[Double], Option[Int]) => G)(
-      lambda: Int,
-      niche: Niche[I, Int],
-      operatorExploration: Double,
-      cloneProbability: Double): Breeding[M, I, G] = Breeding { population =>
+    lambda: Int,
+    niche: Niche[I, Int],
+    operatorExploration: Double,
+    cloneProbability: Double): Breeding[M, I, G] = Breeding { population =>
     for {
       ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregatedFitness(history, aggregation)) apply population
       operatorStatistics = operatorProportions(genome andThen genomeOperator, population)
@@ -153,8 +149,7 @@ object noisyprofileOperations {
         tournament[M, I, (Lazy[Int], Lazy[Double])](ranks, rounds = size => math.round(math.log10(size).toInt)),
         genome andThen genomeValues,
         operatorStatistics,
-        operatorExploration
-      ) apply population
+        operatorExploration) apply population
       offspring <- breeding repeat ((lambda + 1) / 2)
       offspringGenomes = offspring.flatMap {
         case ((o1, o2), op) =>
@@ -181,8 +176,7 @@ object noisyprofileOperations {
           for {
             ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregatedFitness(history.get, aggregation))
             nicheElite <- Elitism[M, I] { population => keepHighestRanked(population, ranks, muByNiche).pure[M] }
-          } yield nicheElite
-      ) apply cloneRemoved
+          } yield nicheElite) apply cloneRemoved
       aged <- incrementGeneration[M, I](age) apply elite
     } yield aged
   }

@@ -119,8 +119,7 @@ object pse extends niche.Imports {
       vectorValues.get,
       Genome.operator.get,
       vectorPhenotype.get _ andThen pattern,
-      buildGenome
-    )(lambda, operatorExploration)
+      buildGenome)(lambda, operatorExploration)
 
   def elitism[M[_]: cats.Monad: StartTime: Random: Generation](pattern: Vector[Double] => Vector[Int])(implicit hm: HitMap[M, Vector[Int]]) =
     pseOperations.elitism[M, Individual, Vector[Double]](
@@ -128,8 +127,7 @@ object pse extends niche.Imports {
       vectorPhenotype.get,
       pattern,
       Individual.age,
-      Individual.mapped
-    )
+      Individual.mapped)
 
   def expression(phenotype: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
     pseOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(phenotype)
@@ -144,8 +142,8 @@ object pseOperations {
     genomeOperator: G => Option[Int],
     pattern: I => Vector[Int],
     buildGenome: (Vector[Double], Option[Int]) => G)(
-      lambda: Int,
-      operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
+    lambda: Int,
+    operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
 
     for {
       ranks <- reversedRanking(hitCountRanking[M, I, Vector[Int]](pattern)) apply population
@@ -154,8 +152,7 @@ object pseOperations {
         tournament[M, I, Lazy[Int]](ranks, rounds = size => math.round(math.log10(size).toInt)),
         genome andThen genomeValues,
         operatorStatistics,
-        operatorExploration
-      ) apply population
+        operatorExploration) apply population
       offspring <- breeding repeat ((lambda + 1) / 2)
       offspringGenomes = offspring.flatMap {
         case ((o1, o2), op) =>

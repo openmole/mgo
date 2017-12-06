@@ -32,17 +32,17 @@ package object mgo extends stop.Imports {
 
   type Expression[G, P] = G => P
 
-  /**** Running the EA ****/
+/**** Running the EA ****/
 
   type Trace[M[_], I] = Kleisli[M, Vector[I], Unit]
 
   def noTrace[M[_]: cats.Monad, I] = Kleisli[M, Vector[I], Unit](_ => ().pure[M])
 
   case class RunAlgorithm[T, M[_], I, G, S](
-      t: T,
-      algo: Algorithm[T, M, I, G, S],
-      stopCondition: Option[StopCondition[M, I]] = None,
-      traceOperation: Option[Trace[M, I]] = None) {
+    t: T,
+    algo: Algorithm[T, M, I, G, S],
+    stopCondition: Option[StopCondition[M, I]] = None,
+    traceOperation: Option[Trace[M, I]] = None) {
 
     def evolution(implicit monadM: cats.Monad[M]) =
       for {
@@ -81,12 +81,12 @@ package object mgo extends stop.Imports {
   def anyReaches[M[_]: cats.Monad, I](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
     (population: Vector[I]) => population.exists(goalReached).pure[M]
 
-  /**** Replacement strategies ****/
+/**** Replacement strategies ****/
 
   def muPlusLambda[I](p1: Vector[I], p2: Vector[I]) = (p1 ++ p2)
   def muCommaLambda[I](parents: Vector[I], offsprings: Vector[I]): Vector[I] = offsprings
 
-  /**** Breeding ****/
+/**** Breeding ****/
 
   def bindB[M[_]: cats.Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: Vector[G1] => Breeding[M, I, G2]): Breeding[M, I, G2] =
     Breeding((individuals: Vector[I]) => for {
@@ -118,7 +118,7 @@ package object mgo extends stop.Imports {
   def flatMapPureB[M[_]: cats.Monad, I, G](op: I => Vector[G]): Breeding[M, I, G] =
     Breeding((individuals: Vector[I]) => individuals.flatTraverse(op(_: I).pure[M]))
 
-  /**** Expression ****/
+/**** Expression ****/
 
   def bindE[G, P1, P2](e1: Expression[G, P1], e2: P1 => Expression[G, P2]): Expression[G, P2] =
     (genome: G) => e2(e1(genome))(genome)
@@ -135,7 +135,7 @@ package object mgo extends stop.Imports {
 
   def withE[G, P](f: G => P): Expression[G, P] = f
 
-  /**** Objectives ****/
+/**** Objectives ****/
 
   def bindO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Vector[I] => Elitism[M, I]): Elitism[M, I] =
     Elitism((phenotypes: Vector[I]) =>
@@ -172,7 +172,7 @@ package object mgo extends stop.Imports {
       res.map(_.flatten)
     })
 
-  /**** Helper functions ****/
+/**** Helper functions ****/
 
   //  def zipWithRandom[M[_]: Applicative, G](gs: Vector[G])(implicit MR: ParallelRandom[M]): M[Vector[(util.Random, G)]] =
   //    for { rngs <- (0 until gs.size).toVector.map(_ => MR.split).sequence } yield rngs.toVector zip gs

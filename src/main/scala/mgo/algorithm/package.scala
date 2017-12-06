@@ -124,8 +124,10 @@ package object algorithm {
     } yield initialIndividuals
 
   object GenomeVectorDouble {
+
     def randomGenomes[M[_]: cats.Monad](n: Int, genomeLength: Int)(
-      implicit randomM: Random[M]): M[Vector[Vector[Double]]] = {
+      implicit
+      randomM: Random[M]): M[Vector[Vector[Double]]] = {
       def genome = randomM.nextDouble.repeat(genomeLength)
       Vector.fill(n)(genome).sequence
     }
@@ -149,16 +151,14 @@ package object algorithm {
         replicatePairC(blxC(2.0)),
         sbxC(0.1),
         sbxC(0.5),
-        sbxC(2.0)
-      )
+        sbxC(2.0))
 
     def mutations[M[_]: cats.Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
       Vector(
         bga(mutationRate = 1.0 / _, mutationRange = 0.001),
         bga(mutationRate = 1.0 / _, mutationRange = 0.01),
         bga(mutationRate = 2.0 / _, mutationRange = 0.1),
-        bga(mutationRate = _ => 0.5, mutationRange = 0.5)
-      )
+        bga(mutationRate = _ => 0.5, mutationRange = 0.5))
 
     def crossoversAndMutations[M[_]: cats.Monad: Random]: Vector[Kleisli[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
       for {
@@ -193,8 +193,7 @@ package object algorithm {
         selectOperator[M, (Vector[Double], Vector[Double])](
           crossoversAndMutations[M],
           operatorStatistics,
-          operatorExploration
-        )
+          operatorExploration)
 
       Kleisli { population: Vector[I] =>
         for {

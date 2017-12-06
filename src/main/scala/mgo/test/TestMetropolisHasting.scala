@@ -41,8 +41,7 @@ object BimodalMetropolisHastings extends App {
       bimodalPdfProportional(Vector(0.0))),
     qSample = normalSample,
     qPdf = normalPdf,
-    pPdf = bimodalPdfProportional
-  )
+    pPdf = bimodalPdfProportional)
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     mh.

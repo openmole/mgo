@@ -54,8 +54,7 @@ object profile extends niche.Imports {
 
   def breeding[M[_]: cats.Monad: Random: Generation](lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double): Breeding[M, Individual, Genome] =
     profileOperations.breeding[M, Individual, Genome](
-      Individual.fitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
-    )(lambda, niche, operatorExploration)
+      Individual.fitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda, niche, operatorExploration)
 
   def expression(fitness: Vector[Double] => Double): Expression[Genome, Individual] =
     profileOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
@@ -103,9 +102,9 @@ object profileOperations {
     genomeValues: G => Vector[Double],
     genomeOperator: G => Option[Int],
     buildGenome: (Vector[Double], Option[Int]) => G)(
-      lambda: Int,
-      niche: Niche[I, Int],
-      operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
+    lambda: Int,
+    niche: Niche[I, Int],
+    operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
     for {
       ranks <- profileRanking[M, I](niche, fitness) apply population
       operatorStatistics = operatorProportions(genome andThen genomeOperator, population)
@@ -113,8 +112,7 @@ object profileOperations {
         tournament[M, I, Lazy[Int]](ranks, rounds = size => round(log10(size).toInt)),
         genome andThen genomeValues,
         operatorStatistics,
-        operatorExploration
-      ) apply population
+        operatorExploration) apply population
       offspring <- breeding repeat ((lambda + 1) / 2)
       offspringGenomes = offspring.flatMap {
         case ((o1, o2), op) =>

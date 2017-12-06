@@ -46,8 +46,7 @@ object SphereProfile extends App {
   println(
     result(finalPopulation, sphere.scale).map {
       case (v, f) => (v ++ Vector(f)).mkString(",")
-    }.mkString("\n")
-  )
+    }.mkString("\n"))
 
 }
 
@@ -81,7 +80,6 @@ object NoisySphereProfile extends App {
   println(
     result(finalPopulation, aggregation, noisySphere.scale, niche).map {
       case (v, f) => (v ++ Vector(f)).mkString(",")
-    }.mkString("\n")
-  )
+    }.mkString("\n"))
 
 }

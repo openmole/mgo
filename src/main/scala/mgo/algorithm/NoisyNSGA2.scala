@@ -86,8 +86,7 @@ object noisynsga2 {
       aggregation,
       (Individual.genome composeLens vectorValues).get,
       Individual.age,
-      Individual.historyAge
-    )(mu, historySize)
+      Individual.historyAge)(mu, historySize)
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
 
@@ -149,8 +148,7 @@ object noisynsga2Operations {
         aggregated(history, aggregation),
         genome,
         genomeValues,
-        buildGenome
-      )(crossover, mutation, lambda) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
+        buildGenome)(crossover, mutation, lambda) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
     } yield gs
 
   def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, I, G](
@@ -160,9 +158,9 @@ object noisynsga2Operations {
     genomeValues: G => Vector[Double],
     genomeOperator: G => Option[Int],
     buildGenome: (Vector[Double], Option[Int]) => G)(
-      lambda: Int,
-      operatorExploration: Double,
-      cloneProbability: Double): Breeding[M, I, G] =
+    lambda: Int,
+    operatorExploration: Double,
+    cloneProbability: Double): Breeding[M, I, G] =
     for {
       population <- Kleisli.ask[M, Vector[I]]
       gs <- nsga2Operations.adaptiveBreeding[M, I, G](
@@ -170,8 +168,7 @@ object noisynsga2Operations {
         genome,
         genomeValues,
         genomeOperator,
-        buildGenome
-      )(lambda, operatorExploration) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
+        buildGenome)(lambda, operatorExploration) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
     } yield gs
 
   def elitism[M[_]: cats.Monad: Random: Generation, I](

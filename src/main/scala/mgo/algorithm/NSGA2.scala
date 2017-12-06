@@ -49,13 +49,11 @@ object nsga2 {
 
   def breeding[M[_]: Generation: Random: cats.Monad](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int): Breeding[M, Individual, Genome] =
     nsga2Operations.breeding[M, Individual, Genome](
-      vectorFitness.get, Individual.genome.get, vectorValues.get, buildGenome(_, None)
-    )(crossover, mutation, lambda)
+      vectorFitness.get, Individual.genome.get, vectorValues.get, buildGenome(_, None))(crossover, mutation, lambda)
 
   def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double): Breeding[M, Individual, Genome] =
     nsga2Operations.adaptiveBreeding[M, Individual, Genome](
-      vectorFitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome
-    )(lambda, operatorExploration)
+      vectorFitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda, operatorExploration)
 
   def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
     nsga2Operations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
@@ -132,8 +130,7 @@ object nsga2Operations {
         tournament[M, I, (Lazy[Int], Lazy[Double])](ranks),
         genome andThen genomeValues,
         operatorStatistics,
-        operatorExploration
-      ) apply population
+        operatorExploration) apply population
       offspring <- breeding repeat ((lambda + 1) / 2)
       offspringGenomes = offspring.flatMap {
         case ((o1, o2), op) =>

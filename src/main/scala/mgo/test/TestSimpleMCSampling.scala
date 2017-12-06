@@ -30,8 +30,7 @@ object NormalSimpleMCSampling extends App {
 
   val mcsampling = SimpleMCSampling(
     sample = rng => Vector(rng.nextGaussian()),
-    probability = x => pdfNormal(x.head)
-  )
+    probability = x => pdfNormal(x.head))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     mcsampling.
