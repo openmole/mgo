@@ -13,17 +13,22 @@ import cats.implicits._
 import GenomeVectorDouble._
 import freedsl.dsl
 import freedsl.tool._
+import monocle._
 import monocle.macros._
 
-object nichedNSGA2 {
+object nichednsga2 extends niche.Imports {
+
+  import algorithm.nsga2._
 
   //  @Lenses case class Genome[N](niche: N, values: Array[Double], operator: Option[Int])
-  //  @Lenses case class Individual[N](genome: Genome[N], fitness: Array[Double], age: Long)
+  @Lenses case class Individual[P](genome: nsga2.Genome, phenotype: P, fitness: Array[Double], age: Long)
   //
-  //  def buildIndividual[N](g: Genome[N], f: Vector[Double]) = Individual(g, f.toArray, 0)
+  def buildIndividual[P](g: Genome, p: P, f: Vector[Double]) = Individual(g, p, f.toArray, 0)
   //  def buildGenome[N](niche: N, values: Vector[Double], operator: Option[Int]) = Genome[N](niche, values.toArray, operator)
   //
-  //  def vectorFitness = Individual.fitness composeLens arrayToVectorLens
+  //
+  //
+  def vectorFitness[P] = Individual.fitness[P] composeLens arrayToVectorLens
   //  def vectorValues = Genome.values composeLens arrayToVectorLens
   //
   //  def initialGenomes[M[_]: cats.Monad: Random, N](lambda: Int, genomeSize: Int, generateNiche: M[N]): M[Vector[Genome[N]]] =
@@ -33,44 +38,54 @@ object nichedNSGA2 {
   //      genomes = (vectors zip niches).map { case (v, n) => Genome[N](n, v.toArray, None) }
   //    } yield genomes
 
-  import algorithm.nsga2._
+  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad, P](lambda: Int, operatorExploration: Double): Breeding[M, Individual[P], Genome] =
+    nsga2Operations.adaptiveBreeding[M, Individual[P], Genome](
+      vectorFitness.get, Individual.genome[P].get, vectorValues.get, Genome.operator.get, buildGenome)(lambda, operatorExploration)
 
-  //  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double): Breeding[M, Individual, Genome] =
-  //    nsga2Operations.adaptiveBreeding[M, Individual, Genome](
-  //      vectorFitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda, operatorExploration)
-  //
-  //  def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
-  //    nsga2Operations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
+  def expression[P](phenotype: Vector[Double] => P, fitness: P => Vector[Double]): Expression[Genome, Individual[P]] =
+    nichedNSGA2Operations.expression[Genome, Individual[P], P](vectorValues.get, buildIndividual)(phenotype, fitness)
 
-  def elitism[M[_]: cats.Monad: Random: Generation, N](niche: Individual => N, mu: Int): Elitism[M, Individual] =
-    nichedNSGA2Operations.elitism[M, Individual, N](
+  def elitism[M[_]: cats.Monad: Random: Generation, N, P](niche: Individual[P] => N, mu: Int): Elitism[M, Individual[P]] =
+    nichedNSGA2Operations.elitism[M, Individual[P], N](
       vectorFitness.get,
       (Individual.genome composeLens vectorValues).get,
       Individual.age)(niche, mu)
 
-  def result(population: Vector[Individual], scaling: Vector[Double] => Vector[Double]) =
-    population.map { i => (scaling(i.genome.values.toVector), i.fitness.toVector) }
+  def result[P](population: Vector[Individual[P]], scaling: Vector[Double] => Vector[Double]) =
+    population.map { i => (scaling(i.genome.values.toVector), i.phenotype, i.fitness.toVector) }
 
   //  def state[M[_]: Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
 
   object NichedNSGA2 {
 
-    implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime, N]: Algorithm[NichedNSGA2[N], M, Individual, Genome, EvolutionState[Unit]] =
-      new Algorithm[NichedNSGA2[N], M, Individual, Genome, EvolutionState[Unit]] {
-        override def initialPopulation(t: NichedNSGA2[N]) =
-          deterministicInitialPopulation[M, Genome, Individual](nsga2.initialGenomes[M](t.lambda, t.genomeSize), expression(t.fitness))
-        override def step(t: NichedNSGA2[N]) =
-          nsga2Operations.step[M, Individual, Genome](nsga2.adaptiveBreeding[M](t.lambda, t.operatorExploration), nsga2.expression(t.fitness), nichedNSGA2.elitism(t.niche, t.mu))
+    def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
+    def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
+
+    implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime, N, P]: Algorithm[NichedNSGA2[N, P], M, Individual[P], Genome, EvolutionState[Unit]] =
+      new Algorithm[NichedNSGA2[N, P], M, Individual[P], Genome, EvolutionState[Unit]] {
+
+        override def initialPopulation(t: NichedNSGA2[N, P]) =
+          deterministicInitialPopulation[M, Genome, Individual[P]](
+            nsga2.initialGenomes[M](t.lambda, t.genomeSize),
+            expression(t.phenotype, t.fitness))
+
+        override def step(t: NichedNSGA2[N, P]) =
+          nsga2Operations.step[M, Individual[P], Genome](
+            adaptiveBreeding[M, P](t.lambda, t.operatorExploration),
+            expression(t.phenotype, t.fitness),
+            nichednsga2.elitism((Individual.phenotype[P].asGetter composeGetter Getter(t.niche)).get, t.mu))
+
         override def state = nsga2.state[M]
       }
 
   }
 
-  case class NichedNSGA2[N](
-    niche: Individual => N,
+  case class NichedNSGA2[N, P](
+    niche: P => N,
     mu: Int,
     lambda: Int,
-    fitness: Vector[Double] => Vector[Double],
+    phenotype: Vector[Double] => P,
+    fitness: P => Vector[Double],
     genomeSize: Int,
     operatorExploration: Double = 0.1)
 
@@ -85,5 +100,13 @@ object nichedNSGA2Operations {
     def nicheElitism(population: Vector[I]) = nsga2Operations.elitism[M, I](fitness, values, age)(mu).apply(population)
     byNiche(population, nicheElitism, niche)
   }
+
+  def expression[G, I, P](
+    values: G => Vector[Double],
+    build: (G, P, Vector[Double]) => I)(phenotype: Vector[Double] => P, fitness: P => Vector[Double]): Expression[G, I] =
+    (g: G) => {
+      val phenotypeValue = phenotype(values(g))
+      build(g, phenotypeValue, fitness(phenotypeValue))
+    }
 
 }

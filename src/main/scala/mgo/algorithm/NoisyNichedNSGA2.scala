@@ -15,7 +15,7 @@ import freedsl.dsl
 import freedsl.tool._
 import monocle.macros._
 
-object noisyNichedNSGA2 {
+object noisyNichedNSGA2 extends niche.Imports {
 
   import algorithm.noisynsga2._
 

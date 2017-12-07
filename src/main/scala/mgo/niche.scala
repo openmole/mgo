@@ -23,6 +23,7 @@ object niche {
   type Niche[-I, +T] = (I => T)
 
   trait Imports {
+
     def grid(gridSize: Seq[Double])(value: Vector[Double]): Vector[Int] =
       (value zip gridSize).map {
         case (x, g) => (x / g).toInt
