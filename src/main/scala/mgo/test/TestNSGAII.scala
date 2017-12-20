@@ -26,7 +26,7 @@ object SphereNSGAII extends App {
   import algorithm.nsga2._
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
-    val nsga2 = NSGA2[M](
+    val nsga2 = NSGA2(
       mu = 100,
       lambda = 100,
       fitness = (v: Vector[Double]) => Vector(sphere.compute(v)),
@@ -55,7 +55,7 @@ object NoisySphereNSGAII extends App {
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
     val nsga2 =
-      NoisyNSGA2[M](
+      NoisyNSGA2(
         mu = 100,
         lambda = 100,
         fitness = (rng: util.Random, v: Vector[Double]) => Vector(noisySphere.compute(rng, v)),
@@ -85,7 +85,7 @@ object ZDT4NSGAII extends App {
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
     val nsga2 =
-      NSGA2[M](
+      NSGA2(
         mu = 100,
         lambda = 100,
         fitness = zdt4.compute(_),

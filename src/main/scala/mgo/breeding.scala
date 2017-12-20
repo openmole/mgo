@@ -294,4 +294,15 @@ object breeding {
   //        (Kleisli.kleisli[M, I, G] { i: I => clone(i).point[M] }, cloneProbability),
   //        (Kleisli.kleisli[M, I, G] { op(_) }, 1 - cloneProbability))) >=>
   //      Kleisli.kleisli[M, (G, Int), G] { case (i, _) => i.point[M] }
+
+  /* ----------------- Discrete operators ----------------------- */
+
+  def randomMutation[M[_]: cats.Monad: Random](mutationRate: Int => Double, randomValues: util.Random => Vector[Long]) = Mutation[M, Vector[Long], Vector[Long]] { values =>
+    Random[M].use { rng =>
+      val newValues = randomValues(rng)
+      assert(values.size == newValues.size)
+      (values zip newValues) map { case (ve, nve) => if (rng.nextDouble() < mutationRate(values.size)) nve else ve }
+    }
+  }
+
 }
