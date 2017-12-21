@@ -24,16 +24,20 @@ import mgo.ranking._
 import mgo.breeding._
 import mgo.elitism._
 import mgo.contexts._
+import mgo.tools._
 import tools._
 import cats.data._
 import cats.implicits._
 import GenomeVectorDouble._
 import freedsl.tool._
+import shapeless._
 
 object nsga2 {
 
-  @Lenses case class Genome(values: Array[Double], operator: Option[Int])
+  implicit def toComponent[C](i: C)(implicit inj: shapeless.ops.coproduct.Inject[nsga2Operations.Component, C]) = Coproduct[nsga2Operations.Component](i)
+  implicit def toComponentVector[C](v: Vector[C])(implicit inj: shapeless.ops.coproduct.Inject[nsga2Operations.Component, C]) = v.map(toComponent(_))
 
+  @Lenses case class Genome(values: Array[Double], operator: Option[Int])
   @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
 
   def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
@@ -55,8 +59,8 @@ object nsga2 {
     nsga2Operations.adaptiveBreeding[M, Individual, Genome](
       vectorFitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda, operatorExploration)
 
-  def expression(fitness: Expression[Vector[Double], Vector[Double]]): Expression[Genome, Individual] =
-    nsga2Operations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
+  def expression(fitness: Expression[Vector[Double], Vector[Double]], components: Vector[nsga2Operations.Component]): Expression[Genome, Individual] =
+    nsga2Operations.expression[Genome, Individual](vectorValues.get, components, buildIndividual)(fitness)
 
   def elitism[M[_]: cats.Monad: Random: Generation](mu: Int): Elitism[M, Individual] =
     nsga2Operations.elitism[M, Individual](
@@ -64,8 +68,8 @@ object nsga2 {
       (Individual.genome composeLens vectorValues).get,
       Individual.age)(mu)
 
-  def result(population: Vector[Individual], scaling: Vector[Double] => Vector[Double]) =
-    population.map { i => (scaling(i.genome.values.toVector), i.fitness.toVector) }
+  def result(population: Vector[Individual], genome: Vector[nsga2Operations.Component]) =
+    population.map { i => (nsga2Operations.doubleValues(i.genome.values.toVector, genome), i.fitness.toVector) }
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
 
@@ -77,9 +81,9 @@ object nsga2 {
     implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] =
       new Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] {
         override def initialPopulation(t: NSGA2) =
-          deterministicInitialPopulation[M, Genome, Individual](nsga2.initialGenomes[M](t.lambda, t.genomeSize), expression(t.fitness))
+          deterministicInitialPopulation[M, Genome, Individual](nsga2.initialGenomes[M](t.lambda, t.genome.size), expression(t.fitness, t.genome))
         override def step(t: NSGA2) =
-          nsga2Operations.step[M, Individual, Genome](nsga2.adaptiveBreeding[M](t.lambda, t.operatorExploration), nsga2.expression(t.fitness), nsga2.elitism(t.mu))
+          nsga2Operations.step[M, Individual, Genome](nsga2.adaptiveBreeding[M](t.lambda, t.operatorExploration), nsga2.expression(t.fitness, t.genome), nsga2.elitism(t.mu))
         override def state = nsga2.state[M]
       }
   }
@@ -87,8 +91,8 @@ object nsga2 {
   case class NSGA2(
     mu: Int,
     lambda: Int,
+    genome: Vector[nsga2Operations.Component],
     fitness: Vector[Double] => Vector[Double],
-    genomeSize: Int,
     operatorExploration: Double = 0.1)
 
 }
@@ -114,6 +118,8 @@ object nsga2Operations {
   //    } yield sizedOffspringGenomes
   //  }
 
+  type Component = C :+: CNil
+
   def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
@@ -131,18 +137,25 @@ object nsga2Operations {
       offspring <- breeding repeat ((lambda + 1) / 2)
       offspringGenomes = offspring.flatMap {
         case ((o1, o2), op) =>
-          def gv1 = o1.map(math.clamp(_))
-          def gv2 = o2.map(math.clamp(_))
+          def gv1 = o1.map(clamp(_))
+          def gv2 = o2.map(clamp(_))
           Vector(buildGenome(gv1, Some(op)), buildGenome(gv2, Some(op)))
       }
       sizedOffspringGenomes <- randomTake[M, G](offspringGenomes, lambda)
     } yield sizedOffspringGenomes
   }
 
+  def doubleValues(values: Vector[Double], genomeComponents: Vector[Component]) =
+    (values zip genomeComponents.flatMap(_.select[C])).map { case (v, c) => v.scale(c) }
+
   def expression[G, I](
     values: G => Vector[Double],
-    build: (G, Vector[Double]) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] =
-    (g: G) => build(g, fitness(values(g)))
+    genomeComponents: Vector[Component],
+    build: (G, Vector[Double]) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] = {
+    (g: G) =>
+      val vs = doubleValues(values(g), genomeComponents)
+      build(g, fitness(vs))
+  }
 
   def elitism[M[_]: cats.Monad: Random: Generation, I](
     fitness: I => Vector[Double],

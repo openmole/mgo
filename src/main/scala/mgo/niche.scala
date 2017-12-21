@@ -18,6 +18,7 @@ package mgo
 
 import scala.math._
 import scalaz._
+import mgo.tools._
 
 object niche {
   type Niche[-I, +T] = (I => T)
@@ -38,7 +39,7 @@ object niche {
       }
 
     def irregularGrid(axes: Vector[Vector[Double]])(values: Vector[Double]): Vector[Int] =
-      axes zip values map { case (axe, v) => tools.math.findInterval(axe.sorted, v) }
+      axes zip values map { case (axe, v) => findInterval(axe.sorted, v) }
 
     def genomeProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
       (genome: G) => {

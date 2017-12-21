@@ -27,20 +27,24 @@ import mgo.ranking._
 import GenomeVectorDouble._
 import cats.data._
 import cats.implicits._
-import tools.Lazy
+import shapeless._
 import freedsl.tool._
 import mgo.niche
+import mgo.tools._
 
 import scala.language.higherKinds
 
 object noisyprofile extends niche.Imports {
 
+  implicit def toComponent[C](i: C)(implicit inj: shapeless.ops.coproduct.Inject[noisyprofileOperations.Component, C]) = Coproduct[nsga2Operations.Component](i)
+  implicit def toComponentVector[C](v: Vector[C])(implicit inj: shapeless.ops.coproduct.Inject[noisyprofileOperations.Component, C]) = v.map(toComponent(_))
+
   def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
     genomeProfile[Individual]((Individual.genome composeLens vectorValues).get _, x, nX)
 
-  def result(population: Vector[Individual], aggregation: Vector[Double] => Double, scaling: Vector[Double] => Vector[Double], niche: Niche[Individual, Int]) =
+  def result(population: Vector[Individual], aggregation: Vector[Double] => Double, genome: Vector[noisyprofileOperations.Component], niche: Niche[Individual, Int]) =
     profile(population, niche).map { i =>
-      scaling(i.genome.values.toVector) -> aggregation(i.fitnessHistory.toVector)
+      noisynsga2Operations.doubleValues(i.genome.values.toVector, genome) -> aggregation(i.fitnessHistory.toVector)
     }
 
   @Lenses case class Genome(values: Array[Double], operator: Option[Int])
@@ -59,8 +63,8 @@ object noisyprofile extends niche.Imports {
     noisyprofileOperations.breeding[M, Individual, Genome](
       vectorFitness.get, aggregation, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda = lambda, niche = niche, operatorExploration = operatorExploration, cloneProbability = cloneProbability)
 
-  def expression(fitness: (util.Random, Vector[Double]) => Double): Expression[(util.Random, Genome), Individual] =
-    noisyprofileOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
+  def expression(fitness: (util.Random, Vector[Double]) => Double, genome: Vector[noisyprofileOperations.Component]): Expression[(util.Random, Genome), Individual] =
+    noisyprofileOperations.expression[Genome, Individual](vectorValues.get, genome, buildIndividual)(fitness)
 
   def elitism[M[_]: cats.Monad: Random: Generation](muByNiche: Int, niche: Niche[Individual, Int], historySize: Int, aggregation: Vector[Double] => Double): Elitism[M, Individual] =
     noisyprofileOperations.elitism[M, Individual](
@@ -83,8 +87,8 @@ object noisyprofile extends niche.Imports {
     implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NoisyProfile, M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[NoisyProfile, M, Individual, Genome, EvolutionState[Unit]] {
       def initialPopulation(t: NoisyProfile) =
         stochasticInitialPopulation[M, Genome, Individual](
-          noisyprofile.initialGenomes[M](t.lambda, t.genomeSize),
-          noisyprofile.expression(t.fitness))
+          noisyprofile.initialGenomes[M](t.lambda, t.genome.size),
+          noisyprofile.expression(t.fitness, t.genome))
 
       def step(t: NoisyProfile) = {
         def breeding =
@@ -104,7 +108,7 @@ object noisyprofile extends niche.Imports {
 
         noisyprofileOperations.step[M, Individual, Genome](
           breeding,
-          noisyprofile.expression(t.fitness),
+          noisyprofile.expression(t.fitness, t.genome),
           elitism)
       }
 
@@ -119,7 +123,7 @@ object noisyprofile extends niche.Imports {
     fitness: (util.Random, Vector[Double]) => Double,
     aggregation: Vector[Double] => Double,
     niche: Niche[Individual, Int],
-    genomeSize: Int,
+    genome: Vector[noisynsga2Operations.Component],
     historySize: Int = 100,
     cloneProbability: Double = 0.2,
     operatorExploration: Double = 0.1)
@@ -127,6 +131,9 @@ object noisyprofile extends niche.Imports {
 }
 
 object noisyprofileOperations {
+
+  import shapeless._
+  type Component = C :+: CNil
 
   def aggregatedFitness[I](fitness: I => Vector[Double], aggregation: Vector[Double] => Double)(i: I): Vector[Double] =
     Vector(aggregation(fitness(i)), 1.0 / fitness(i).size.toDouble)
@@ -153,8 +160,8 @@ object noisyprofileOperations {
       offspring <- breeding repeat ((lambda + 1) / 2)
       offspringGenomes = offspring.flatMap {
         case ((o1, o2), op) =>
-          def gv1 = o1.map(tools.math.clamp(_))
-          def gv2 = o2.map(tools.math.clamp(_))
+          def gv1 = o1.map(clamp(_))
+          def gv2 = o2.map(clamp(_))
           Vector(buildGenome(gv1, Some(op)), buildGenome(gv2, Some(op)))
       }
       sizedOffspringGenomes <- randomTake[M, G](offspringGenomes, lambda)
@@ -181,10 +188,16 @@ object noisyprofileOperations {
     } yield aged
   }
 
+  def doubleValues(values: Vector[Double], genomeComponents: Vector[Component]) =
+    (values zip genomeComponents.flatMap(_.select[C])).map { case (v, c) => v.scale(c) }
+
   def expression[G, I](
     values: G => Vector[Double],
+    genomeComponents: Vector[Component],
     builder: (G, Double) => I)(fitness: (util.Random, Vector[Double]) => Double): Expression[(util.Random, G), I] = {
-    case (rg, g) => builder(g, fitness(rg, values(g)))
+    case (rg, g) =>
+      val vs = doubleValues(values(g), genomeComponents)
+      builder(g, fitness(rg, vs))
   }
 
   def step[M[_]: cats.Monad: Random: Generation, I, G](

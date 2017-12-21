@@ -25,18 +25,17 @@ object SphereNSGAII extends App {
 
   import algorithm.nsga2._
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
-    val nsga2 = NSGA2(
-      mu = 100,
-      lambda = 100,
-      fitness = (v: Vector[Double]) => Vector(sphere.compute(v)),
-      genomeSize = 2)
+  val nsga2 = NSGA2(
+    mu = 100,
+    lambda = 100,
+    fitness = (v: Vector[Double]) => Vector(sphere.compute(v)),
+    genome = sphere.genome(6))
 
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       evolution
-  }
 
   val (finalState, finalPopulation) =
     NSGA2.run(new util.Random(42)) { imp =>
@@ -44,7 +43,7 @@ object SphereNSGAII extends App {
       evolution[DSL].eval
     }
 
-  println(result(finalPopulation, sphere.scale).mkString("\n"))
+  println(result(finalPopulation, nsga2.genome).mkString("\n"))
 
 }
 
@@ -53,21 +52,19 @@ object NoisySphereNSGAII extends App {
   import algorithm._
   import algorithm.noisynsga2._
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
-    val nsga2 =
-      NoisyNSGA2(
-        mu = 100,
-        lambda = 100,
-        fitness = (rng: util.Random, v: Vector[Double]) => Vector(noisySphere.compute(rng, v)),
-        aggregation = averageAggregation(_),
-        genomeSize = 2)
+  val nsga2 =
+    NoisyNSGA2(
+      mu = 100,
+      lambda = 100,
+      fitness = (rng: util.Random, v: Vector[Double]) => Vector(noisySphere.compute(rng, v)),
+      aggregation = averageAggregation(_),
+      genome = noisySphere.genome(2))
 
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       evolution
-
-  }
 
   val (finalState, finalPopulation) =
     NoisyNSGA2.run(new util.Random(42)) { imp =>
@@ -75,7 +72,7 @@ object NoisySphereNSGAII extends App {
       evolution[DSL].eval
     }
 
-  println(result(finalPopulation, averageAggregation, noisySphere.scale).mkString("\n"))
+  println(result(finalPopulation, averageAggregation, nsga2.genome).mkString("\n"))
 
 }
 
@@ -83,19 +80,18 @@ object ZDT4NSGAII extends App {
 
   import algorithm.nsga2._
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
-    val nsga2 =
-      NSGA2(
-        mu = 100,
-        lambda = 100,
-        fitness = zdt4.compute(_),
-        genomeSize = 10)
+  val nsga2 =
+    NSGA2(
+      mu = 100,
+      lambda = 100,
+      fitness = zdt4.compute(_),
+      genome = zdt4.genome(10))
 
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
       evolution
-  }
 
   val (finalState, finalPopulation) = NSGA2.run(new util.Random(42)) { impl =>
     import impl._

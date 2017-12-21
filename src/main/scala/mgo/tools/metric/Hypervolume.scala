@@ -23,6 +23,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import math._
 import mgo.tools._
+import shapeless._
 
 // A translation/adaptation based on the python source code by Simon Wessing :
 // http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip

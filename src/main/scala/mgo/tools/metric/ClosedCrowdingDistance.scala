@@ -17,7 +17,7 @@
 
 package mgo.tools.metric
 
-import mgo.tools.Lazy
+import shapeless.Lazy
 
 /**
  * Modification of the crowding distance to avoid infinite values for the first and last

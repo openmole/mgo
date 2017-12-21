@@ -26,14 +26,14 @@ package object test {
   def average(s: Seq[Double]) = s.sum / s.size
 
   object sphere {
-    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-2, 2))
-    def compute(i: Vector[Double]): Double = scale(i).map(x => x * x).sum
+    def compute(i: Vector[Double]): Double = i.map(x => x * x).sum
+    def genome(size: Int) = Vector.fill(size)(C(-2, 2))
   }
 
   object noisySphere {
-    def scale(s: Vector[Double]): Vector[Double] = sphere.scale(s)
     def compute(rng: Random, v: Vector[Double]) =
       sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v))
+    def genome(size: Int) = sphere.genome(size)
   }
 
   object rastrigin {
@@ -73,7 +73,7 @@ package object test {
 
   object zdt4 {
 
-    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(0.0, 5.0))
+    def genome(size: Int) = Vector.fill(size)(C(0.0, 5.0))
 
     def compute(genome: Vector[Double]): Vector[Double] = {
       val genomeSize = genome.size
@@ -85,8 +85,7 @@ package object test {
         gx * (1 - sqrt(genome(0) / gx))
       }
 
-      val scaled = scale(genome)
-      Vector(scaled(0), f(scaled.tail))
+      Vector(genome(0), f(genome.tail))
     }
 
   }

@@ -30,10 +30,14 @@ import cats.data._
 import cats.implicits._
 
 import freedsl.dsl
+import shapeless._
 
 import scala.language.higherKinds
 
 object noisynsga2 {
+
+  implicit def toComponent[C](i: C)(implicit inj: shapeless.ops.coproduct.Inject[noisynsga2Operations.Component, C]) = Coproduct[nsga2Operations.Component](i)
+  implicit def toComponentVector[C](v: Vector[C])(implicit inj: shapeless.ops.coproduct.Inject[noisynsga2Operations.Component, C]) = v.map(toComponent(_))
 
   def oldest(population: Vector[Individual]) =
     if (population.isEmpty) population
@@ -42,11 +46,11 @@ object noisynsga2 {
       population.filter(_.fitnessHistory.size == maxHistory)
     }
 
-  def aggregate(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], scaling: Vector[Double] => Vector[Double]) =
-    population.map(i => (scaling(i.genome.values.toVector), aggregation(vectorFitness.get(i))))
+  def aggregate(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], genome: Vector[noisynsga2Operations.Component]) =
+    population.map(i => (noisynsga2Operations.doubleValues(i.genome.values.toVector, genome), aggregation(vectorFitness.get(i))))
 
-  def result(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], scaling: Vector[Double] => Vector[Double]) =
-    aggregate(oldest(population), aggregation, scaling)
+  def result(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], genome: Vector[noisynsga2Operations.Component]) =
+    aggregate(oldest(population), aggregation, genome)
 
   @Lenses case class Genome(values: Array[Double], operator: Option[Int])
   @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Array[Double]], age: Long)
@@ -77,8 +81,8 @@ object noisynsga2 {
       Genome.operator.get,
       buildGenome)(lambda, operatorExploration, cloneProbability)
 
-  def expression(fitness: (util.Random, Vector[Double]) => Vector[Double]): Expression[(util.Random, Genome), Individual] =
-    noisynsga2Operations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
+  def expression(fitness: (util.Random, Vector[Double]) => Vector[Double], genome: Vector[noisynsga2Operations.Component]): Expression[(util.Random, Genome), Individual] =
+    noisynsga2Operations.expression[Genome, Individual](vectorValues.get, genome, buildIndividual)(fitness)
 
   def elitism[M[_]: cats.Monad: Random: Generation](mu: Int, historySize: Int, aggregation: Vector[Vector[Double]] => Vector[Double]): Elitism[M, Individual] =
     noisynsga2Operations.elitism[M, Individual](
@@ -98,13 +102,13 @@ object noisynsga2 {
     implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NoisyNSGA2, M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[NoisyNSGA2, M, Individual, Genome, EvolutionState[Unit]] {
       def initialPopulation(t: NoisyNSGA2) =
         stochasticInitialPopulation[M, Genome, Individual](
-          noisynsga2.initialGenomes[M](t.lambda, t.genomeSize),
-          noisynsga2.expression(t.fitness))
+          noisynsga2.initialGenomes[M](t.lambda, t.genome.size),
+          noisynsga2.expression(t.fitness, t.genome))
 
       def step(t: NoisyNSGA2): Kleisli[M, Vector[Individual], Vector[Individual]] =
         noisynsga2Operations.step[M, Individual, Genome](
           noisynsga2.adaptiveBreeding[M](t.lambda, t.operatorExploration, t.cloneProbability, t.aggregation),
-          noisynsga2.expression(t.fitness),
+          noisynsga2.expression(t.fitness, t.genome),
           noisynsga2.elitism[M](t.mu, t.historySize, t.aggregation))
       //          case ManualOperators(crossover, mutation) =>
       //            noisynsga2Operations.step[M, Individual, Genome](
@@ -121,7 +125,7 @@ object noisynsga2 {
     lambda: Int,
     fitness: (util.Random, Vector[Double]) => Vector[Double],
     aggregation: Vector[Vector[Double]] => Vector[Double],
-    genomeSize: Int,
+    genome: Vector[noisynsga2Operations.Component],
     historySize: Int = 100,
     cloneProbability: Double = 0.2,
     operatorExploration: Double = 0.1)
@@ -129,6 +133,10 @@ object noisynsga2 {
 }
 
 object noisynsga2Operations {
+
+  import shapeless._
+
+  type Component = C :+: CNil
 
   def aggregated[I](fitness: I => Vector[Vector[Double]], aggregation: Vector[Vector[Double]] => Vector[Double])(i: I): Vector[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
@@ -181,10 +189,16 @@ object noisynsga2Operations {
     } yield elite
   } andThen incrementGeneration[M, I](age)
 
+  def doubleValues(values: Vector[Double], genomeComponents: Vector[Component]) =
+    (values zip genomeComponents.flatMap(_.select[C])).map { case (v, c) => v.scale(c) }
+
   def expression[G, I](
     values: G => Vector[Double],
+    genomeComponents: Vector[Component],
     builder: (G, Vector[Double]) => I)(fitness: (util.Random, Vector[Double]) => Vector[Double]): Expression[(util.Random, G), I] = {
-    case (rg, g) => builder(g, fitness(rg, values(g)))
+    case (rg, g) =>
+      val vs = doubleValues(values(g), genomeComponents)
+      builder(g, fitness(rg, vs))
   }
 
   def step[M[_]: cats.Monad: Random: Generation, I, G](

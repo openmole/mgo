@@ -28,7 +28,7 @@ object HierarchicalRanking {
       map { case (_, originalOrder) => originalOrder }.
       zipWithIndex.
       sortBy { case (originalOrder, _) => originalOrder }.
-      map(_._2).map(Lazy(_))
+      map(_._2).map(shapeless.Lazy(_))
 
 }
 

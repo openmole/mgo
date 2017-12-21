@@ -199,8 +199,9 @@ package object mgo extends stop.Imports {
   }
 
   implicit def double2Scalable(d: Double) = new {
-    def scale(min: Double, max: Double) = changeScale(d, 0, 1, min, max)
-    def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
+    def scale(min: Double, max: Double): Double = changeScale(d, 0, 1, min, max)
+    def scale(s: C): Double = scale(s.low, s.high)
+    //def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
   }
 
   def arrayToVectorLens[A: Manifest] = monocle.Lens[Array[A], Vector[A]](_.toVector)(v => _ => v.toArray)
@@ -219,4 +220,8 @@ package object mgo extends stop.Imports {
   object ToHistoryOps {
     implicit def toHistoryOps[P, I](v: I)(implicit I: History[P, I]): HistoryOps[P, I] = HistoryOps[P, I](v)
   }
+
+  case class C(low: Double, high: Double)
+  case class D(low: Long, high: Long)
+
 }

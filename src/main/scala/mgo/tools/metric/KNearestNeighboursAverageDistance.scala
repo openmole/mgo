@@ -17,7 +17,7 @@
 
 package mgo.tools.metric
 
-import mgo.tools.Lazy
+import shapeless._
 import mgo.tools.KDTree
 
 /**

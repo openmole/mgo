@@ -19,12 +19,13 @@ package mgo
 import cats.data._
 import cats.implicits._
 import tools.metric._
-import tools.{ HierarchicalRanking, Lazy }
+import tools._
 import mgo.contexts._
 import mgo.dominance._
 import mgo.niche._
-import mgo.tools.math._
+import mgo.tools._
 import mgo.diversity._
+import shapeless.Lazy
 
 import scala.Ordering.Implicits._
 import scala.language.higherKinds
@@ -73,7 +74,7 @@ object ranking {
           def containsNaN = v1.exists(_.isNaN)
           def otherIndividuals = fitnesses.zipWithIndex.filter { case (_, index2) => index1 != index2 }
           def numberOfDominatingIndividual = otherIndividuals.count { case (v2, _) => dominance.isDominated(v1, v2) }
-          Lazy(if (containsNaN) Int.MaxValue else numberOfDominatingIndividual)
+          shapeless.Lazy(if (containsNaN) Int.MaxValue else numberOfDominatingIndividual)
       }
 
     ranks.pure[M]
@@ -87,7 +88,7 @@ object ranking {
         }.zipWithIndex.sortBy(_._1._1).unzip
 
       def signedSurface(p1: Point2D, p2: Point2D, p3: Point2D) = {
-        val surface = mgo.tools.math.surface(p1, p2, p3)
+        val surface = mgo.tools.surface(p1, p2, p3)
         if (isUpper(p1, p3, p2)) -surface else surface
       }
 
@@ -130,7 +131,7 @@ object ranking {
 /**** Generic functions on rankings ****/
 
   def reversedRanking[M[_]: cats.Monad, I](ranking: Ranking[M, I]): Ranking[M, I] =
-    Ranking((population: Vector[I]) => ranking(population).map { _.map { x => /*map lazyly*/ Lazy(-x()) } })
+    Ranking((population: Vector[I]) => ranking(population).map { ranks => ranks.map { rank => rank.map(x => -x) } })
 
   //TODO: the following functions don't produce rankings and don't belong here.
   def rankAndDiversity[M[_]: cats.Monad, I](ranking: Ranking[M, I], diversity: Diversity[M, I]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =

@@ -22,6 +22,7 @@ import mgo.tools._
 import freedsl.random._
 import cats._
 import cats.implicits._
+import shapeless.Lazy
 /**
  * Crowding distance computation see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
  * A fast elitist non-dominated sorting genetic algorithm for multi-objective

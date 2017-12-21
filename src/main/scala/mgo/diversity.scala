@@ -5,7 +5,7 @@ import cats.implicits._
 import contexts._
 
 import tools.metric._
-import tools.Lazy
+import shapeless._
 
 /**
  * Layer of the cake that compute a diversity metric for a set of values

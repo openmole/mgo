@@ -25,18 +25,22 @@ import mgo.niche._
 import mgo.breeding._
 import mgo.elitism._
 import mgo.ranking._
-import mgo.tools.math.clamp
+import mgo.tools._
 import GenomeVectorDouble._
 import cats.data._
 import cats.implicits._
-import mgo.tools.{ Lazy, math }
 import freedsl.tool._
+import mgo.algorithm.nsga2Operations.Component
 import mgo.niche
+import shapeless._
 
 object profile extends niche.Imports {
 
-  def result(population: Vector[Individual], scaling: Vector[Double] => Vector[Double]) =
-    population.map { i => (scaling(i.genome.values.toVector), i.fitness) }
+  implicit def toComponent[C](i: C)(implicit inj: shapeless.ops.coproduct.Inject[profileOperations.Component, C]) = Coproduct[nsga2Operations.Component](i)
+  implicit def toComponentVector[C](v: Vector[C])(implicit inj: shapeless.ops.coproduct.Inject[profileOperations.Component, C]) = v.map(toComponent(_))
+
+  def result(population: Vector[Individual], genome: Vector[profileOperations.Component]) =
+    population.map { i => (profileOperations.doubleValues(i.genome.values.toVector, genome), i.fitness) }
 
   def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
     genomeProfile[Individual]((Individual.genome composeLens vectorValues).get _, x, nX)
@@ -56,8 +60,8 @@ object profile extends niche.Imports {
     profileOperations.breeding[M, Individual, Genome](
       Individual.fitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda, niche, operatorExploration)
 
-  def expression(fitness: Vector[Double] => Double): Expression[Genome, Individual] =
-    profileOperations.expression[Genome, Individual](vectorValues.get, buildIndividual)(fitness)
+  def expression(fitness: Vector[Double] => Double, genome: Vector[profileOperations.Component]): Expression[Genome, Individual] =
+    profileOperations.expression[Genome, Individual](vectorValues.get, genome, buildIndividual)(fitness)
 
   def elitism[M[_]: cats.Monad: Random: Generation](niche: Niche[Individual, Int]): Elitism[M, Individual] =
     profileOperations.elitism[M, Individual](
@@ -75,24 +79,32 @@ object profile extends niche.Imports {
     implicit def isAlgorithm[M[_]: cats.Monad: Generation: Random: StartTime]: Algorithm[Profile, M, Individual, Genome, EvolutionState[Unit]] = new Algorithm[Profile, M, Individual, Genome, EvolutionState[Unit]] {
       def initialPopulation(t: Profile) =
         deterministicInitialPopulation[M, Genome, Individual](
-          profile.initialGenomes[M](t.lambda, t.genomeSize),
-          profile.expression(t.fitness))
+          profile.initialGenomes[M](t.lambda, t.genome.size),
+          profile.expression(t.fitness, t.genome))
 
       def step(t: Profile) =
         profileOperations.step[M, Individual, Genome](
           profile.breeding(t.lambda, t.niche, t.operatorExploration),
-          profile.expression(t.fitness),
+          profile.expression(t.fitness, t.genome),
           profile.elitism(t.niche))
 
       def state = profile.state[M]
     }
   }
 
-  case class Profile(lambda: Int, fitness: Vector[Double] => Double, niche: Niche[Individual, Int], genomeSize: Int, operatorExploration: Double = 0.1)
+  case class Profile(
+    lambda: Int,
+    fitness: Vector[Double] => Double,
+    niche: Niche[Individual, Int],
+    genome: Vector[profileOperations.Component],
+    operatorExploration: Double = 0.1)
 
 }
 
 object profileOperations {
+
+  import shapeless._
+  type Component = C :+: CNil
 
   import scala.math._
 
@@ -124,10 +136,17 @@ object profileOperations {
     } yield sizedOffspringGenomes
   }
 
+  def doubleValues(values: Vector[Double], genomeComponents: Vector[Component]) =
+    (values zip genomeComponents.flatMap(_.select[C])).map { case (v, c) => v.scale(c) }
+
   def expression[G, I](
     values: G => Vector[Double],
-    build: (G, Double) => I)(fitness: Vector[Double] => Double): Expression[G, I] =
-    (g: G) => build(g, fitness(values(g)))
+    genomeComponents: Vector[Component],
+    build: (G, Double) => I)(fitness: Vector[Double] => Double): Expression[G, I] = {
+    (g: G) =>
+      val vs = doubleValues(values(g), genomeComponents)
+      build(g, fitness(vs))
+  }
 
   def elitism[M[_]: cats.Monad: Random: Generation, I](
     fitness: I => Double,

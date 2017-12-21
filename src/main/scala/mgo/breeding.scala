@@ -4,7 +4,7 @@ import cats._
 import cats.data._
 import cats.implicits._
 import freedsl.random._
-import mgo.tools.math._
+import mgo.tools._
 
 object breeding {
 
