@@ -39,14 +39,11 @@ import freestyle.tagless._
 
 object pse extends niche.Imports {
 
-  implicit def toComponent[C](i: C)(implicit inj: shapeless.ops.coproduct.Inject[pseOperations.Component, C]) = Coproduct[pseOperations.Component](i)
-  implicit def toComponentVector[C](v: Vector[C])(implicit inj: shapeless.ops.coproduct.Inject[pseOperations.Component, C]) = v.map(toComponent(_))
-
   type HitMapM[M[_]] = HitMap[M, Vector[Int]]
   type HitMapState = Map[Vector[Int], Int]
 
-  def result(population: Vector[Individual], genome: Vector[pseOperations.Component]) =
-    population.map { i => (pseOperations.doubleValues(i.genome.values.toVector, genome), i.phenotype.toVector) }
+  def result(algorithm: PSE, population: Vector[Individual]) =
+    population.map { i => (pseOperations.doubleValues(i.genome.values.toVector, algorithm.continuous), i.phenotype.toVector) }
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: mgo.contexts.HitMap[M, Vector[Int]]) = for {
     map <- hitmap.get
@@ -74,12 +71,12 @@ object pse extends niche.Imports {
       // def initialState(t: PSE, rng: util.Random) = EvolutionState[HitMap](random = rng, s = Map.empty)
       override def initialPopulation(t: PSE) =
         deterministicInitialPopulation[M, Genome, Individual](
-          pse.initialGenomes[M](t.lambda, t.genome.size), pse.expression(t.phenotype, t.genome))
+          pse.initialGenomes[M](t.lambda, t.continuous.size), pse.expression(t.phenotype, t.continuous))
 
       def step(t: PSE) =
         deterministicStep[M, Individual, Genome](
           pse.breeding(t.lambda, t.pattern, t.operatorExploration),
-          pse.expression(t.phenotype, t.genome),
+          pse.expression(t.phenotype, t.continuous),
           pse.elitism(t.pattern))
 
       def state = pse.state[M]
@@ -93,7 +90,7 @@ object pse extends niche.Imports {
     lambda: Int,
     phenotype: Expression[Vector[Double], Vector[Double]],
     pattern: Vector[Double] => Vector[Int],
-    genome: Vector[pseOperations.Component],
+    continuous: Vector[C],
     operatorExploration: Double = 0.1)
 
   @Lenses case class Genome(values: Array[Double], operator: Option[Int])
@@ -132,15 +129,12 @@ object pse extends niche.Imports {
       Individual.age,
       Individual.mapped)
 
-  def expression(phenotype: Expression[Vector[Double], Vector[Double]], genome: Vector[pseOperations.Component]): Expression[Genome, Individual] =
+  def expression(phenotype: Expression[Vector[Double], Vector[Double]], genome: Vector[C]): Expression[Genome, Individual] =
     pseOperations.expression[Genome, Individual](vectorValues.get, genome, buildIndividual)(phenotype)
 
 }
 
 object pseOperations {
-
-  import shapeless._
-  type Component = C :+: CNil
 
   def breeding[M[_]: cats.Monad: Random: Generation: pse.HitMapM, I, G](
     genome: I => G,
@@ -183,12 +177,12 @@ object pseOperations {
     } yield elite
   } andThen incrementGeneration[M, I](age)
 
-  def doubleValues(values: Vector[Double], genomeComponents: Vector[Component]) =
-    (values zip genomeComponents.flatMap(_.select[C])).map { case (v, c) => v.scale(c) }
+  def doubleValues(values: Vector[Double], continuous: Vector[C]) =
+    (values zip continuous).map { case (v, c) => v.scale(c) }
 
   def expression[G, I](
     values: G => Vector[Double],
-    genome: Vector[Component],
+    genome: Vector[C],
     build: (G, Vector[Double]) => I)(express: Expression[Vector[Double], Vector[Double]]): Expression[G, I] = {
     (g: G) =>
       val vs = doubleValues(values(g), genome)

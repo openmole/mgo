@@ -29,7 +29,7 @@ object SphereNSGAII extends App {
     mu = 100,
     lambda = 100,
     fitness = (v: Vector[Double]) => Vector(sphere.compute(v)),
-    genome = sphere.genome(6))
+    continuous = sphere.genome(6))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
@@ -43,7 +43,7 @@ object SphereNSGAII extends App {
       evolution[DSL].eval
     }
 
-  println(result(finalPopulation, nsga2.genome).mkString("\n"))
+  println(result(nsga2, finalPopulation).mkString("\n"))
 
 }
 
@@ -58,7 +58,7 @@ object NoisySphereNSGAII extends App {
       lambda = 100,
       fitness = (rng: util.Random, v: Vector[Double]) => Vector(noisySphere.compute(rng, v)),
       aggregation = averageAggregation(_),
-      genome = noisySphere.genome(2))
+      continuous = noisySphere.genome(2))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
@@ -72,7 +72,7 @@ object NoisySphereNSGAII extends App {
       evolution[DSL].eval
     }
 
-  println(result(finalPopulation, averageAggregation, nsga2.genome).mkString("\n"))
+  println(result(nsga2, finalPopulation).mkString("\n"))
 
 }
 
@@ -85,7 +85,7 @@ object ZDT4NSGAII extends App {
       mu = 100,
       lambda = 100,
       fitness = zdt4.compute(_),
-      genome = zdt4.genome(10))
+      continuous = zdt4.genome(10))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.

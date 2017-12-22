@@ -30,7 +30,7 @@ object SphereProfile extends App {
     lambda = 100,
     fitness = sphere.compute,
     niche = genomeProfile(x = 0, nX = 10),
-    genome = sphere.genome(10))
+    continuous = sphere.genome(10))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     algo.
@@ -44,7 +44,7 @@ object SphereProfile extends App {
     }
 
   println(
-    result(finalPopulation, algo.genome).map {
+    result(algo, finalPopulation).map {
       case (v, f) => (v ++ Vector(f)).mkString(",")
     }.mkString("\n"))
 
@@ -63,7 +63,7 @@ object NoisySphereProfile extends App {
     fitness = noisySphere.compute,
     aggregation = aggregation,
     niche = niche,
-    genome = noisySphere.genome(5))
+    continuous = noisySphere.genome(5))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     algo.
@@ -78,7 +78,7 @@ object NoisySphereProfile extends App {
     }
 
   println(
-    result(finalPopulation, aggregation, algo.genome, niche).map {
+    result(algo, finalPopulation).map {
       case (v, f) => (v ++ Vector(f)).mkString(",")
     }.mkString("\n"))
 

@@ -33,7 +33,7 @@ object ZDT4PSE extends App {
         lowBound = Vector(0.0, 0.0),
         highBound = Vector(1.0, 200.0),
         definition = Vector(10, 10)),
-    genome = zdt4.genome(10))
+    continuous = zdt4.genome(10))
 
   def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMapM] =
     pse.
@@ -46,6 +46,6 @@ object ZDT4PSE extends App {
     evolution[DSL].eval
   }
 
-  println(result(finalPopulation, pse.genome).mkString("\n"))
+  println(result(pse, finalPopulation).mkString("\n"))
 
 }

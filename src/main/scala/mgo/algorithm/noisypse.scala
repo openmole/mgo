@@ -45,8 +45,8 @@ object noisypse extends niche.Imports {
 
       def initialPopulation(t: NoisyPSE) =
         stochasticInitialPopulation[M, Genome, Individual](
-          noisypse.initialGenomes[M](t.lambda, t.genome.size),
-          noisypse.expression(t.phenotype, t.genome))
+          noisypse.initialGenomes[M](t.lambda, t.continuous.size),
+          noisypse.expression(t.phenotype, t.continuous))
 
       def step(t: NoisyPSE) =
         noisypseOperations.step[M, Individual, Genome](
@@ -56,7 +56,7 @@ object noisypse extends niche.Imports {
             cloneProbability = t.cloneProbability,
             operatorExploration = t.operatorExploration,
             aggregation = t.aggregation),
-          noisypse.expression(t.phenotype, t.genome),
+          noisypse.expression(t.phenotype, t.continuous),
           noisypse.elitism[M](
             pattern = t.pattern,
             historySize = t.historySize,
@@ -73,7 +73,7 @@ object noisypse extends niche.Imports {
     phenotype: (util.Random, Vector[Double]) => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
     aggregation: Vector[Vector[Double]] => Vector[Double],
-    genome: Vector[noisypseOperations.Component],
+    continuous: Vector[C],
     historySize: Int = 100,
     cloneProbability: Double = 0.2,
     operatorExploration: Double = 0.1)
@@ -119,7 +119,7 @@ object noisypse extends niche.Imports {
       Individual.mapped,
       Individual.historyAge)(historySize)
 
-  def expression(phenotype: (util.Random, Vector[Double]) => Vector[Double], genome: Vector[noisypseOperations.Component]) =
+  def expression(phenotype: (util.Random, Vector[Double]) => Vector[Double], genome: Vector[C]) =
     noisypseOperations.expression[Genome, Individual, Vector[Double]](
       vectorValues.get,
       genome,
@@ -128,9 +128,6 @@ object noisypse extends niche.Imports {
 }
 
 object noisypseOperations {
-
-  import shapeless._
-  type Component = C :+: CNil
 
   def breeding[M[_]: cats.Monad: Random: Generation, I, G](
     genome: I => G,
@@ -166,12 +163,12 @@ object noisypseOperations {
     } yield elite
   } andThen incrementGeneration[M, I](age)
 
-  def doubleValues(values: Vector[Double], genomeComponents: Vector[Component]) =
-    (values zip genomeComponents.flatMap(_.select[C])).map { case (v, c) => v.scale(c) }
+  def doubleValues(values: Vector[Double], continuous: Vector[C]) =
+    (values zip continuous).map { case (v, c) => v.scale(c) }
 
   def expression[G, I, P](
     values: G => Vector[Double],
-    genome: Vector[Component],
+    genome: Vector[C],
     builder: (G, P) => I)(phenotype: (util.Random, Vector[Double]) => P): Expression[(util.Random, G), I] = {
     case (rg, g) =>
       val vs = doubleValues(values(g), genome)

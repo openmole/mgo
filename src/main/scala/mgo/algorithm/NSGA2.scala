@@ -34,19 +34,18 @@ import shapeless._
 
 object nsga2 {
 
-  implicit def toComponent[C](i: C)(implicit inj: shapeless.ops.coproduct.Inject[nsga2Operations.Component, C]) = Coproduct[nsga2Operations.Component](i)
-  implicit def toComponentVector[C](v: Vector[C])(implicit inj: shapeless.ops.coproduct.Inject[nsga2Operations.Component, C]) = v.map(toComponent(_))
-
-  @Lenses case class Genome(values: Array[Double], operator: Option[Int])
+  @Lenses case class GenomePart[A](values: Array[A], operator: Option[Int])
+  @Lenses case class Genome(doublePart: GenomePart[Double])
   @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
 
   def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
 
-  def buildGenome(values: Vector[Double], operator: Option[Int]) = Genome(values.toArray, operator)
+  def buildGenome(values: Vector[Double], operator: Option[Int]) =
+    Genome(GenomePart[Double](values.toArray, operator))
 
   def vectorFitness = Individual.fitness composeLens arrayToVectorLens
-
-  def vectorValues = Genome.values composeLens arrayToVectorLens
+  def vectorValues = Genome.doublePart composeLens GenomePart.values[Double] composeLens arrayToVectorLens
+  def doubleOperator = Genome.doublePart composeLens GenomePart.operator[Double]
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, genomeSize: Int): M[Vector[Genome]] =
     GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(lambda, genomeSize)
@@ -57,9 +56,9 @@ object nsga2 {
 
   def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double): Breeding[M, Individual, Genome] =
     nsga2Operations.adaptiveBreeding[M, Individual, Genome](
-      vectorFitness.get, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda, operatorExploration)
+      vectorFitness.get, Individual.genome.get, vectorValues.get, doubleOperator.get, buildGenome)(lambda, operatorExploration)
 
-  def expression(fitness: Expression[Vector[Double], Vector[Double]], components: Vector[nsga2Operations.Component]): Expression[Genome, Individual] =
+  def expression(fitness: Expression[Vector[Double], Vector[Double]], components: Vector[C]): Expression[Genome, Individual] =
     nsga2Operations.expression[Genome, Individual](vectorValues.get, components, buildIndividual)(fitness)
 
   def elitism[M[_]: cats.Monad: Random: Generation](mu: Int): Elitism[M, Individual] =
@@ -68,8 +67,10 @@ object nsga2 {
       (Individual.genome composeLens vectorValues).get,
       Individual.age)(mu)
 
-  def result(population: Vector[Individual], genome: Vector[nsga2Operations.Component]) =
-    population.map { i => (nsga2Operations.doubleValues(i.genome.values.toVector, genome), i.fitness.toVector) }
+  def result(nsga2: NSGA2, population: Vector[Individual]) =
+    population.map { i =>
+      (nsga2Operations.doubleValues(vectorValues.get(i.genome), nsga2.continuous), i.fitness.toVector)
+    }
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
 
@@ -81,9 +82,9 @@ object nsga2 {
     implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] =
       new Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] {
         override def initialPopulation(t: NSGA2) =
-          deterministicInitialPopulation[M, Genome, Individual](nsga2.initialGenomes[M](t.lambda, t.genome.size), expression(t.fitness, t.genome))
+          deterministicInitialPopulation[M, Genome, Individual](nsga2.initialGenomes[M](t.lambda, t.continuous.size), expression(t.fitness, t.continuous))
         override def step(t: NSGA2) =
-          nsga2Operations.step[M, Individual, Genome](nsga2.adaptiveBreeding[M](t.lambda, t.operatorExploration), nsga2.expression(t.fitness, t.genome), nsga2.elitism(t.mu))
+          nsga2Operations.step[M, Individual, Genome](nsga2.adaptiveBreeding[M](t.lambda, t.operatorExploration), nsga2.expression(t.fitness, t.continuous), nsga2.elitism(t.mu))
         override def state = nsga2.state[M]
       }
   }
@@ -91,8 +92,8 @@ object nsga2 {
   case class NSGA2(
     mu: Int,
     lambda: Int,
-    genome: Vector[nsga2Operations.Component],
     fitness: Vector[Double] => Vector[Double],
+    continuous: Vector[C] = Vector.empty,
     operatorExploration: Double = 0.1)
 
 }
@@ -117,8 +118,6 @@ object nsga2Operations {
   //      sizedOffspringGenomes <- randomTake[M, G](offspringGenomes, lambda)
   //    } yield sizedOffspringGenomes
   //  }
-
-  type Component = C :+: CNil
 
   def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G](
     fitness: I => Vector[Double],
@@ -145,12 +144,12 @@ object nsga2Operations {
     } yield sizedOffspringGenomes
   }
 
-  def doubleValues(values: Vector[Double], genomeComponents: Vector[Component]) =
-    (values zip genomeComponents.flatMap(_.select[C])).map { case (v, c) => v.scale(c) }
+  def doubleValues(values: Vector[Double], genomeComponents: Vector[C]) =
+    (values zip genomeComponents).map { case (v, c) => v.scale(c) }
 
   def expression[G, I](
     values: G => Vector[Double],
-    genomeComponents: Vector[Component],
+    genomeComponents: Vector[C],
     build: (G, Vector[Double]) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] = {
     (g: G) =>
       val vs = doubleValues(values(g), genomeComponents)
