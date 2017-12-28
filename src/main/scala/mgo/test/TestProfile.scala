@@ -23,14 +23,14 @@ import freedsl.dsl._
 
 object SphereProfile extends App {
 
-  import algorithm.profile._
+  import algorithm._
 
   //Profile the first dimension of the genome
   val algo = Profile(
     lambda = 100,
-    fitness = sphere.compute,
-    niche = genomeProfile(x = 0, nX = 10),
-    continuous = sphere.genome(10))
+    fitness = discreteSphere.compute,
+    niche = Profile.genomeProfile(x = 0, nX = 10),
+    continuous = discreteSphere.continuous(10))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     algo.
@@ -44,26 +44,27 @@ object SphereProfile extends App {
     }
 
   println(
-    result(algo, finalPopulation).map {
-      case (v, f) => (v ++ Vector(f)).mkString(",")
+    Profile.result(algo, finalPopulation).map {
+      case (v, i, f) => (v ++ i ++ f).mkString(",")
     }.mkString("\n"))
 
 }
 
 object NoisySphereProfile extends App {
 
-  import algorithm.noisyprofile._
+  import algorithm._
 
-  def aggregation(history: Vector[Double]) = history.sum / history.size
-  def niche = genomeProfile(x = 0, nX = 10)
+  def aggregation(history: Vector[Vector[Double]]) = history.transpose.map(h => h.sum / h.size)
+  def niche = NoisyProfile.genomeProfile(x = 0, nX = 10)
 
   val algo = NoisyProfile(
     muByNiche = 20,
     lambda = 100,
-    fitness = noisySphere.compute,
+    fitness = noisyDiscreteSphere.compute,
     aggregation = aggregation,
     niche = niche,
-    continuous = noisySphere.genome(5))
+    continuous = noisyDiscreteSphere.continuous(2),
+    discrete = noisyDiscreteSphere.discrete(2))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     algo.
@@ -78,8 +79,8 @@ object NoisySphereProfile extends App {
     }
 
   println(
-    result(algo, finalPopulation).map {
-      case (v, f) => (v ++ Vector(f)).mkString(",")
+    NoisyProfile.result(algo, finalPopulation).map {
+      case (v, d, f, a) => (v ++ d ++ f ++ Vector(a)).mkString(",")
     }.mkString("\n"))
 
 }

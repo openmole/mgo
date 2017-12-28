@@ -30,10 +30,20 @@ package object test {
     def genome(size: Int) = Vector.fill(size)(C(-2, 2))
   }
 
-  object noisySphere {
-    def compute(rng: Random, v: Vector[Double]) =
-      sphere.compute(v) + rng.nextGaussian() * 0.5 * math.sqrt(sphere.compute(v))
-    def genome(size: Int) = sphere.genome(size)
+  object discreteSphere {
+    def compute(x: Vector[Double], i: Vector[Int]) = Vector(x.map(x => x * x).sum + i.map(math.abs).sum)
+    def continuous(size: Int) = Vector.fill(size)(C(-2, 2))
+    def discrete(size: Int) = Vector.fill(size)(D(-2, 2))
+  }
+
+  object noisyDiscreteSphere {
+    def compute(rng: Random, v: Vector[Double], i: Vector[Int]) = {
+      val res = v.map(x => x * x).sum + i.map(math.abs).sum
+      val noise = rng.nextGaussian() * 0.5 * res
+      Vector(res + noise)
+    }
+    def continuous(size: Int) = Vector.fill(size)(C(-2, 2))
+    def discrete(size: Int) = Vector.fill(size)(D(-2, 2))
   }
 
   object rastrigin {
@@ -73,9 +83,10 @@ package object test {
 
   object zdt4 {
 
-    def genome(size: Int) = Vector.fill(size)(C(0.0, 5.0))
+    def continuous(size: Int) = Vector.fill(size)(C(0.0, 5.0))
+    def discrete = Vector.empty
 
-    def compute(genome: Vector[Double]): Vector[Double] = {
+    def compute(genome: Vector[Double], d: Vector[Int]): Vector[Double] = {
       val genomeSize = genome.size
 
       def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum

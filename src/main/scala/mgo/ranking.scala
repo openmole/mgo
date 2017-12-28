@@ -66,7 +66,7 @@ object ranking {
     Ranking((values: Vector[I]) =>
       HierarchicalRanking.upRank(values.map(v => fitness(v))).pure[M])
 
-  def paretoRanking[M[_]: cats.Monad, I](fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Ranking[M, I] = Ranking { (values: Vector[I]) =>
+  def numberOfDominating[I](fitness: I => Vector[Double], values: Vector[I], dominance: Dominance = nonStrictDominance) = {
     val fitnesses = values.map(i => fitness(i))
     def ranks =
       fitnesses.zipWithIndex.map {
@@ -77,7 +77,7 @@ object ranking {
           shapeless.Lazy(if (containsNaN) Int.MaxValue else numberOfDominatingIndividual)
       }
 
-    ranks.pure[M]
+    ranks
   }
 
   def profileRanking[M[_]: cats.Monad, I](niche: Niche[I, Int], fitness: I => Double): Ranking[M, I] =
@@ -133,6 +133,11 @@ object ranking {
   def reversedRanking[M[_]: cats.Monad, I](ranking: Ranking[M, I]): Ranking[M, I] =
     Ranking((population: Vector[I]) => ranking(population).map { ranks => ranks.map { rank => rank.map(x => -x) } })
 
+  def paretoRanking[M[_]: cats.Monad, I](fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance) = {
+    def dominating = Ranking { (population: Vector[I]) => numberOfDominating(fitness, population, dominance).pure[M] }
+    reversedRanking(dominating)
+  }
+
   //TODO: the following functions don't produce rankings and don't belong here.
   def rankAndDiversity[M[_]: cats.Monad, I](ranking: Ranking[M, I], diversity: Diversity[M, I]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
     Kleisli((population: Vector[I]) =>
@@ -143,7 +148,7 @@ object ranking {
 
   def paretoRankingMinAndCrowdingDiversity[M[_]: cats.Monad: Random, I](fitness: I => Vector[Double]): Kleisli[M, Vector[I], Vector[(Lazy[Int], Lazy[Double])]] =
     rankAndDiversity(
-      reversedRanking(paretoRanking[M, I](fitness)),
+      paretoRanking[M, I](fitness),
       crowdingDistance[M, I] { (i: I) => fitness(i) })
 
   def rank[M[_]: cats.Monad, I, K](ranking: Kleisli[M, Vector[I], Vector[K]]) = Kleisli[M, Vector[I], Vector[(I, K)]] { is =>

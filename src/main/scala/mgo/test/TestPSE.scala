@@ -23,7 +23,8 @@ import freedsl.dsl._
 
 object ZDT4PSE extends App {
 
-  import algorithm.pse._
+  import algorithm._
+  import algorithm.PSE._
 
   val pse = PSE(
     lambda = 10,
@@ -33,7 +34,7 @@ object ZDT4PSE extends App {
         lowBound = Vector(0.0, 0.0),
         highBound = Vector(1.0, 200.0),
         definition = Vector(10, 10)),
-    continuous = zdt4.genome(10))
+    continuous = zdt4.continuous(10))
 
   def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMapM] =
     pse.

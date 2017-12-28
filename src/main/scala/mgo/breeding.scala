@@ -36,6 +36,12 @@ object breeding {
     individuals(challengersIndices.maxBy(i => ranks(i))(implicitly[Order[K]].toOrdering))
   }
 
+  def logOfPopulationSize(size: Int): Int = math.round(math.log10(size).toInt)
+
+  def randomSelection[M[_]: cats.Monad: Random, I] = Kleisli { population: Vector[I] =>
+    Random[M].randomElement(population)
+  }
+
 /**** Mating ****/
 
   //  def groupConsecutive[M[_]: cats.Monad, I](groupSize: Int): Breeding[M, I, Vector[I]] =
@@ -267,12 +273,12 @@ object breeding {
   //  }
 
   /** Randomly replaces some of the genomes in gs by genomes taken from the original population of I */
-  def clonesReplace[M[_]: cats.Monad: Random, I, G](cloneProbability: Double, population: Vector[I], genome: I => G): Breeding[M, G, G] =
+  def clonesReplace[M[_]: cats.Monad: Random, I, G](cloneProbability: Double, population: Vector[I], genome: I => G, selection: Selection[M, I]): Breeding[M, G, G] =
     Breeding { gs: Vector[G] =>
       def cloneOrKeep(g: G): M[G] =
         for {
           clone <- Random[M].nextDouble.map(_ < cloneProbability)
-          newG <- if (clone) Random[M].randomElement(population).map(genome) else g.pure[M]
+          newG <- if (clone) selection(population).map(genome) else g.pure[M]
         } yield newG
 
       gs traverse cloneOrKeep
@@ -297,12 +303,20 @@ object breeding {
 
   /* ----------------- Discrete operators ----------------------- */
 
-  def randomMutation[M[_]: cats.Monad: Random](mutationRate: Int => Double, randomValues: util.Random => Vector[Long]) = Mutation[M, Vector[Long], Vector[Long]] { values =>
+  def randomMutation[M[_]: cats.Monad: Random](mutationRate: Int => Double, discrete: Vector[D]) = Mutation[M, Vector[Int], Vector[Int]] { values =>
     Random[M].use { rng =>
-      val newValues = randomValues(rng)
-      assert(values.size == newValues.size)
-      (values zip newValues) map { case (ve, nve) => if (rng.nextDouble() < mutationRate(values.size)) nve else ve }
+      (values zip discrete) map {
+        case (v, d) =>
+          if (rng.nextDouble() < mutationRate(values.size)) tools.randomInt(rng, d)
+          else v
+      }
     }
+  }
+
+  def binaryCrossover[M[_]: cats.Monad: Random, V](rate: Int => Double) = Crossover[M, (Vector[V], Vector[V]), (Vector[V], Vector[V])] {
+    case (v1, v2) =>
+      def switch(x: V, y: V) = Random[M].nextDouble().map(d => if (d < rate(v1.size)) (y, x) else (x, y))
+      (v1 zip v2).traverse(Function.tupled(switch)).map(_.unzip)
   }
 
 }

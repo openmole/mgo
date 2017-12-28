@@ -30,8 +30,6 @@ import scala.util.Random
 
 package object mgo extends stop.Imports {
 
-  type Expression[G, P] = G => P
-
 /**** Running the EA ****/
 
   type Trace[M[_], I] = Kleisli[M, Vector[I], Unit]
@@ -120,20 +118,20 @@ package object mgo extends stop.Imports {
 
 /**** Expression ****/
 
-  def bindE[G, P1, P2](e1: Expression[G, P1], e2: P1 => Expression[G, P2]): Expression[G, P2] =
-    (genome: G) => e2(e1(genome))(genome)
-
-  def zipE[G, P1, P2](e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, (P1, P2)] =
-    zipWithE[G, P1, P2, (P1, P2)] { (p1: P1, p2: P2) => (p1, p2) }(e1, e2)
-
-  def zipWithE[G, P1, P2, P3](f: (P1, P2) => P3)(e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, P3] =
-    (genome: G) => f(e1(genome), e2(genome))
-
-  def asE[G, G1, P](gtog1: G => G1, express: Expression[G1, P]): Expression[G, P] = (genome: G) => express(gtog1(genome))
-
-  def withGenomeE[G, P](express: Expression[G, P]): Expression[G, (P, G)] = (genome: G) => (express(genome), genome)
-
-  def withE[G, P](f: G => P): Expression[G, P] = f
+  //  def bindE[G, P1, P2](e1: Expression[G, P1], e2: P1 => Expression[G, P2]): Expression[G, P2] =
+  //    (genome: G) => e2(e1(genome))(genome)
+  //
+  //  def zipE[G, P1, P2](e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, (P1, P2)] =
+  //    zipWithE[G, P1, P2, (P1, P2)] { (p1: P1, p2: P2) => (p1, p2) }(e1, e2)
+  //
+  //  def zipWithE[G, P1, P2, P3](f: (P1, P2) => P3)(e1: Expression[G, P1], e2: Expression[G, P2]): Expression[G, P3] =
+  //    (genome: G) => f(e1(genome), e2(genome))
+  //
+  //  def asE[G, G1, P](gtog1: G => G1, express: Expression[G1, P]): Expression[G, P] = (genome: G) => express(gtog1(genome))
+  //
+  //  def withGenomeE[G, P](express: Expression[G, P]): Expression[G, (P, G)] = (genome: G) => (express(genome), genome)
+  //
+  //  def withE[G, P](f: G => P): Expression[G, P] = f
 
 /**** Objectives ****/
 
@@ -206,6 +204,7 @@ package object mgo extends stop.Imports {
 
   def arrayToVectorLens[A: Manifest] = monocle.Lens[Array[A], Vector[A]](_.toVector)(v => _ => v.toArray)
   def array2ToVectorLens[A: Manifest] = monocle.Lens[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => _ => v.map(_.toArray).toArray)
+  def intToUnsignedIntOption = monocle.Lens[Int, Option[Int]](i => if (i < 0) None else Some(i))(v => _ => v.getOrElse(-1))
 
   trait History[P, I] {
     val lens: monocle.Lens[I, Vector[P]]
@@ -222,6 +221,6 @@ package object mgo extends stop.Imports {
   }
 
   case class C(low: Double, high: Double)
-  case class D(low: Long, high: Long)
+  case class D(low: Int, high: Int)
 
 }

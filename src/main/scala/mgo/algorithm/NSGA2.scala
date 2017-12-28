@@ -32,73 +32,77 @@ import GenomeVectorDouble._
 import freedsl.tool._
 import shapeless._
 
-object nsga2 {
+object NSGA2 {
 
-  @Lenses case class GenomePart[A](values: Array[A], operator: Option[Int])
-  @Lenses case class Genome(doublePart: GenomePart[Double])
-  @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
-
-  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
-
-  def buildGenome(values: Vector[Double], operator: Option[Int]) =
-    Genome(GenomePart[Double](values.toArray, operator))
-
-  def vectorFitness = Individual.fitness composeLens arrayToVectorLens
-  def vectorValues = Genome.doublePart composeLens GenomePart.values[Double] composeLens arrayToVectorLens
-  def doubleOperator = Genome.doublePart composeLens GenomePart.operator[Double]
-
-  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, genomeSize: Int): M[Vector[Genome]] =
-    GenomeVectorDouble.randomGenomes[M, Genome](buildGenome)(lambda, genomeSize)
+  import CDGenome._
+  import DeternimisticIndividual._
 
   //  def breeding[M[_]: Generation: Random: cats.Monad](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int): Breeding[M, Individual, Genome] =
   //    nsga2Operations.breeding[M, Individual, Genome](
   //      vectorFitness.get, Individual.genome.get, vectorValues.get, buildGenome(_, None))(crossover, mutation, lambda)
 
-  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double): Breeding[M, Individual, Genome] =
-    nsga2Operations.adaptiveBreeding[M, Individual, Genome](
-      vectorFitness.get, Individual.genome.get, vectorValues.get, doubleOperator.get, buildGenome)(lambda, operatorExploration)
+  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
+    CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
-  def expression(fitness: Expression[Vector[Double], Vector[Double]], components: Vector[C]): Expression[Genome, Individual] =
-    nsga2Operations.expression[Genome, Individual](vectorValues.get, components, buildIndividual)(fitness)
-
-  def elitism[M[_]: cats.Monad: Random: Generation](mu: Int): Elitism[M, Individual] =
-    nsga2Operations.elitism[M, Individual](
+  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double, discrete: Vector[D]): Breeding[M, Individual, Genome] =
+    NSGA2Operations.adaptiveBreeding[M, Individual, Genome](
       vectorFitness.get,
-      (Individual.genome composeLens vectorValues).get,
-      Individual.age)(mu)
+      Individual.genome.get,
+      continuousValues.get,
+      continuousOperator.get,
+      discreteValues.get,
+      discreteOperator.get,
+      discrete,
+      buildGenome,
+      _ => 1,
+      lambda,
+      operatorExploration)
+
+  def expression(fitness: (Vector[Double], Vector[Int]) => Vector[Double], components: Vector[C]): Genome => Individual =
+    DeternimisticIndividual.expression(fitness, components)
+
+  def elitism[M[_]: cats.Monad: Random: Generation](mu: Int, components: Vector[C]): Elitism[M, Individual] =
+    NSGA2Operations.elitism[M, Individual](
+      vectorFitness.get,
+      i => values(Individual.genome.get(i), components),
+      Individual.age,
+      mu)
 
   def result(nsga2: NSGA2, population: Vector[Individual]) =
-    population.map { i =>
-      (nsga2Operations.doubleValues(vectorValues.get(i.genome), nsga2.continuous), i.fitness.toVector)
+    keepFirstFront(population, vectorFitness.get).map { i =>
+      (scaleContinuousValues(continuousValues.get(i.genome), nsga2.continuous), Individual.genome composeLens discreteValues get i, i.fitness.toVector)
     }
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
 
-  object NSGA2 {
+  def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
+  def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
 
-    def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
-    def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
-
-    implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] =
-      new Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] {
-        override def initialPopulation(t: NSGA2) =
-          deterministicInitialPopulation[M, Genome, Individual](nsga2.initialGenomes[M](t.lambda, t.continuous.size), expression(t.fitness, t.continuous))
-        override def step(t: NSGA2) =
-          nsga2Operations.step[M, Individual, Genome](nsga2.adaptiveBreeding[M](t.lambda, t.operatorExploration), nsga2.expression(t.fitness, t.continuous), nsga2.elitism(t.mu))
-        override def state = nsga2.state[M]
-      }
-  }
-
-  case class NSGA2(
-    mu: Int,
-    lambda: Int,
-    fitness: Vector[Double] => Vector[Double],
-    continuous: Vector[C] = Vector.empty,
-    operatorExploration: Double = 0.1)
+  implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] =
+    new Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] {
+      override def initialPopulation(t: NSGA2) =
+        deterministic.initialPopulation[M, Genome, Individual](
+          NSGA2.initialGenomes[M](t.lambda, t.continuous, t.discrete),
+          NSGA2.expression(t.fitness, t.continuous))
+      override def step(t: NSGA2) =
+        deterministic.step[M, Individual, Genome](
+          NSGA2.adaptiveBreeding[M](t.lambda, t.operatorExploration, t.discrete),
+          NSGA2.expression(t.fitness, t.continuous),
+          NSGA2.elitism(t.mu, t.continuous))
+      override def state = NSGA2.state[M]
+    }
 
 }
 
-object nsga2Operations {
+case class NSGA2(
+  mu: Int,
+  lambda: Int,
+  fitness: (Vector[Double], Vector[Int]) => Vector[Double],
+  continuous: Vector[C] = Vector.empty,
+  discrete: Vector[D] = Vector.empty,
+  operatorExploration: Double = 0.1)
+
+object NSGA2Operations {
 
   //  def breeding[M[_]: cats.Monad: Generation: Random, I, G](
   //    fitness: I => Vector[Double],
@@ -122,55 +126,43 @@ object nsga2Operations {
   def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
-    genomeValues: G => Vector[Double],
-    genomeOperator: G => Option[Int],
-    buildGenome: (Vector[Double], Option[Int]) => G)(lambda: Int, operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
+    continuousValues: G => Vector[Double],
+    continuousOperator: G => Option[Int],
+    discreteValues: G => Vector[Int],
+    discreteOperator: G => Option[Int],
+    discrete: Vector[D],
+    buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
+    tournamentRounds: Int => Int,
+    lambda: Int,
+    operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
     for {
-      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply population
-      operatorStatistics = operatorProportions(genome andThen genomeOperator, population)
-      breeding = applyDynamicOperators[M, I](
-        tournament[M, I, (Lazy[Int], Lazy[Double])](ranks),
-        genome andThen genomeValues,
-        operatorStatistics,
-        operatorExploration) apply population
+      ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply population
+      continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
+      discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+      breeding = applyDynamicOperators[M, I, G](
+        tournament(ranks, tournamentRounds),
+        genome andThen continuousValues,
+        genome andThen discreteValues,
+        continuousOperatorStatistics,
+        discreteOperatorStatistics,
+        discrete,
+        operatorExploration,
+        buildGenome) apply population
       offspring <- breeding repeat ((lambda + 1) / 2)
-      offspringGenomes = offspring.flatMap {
-        case ((o1, o2), op) =>
-          def gv1 = o1.map(clamp(_))
-          def gv2 = o2.map(clamp(_))
-          Vector(buildGenome(gv1, Some(op)), buildGenome(gv2, Some(op)))
-      }
-      sizedOffspringGenomes <- randomTake[M, G](offspringGenomes, lambda)
+      sizedOffspringGenomes <- randomTake[M, G](offspring.flatMap { case (g1, g2) => Vector(g1, g2) }, lambda)
     } yield sizedOffspringGenomes
-  }
-
-  def doubleValues(values: Vector[Double], genomeComponents: Vector[C]) =
-    (values zip genomeComponents).map { case (v, c) => v.scale(c) }
-
-  def expression[G, I](
-    values: G => Vector[Double],
-    genomeComponents: Vector[C],
-    build: (G, Vector[Double]) => I)(fitness: Vector[Double] => Vector[Double]): Expression[G, I] = {
-    (g: G) =>
-      val vs = doubleValues(values(g), genomeComponents)
-      build(g, fitness(vs))
   }
 
   def elitism[M[_]: cats.Monad: Random: Generation, I](
     fitness: I => Vector[Double],
-    values: I => Vector[Double],
-    age: monocle.Lens[I, Long])(mu: Int) = Elitism[M, I] { population =>
+    values: I => (Vector[Double], Vector[Int]),
+    age: monocle.Lens[I, Long],
+    mu: Int) = Elitism[M, I] { population =>
     for {
       cloneRemoved <- applyCloneStrategy(values, keepYoungest[M, I](age.get)) apply filterNaN(population, fitness)
       ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply cloneRemoved
       elite = keepHighestRanked(cloneRemoved, ranks, mu)
     } yield elite
-  } andThen incrementGeneration[M, I](age)
-
-  def step[M[_]: cats.Monad: Random: Generation, I, G](
-    breeding: Breeding[M, I, G],
-    expression: Expression[G, I],
-    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] =
-    deterministicStep(breeding, expression, elitism)
+  } andThen incrementAge[M, I](age)
 
 }

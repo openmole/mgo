@@ -21,6 +21,7 @@ import contexts._
 import elitism._
 import tools._
 
+import cats._
 import cats.implicits._
 import cats.data._
 import freedsl.tool._
@@ -72,79 +73,33 @@ package object algorithm {
       } yield (g, op)
     })
 
-  def deterministicStep[M[_]: cats.Monad: Random: Generation, I, G](
-    breeding: Breeding[M, I, G],
-    expression: Expression[G, I],
-    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { population =>
-    for {
-      newGenomes <- breeding(population)
-      newPopulation = newGenomes.map(expression)
-      mergedPopulation = muPlusLambda(population, newPopulation)
-      elitePopulation <- elitism(mergedPopulation)
-    } yield elitePopulation
-  }
-
-  def noisyStep[M[_]: cats.Monad: Generation, I, G](
-    breeding: Breeding[M, I, G],
-    expression: Expression[(util.Random, G), I],
-    elitism: Elitism[M, I])(implicit randomM: Random[M]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { population =>
-
-    def evaluate(g: G) = randomM.use { rng => expression(rng, g) }
-
-    for {
-      newGenomes <- breeding(population)
-      newPopulation <- newGenomes.traverse { evaluate }
-      mergedPopulation = muPlusLambda(population, newPopulation)
-      elitePopulation <- elitism(mergedPopulation)
-    } yield elitePopulation
-  }
-
-  def deterministicInitialPopulation[M[_]: cats.Monad, G, I](
-    initialGenomes: M[Vector[G]],
-    expression: Expression[G, I]) =
-    for {
-      gs <- initialGenomes
-    } yield gs.map(expression)
-
-  //  trait ParallelRandom[M[_]] {
-  //    /**
-  //     * Returns a new random number generator that is independant from the one in M, useful for parallel computations.
-  //     * Implementations of this function must use a random number generator contained in M in order to produce the Random returned, and update the original
-  //     * random number generator in an independant manner so that it is never used twice (and allows for safe parallelisation).
-  //     */
-  //    def split: M[util.Random]
-  //  }
-
-  def stochasticInitialPopulation[M[_]: cats.Monad, G, I](
-    initialGenomes: M[Vector[G]],
-    expression: Expression[(util.Random, G), I])(implicit random: Random[M]) =
-    for {
-      genomes <- initialGenomes
-      initialIndividuals <- genomes.traverse(g => random.use(rng => expression(rng, g)))
-    } yield initialIndividuals
-
   object GenomeVectorDouble {
 
-    def randomGenomes[M[_]: cats.Monad](n: Int, genomeLength: Int)(
+    def randomUnscaledContinuousValues[M[_]: cats.Monad](n: Int, genomeLength: Int)(
       implicit
       randomM: Random[M]): M[Vector[Vector[Double]]] = {
       def genome = randomM.nextDouble.repeat(genomeLength)
       Vector.fill(n)(genome).sequence
     }
 
-    def randomGenomes[M[_]: cats.Monad: Random, G](cons: (Vector[Double], Option[Int]) => G)(mu: Int, genomeSize: Int): M[Vector[G]] =
-      for {
-        values <- randomGenomes[M](mu, genomeSize)
-        gs = values.map { (vs: Vector[Double]) => cons(vs, None) }
-      } yield gs
+    def randomDiscreteValues[M[_]: cats.Monad](n: Int, genome: Vector[D])(
+      implicit
+      randomM: Random[M]): M[Vector[Vector[Int]]] = {
+      def part(d: D) = randomM.use(rng => tools.randomInt(rng, d))
+      def random = genome.map(part).sequence
+      Vector.fill(n)(random).sequence
+    }
 
-    //    def clamp[G](lens: monocle.Lens[G, Vector[Double]]) =
-    //      (gs: Vector[G]) => gs.map(lens.modify(_ map { x: Double => scala.math.max(0.0, scala.math.min(1.0, x)) }))
+    def randomGenomes[M[_]: cats.Monad: Random, G](cons: (Vector[Double], Vector[Int]) => G)(mu: Int, continuous: Vector[C], discrete: Vector[D]): M[Vector[G]] =
+      for {
+        discreteGenomes <- randomDiscreteValues[M](mu, discrete)
+        continuousGenomes <- randomUnscaledContinuousValues[M](mu, continuous.size)
+      } yield (continuousGenomes zip discreteGenomes).map(Function.tupled(cons))
 
     def filterNaN[I, T](values: Vector[I], value: I => T)(implicit cbn: CanBeNaN[T]) =
       values.filter { i => !cbn.isNaN(value(i)) }
 
-    def crossovers[M[_]: cats.Monad: Random]: Vector[Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
+    def continuousCrossovers[M[_]: cats.Monad: Random]: Vector[Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
       Vector(
         replicatePairC(blxC(0.1)),
         replicatePairC(blxC(0.5)),
@@ -153,7 +108,14 @@ package object algorithm {
         sbxC(0.5),
         sbxC(2.0))
 
-    def mutations[M[_]: cats.Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
+    def discreteCrossovers[M[_]: cats.Monad: Random]: Vector[Crossover[M, (Vector[Int], Vector[Int]), (Vector[Int], Vector[Int])]] =
+      Vector(
+        binaryCrossover(1.0 / _),
+        binaryCrossover(2.0 / _),
+        binaryCrossover(_ => 0.1),
+        binaryCrossover(_ => 0.5))
+
+    def continuousMutations[M[_]: cats.Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
       Vector(
         bga(mutationRate = 1.0 / _, mutationRange = 0.001),
         bga(mutationRate = 1.0 / _, mutationRange = 0.01),
@@ -161,10 +123,25 @@ package object algorithm {
         bga(mutationRate = _ => 0.1, mutationRange = 0.1),
         bga(mutationRate = _ => 0.5, mutationRange = 0.5))
 
-    def crossoversAndMutations[M[_]: cats.Monad: Random]: Vector[Kleisli[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
+    def discreteMutations[M[_]: cats.Monad: Random](discrete: Vector[D]): Vector[Mutation[M, Vector[Int], Vector[Int]]] =
+      Vector(
+        randomMutation(1.0 / _, discrete),
+        randomMutation(2.0 / _, discrete),
+        randomMutation(_ => 0.1, discrete),
+        randomMutation(_ => 0.5, discrete))
+
+    type CrossoverAndMutation[M[_], G] = Kleisli[M, (G, G), (G, G)]
+
+    def continuousCrossoversAndMutations[M[_]: cats.Monad: Random]: Vector[CrossoverAndMutation[M, Vector[Double]]] =
       for {
-        c <- crossovers[M]
-        m <- mutations[M]
+        c <- continuousCrossovers[M]
+        m <- continuousMutations[M]
+      } yield crossoverAndMutation(c, m)
+
+    def discreteCrossoversAndMutations[M[_]: cats.Monad: Random](discrete: Vector[D]): Vector[CrossoverAndMutation[M, Vector[Int]]] =
+      for {
+        c <- discreteCrossovers[M]
+        m <- discreteMutations[M](discrete)
       } yield crossoverAndMutation(c, m)
 
     def crossoverAndMutation[M[_]: cats.Monad, G](crossover: Crossover[M, (G, G), (G, G)], mutation: Mutation[M, G, G]) =
@@ -189,10 +166,15 @@ package object algorithm {
         } yield offspring
       }
 
-    def applyDynamicOperators[M[_]: cats.Monad: Random, I](selection: Selection[M, I], genome: I => Vector[Double], operatorStatistics: Map[Int, Double], operatorExploration: Double) = {
+    def applyContinuousDynamicOperators[M[_]: cats.Monad: Random, I](
+      selection: Selection[M, I],
+      genome: I => Vector[Double],
+      operatorStatistics: Map[Int, Double],
+      operatorExploration: Double) = {
+
       def applyOperator =
-        selectOperator[M, (Vector[Double], Vector[Double])](
-          crossoversAndMutations[M],
+        selectOperator(
+          continuousCrossoversAndMutations[M],
           operatorStatistics,
           operatorExploration)
 
@@ -202,6 +184,52 @@ package object algorithm {
           m2 <- selection apply population
           offspring <- applyOperator apply ((genome(m1), genome(m2)))
         } yield offspring
+      }
+    }
+
+    def applyDynamicOperators[M[_]: cats.Monad: Random, I, G](
+      selection: Selection[M, I],
+      continuousValues: I => Vector[Double],
+      discreteValues: I => Vector[Int],
+      continuousOperatorStatistics: Map[Int, Double],
+      discreteOperatorStatistics: Map[Int, Double],
+      discrete: Vector[D],
+      operatorExploration: Double,
+      buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G) = {
+
+      def continuousOperator =
+        selectOperator(
+          continuousCrossoversAndMutations[M],
+          continuousOperatorStatistics,
+          operatorExploration)
+
+      def discreteOperator =
+        selectOperator(
+          discreteCrossoversAndMutations[M](discrete),
+          discreteOperatorStatistics,
+          operatorExploration)
+
+      Kleisli { population: Vector[I] =>
+        for {
+          m1 <- selection apply population
+          m2 <- selection apply population
+          c1 = continuousValues(m1)
+          c2 = continuousValues(m2)
+          cOff <- continuousOperator apply (c1, c2)
+          d1 = discreteValues(m1)
+          d2 = discreteValues(m2)
+          dOff <- discreteOperator apply (d1, d2)
+        } yield {
+          val ((cOff1, cOff2), cop) = cOff
+          val ((dOff1, dOff2), dop) = dOff
+
+          import tools.clamp
+
+          val ng1 = buildGenome(cOff1.map(clamp(_)), Some(cop), dOff1, Some(dop))
+          val ng2 = buildGenome(cOff2.map(clamp(_)), Some(cop), dOff2, Some(dop))
+
+          (ng1, ng2)
+        }
       }
     }
   }
@@ -215,5 +243,153 @@ package object algorithm {
   case class ManualOperators[M[_]](crossover: GACrossover[M], mutation: GAMutation[M]) extends Operators[M]
 
   def averageAggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
+
+  def scaleContinuousValues(values: Vector[Double], genomeComponents: Vector[C]) =
+    (values zip genomeComponents).map { case (v, c) => v.scale(c) }
+
+  def keepFirstFront[I](population: Vector[I], fitness: I => Vector[Double]) = {
+    val dominating = ranking.numberOfDominating(fitness, population)
+    val minDominating = dominating.map(_.value).min
+    (population zip dominating).filter { case (_, d) => d.value == minDominating }.map(_._1)
+  }
+
+  object CDGenome {
+
+    import monocle.macros._
+
+    object DeternimisticIndividual {
+      @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
+      def vectorFitness = Individual.fitness composeLens arrayToVectorLens
+      def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
+
+      def expression(fitness: (Vector[Double], Vector[Int]) => Vector[Double], components: Vector[C]): Genome => Individual =
+        deterministic.expression[Genome, Individual](
+          values(_, components),
+          buildIndividual,
+          fitness)
+
+    }
+
+    object NoisyIndividual {
+      def oldest(population: Vector[Individual]) =
+        if (population.isEmpty) population
+        else {
+          val maxHistory = population.map(_.fitnessHistory.size).max
+          population.filter(_.fitnessHistory.size == maxHistory)
+        }
+
+      def aggregate(i: Individual, aggregation: Vector[Vector[Double]] => Vector[Double], continuous: Vector[C]) =
+        (
+          scaleContinuousValues(continuousValues.get(i.genome), continuous),
+          Individual.genome composeLens discreteValues get i,
+          aggregation(vectorFitness.get(i)),
+          Individual.fitnessHistory.get(i).size)
+
+      @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Array[Double]], age: Long)
+      def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, 1, Array(f.toArray), 0)
+      def vectorFitness = Individual.fitnessHistory composeLens array2ToVectorLens
+
+      def expression(fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): (util.Random, Genome) => Individual =
+        noisy.expression[Genome, Individual](
+          values(_, continuous),
+          buildIndividual)(fitness)
+    }
+
+    @Lenses case class Genome(
+      continuousValues: Array[Double],
+      continuousOperator: Int,
+      discreteValues: Array[Int],
+      discreteOperator: Int)
+
+    def buildGenome(
+      continuous: Vector[Double],
+      continuousOperator: Option[Int],
+      discrete: Vector[Int],
+      discreteOperator: Option[Int]) =
+      Genome(
+        continuous.toArray,
+        continuousOperator.getOrElse(-1),
+        discrete.toArray,
+        discreteOperator.getOrElse(-1))
+
+    def continuousValues = Genome.continuousValues composeLens arrayToVectorLens
+    def continuousOperator = Genome.continuousOperator composeLens intToUnsignedIntOption
+    def discreteValues = Genome.discreteValues composeLens arrayToVectorLens
+    def discreteOperator = Genome.discreteOperator composeLens intToUnsignedIntOption
+
+    def values(g: Genome, continuous: Vector[C]) =
+      (scaleContinuousValues(continuousValues.get(g), continuous), discreteValues.get(g))
+
+    def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]): M[Vector[Genome]] =
+      GenomeVectorDouble.randomGenomes[M, Genome]((c, d) => buildGenome(c, None, d, None))(lambda, continuous, discrete)
+
+  }
+
+  object deterministic {
+    def initialPopulation[M[_]: cats.Monad, G, I](
+      initialGenomes: M[Vector[G]],
+      expression: G => I) =
+      for {
+        gs <- initialGenomes
+      } yield gs.map(expression)
+
+    def step[M[_]: cats.Monad: Random: Generation, I, G](
+      breeding: Breeding[M, I, G],
+      expression: G => I,
+      elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { population =>
+      for {
+        newGenomes <- breeding(population)
+        newPopulation = newGenomes.map(expression)
+        mergedPopulation = muPlusLambda(population, newPopulation)
+        elitePopulation <- elitism(mergedPopulation)
+        _ <- incrementGeneration
+      } yield elitePopulation
+    }
+
+    def expression[G, I](
+      values: G => (Vector[Double], Vector[Int]),
+      build: (G, Vector[Double]) => I,
+      fitness: (Vector[Double], Vector[Int]) => Vector[Double]): G => I = {
+      (g: G) =>
+        val (cs, ds) = values(g)
+        build(g, fitness(cs, ds))
+    }
+
+  }
+
+  object noisy {
+    def initialPopulation[M[_]: cats.Monad, G, I](
+      initialGenomes: M[Vector[G]],
+      expression: (util.Random, G) => I)(implicit random: Random[M]) =
+      for {
+        genomes <- initialGenomes
+        initialIndividuals <- genomes.traverse(g => random.use(rng => expression(rng, g)))
+      } yield initialIndividuals
+
+    def step[M[_]: cats.Monad: Generation, I, G](
+      breeding: Breeding[M, I, G],
+      expression: (util.Random, G) => I,
+      elitism: Elitism[M, I])(implicit randomM: Random[M]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { population =>
+
+      def evaluate(g: G) = randomM.use { rng => expression(rng, g) }
+
+      for {
+        newGenomes <- breeding(population)
+        newPopulation <- newGenomes.traverse { evaluate }
+        mergedPopulation = muPlusLambda(population, newPopulation)
+        elitePopulation <- elitism(mergedPopulation)
+        _ <- incrementGeneration
+      } yield elitePopulation
+    }
+
+    def expression[G, I](
+      values: G => (Vector[Double], Vector[Int]),
+      build: (G, Vector[Double]) => I)(fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double]): (util.Random, G) => I = {
+      case (rg, g) =>
+        val (cs, ds) = values(g)
+        build(g, fitness(rg, cs, ds))
+    }
+
+  }
 
 }

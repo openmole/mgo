@@ -25,9 +25,10 @@ object elitism {
     Elitism(
       individuals => Vector.fill(n)(randomM.randomElement(individuals)).sequence)
 
-  def incrementGeneration[M[_]: cats.Monad, I](age: monocle.Lens[I, Long])(implicit generationM: Generation[M]): Elitism[M, I] =
-    Elitism((individuals: Vector[I]) =>
-      for { _ <- generationM.increment } yield individuals.map(age.modify(_ + 1)))
+  def incrementAge[M[_]: cats.Monad, I](age: monocle.Lens[I, Long]) =
+    Elitism { (individuals: Vector[I]) => individuals.map(age.modify(_ + 1)).pure[M] }
+
+  def incrementGeneration[M[_]: Generation] = Generation[M].increment
 
   def addHits[M[_]: cats.Monad, I, C](cell: I => C, mapped: monocle.Lens[I, Boolean])(implicit hitMapperM: HitMap[M, C]) = {
     def hits(cells: Vector[C]) =
@@ -53,7 +54,7 @@ object elitism {
     }
   }
 
-  def byNiche[M[_]: cats.Monad, I, N](population: Vector[I], keep: Vector[I] => M[Vector[I]], niche: I => N): M[Vector[I]] = {
+  def nicheElitism[M[_]: cats.Monad, I, N](population: Vector[I], keep: Vector[I] => M[Vector[I]], niche: I => N): M[Vector[I]] = {
     val niches = population.groupBy(niche).toVector
     niches.map { case (_, individuals) => keep(individuals) }.sequence.map(_.flatten)
   }
@@ -62,8 +63,7 @@ object elitism {
 
 /**** Clone strategies ****/
   def applyCloneStrategy[M[_]: cats.Monad, I, G](getGenome: I => G, cloneStrategy: CloneStrategy[M, I]): Elitism[M, I] =
-    Elitism(
-      _.groupBy(getGenome).valuesIterator.toVector.flatTraverse(cloneStrategy))
+    Elitism(_.groupBy(getGenome).valuesIterator.toVector.flatTraverse(cloneStrategy))
 
   def keepYoungest[M[_]: cats.Monad, I](age: I => Long): CloneStrategy[M, I] =
     (clones: Vector[I]) => Vector(clones.minBy(age)).pure[M]

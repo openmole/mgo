@@ -23,12 +23,12 @@ import freedsl.dsl._
 
 object SphereNSGAII extends App {
 
-  import algorithm.nsga2._
+  import algorithm._
 
   val nsga2 = NSGA2(
     mu = 100,
     lambda = 100,
-    fitness = (v: Vector[Double]) => Vector(sphere.compute(v)),
+    fitness = (v: Vector[Double], _) => Vector(sphere.compute(v)),
     continuous = sphere.genome(6))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
@@ -43,22 +43,49 @@ object SphereNSGAII extends App {
       evolution[DSL].eval
     }
 
-  println(result(nsga2, finalPopulation).mkString("\n"))
+  println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
+
+}
+
+object DiscreteNSGAII extends App {
+
+  import algorithm._
+
+  val nsga2 = NSGA2(
+    mu = 100,
+    lambda = 100,
+    fitness = discreteSphere.compute,
+    continuous = discreteSphere.continuous(6),
+    discrete = discreteSphere.discrete(3))
+
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+    nsga2.
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation)).
+      evolution
+
+  val (finalState, finalPopulation) =
+    NSGA2.run(new util.Random(42)) { imp =>
+      import imp._
+      evolution[DSL].eval
+    }
+
+  println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
 
 }
 
 object NoisySphereNSGAII extends App {
 
   import algorithm._
-  import algorithm.noisynsga2._
 
   val nsga2 =
     NoisyNSGA2(
       mu = 100,
       lambda = 100,
-      fitness = (rng: util.Random, v: Vector[Double]) => Vector(noisySphere.compute(rng, v)),
+      fitness = noisyDiscreteSphere.compute,
       aggregation = averageAggregation(_),
-      continuous = noisySphere.genome(2))
+      continuous = noisyDiscreteSphere.continuous(2),
+      discrete = noisyDiscreteSphere.discrete(2))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
@@ -72,20 +99,20 @@ object NoisySphereNSGAII extends App {
       evolution[DSL].eval
     }
 
-  println(result(nsga2, finalPopulation).mkString("\n"))
+  println(NoisyNSGA2.result(nsga2, finalPopulation).mkString("\n"))
 
 }
 
 object ZDT4NSGAII extends App {
 
-  import algorithm.nsga2._
+  import algorithm._
 
   val nsga2 =
     NSGA2(
       mu = 100,
       lambda = 100,
-      fitness = zdt4.compute(_),
-      continuous = zdt4.genome(10))
+      fitness = zdt4.compute,
+      continuous = zdt4.continuous(10))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
