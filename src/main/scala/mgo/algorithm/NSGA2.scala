@@ -35,7 +35,7 @@ import shapeless._
 object NSGA2 {
 
   import CDGenome._
-  import DeternimisticIndividual._
+  import DeterministicIndividual._
 
   //  def breeding[M[_]: Generation: Random: cats.Monad](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int): Breeding[M, Individual, Genome] =
   //    nsga2Operations.breeding[M, Individual, Genome](
@@ -59,7 +59,7 @@ object NSGA2 {
       operatorExploration)
 
   def expression(fitness: (Vector[Double], Vector[Int]) => Vector[Double], components: Vector[C]): Genome => Individual =
-    DeternimisticIndividual.expression(fitness, components)
+    DeterministicIndividual.expression(fitness, components)
 
   def elitism[M[_]: cats.Monad: Random: Generation](mu: Int, components: Vector[C]): Elitism[M, Individual] =
     NSGA2Operations.elitism[M, Individual](

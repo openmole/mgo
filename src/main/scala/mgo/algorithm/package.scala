@@ -257,7 +257,7 @@ package object algorithm {
 
     import monocle.macros._
 
-    object DeternimisticIndividual {
+    object DeterministicIndividual {
       @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
       def vectorFitness = Individual.fitness composeLens arrayToVectorLens
       def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)

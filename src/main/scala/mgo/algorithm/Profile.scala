@@ -36,7 +36,7 @@ import shapeless._
 object Profile extends niche.Imports {
 
   import CDGenome._
-  import DeternimisticIndividual._
+  import DeterministicIndividual._
 
   def result[N](profile: Profile[N], population: Vector[Individual]) =
     nicheElitism[Id, Individual, N](population, keepFirstFront(_, vectorFitness.get), profile.niche).map { i =>
@@ -64,7 +64,7 @@ object Profile extends niche.Imports {
       operatorExploration)
 
   def expression(fitness: (Vector[Double], Vector[Int]) => Vector[Double], components: Vector[C]): Genome => Individual =
-    DeternimisticIndividual.expression(fitness, components)
+    DeterministicIndividual.expression(fitness, components)
 
   def elitism[M[_]: cats.Monad: Random: Generation, N](niche: Niche[Individual, N], mu: Int, components: Vector[C]): Elitism[M, Individual] =
     ProfileOperations.elitism[M, Individual, N](
@@ -101,7 +101,7 @@ case class Profile[N](
   fitness: (Vector[Double], Vector[Int]) => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
-  niche: Niche[CDGenome.DeternimisticIndividual.Individual, N],
+  niche: Niche[CDGenome.DeterministicIndividual.Individual, N],
   nicheSize: Int = 20,
   operatorExploration: Double = 0.1)
 
