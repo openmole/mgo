@@ -44,10 +44,19 @@ object PSE extends niche.Imports {
 
   import CDGenome._
 
-  def result(nsga2: PSE, population: Vector[Individual]) =
+  case class Result(continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: Vector[Double])
+
+  def result(population: Vector[Individual], continuous: Vector[C], pattern: Vector[Double] => Vector[Int]) =
     population.map { i =>
-      (scaleContinuousValues(continuousValues.get(i.genome), nsga2.continuous), Individual.genome composeLens discreteValues get i, i.phenotype.toVector)
+      Result(
+        scaleContinuousValues(continuousValues.get(i.genome), continuous),
+        Individual.genome composeLens discreteValues get i,
+        pattern(i.phenotype.toVector),
+        i.phenotype.toVector)
     }
+
+  def result(pse: PSE, population: Vector[Individual]): Vector[Result] =
+    result(population, pse.continuous, pse.pattern)
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: HitMapM[M]) = for {
     map <- hitmap.get

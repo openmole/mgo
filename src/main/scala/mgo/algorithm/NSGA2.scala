@@ -68,10 +68,14 @@ object NSGA2 {
       Individual.age,
       mu)
 
-  def result(nsga2: NSGA2, population: Vector[Individual]) =
+  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
+
+  def result(population: Vector[Individual], continuous: Vector[C]) =
     keepFirstFront(population, vectorFitness.get).map { i =>
-      (scaleContinuousValues(continuousValues.get(i.genome), nsga2.continuous), Individual.genome composeLens discreteValues get i, i.fitness.toVector)
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, i.fitness.toVector)
     }
+
+  def result(nsga2: NSGA2, population: Vector[Individual]): Vector[Result] = result(population, nsga2.continuous)
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
 

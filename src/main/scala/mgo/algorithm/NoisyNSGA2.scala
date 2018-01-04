@@ -40,10 +40,17 @@ object NoisyNSGA2 {
   import CDGenome._
   import NoisyIndividual._
 
-  def result(nsga2: NoisyNSGA2, population: Vector[Individual]) =
-    keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness.get, nsga2.aggregation)).map {
-      i => NoisyIndividual.aggregate(i, nsga2.aggregation, nsga2.continuous)
+  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
+
+  def result(population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], continuous: Vector[C]) =
+    keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness.get, aggregation)).map {
+      i =>
+        val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
+        Result(c, d, f, r)
     }
+
+  def result(nsga2: NoisyNSGA2, population: Vector[Individual]): Vector[Result] =
+    result(population, nsga2.aggregation, nsga2.continuous)
 
   //  def breeding[M[_]: cats.Monad: Random: Generation](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
   //    noisynsga2Operations.breeding[M, Individual, Genome](

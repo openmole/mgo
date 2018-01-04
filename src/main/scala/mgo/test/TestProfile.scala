@@ -45,7 +45,7 @@ object SphereProfile extends App {
 
   println(
     Profile.result(algo, finalPopulation).map {
-      case (v, i, f) => (v ++ i ++ f).mkString(",")
+      r => (r.continuous ++ r.discrete ++ r.fitness).mkString(",")
     }.mkString("\n"))
 
 }
@@ -80,7 +80,7 @@ object NoisySphereProfile extends App {
 
   println(
     NoisyProfile.result(algo, finalPopulation).map {
-      case (v, d, f, a) => (v ++ d ++ f ++ Vector(a)).mkString(",")
+      r => (r.continuous ++ r.discrete ++ r.fitness ++ Vector(r.replications)).mkString(",")
     }.mkString("\n"))
 
 }

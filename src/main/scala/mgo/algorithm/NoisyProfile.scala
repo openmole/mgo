@@ -39,17 +39,27 @@ object NoisyProfile extends niche.Imports {
   import CDGenome._
   import NoisyIndividual._
 
-  def aggregatedFitness[N](profile: NoisyProfile[N]) =
-    NoisyNSGA2Operations.aggregated(vectorFitness.get, profile.aggregation)(_)
+  def aggregatedFitness[N](aggregation: Vector[Vector[Double]] => Vector[Double]) =
+    NoisyNSGA2Operations.aggregated(vectorFitness.get, aggregation)(_)
 
-  def result[N](profile: NoisyProfile[N], population: Vector[Individual]) = {
+  case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, replications: Int)
+
+  def result[N](
+    population: Vector[Individual],
+    aggregation: Vector[Vector[Double]] => Vector[Double],
+    niche: Individual => N,
+    continuous: Vector[C]) = {
     def nicheResult(population: Vector[Individual]) =
-      keepFirstFront(population, aggregatedFitness(profile))
+      keepFirstFront(population, aggregatedFitness(aggregation))
 
-    nicheElitism[Id, Individual, N](population, nicheResult, profile.niche).map { i =>
-      NoisyIndividual.aggregate(i, profile.aggregation, profile.continuous)
+    nicheElitism[Id, Individual, N](population, nicheResult, niche).map { i =>
+      val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
+      Result(c, d, f, niche(i), r)
     }
   }
+
+  def result[N](noisyProfile: NoisyProfile[N], population: Vector[Individual]): Vector[Result[N]] =
+    result(population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous)
 
   def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
     genomeProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)

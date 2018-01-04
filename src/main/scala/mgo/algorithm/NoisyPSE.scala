@@ -98,10 +98,21 @@ object NoisyPSE extends niche.Imports {
       (vectorPhenotype.get _ andThen aggregation andThen pattern)(i),
       Individual.phenotypeHistory.get(i).size)
 
-  def result(pse: NoisyPSE, population: Vector[Individual]) =
+  case class Result(continuous: Vector[Double], discrete: Vector[Int], phenotype: Vector[Double], pattern: Vector[Int], replications: Int)
+
+  def result(
+    population: Vector[Individual],
+    aggregation: Vector[Vector[Double]] => Vector[Double],
+    pattern: Vector[Double] => Vector[Int],
+    continuous: Vector[C]) =
     population.map {
-      i => aggregate(i, pse.aggregation, pse.pattern, pse.continuous)
+      i =>
+        val (c, d, f, p, r) = aggregate(i, aggregation, pattern, continuous)
+        Result(c, d, f, p, r)
     }
+
+  def result(pse: NoisyPSE, population: Vector[Individual]): Vector[Result] =
+    result(population, pse.aggregation, pse.pattern, pse.continuous)
 
   def run[T](rng: util.Random)(f: PSE.PSEImplicits => T): T = PSE.run(rng)(f)
   def run[T](state: EvolutionState[Map[Vector[Int], Int]])(f: PSE.PSEImplicits => T): T = PSE.run(state)(f)

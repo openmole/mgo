@@ -38,10 +38,19 @@ object Profile extends niche.Imports {
   import CDGenome._
   import DeterministicIndividual._
 
-  def result[N](profile: Profile[N], population: Vector[Individual]) =
-    nicheElitism[Id, Individual, N](population, keepFirstFront(_, vectorFitness.get), profile.niche).map { i =>
-      (scaleContinuousValues(continuousValues.get(i.genome), profile.continuous), Individual.genome composeLens discreteValues get i, i.fitness.toVector)
+  case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N)
+
+  def result[N](population: Vector[Individual], niche: Individual => N, continuous: Vector[C]) =
+    nicheElitism[Id, Individual, N](population, keepFirstFront(_, vectorFitness.get), niche).map { i =>
+      Result(
+        scaleContinuousValues(continuousValues.get(i.genome), continuous),
+        Individual.genome composeLens discreteValues get i,
+        i.fitness.toVector,
+        niche(i))
     }
+
+  def result[N](profile: Profile[N], population: Vector[Individual]): Vector[Result[N]] =
+    result(population, profile.niche, profile.continuous)
 
   def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
     genomeProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
