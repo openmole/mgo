@@ -69,5 +69,27 @@ pomExtra := (
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
+releaseVersionBump := sbtrelease.Version.Bump.Minor
+
+releaseTagComment    := s"Releasing ${(version in ThisBuild).value}"
+
+releaseCommitMessage := s"Bump version to ${(version in ThisBuild).value}"
+
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  tagRelease,
+  releaseStepCommand("publishSigned"),
+  setNextVersion,
+  commitNextVersion,
+  releaseStepCommand("sonatypeReleaseAll"),
+  pushChanges
+)
+
 scalariformSettings(true)
 
