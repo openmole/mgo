@@ -50,3 +50,34 @@ object ZDT4PSE extends App {
   println(result(pse, finalPopulation).mkString("\n"))
 
 }
+
+object ZDT4NoisyPSE extends App {
+
+  import algorithm._
+  import algorithm.NoisyPSE._
+
+  val pse = NoisyPSE(
+    lambda = 10,
+    phenotype = (_, c, d) => zdt4.compute(c, d),
+    pattern =
+      boundedGrid(
+        lowBound = Vector(0.0, 0.0),
+        highBound = Vector(1.0, 200.0),
+        definition = Vector(10, 10)),
+    continuous = zdt4.continuous(10),
+    aggregation = averageAggregation(_))
+
+  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMapM] =
+    pse.
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation)).
+      evolution
+
+  val (finalState, finalPopulation) = NoisyPSE.run(new util.Random(42)) { imp =>
+    import imp._
+    evolution[DSL].eval
+  }
+
+  println(result(pse, finalPopulation).mkString("\n"))
+
+}

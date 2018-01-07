@@ -32,6 +32,8 @@ import monocle.macros._
 import freedsl.dsl
 
 object NoisyPSE extends niche.Imports {
+  type HitMapM[M[_]] = PSE.HitMapM[M]
+
   import CDGenome._
 
   @Lenses case class Individual(
