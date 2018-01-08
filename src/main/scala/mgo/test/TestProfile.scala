@@ -30,11 +30,13 @@ object SphereProfile extends App {
     lambda = 100,
     fitness = discreteSphere.compute,
     niche = Profile.continuousProfile(x = 0, nX = 10),
-    continuous = discreteSphere.continuous(10))
+    continuous = discreteSphere.continuous(2),
+    discrete = discreteSphere.discrete(2)
+  )
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     algo.
-      until(afterGeneration(1000)).
+      until(afterGeneration(0)).
       trace((s, is) => println(s.generation)).evolution
 
   val (finalState, finalPopulation) =

@@ -78,7 +78,7 @@ package object algorithm {
     def randomUnscaledContinuousValues[M[_]: cats.Monad](n: Int, genomeLength: Int)(
       implicit
       randomM: Random[M]): M[Vector[Vector[Double]]] = {
-      def genome = randomM.nextDouble.repeat(genomeLength)
+      def genome = randomM.use(rng => Vector.fill(genomeLength)(rng.nextDouble()))
       Vector.fill(n)(genome).sequence
     }
 
