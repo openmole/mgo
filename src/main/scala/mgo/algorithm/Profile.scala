@@ -52,8 +52,11 @@ object Profile extends niche.Imports {
   def result[N](profile: Profile[N], population: Vector[Individual]): Vector[Result[N]] =
     result(population, profile.niche, profile.continuous)
 
-  def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
-    genomeProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
+  def continuousProfile(x: Int, nX: Int): Niche[Individual, Int] =
+    continuousProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
+
+  def discreteProfile(x: Int): Niche[Individual, Int] =
+    discreteProfile[Individual]((Individual.genome composeLens discreteValues).get _, x)
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)

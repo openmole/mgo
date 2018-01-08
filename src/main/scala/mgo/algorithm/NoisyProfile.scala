@@ -61,8 +61,11 @@ object NoisyProfile extends niche.Imports {
   def result[N](noisyProfile: NoisyProfile[N], population: Vector[Individual]): Vector[Result[N]] =
     result(population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous)
 
-  def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
-    genomeProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
+  def continuousProfile(x: Int, nX: Int): Niche[Individual, Int] =
+    continuousProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
+
+  def discreteProfile(x: Int): Niche[Individual, Int] =
+    discreteProfile[Individual]((Individual.genome composeLens discreteValues).get _, x)
 
   def adaptiveBreeding[M[_]: cats.Monad: Random: Generation](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double], discrete: Vector[D]): Breeding[M, Individual, Genome] =
     NoisyNSGA2Operations.adaptiveBreeding[M, Individual, Genome](

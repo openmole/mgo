@@ -41,11 +41,14 @@ object niche {
     def irregularGrid(axes: Vector[Vector[Double]])(values: Vector[Double]): Vector[Int] =
       axes zip values map { case (axe, v) => findInterval(axe.sorted, v) }
 
-    def genomeProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
+    def continuousProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
       (genome: G) => {
         val niche = (values(genome)(x) * nX).toInt
         if (niche == nX) niche - 1 else niche
       }
+
+    def discreteProfile[G](values: G => Vector[Int], x: Int): Niche[G, Int] =
+      (genome: G) => values(genome)(x)
 
     def mapGenomePlotter[G](x: Int, nX: Int, y: Int, nY: Int)(implicit values: Lens[G, Seq[Double]]): Niche[G, (Int, Int)] =
       (genome: G) => {

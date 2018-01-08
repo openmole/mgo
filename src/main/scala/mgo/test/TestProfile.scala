@@ -29,7 +29,7 @@ object SphereProfile extends App {
   val algo = Profile(
     lambda = 100,
     fitness = discreteSphere.compute,
-    niche = Profile.genomeProfile(x = 0, nX = 10),
+    niche = Profile.continuousProfile(x = 0, nX = 10),
     continuous = discreteSphere.continuous(10))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
@@ -55,7 +55,7 @@ object NoisySphereProfile extends App {
   import algorithm._
 
   def aggregation(history: Vector[Vector[Double]]) = history.transpose.map(h => h.sum / h.size)
-  def niche = NoisyProfile.genomeProfile(x = 0, nX = 10)
+  def niche = NoisyProfile.continuousProfile(x = 0, nX = 10)
 
   val algo = NoisyProfile(
     muByNiche = 20,
