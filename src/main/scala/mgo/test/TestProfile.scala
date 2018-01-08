@@ -31,8 +31,7 @@ object SphereProfile extends App {
     fitness = discreteSphere.compute,
     niche = Profile.continuousProfile(x = 0, nX = 10),
     continuous = discreteSphere.continuous(2),
-    discrete = discreteSphere.discrete(2)
-  )
+    discrete = discreteSphere.discrete(2))
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     algo.
