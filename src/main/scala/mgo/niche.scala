@@ -50,6 +50,8 @@ object niche {
     def discreteProfile[G](values: G => Vector[Int], x: Int): Niche[G, Int] =
       (genome: G) => values(genome)(x)
 
+    def sequenceNiches[G, T](niches: Vector[Niche[G, T]]): Niche[G, Vector[T]] = { (g: G) => niches.map(_(g)) }
+
     def mapGenomePlotter[G](x: Int, nX: Int, y: Int, nY: Int)(implicit values: Lens[G, Seq[Double]]): Niche[G, (Int, Int)] =
       (genome: G) => {
         val (nicheX, nicheY) = ((values.get(genome)(x) * nX).toInt, (values.get(genome)(y) * nY).toInt)
