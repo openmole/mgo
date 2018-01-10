@@ -18,7 +18,7 @@ object elitism {
     Elitism[M, I](individuals => individuals.sorted(FO.contramap[I](f).toOrdering).take(mu).pure[M])
 
   def maximiseO[M[_]: Applicative, I, F](f: I => F, mu: Int)(implicit MM: cats.Monad[M], FO: Order[F]): Elitism[M, I] =
-    Elitism(individuals => individuals.sorted(FO.contramap[I](f).reverse.toOrdering).take(mu).pure[M])
+    Elitism(individuals => individuals.sorted(Order.reverse(FO.contramap[I](f)).toOrdering).take(mu).pure[M])
 
   /** Returns n individuals randomly. */
   def randomO[M[_]: cats.Monad, I](n: Int)(implicit randomM: Random[M]): Elitism[M, I] =
@@ -49,7 +49,7 @@ object elitism {
   def keepHighestRanked[I, K](population: Vector[I], ranks: Vector[K], mu: Int)(implicit KO: Order[K]) = {
     if (population.size < mu) population
     else {
-      val sortedBestToWorst = (population zip ranks).sortBy { _._2 }(KO.reverse.toOrdering).map { _._1 }
+      val sortedBestToWorst = (population zip ranks).sortBy { _._2 }(Order.reverse(KO).toOrdering).map { _._1 }
       sortedBestToWorst.take(mu)
     }
   }

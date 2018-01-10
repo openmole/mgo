@@ -16,7 +16,7 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 sources in (Compile, doc) := Nil
 
 val monocleVersion = "1.4.0"
-val freedslVersion = "0.21"
+val freedslVersion = "0.23"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
 
