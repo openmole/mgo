@@ -47,6 +47,17 @@ object niche {
         if (niche == nX) niche - 1 else niche
       }
 
+    def boundedContinuousProfile[I](values: I => Vector[Double], x: Int, nX: Int, min: Double, max: Double): Niche[I, Int] =
+      (i: I) =>
+        values(i)(x) match {
+          case v if v < min => -1
+          case v if v > max => nX
+          case v =>
+            val bounded = changeScale(v, min, max, 0, 1)
+            val niche = (bounded * nX).toInt
+            if (niche == nX) niche - 1 else niche
+        }
+
     def discreteProfile[G](values: G => Vector[Int], x: Int): Niche[G, Int] =
       (genome: G) => values(genome)(x)
 

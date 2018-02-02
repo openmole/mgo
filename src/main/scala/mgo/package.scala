@@ -191,9 +191,9 @@ package object mgo extends stop.Imports {
 
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
 
-  private def changeScale(v: Double, min: Double, max: Double, boundaryMin: Double, boundaryMax: Double) = {
-    val factor = (boundaryMax - boundaryMin) / (max - min)
-    (factor * (v - min) + boundaryMin)
+  def changeScale(v: Double, fromMin: Double, fromMax: Double, toMin: Double, toMax: Double) = {
+    val factor = (toMax - toMin) / (fromMax - fromMin)
+    (factor * (v - fromMin) + toMin)
   }
 
   implicit def double2Scalable(d: Double) = new {

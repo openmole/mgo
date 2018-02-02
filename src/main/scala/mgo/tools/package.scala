@@ -100,12 +100,11 @@ package object tools {
       }
   }     */
 
-  def time[R](label: String, block: => R): R = {
+  def time[R](label: String, block: => R): (R, Long) = {
     val t0 = System.nanoTime()
     val result = block // call-by-name
     val t1 = System.nanoTime()
-    println(f"$label elapsed time: ${(t1 - t0)}%,d ns")
-    result
+    (result, t1 - t0)
   }
 
   /* ------------------ Math ------------------ */
