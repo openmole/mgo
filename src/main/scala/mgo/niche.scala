@@ -58,6 +58,9 @@ object niche {
             if (niche == nX) niche - 1 else niche
         }
 
+    def gridContinuousProfile[I](values: I => Vector[Double], x: Int, intervals: Vector[Double]): Niche[I, Int] =
+      (i: I) => findInterval(intervals, values(i)(x))
+
     def discreteProfile[G](values: G => Vector[Int], x: Int): Niche[G, Int] =
       (genome: G) => values(genome)(x)
 

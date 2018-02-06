@@ -58,11 +58,17 @@ object Profile extends niche.Imports {
   def discreteProfile(x: Int): Niche[Individual, Int] =
     discreteProfile[Individual]((Individual.genome composeLens discreteValues).get _, x)
 
-  def continuousBoundedProfile(continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
+  def boundedContinuousProfile(continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
     boundedContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, nX, min, max)
 
-  def objectiveBoundedProfile(x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
+  def gridContinuousProfile(continuous: Vector[C], x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
+    gridContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, intervals)
+
+  def boundedObjectiveProfile(x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
     boundedContinuousProfile[Individual](vectorFitness.get _, x, nX, min, max)
+
+  def gridObjectiveProfile(x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
+    gridContinuousProfile[Individual](vectorFitness.get _, x, intervals)
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
