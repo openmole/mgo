@@ -47,10 +47,9 @@ package object test {
   }
 
   object rastrigin {
-    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-5.12, 5.12))
+    def continuous(size: Int) = Vector.fill(size)(C(-5.12, 5.12))
     def compute(i: Vector[Double]): Double = {
-      val scaled = scale(i)
-      10 * scaled.size + scaled.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
+      10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
     }
   }
 

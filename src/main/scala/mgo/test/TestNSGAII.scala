@@ -126,3 +126,28 @@ object ZDT4NSGAII extends App {
   }
 
 }
+
+object RastriginNSGAII extends App {
+
+  import algorithm._
+
+  val nsga2 = NSGA2(
+    mu = 20,
+    lambda = 20,
+    fitness = (x, _) => Vector(rastrigin.compute(x)),
+    continuous = rastrigin.continuous(2))
+
+  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+    nsga2.
+      until(afterGeneration(5000)).
+      trace { (s, is) => println(s.generation) }.
+      evolution
+
+  val (finalState, finalPopulation) =
+    NSGA2.run(new util.Random(42)) { imp =>
+      import imp._
+      evolution[DSL].eval
+    }
+
+  println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
+}
