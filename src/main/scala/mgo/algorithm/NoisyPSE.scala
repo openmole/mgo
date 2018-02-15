@@ -198,7 +198,7 @@ object NoisyPSEOperations {
     historyAge: monocle.Lens[I, Long],
     historySize: Int)(implicit MH: HitMap[M, Vector[Int]]): Elitism[M, I] = Elitism[M, I] { population =>
     for {
-      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, P](historyAge, history)(historySize)) apply filterNaN(population, history.get _ andThen aggregation)
+      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, P](age.get, historyAge, history)(historySize)) apply filterNaN(population, history.get _ andThen aggregation)
       mappedPopulation <- addHits[M, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, mapped) apply cloneRemoved
       elite <- keepNiches(history.get _ andThen aggregation andThen pattern, maximiseO[M, I, Long](i => history.get(i).size, 1)) apply mappedPopulation
     } yield elite

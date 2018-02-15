@@ -201,7 +201,7 @@ object NoisyNSGA2Operations {
     historySize: Int,
     mu: Int): Elitism[M, I] = Elitism[M, I] { population =>
     for {
-      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](historyAge, history)(historySize)) apply filterNaN(population, aggregated(history.get, aggregation))
+      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](age.get, historyAge, history)(historySize)) apply filterNaN(population, aggregated(history.get, aggregation))
       ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history.get, aggregation)) apply cloneRemoved
       elite = keepHighestRanked(cloneRemoved, ranks, mu)
     } yield elite

@@ -68,18 +68,15 @@ object elitism {
   def keepYoungest[M[_]: cats.Monad, I](age: I => Long): CloneStrategy[M, I] =
     (clones: Vector[I]) => Vector(clones.maxBy(age)).pure[M]
 
-  def mergeHistories[M[_]: cats.Monad, I, P](age: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
+  def mergeHistories[M[_]: cats.Monad, I, P](age: I => Long, historyAge: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
     (clones: Vector[I]) =>
       Vector(clones.reduce { (i1, i2) =>
-        val (old, young) = if (age.get(i1) > age.get(i2)) (i1, i2) else (i2, i1)
-
-        val oldAge = age.get(old)
-        val youngAge = age.get(young)
+        val (old, young) = if (age(i1) > age(i2)) (i1, i2) else (i2, i1)
 
         def oldH: Vector[P] = history.get(old)
-        def youngH: Vector[P] = history.get(young).takeRight(scala.math.min(youngAge, historySize).toInt)
+        def youngH: Vector[P] = history.get(young).takeRight(scala.math.min(historyAge.get(young), historySize).toInt)
         def updatedHistory = history.set((oldH ++ youngH).takeRight(historySize))(old)
-        age.set(oldAge + youngAge)(updatedHistory)
+        historyAge.set(historyAge.get(old) + historyAge.get(young))(updatedHistory)
       }).pure[M]
 
 }
