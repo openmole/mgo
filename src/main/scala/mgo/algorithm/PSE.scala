@@ -188,7 +188,7 @@ object PSEOperations {
     age: monocle.Lens[I, Long],
     mapped: monocle.Lens[I, Boolean]): Elitism[M, I] = Elitism[M, I] { population =>
     for {
-      cloneRemoved <- applyCloneStrategy(values, keepYoungest[M, I](age.get)) apply filterNaN(population, phenotype)
+      cloneRemoved <- applyCloneStrategy(values, keepOldest[M, I](age.get)) apply filterNaN(population, phenotype)
       mappedPopulation <- addHits[M, I, Vector[Int]](phenotype andThen pattern, mapped) apply cloneRemoved
       elite <- keepNiches(phenotype andThen pattern, randomO[M, I](1)) apply mappedPopulation
     } yield elite

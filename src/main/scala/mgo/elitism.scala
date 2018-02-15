@@ -65,7 +65,7 @@ object elitism {
   def applyCloneStrategy[M[_]: cats.Monad, I, G](getGenome: I => G, cloneStrategy: CloneStrategy[M, I]): Elitism[M, I] =
     Elitism(_.groupBy(getGenome).valuesIterator.toVector.flatTraverse(cloneStrategy))
 
-  def keepYoungest[M[_]: cats.Monad, I](age: I => Long): CloneStrategy[M, I] =
+  def keepOldest[M[_]: cats.Monad, I](age: I => Long): CloneStrategy[M, I] =
     (clones: Vector[I]) => Vector(clones.maxBy(age)).pure[M]
 
   def mergeHistories[M[_]: cats.Monad, I, P](age: I => Long, historyAge: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =

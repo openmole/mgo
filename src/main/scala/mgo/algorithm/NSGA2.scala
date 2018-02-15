@@ -163,7 +163,7 @@ object NSGA2Operations {
     age: monocle.Lens[I, Long],
     mu: Int) = Elitism[M, I] { population =>
     for {
-      cloneRemoved <- applyCloneStrategy(values, keepYoungest[M, I](age.get)) apply filterNaN(population, fitness)
+      cloneRemoved <- applyCloneStrategy(values, keepOldest[M, I](age.get)) apply filterNaN(population, fitness)
       ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply cloneRemoved
       elite = keepHighestRanked(cloneRemoved, ranks, mu)
     } yield elite
