@@ -40,11 +40,10 @@ object NoisyPSE extends niche.Imports {
     genome: Genome,
     historyAge: Long,
     phenotypeHistory: Array[Array[Double]],
-    age: Long,
     mapped: Boolean = false,
     foundedIsland: Boolean = false)
 
-  def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, 1, Array(phenotype.toArray), 0)
+  def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, 1, Array(phenotype.toArray))
   def vectorPhenotype = Individual.phenotypeHistory composeLens array2ToVectorLens
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: mgo.contexts.HitMap[M, Vector[Int]]) = PSE.state[M]
@@ -195,8 +194,16 @@ object NoisyPSEOperations {
     mapped: monocle.Lens[I, Boolean],
     historyAge: monocle.Lens[I, Long],
     historySize: Int)(implicit MH: HitMap[M, Vector[Int]]): Elitism[M, I] = Elitism[M, I] { population =>
+
+    def unclone: UncloneStrategy[M, I] = (is: Vector[I]) => {
+      def merged: M[I] = mergeHistories[M, I, P](historyAge, history)(historySize).apply(is)
+      merged.map(mapped.set(false))
+    }
+
     for {
-      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, P](historyAge, history)(historySize)) apply filterNaN(population, history.get _ andThen aggregation)
+      cloneRemoved <- applyCloneStrategy(
+        values,
+        unclone) apply filterNaN(population, history.get _ andThen aggregation)
       mappedPopulation <- addHits[M, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, mapped) apply cloneRemoved
       elite <- keepNiches(history.get _ andThen aggregation andThen pattern, maximiseO[M, I, Long](i => history.get(i).size, 1)) apply mappedPopulation
     } yield elite

@@ -59,42 +59,43 @@ object elitism {
     niches.map { case (_, individuals) => keep(individuals) }.sequence.map(_.flatten)
   }
 
-  type CloneStrategy[M[_], I] = Vector[I] => M[Vector[I]]
+  type UncloneStrategy[M[_], I] = Vector[I] => M[I]
 
 /**** Clone strategies ****/
 
-  def applyCloneStrategy[M[_]: cats.Monad, I, G](getGenome: I => G, cloneStrategy: CloneStrategy[M, I]): Elitism[M, I] = {
+  def applyCloneStrategy[M[_]: cats.Monad, I, G](getGenome: I => G, cloneStrategy: UncloneStrategy[M, I]): Elitism[M, I] = {
     import tools._
-    Elitism(_.groupByOrdered(getGenome).valuesIterator.map(_.toVector).toVector.flatTraverse(cloneStrategy))
+    def unclone(clones: Vector[I]) =
+      if (clones.size == 1) clones.head.pure[M]
+      else cloneStrategy(clones)
+
+    Elitism(_.groupByOrdered(getGenome).valuesIterator.map(_.toVector).toVector.traverse(unclone))
   }
 
-  def keepOldest[M[_]: cats.Monad, I](age: I => Long): CloneStrategy[M, I] =
-    (clones: Vector[I]) => Vector(clones.maxBy(age)).pure[M]
+  def keepOldest[M[_]: cats.Monad, I](age: I => Long): UncloneStrategy[M, I] =
+    (clones: Vector[I]) => clones.maxBy(age).pure[M]
 
-  def keepFirst[M[_]: cats.Monad, I]: CloneStrategy[M, I] =
-    (clones: Vector[I]) => clones.take(1).pure[M]
+  def keepFirst[M[_]: cats.Monad, I]: UncloneStrategy[M, I] =
+    (clones: Vector[I]) => clones.head.pure[M]
 
-  def mergeHistories[M[_]: cats.Monad: Random, I, P](historyAge: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
+  def mergeHistories[M[_]: cats.Monad: Random, I, P](historyAge: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): UncloneStrategy[M, I] =
     (clones: Vector[I]) =>
       implicitly[Random[M]].use { rng =>
-        if (clones.size == 1) clones
-        else {
-          def merged: I =
-            clones.reduce { (i1, i2) =>
-              val i1HistoryAge = historyAge.get(i1)
-              val i2HistoryAge = historyAge.get(i2)
+        def merged: I =
+          clones.reduce { (i1, i2) =>
+            val i1HistoryAge = historyAge.get(i1)
+            val i2HistoryAge = historyAge.get(i2)
 
-              (i1HistoryAge, i2HistoryAge) match {
-                case (_, 0) => i1
-                case (0, _) => i2
-                case _ =>
-                  def ownHistory(i: I) = history.get(i).takeRight(scala.math.min(historyAge.get(i), historySize).toInt)
-                  def updatedHistory = history.set(rng.shuffle((ownHistory(i1) ++ ownHistory(i2)).take(historySize)))(i1)
-                  historyAge.set(i1HistoryAge + i2HistoryAge)(updatedHistory)
-              }
+            (i1HistoryAge, i2HistoryAge) match {
+              case (_, 0) => i1
+              case (0, _) => i2
+              case _ =>
+                def ownHistory(i: I) = history.get(i).takeRight(scala.math.min(historyAge.get(i), historySize).toInt)
+                def updatedHistory = history.set(rng.shuffle((ownHistory(i1) ++ ownHistory(i2)).take(historySize)))(i1)
+                historyAge.set(i1HistoryAge + i2HistoryAge)(updatedHistory)
             }
-          Vector(merged)
-        }
+          }
+        merged
       }
 
 }

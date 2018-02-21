@@ -66,11 +66,10 @@ object PSE extends niche.Imports {
   @Lenses case class Individual(
     genome: Genome,
     phenotype: Array[Double],
-    age: Long,
     mapped: Boolean = false,
     foundedIsland: Boolean = false)
 
-  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
+  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray)
   def vectorPhenotype = Individual.phenotype composeLens arrayToVectorLens
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
@@ -98,7 +97,6 @@ object PSE extends niche.Imports {
       i => values(Individual.genome.get(i), continuous),
       vectorPhenotype.get,
       pattern,
-      Individual.age,
       Individual.mapped)
 
   def expression(phenotype: (Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): Genome => Individual =
@@ -185,13 +183,12 @@ object PSEOperations {
     values: I => (Vector[Double], Vector[Int]),
     phenotype: I => P,
     pattern: P => Vector[Int],
-    age: monocle.Lens[I, Long],
     mapped: monocle.Lens[I, Boolean]): Elitism[M, I] = Elitism[M, I] { population =>
     for {
-      cloneRemoved <- applyCloneStrategy(values, keepOldest[M, I](age.get)) apply filterNaN(population, phenotype)
+      cloneRemoved <- applyCloneStrategy(values, keepFirst[M, I]) apply filterNaN(population, phenotype)
       mappedPopulation <- addHits[M, I, Vector[Int]](phenotype andThen pattern, mapped) apply cloneRemoved
       elite <- keepNiches(phenotype andThen pattern, randomO[M, I](1)) apply mappedPopulation
     } yield elite
-  } andThen incrementAge[M, I](age)
+  }
 
 }
