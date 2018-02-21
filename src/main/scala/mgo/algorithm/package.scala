@@ -258,9 +258,9 @@ package object algorithm {
     import monocle.macros._
 
     object DeterministicIndividual {
-      @Lenses case class Individual(genome: Genome, fitness: Array[Double], age: Long)
+      @Lenses case class Individual(genome: Genome, fitness: Array[Double])
       def vectorFitness = Individual.fitness composeLens arrayToVectorLens
-      def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray, 0)
+      def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray)
 
       def expression(fitness: (Vector[Double], Vector[Int]) => Vector[Double], components: Vector[C]): Genome => Individual =
         deterministic.expression[Genome, Individual](
@@ -271,12 +271,6 @@ package object algorithm {
     }
 
     object NoisyIndividual {
-      def oldest(population: Vector[Individual]) =
-        if (population.isEmpty) population
-        else {
-          val maxHistory = population.map(_.fitnessHistory.size).max
-          population.filter(_.fitnessHistory.size == maxHistory)
-        }
 
       def aggregate(i: Individual, aggregation: Vector[Vector[Double]] => Vector[Double], continuous: Vector[C]) =
         (
@@ -285,8 +279,8 @@ package object algorithm {
           aggregation(vectorFitness.get(i)),
           Individual.fitnessHistory.get(i).size)
 
-      @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Array[Double]], age: Long)
-      def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, 1, Array(f.toArray), 0)
+      @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Array[Double]])
+      def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, 1, Array(f.toArray))
       def vectorFitness = Individual.fitnessHistory composeLens array2ToVectorLens
 
       def expression(fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): (util.Random, Genome) => Individual =

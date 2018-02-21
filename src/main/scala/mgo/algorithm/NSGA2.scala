@@ -65,7 +65,6 @@ object NSGA2 {
     NSGA2Operations.elitism[M, Individual](
       vectorFitness.get,
       i => values(Individual.genome.get(i), components),
-      Individual.age,
       mu)
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
@@ -160,13 +159,12 @@ object NSGA2Operations {
   def elitism[M[_]: cats.Monad: Random: Generation, I](
     fitness: I => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
-    age: monocle.Lens[I, Long],
     mu: Int) = Elitism[M, I] { population =>
     for {
-      cloneRemoved <- applyCloneStrategy(values, keepOldest[M, I](age.get)) apply filterNaN(population, fitness)
+      cloneRemoved <- applyCloneStrategy(values, keepFirst[M, I]) apply filterNaN(population, fitness)
       ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply cloneRemoved
       elite = keepHighestRanked(cloneRemoved, ranks, mu)
     } yield elite
-  } andThen incrementAge[M, I](age)
+  }
 
 }

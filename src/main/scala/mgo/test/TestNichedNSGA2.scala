@@ -17,7 +17,6 @@ object NichedNSGAII extends App {
     discrete = discreteSphere.discrete(3),
     niche = i => i.genome.discreteValues.take(2).toSeq)
 
-
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
     nsga2.
       until(afterGeneration(100)).

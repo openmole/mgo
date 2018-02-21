@@ -132,8 +132,8 @@ object RastriginNSGAII extends App {
   import algorithm._
 
   val nsga2 = NSGA2(
-    mu = 20,
-    lambda = 20,
+    mu = 100,
+    lambda = 100,
     fitness = (x, _) => Vector(rastrigin.compute(x)),
     continuous = rastrigin.continuous(2))
 

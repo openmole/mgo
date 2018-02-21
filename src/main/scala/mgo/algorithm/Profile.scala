@@ -94,7 +94,6 @@ object Profile extends niche.Imports {
     ProfileOperations.elitism[M, Individual, N](
       vectorFitness.get,
       i => values(Individual.genome.get(i), components),
-      Individual.age,
       niche,
       mu)
 
@@ -185,10 +184,9 @@ object ProfileOperations {
   def elitism[M[_]: cats.Monad: Random: Generation, I, N](
     fitness: I => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
-    age: monocle.Lens[I, Long],
     niche: Niche[I, N],
     muByNiche: Int) = {
-    def nsga2Elitism(population: Vector[I]) = NSGA2Operations.elitism[M, I](fitness, values, age, muByNiche).apply(population)
+    def nsga2Elitism(population: Vector[I]) = NSGA2Operations.elitism[M, I](fitness, values, muByNiche).apply(population)
     Elitism[M, I] { nicheElitism(_, nsga2Elitism, niche) }
   }
 

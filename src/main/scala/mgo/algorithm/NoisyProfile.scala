@@ -100,7 +100,6 @@ object NoisyProfile extends niche.Imports {
       vectorFitness,
       aggregation,
       i => values(Individual.genome.get(i), components),
-      Individual.age,
       Individual.historyAge,
       historySize,
       niche,
@@ -231,7 +230,6 @@ object NoisyProfileOperations {
     history: monocle.Lens[I, Vector[Vector[Double]]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
-    age: monocle.Lens[I, Long],
     historyAge: monocle.Lens[I, Long],
     historySize: Int,
     niche: Niche[I, N],
@@ -241,7 +239,6 @@ object NoisyProfileOperations {
         history,
         aggregation,
         values,
-        age,
         historyAge,
         historySize,
         muByNiche).apply(population)

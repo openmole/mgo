@@ -87,7 +87,6 @@ object NoisyNSGA2 {
       vectorFitness,
       aggregation,
       i => values(Individual.genome.get(i), components),
-      Individual.age,
       Individual.historyAge,
       historySize,
       mu)
@@ -196,15 +195,14 @@ object NoisyNSGA2Operations {
     history: monocle.Lens[I, Vector[Vector[Double]]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
-    age: monocle.Lens[I, Long],
     historyAge: monocle.Lens[I, Long],
     historySize: Int,
     mu: Int): Elitism[M, I] = Elitism[M, I] { population =>
     for {
-      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](age.get, historyAge, history)(historySize)) apply filterNaN(population, aggregated(history.get, aggregation))
+      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](historyAge, history)(historySize)) apply filterNaN(population, aggregated(history.get, aggregation))
       ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history.get, aggregation)) apply cloneRemoved
       elite = keepHighestRanked(cloneRemoved, ranks, mu)
     } yield elite
-  } andThen incrementAge[M, I](age)
+  }
 
 }

@@ -62,21 +62,39 @@ object elitism {
   type CloneStrategy[M[_], I] = Vector[I] => M[Vector[I]]
 
 /**** Clone strategies ****/
-  def applyCloneStrategy[M[_]: cats.Monad, I, G](getGenome: I => G, cloneStrategy: CloneStrategy[M, I]): Elitism[M, I] =
-    Elitism(_.groupBy(getGenome).valuesIterator.toVector.flatTraverse(cloneStrategy))
+
+  def applyCloneStrategy[M[_]: cats.Monad, I, G](getGenome: I => G, cloneStrategy: CloneStrategy[M, I]): Elitism[M, I] = {
+    import tools._
+    Elitism(_.groupByOrdered(getGenome).valuesIterator.map(_.toVector).toVector.flatTraverse(cloneStrategy))
+  }
 
   def keepOldest[M[_]: cats.Monad, I](age: I => Long): CloneStrategy[M, I] =
     (clones: Vector[I]) => Vector(clones.maxBy(age)).pure[M]
 
-  def mergeHistories[M[_]: cats.Monad, I, P](age: I => Long, historyAge: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
-    (clones: Vector[I]) =>
-      Vector(clones.reduce { (i1, i2) =>
-        val (old, young) = if (age(i1) > age(i2)) (i1, i2) else (i2, i1)
+  def keepFirst[M[_]: cats.Monad, I]: CloneStrategy[M, I] =
+    (clones: Vector[I]) => clones.take(1).pure[M]
 
-        def oldH: Vector[P] = history.get(old)
-        def youngH: Vector[P] = history.get(young).takeRight(scala.math.min(historyAge.get(young), historySize).toInt)
-        def updatedHistory = history.set((oldH ++ youngH).takeRight(historySize))(old)
-        historyAge.set(historyAge.get(old) + historyAge.get(young))(updatedHistory)
-      }).pure[M]
+  def mergeHistories[M[_]: cats.Monad: Random, I, P](historyAge: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): CloneStrategy[M, I] =
+    (clones: Vector[I]) =>
+      implicitly[Random[M]].use { rng =>
+        if (clones.size == 1) clones
+        else {
+          def merged: I =
+            clones.reduce { (i1, i2) =>
+              val i1HistoryAge = historyAge.get(i1)
+              val i2HistoryAge = historyAge.get(i2)
+
+              (i1HistoryAge, i2HistoryAge) match {
+                case (_, 0) => i1
+                case (0, _) => i2
+                case _ =>
+                  def ownHistory(i: I) = history.get(i).takeRight(scala.math.min(historyAge.get(i), historySize).toInt)
+                  def updatedHistory = history.set(rng.shuffle((ownHistory(i1) ++ ownHistory(i2)).take(historySize)))(i1)
+                  historyAge.set(i1HistoryAge + i2HistoryAge)(updatedHistory)
+              }
+            }
+          Vector(merged)
+        }
+      }
 
 }

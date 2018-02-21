@@ -21,6 +21,7 @@ import cats.kernel._
 import shapeless.Lazy
 import org.apache.commons.math3.random.RandomGenerator
 
+import scala.collection.mutable
 import scala.math.{ abs, max, min, pow, sqrt }
 
 package object tools {
@@ -99,6 +100,17 @@ package object tools {
         case None => a
       }
   }     */
+
+  implicit class GroupByOrderedImplicitImpl[A](val t: Traversable[A]) extends AnyVal {
+    def groupByOrdered[K](f: A => K): collection.Map[K, List[A]] = {
+      val map = mutable.LinkedHashMap[K, List[A]]()
+      for (i <- t) {
+        val key = f(i)
+        map(key) = i :: map.getOrElse(key, Nil)
+      }
+      map.mapValues(_.reverse)
+    }
+  }
 
   def time[R](label: String, block: => R): (R, Long) = {
     val t0 = System.nanoTime()
