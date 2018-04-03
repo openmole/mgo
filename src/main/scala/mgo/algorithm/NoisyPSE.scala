@@ -32,7 +32,6 @@ import monocle.macros._
 import freedsl.dsl
 
 object NoisyPSE extends niche.Imports {
-  type HitMapM[M[_]] = PSE.HitMapM[M]
 
   import CDGenome._
 
@@ -51,7 +50,7 @@ object NoisyPSE extends niche.Imports {
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: PSE.HitMapM](
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: HitMapM](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,

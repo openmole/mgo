@@ -39,9 +39,6 @@ import freestyle.tagless._
 
 object PSE extends niche.Imports {
 
-  type HitMapM[M[_]] = HitMap[M, Vector[Int]]
-  type HitMapState = Map[Vector[Int], Int]
-
   import CDGenome._
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: Vector[Double])
@@ -149,7 +146,7 @@ case class PSE(
 
 object PSEOperations {
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: PSE.HitMapM, I, G](
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: HitMapM, I, G](
     genome: I => G,
     continuousValues: G => Vector[Double],
     continuousOperator: G => Option[Int],
@@ -179,7 +176,7 @@ object PSEOperations {
     } yield sizedOffspringGenomes
   }
 
-  def elitism[M[_]: cats.Monad: Random: Generation: PSE.HitMapM, I, P: CanBeNaN](
+  def elitism[M[_]: cats.Monad: Random: Generation: HitMapM, I, P: CanBeNaN](
     values: I => (Vector[Double], Vector[Int]),
     phenotype: I => P,
     pattern: P => Vector[Int],
