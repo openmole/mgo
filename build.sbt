@@ -15,7 +15,7 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 // macro paradise doesn't work with scaladoc
 sources in (Compile, doc) := Nil
 
-val monocleVersion = "1.4.0"
+val monocleVersion = "1.5.0"
 val freedslVersion = "0.23"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
