@@ -44,13 +44,13 @@ object contexts {
   //  }
 
   trait Archive[M[_], I] {
-    def put(i: I): M[Unit]
+    def put(i: Seq[I]): M[Unit]
     def get(): M[Vector[I]]
   }
 
   @tagless trait ReachMap {
     def reached(c: Vector[Int]): FS[Boolean]
-    def set(c: Vector[Int], boolean: Boolean): FS[Unit]
+    def setReached(c: Seq[Vector[Int]]): FS[Unit]
   }
 
   type IO[T[_]] = freedsl.io.IO[T]
