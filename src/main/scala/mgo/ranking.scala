@@ -123,8 +123,8 @@ object ranking {
 
   //TODO: Lazy ne sert à rien ici. On pourrait redefinir le type Ranking en Ranking[M,I,K] avec K est de typeclass Order,
   // pour ne pas toujours être obligé d'utiliser Lazy.
-  def hitCountRanking[M[_]: cats.Monad, I, C](cell: I => C)(implicit hm: HitMap[M, C]): Ranking[M, I] = {
-    def hitCount(cell: C) = hm.get.map(m => m.getOrElse(cell, 0))
+  def hitCountRanking[M[_]: cats.Monad: HitMap, I](cell: I => Vector[Int]): Ranking[M, I] = {
+    def hitCount(cell: Vector[Int]) = implicitly[HitMap[M]].get.map(m => m.getOrElse(cell, 0))
     Ranking { is => is.traverse { i: I => hitCount(cell(i)).map[Lazy[Int]] { i => Lazy(i) } } }
   }
 

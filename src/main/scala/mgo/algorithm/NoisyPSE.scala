@@ -45,12 +45,12 @@ object NoisyPSE extends niche.Imports {
   def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, 1, Array(phenotype.toArray))
   def vectorPhenotype = Individual.phenotypeHistory composeLens array2ToVectorLens
 
-  def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: mgo.contexts.HitMap[M, Vector[Int]]) = PSE.state[M]
+  def state[M[_]: cats.Monad: StartTime: Random: Generation: HitMap] = PSE.state[M]
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: HitMapM](
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: HitMap](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
@@ -70,11 +70,11 @@ object NoisyPSE extends niche.Imports {
       operatorExploration,
       cloneProbability)
 
-  def elitism[M[_]: cats.Monad: Random: Generation](
+  def elitism[M[_]: cats.Monad: Random: HitMap: Generation](
     pattern: Vector[Double] => Vector[Int],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     historySize: Int,
-    continuous: Vector[C])(implicit MH: HitMap[M, Vector[Int]]) =
+    continuous: Vector[C]) =
     NoisyPSEOperations.elitism[M, Individual, Vector[Double]](
       i => values(Individual.genome.get(i), continuous),
       vectorPhenotype,
@@ -116,7 +116,7 @@ object NoisyPSE extends niche.Imports {
   def run[T](rng: util.Random)(f: PSE.PSEImplicits => T): T = PSE.run(rng)(f)
   def run[T](state: EvolutionState[Map[Vector[Int], Int]])(f: PSE.PSEImplicits => T): T = PSE.run(state)(f)
 
-  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: HitMap[M, Vector[Int]]) = new Algorithm[NoisyPSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] {
+  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: HitMap: Generation] = new Algorithm[NoisyPSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] {
 
     def initialPopulation(t: NoisyPSE) =
       noisy.initialPopulation[M, Genome, Individual](
@@ -157,7 +157,7 @@ case class NoisyPSE(
 
 object NoisyPSEOperations {
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, I, G](
+  def adaptiveBreeding[M[_]: cats.Monad: Random: HitMap: Generation, I, G](
     genome: I => G,
     continuousValues: G => Vector[Double],
     continuousOperator: G => Option[Int],
@@ -168,7 +168,7 @@ object NoisyPSEOperations {
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     lambda: Int,
     cloneProbability: Double,
-    operatorExploration: Double)(implicit MH: HitMap[M, Vector[Int]]) = Breeding[M, I, G] { population =>
+    operatorExploration: Double) = Breeding[M, I, G] { population =>
     for {
       gs <- PSEOperations.adaptiveBreeding[M, I, G](
         genome,
@@ -185,14 +185,14 @@ object NoisyPSEOperations {
     } yield withClones
   }
 
-  def elitism[M[_]: cats.Monad: Random: Generation, I, P: CanBeNaN](
+  def elitism[M[_]: cats.Monad: Random: Generation: HitMap, I, P: CanBeNaN](
     values: I => (Vector[Double], Vector[Int]),
     history: monocle.Lens[I, Vector[P]],
     aggregation: Vector[P] => P,
     pattern: P => Vector[Int],
     mapped: monocle.Lens[I, Boolean],
     historyAge: monocle.Lens[I, Long],
-    historySize: Int)(implicit MH: HitMap[M, Vector[Int]]): Elitism[M, I] = Elitism[M, I] { population =>
+    historySize: Int): Elitism[M, I] = Elitism[M, I] { population =>
 
     def unclone: UncloneStrategy[M, I] = (is: Vector[I]) => {
       def merged: M[I] = mergeHistories[M, I, P](historyAge, history)(historySize).apply(is)
@@ -203,7 +203,7 @@ object NoisyPSEOperations {
       cloneRemoved <- applyCloneStrategy(
         values,
         unclone) apply filterNaN(population, history.get _ andThen aggregation)
-      mappedPopulation <- addHits[M, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, mapped) apply cloneRemoved
+      mappedPopulation <- addHits[M, I](history.get _ andThen aggregation andThen pattern, mapped) apply cloneRemoved
       elite <- keepNiches(history.get _ andThen aggregation andThen pattern, maximiseO[M, I, Long](i => history.get(i).size, 1)) apply mappedPopulation
     } yield elite
   }

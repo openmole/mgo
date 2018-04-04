@@ -30,9 +30,9 @@ object elitism {
 
   def incrementGeneration[M[_]: Generation] = Generation[M].increment
 
-  def addHits[M[_]: cats.Monad, I, C](cell: I => C, mapped: monocle.Lens[I, Boolean])(implicit hitMapperM: HitMap[M, C]) = {
-    def hits(cells: Vector[C]) =
-      modifier(hitMapperM.get, hitMapperM.set).modify { map =>
+  def addHits[M[_]: cats.Monad: HitMap, I](cell: I => Vector[Int], mapped: monocle.Lens[I, Boolean]) = {
+    def hits(cells: Vector[Vector[Int]]) =
+      modifier(implicitly[HitMap[M]].get, implicitly[HitMap[M]].set).modify { map =>
         def newValues = cells.map { c => (c, map.getOrElse(c, 0) + 1) }
         map ++ newValues
       }

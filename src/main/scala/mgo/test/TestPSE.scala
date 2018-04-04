@@ -36,7 +36,7 @@ object ZDT4PSE extends App {
         definition = Vector(10, 10)),
     continuous = zdt4.continuous(10))
 
-  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMapM] =
+  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMap] =
     pse.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).
@@ -67,7 +67,7 @@ object ZDT4NoisyPSE extends App {
     continuous = zdt4.continuous(10),
     aggregation = averageAggregation(_))
 
-  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMapM] =
+  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMap] =
     pse.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation)).

@@ -28,24 +28,29 @@ object contexts {
     def get(): FS[Long]
   }
 
-  trait HitMap[M[_], C] {
-    def get(): M[Map[C, Int]]
-    def set(map: Map[C, Int]): M[Unit]
-  }
-
-  @tagless trait VectorHitMap {
+  @tagless trait HitMap {
     def get(): FS[Map[Vector[Int], Int]]
     def set(map: Map[Vector[Int], Int]): FS[Unit]
   }
 
-  case class VectorHitMapInterpreter(var map: Map[Vector[Int], Int]) extends VectorHitMap.Handler[Evaluated] {
+  case class HitMapInterpreter(var map: Map[Vector[Int], Int]) extends HitMap.Handler[Evaluated] {
     def get() = result(map)
     def set(m: Map[Vector[Int], Int]) = result(map = m)
   }
 
-  implicit def convert[M[_]](implicit vhm: VectorHitMap[M]) = new HitMap[M, Vector[Int]] {
-    def get() = vhm.get()
-    def set(map: Map[Vector[Int], Int]) = vhm.set(map)
+  //  implicit def convert[M[_]](implicit vhm: VectorHitMap[M]) = new HitMap[M, Vector[Int]] {
+  //    def get() = vhm.get()
+  //    def set(map: Map[Vector[Int], Int]) = vhm.set(map)
+  //  }
+
+  trait Archive[M[_], I] {
+    def put(i: I): M[Unit]
+    def get(): M[Vector[I]]
+  }
+
+  @tagless trait ReachMap {
+    def reached(c: Vector[Int]): FS[Boolean]
+    def set(c: Vector[Int], boolean: Boolean): FS[Unit]
   }
 
   type IO[T[_]] = freedsl.io.IO[T]

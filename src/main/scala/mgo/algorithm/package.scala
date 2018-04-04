@@ -28,7 +28,6 @@ import freedsl.tool._
 
 package object algorithm {
 
-  type HitMapM[M[_]] = HitMap[M, Vector[Int]]
   type HitMapState = Map[Vector[Int], Int]
 
   case class EvolutionState[S](
