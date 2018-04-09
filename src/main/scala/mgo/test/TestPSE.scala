@@ -20,6 +20,7 @@ package mgo.test
 import mgo._
 import mgo.contexts._
 import freedsl.dsl._
+import niche._
 
 object ZDT4PSE extends App {
 

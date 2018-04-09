@@ -72,6 +72,10 @@ package object mgo extends stop.Imports {
 
   }
 
+  def toAlgorithm[M[_]] = new {
+    def apply[T, I, G, S](t: T)(implicit algo: Algorithm[T, M, I, G, S]) = RunAlgorithm(t, algo)
+  }
+
   implicit def algorithmDecorator[T, M[_], I, G, S](t: T)(implicit algo: Algorithm[T, M, I, G, S]) = RunAlgorithm(t, algo)
 
   /** ** Stop conditions ****/

@@ -37,7 +37,7 @@ import freedsl.system.SystemInterpreter
 import freedsl.tool._
 import freestyle.tagless._
 
-object PSE extends niche.Imports {
+object PSE {
 
   import CDGenome._
 

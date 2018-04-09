@@ -51,11 +51,13 @@ object contexts {
   @tagless trait ReachMap {
     def reached(c: Vector[Int]): FS[Boolean]
     def setReached(c: Seq[Vector[Int]]): FS[Unit]
+    def get(): FS[Seq[Vector[Int]]]
   }
 
   case class ReachMapInterpreter(map: collection.mutable.HashSet[Vector[Int]]) extends ReachMap.Handler[Evaluated] {
     def reached(c: Vector[Int]) = result(map.contains(c))
     def setReached(c: Seq[Vector[Int]]) = result(map ++= c)
+    def get() = result(map.toVector)
   }
 
   type IO[T[_]] = freedsl.io.IO[T]

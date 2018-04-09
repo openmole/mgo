@@ -17,6 +17,8 @@ import GenomeVectorDouble._
 import freedsl.tool._
 import shapeless._
 
+import scala.collection.immutable.BitSet
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object OSE {
@@ -24,7 +26,7 @@ object OSE {
   import DeterministicIndividual._
   import freedsl.dsl._
 
-  type OSEState = Seq[Individual]
+  type OSEState = (Array[Individual], Array[Vector[Int]])
 
   @tagless trait IndividualArchive {
     def put(i: Seq[Individual]): FS[Unit]
@@ -36,9 +38,9 @@ object OSE {
     def get() = vhm.get()
   }
 
-  case class ArchiveInterpreter(var archive: ListBuffer[Individual]) extends IndividualArchive.Handler[Evaluated] {
-    def put(i: Seq[Individual]) = result(archive ++= i)
-    def get() = result(archive.toVector)
+  case class ArchiveInterpreter(val archive: collection.mutable.Buffer[Individual]) extends IndividualArchive.Handler[Evaluated] {
+    def put(i: Seq[Individual]) = freedsl.dsl.result(archive ++= i)
+    def get() = freedsl.dsl.result(archive.toVector)
   }
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
@@ -70,27 +72,59 @@ object OSE {
       origin,
       mu)
 
-  //  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
-  //
-  //  //  def result(population: Vector[Individual], continuous: Vector[C]) =
-  //  //    keepFirstFront(population, vectorFitness.get).map { i =>
-  //  //      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, i.fitness.toVector)
-  //  //    }
-  //  //
-  //  //  def result(nsga2: NSGA2, population: Vector[Individual]): Vector[Result] = result(population, nsga2.continuous)
-  //  //
-  //  //  def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
-  //
+  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
 
-  //  object OSEImplicits {
-  //    def apply(state: EvolutionState[Map[Vector[Int], Int]]): OSEImplicits =
-  //      PSEImplicits()(GenerationInterpreter(state.generation), RandomInterpreter(state.random), StartTimeInterpreter(state.startTime), IOInterpreter(), HitMapInterpreter(state.s), SystemInterpreter())
-  //  }
+  def result(state: EvolutionState[OSEState], continuous: Vector[C]) =
+    state.s._1.toVector.map { i =>
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, i.fitness.toVector)
+    }
+
+  def result(ose: OSE, state: EvolutionState[OSEState]): Vector[Result] =
+    result(state = state, continuous = ose.continuous)
+
+  object OSEImplicits {
+    def apply(state: EvolutionState[OSEState]): OSEImplicits =
+      OSEImplicits()(
+        GenerationInterpreter(state.generation),
+        RandomInterpreter(state.random),
+        StartTimeInterpreter(state.startTime),
+        IOInterpreter(),
+        ArchiveInterpreter(state.s._1.to[mutable.Buffer]),
+        ReachMapInterpreter(state.s._2.to[mutable.HashSet]),
+        SystemInterpreter())
+  }
 
   case class OSEImplicits(implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, archiveInterpreter: ArchiveInterpreter, reachMapInterpreter: ReachMapInterpreter, systemInterpreter: SystemInterpreter)
-  //
-  //  def run[T](rng: util.Random)(f: OSEImplicits => T): T = contexts.run(rng)(f)
-  //  def run[T](state: EvolutionState[Unit])(f: OSEImplicits => T): T = contexts.run(state)(f)
+
+  def run[T](rng: util.Random)(f: OSEImplicits => T): T = {
+    val state = EvolutionState[OSEState](random = rng, s = (Array.empty, Array.empty))
+    run(state)(f)
+  }
+
+  def run[T, S](state: EvolutionState[OSEState])(f: OSEImplicits => T): T = f(OSEImplicits(state))
+
+  def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit archive: Archive[M, Individual], reachMap: ReachMap[M]) = for {
+    map <- reachMap.get()
+    arch <- archive.get()
+    s <- mgo.algorithm.state[M, OSEState]((arch.toArray, map.toArray))
+  } yield s
+
+  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: Generation: ReachMap](implicit archive: Archive[M, Individual]): Algorithm[OSE, M, Individual, Genome, EvolutionState[OSEState]] = new Algorithm[OSE, M, Individual, Genome, EvolutionState[OSEState]] {
+
+    override def initialPopulation(t: OSE) =
+      deterministic.initialPopulation[M, Genome, Individual](
+        OSE.initialGenomes[M](t.lambda, t.continuous, t.discrete),
+        OSE.expression(t.fitness, t.continuous))
+
+    def step(t: OSE) =
+      deterministic.step[M, Individual, Genome](
+        OSE.adaptiveBreeding[M](t.lambda, t.operatorExploration, t.discrete, t.origin),
+        OSE.expression(t.fitness, t.continuous),
+        OSE.elitism(t.mu, t.limit, t.origin, t.continuous))
+
+    def state = OSE.state[M]
+
+  }
 
 }
 
@@ -98,7 +132,7 @@ case class OSE(
   mu: Int,
   lambda: Int,
   fitness: (Vector[Double], Vector[Int]) => Vector[Double],
-  pattern: Vector[Double],
+  limit: Vector[Double],
   origin: (Vector[Double], Vector[Int]) => Vector[Int],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,

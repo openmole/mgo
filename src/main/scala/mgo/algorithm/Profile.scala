@@ -33,7 +33,7 @@ import freedsl.tool._
 import mgo.niche
 import shapeless._
 
-object Profile extends niche.Imports {
+object Profile {
 
   import CDGenome._
   import DeterministicIndividual._
@@ -53,22 +53,22 @@ object Profile extends niche.Imports {
     result(population, profile.niche, profile.continuous)
 
   def continuousProfile(x: Int, nX: Int): Niche[Individual, Int] =
-    continuousProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
+    mgo.niche.continuousProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
 
   def discreteProfile(x: Int): Niche[Individual, Int] =
-    discreteProfile[Individual]((Individual.genome composeLens discreteValues).get _, x)
+    mgo.niche.discreteProfile[Individual]((Individual.genome composeLens discreteValues).get _, x)
 
   def boundedContinuousProfile(continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
-    boundedContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, nX, min, max)
+    mgo.niche.boundedContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, nX, min, max)
 
   def gridContinuousProfile(continuous: Vector[C], x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
-    gridContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, intervals)
+    mgo.niche.gridContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, intervals)
 
   def boundedObjectiveProfile(x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
-    boundedContinuousProfile[Individual](vectorFitness.get _, x, nX, min, max)
+    mgo.niche.boundedContinuousProfile[Individual](vectorFitness.get _, x, nX, min, max)
 
   def gridObjectiveProfile(x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
-    gridContinuousProfile[Individual](vectorFitness.get _, x, intervals)
+    mgo.niche.gridContinuousProfile[Individual](vectorFitness.get _, x, intervals)
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)

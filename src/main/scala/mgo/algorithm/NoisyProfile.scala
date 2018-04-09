@@ -34,7 +34,7 @@ import mgo.tools._
 
 import scala.language.higherKinds
 
-object NoisyProfile extends niche.Imports {
+object NoisyProfile {
 
   import CDGenome._
   import NoisyIndividual._
@@ -62,22 +62,22 @@ object NoisyProfile extends niche.Imports {
     result(population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous)
 
   def continuousProfile(x: Int, nX: Int): Niche[Individual, Int] =
-    continuousProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
+    mgo.niche.continuousProfile[Individual]((Individual.genome composeLens continuousValues).get _, x, nX)
 
   def discreteProfile(x: Int): Niche[Individual, Int] =
-    discreteProfile[Individual]((Individual.genome composeLens discreteValues).get _, x)
+    mgo.niche.discreteProfile[Individual]((Individual.genome composeLens discreteValues).get _, x)
 
   def boundedContinuousProfile(continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
-    boundedContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, nX, min, max)
+    mgo.niche.boundedContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, nX, min, max)
 
   def gridContinuousProfile(continuous: Vector[C], x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
-    gridContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, intervals)
+    mgo.niche.gridContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, intervals)
 
   def boundedObjectiveProfile(aggregation: Vector[Vector[Double]] => Vector[Double], x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
-    boundedContinuousProfile[Individual](aggregatedFitness(aggregation), x, nX, min, max)
+    mgo.niche.boundedContinuousProfile[Individual](aggregatedFitness(aggregation), x, nX, min, max)
 
   def gridObjectiveProfile(aggregation: Vector[Vector[Double]] => Vector[Double], x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
-    gridContinuousProfile[Individual](aggregatedFitness(aggregation), x, intervals)
+    mgo.niche.gridContinuousProfile[Individual](aggregatedFitness(aggregation), x, intervals)
 
   def adaptiveBreeding[M[_]: cats.Monad: Random: Generation](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double], discrete: Vector[D]): Breeding[M, Individual, Genome] =
     NoisyNSGA2Operations.adaptiveBreeding[M, Individual, Genome](

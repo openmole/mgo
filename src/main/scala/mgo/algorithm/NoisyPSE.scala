@@ -31,7 +31,7 @@ import cats.implicits._
 import monocle.macros._
 import freedsl.dsl
 
-object NoisyPSE extends niche.Imports {
+object NoisyPSE {
 
   import CDGenome._
 
