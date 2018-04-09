@@ -230,7 +230,7 @@ package object algorithm {
           val ng1 = buildGenome(cOff1.map(clamp(_)), Some(cop), dOff1, Some(dop))
           val ng2 = buildGenome(cOff2.map(clamp(_)), Some(cop), dOff2, Some(dop))
 
-          (ng1, ng2)
+          Vector(ng1, ng2)
         }
       }
     }

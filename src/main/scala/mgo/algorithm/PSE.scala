@@ -171,8 +171,8 @@ object PSEOperations {
         discrete,
         operatorExploration,
         buildGenome) apply population
-      offspring <- breeding repeat ((lambda + 1) / 2)
-      sizedOffspringGenomes <- randomTake[M, G](offspring.flatMap { case (g1, g2) => Vector(g1, g2) }, lambda)
+      offspring <- breeding.accumulate(lambda)
+      sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
     } yield sizedOffspringGenomes
   }
 

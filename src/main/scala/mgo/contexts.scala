@@ -53,6 +53,11 @@ object contexts {
     def setReached(c: Seq[Vector[Int]]): FS[Unit]
   }
 
+  case class ReachMapInterpreter(map: collection.mutable.HashSet[Vector[Int]]) extends ReachMap.Handler[Evaluated] {
+    def reached(c: Vector[Int]) = result(map.contains(c))
+    def setReached(c: Seq[Vector[Int]]) = result(map ++= c)
+  }
+
   type IO[T[_]] = freedsl.io.IO[T]
   type Random[T[_]] = freedsl.random.Random[T]
 

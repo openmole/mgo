@@ -125,6 +125,8 @@ object ZDT4NSGAII extends App {
     evolution[DSL].eval
   }
 
+  println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
+
 }
 
 object RastriginNSGAII extends App {
@@ -139,7 +141,7 @@ object RastriginNSGAII extends App {
 
   def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
     nsga2.
-      until(afterGeneration(5000)).
+      until(afterGeneration(1000)).
       trace { (s, is) => println(s.generation) }.
       evolution
 
