@@ -57,7 +57,7 @@ object OSE {
       discrete,
       origin,
       buildGenome,
-      _ => 1,
+      logOfPopulationSize,
       lambda,
       operatorExploration)
 
