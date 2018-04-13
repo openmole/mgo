@@ -29,8 +29,11 @@ libraryDependencies += "fr.iscpif.freedsl" %% "io" % freedslVersion
 libraryDependencies += "fr.iscpif.freedsl" %% "tool" % freedslVersion
 libraryDependencies += "fr.iscpif.freedsl" %% "dsl" % freedslVersion
 libraryDependencies += "fr.iscpif.freedsl" %% "system" % freedslVersion
-
 libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0"
+
+
+libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.4.0"
+
 
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 

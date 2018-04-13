@@ -3,6 +3,7 @@ package mgo.test
 import mgo._
 import mgo.contexts._
 import freedsl.dsl._
+import better.files._
 
 object RastriginOSE extends App {
 
@@ -18,20 +19,20 @@ object RastriginOSE extends App {
     origin =
       (c, _) =>
         boundedGrid(
-          lowBound = Vector(-10.0, -10.0),
-          highBound = Vector(10.0, 10.0),
-          definition = Vector(100, 100))(c),
-    continuous = rastrigin.continuous(2))
+          lowBound = Vector.fill(6)(-10.0),
+          highBound = Vector.fill(6)(10.0),
+          definition = Vector.fill(6)(100))(c),
+    continuous = rastrigin.continuous(6))
 
   val (finalState, finalPopulation) =
     OSE.run(new util.Random(42)) { imp =>
       import imp._
 
       toAlgorithm[DSL](ose).
-        until(afterGeneration(10000)).
+        until(afterGeneration(5000)).
         trace { (s, is) => println(s.generation) }.
         evolution.eval
     }
 
-  println(OSE.result(ose, finalState).map(_.continuous.mkString(",")).mkString("\n"))
+  File("/tmp/ose.csv") write OSE.result(ose, finalState).map(_.continuous.mkString(",")).mkString("\n")
 }

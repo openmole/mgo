@@ -31,12 +31,17 @@ object breeding {
     rounds: Int => Int = _ => 1): Selection[M, I] = Kleisli { individuals: Vector[I] =>
     val populationSize = individuals.size
     for {
-      challengersIndices <- Vector.fill(math.max(rounds(populationSize), 1))(Random[M].nextInt(populationSize)).sequence
+      challengersIndices <- Vector.fill(rounds(populationSize) + 1)(Random[M].nextInt(populationSize)).sequence
     } yield // Unbiased since individual are placed in random order in the vector
     individuals(challengersIndices.maxBy(i => ranks(i))(implicitly[Order[K]].toOrdering))
   }
 
-  def logOfPopulationSize(size: Int): Int = math.round(math.log10(size).toInt)
+  def log2(x: Int) = (math.log(x) / math.log(2)).toInt
+  lazy val log2_256 = log2(256)
+
+  /* 1 round from 0 to 256 and then 1 more round for each population doubling */
+  def logOfPopulationSize(size: Int): Int =
+    math.max(log2(size) - log2_256 + 2, 1)
 
   def randomSelection[M[_]: cats.Monad: Random, I] = Kleisli { population: Vector[I] =>
     Random[M].randomElement(population)
