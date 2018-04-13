@@ -11,6 +11,8 @@ object RastriginOSE extends App {
   import niche._
   import OSE._
 
+  def dimensions = 3
+
   val ose = OSE(
     mu = 100,
     lambda = 100,
@@ -19,10 +21,10 @@ object RastriginOSE extends App {
     origin =
       (c, _) =>
         boundedGrid(
-          lowBound = Vector.fill(6)(-10.0),
-          highBound = Vector.fill(6)(10.0),
-          definition = Vector.fill(6)(100))(c),
-    continuous = rastrigin.continuous(6))
+          lowBound = Vector.fill(dimensions)(-10.0),
+          highBound = Vector.fill(dimensions)(10.0),
+          definition = Vector.fill(dimensions)(100))(c),
+    continuous = rastrigin.continuous(dimensions))
 
   val (finalState, finalPopulation) =
     OSE.run(new util.Random(42)) { imp =>
@@ -30,7 +32,7 @@ object RastriginOSE extends App {
 
       toAlgorithm[DSL](ose).
         until(afterGeneration(5000)).
-        trace { (s, is) => println(s.generation) }.
+        trace { (s, is) => println(s.generation + " " + s.s._1.size) }.
         evolution.eval
     }
 

@@ -48,7 +48,7 @@ object OSE {
 
   def adaptiveBreeding[M[_]: Generation: Random: cats.Monad: ReachMap](lambda: Int, operatorExploration: Double, discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int])(implicit archive: Archive[M, Individual]): Breeding[M, Individual, Genome] =
     OSEOperation.adaptiveBreeding[M, Individual, Genome](
-      vectorFitness,
+      vectorFitness.get,
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -141,7 +141,7 @@ case class OSE(
 object OSEOperation {
 
   def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G](
-    fitness: monocle.Lens[I, Vector[Double]],
+    fitness: I => Vector[Double],
     genome: I => G,
     continuousValues: G => Vector[Double],
     continuousOperator: G => Option[Int],
@@ -165,20 +165,21 @@ object OSEOperation {
       genomes.flatTraverse(g => keepNonReaching(g).map(_.toVector))
     }
 
-    def adaptiveBreeding = Breeding[M, I, G] { population =>
+    def adaptiveBreeding(archivedPopulation: Vector[I]) = Breeding[M, I, G] { population =>
       for {
-        ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](fitness.get) apply population
+        ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply population
+        allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
         continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
         discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
         breeding = applyDynamicOperators[M, I, G](
-          tournament(ranks, tournamentRounds),
+          tournament(allRanks, tournamentRounds),
           genome andThen continuousValues,
           genome andThen discreteValues,
           continuousOperatorStatistics,
           discreteOperatorStatistics,
           discrete,
           operatorExploration,
-          buildGenome) apply population
+          buildGenome) apply (population ++ archivedPopulation)
         offspring <- breeding.flatMap(filterAlreadyReached).accumulate(lambda)
         sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
       } yield sizedOffspringGenomes
@@ -186,8 +187,7 @@ object OSEOperation {
 
     for {
       archived <- archive.get()
-      additionalIndividuals = archived.map { i => fitness.modify(_.map(_ => Double.PositiveInfinity))(i) }
-      genomes <- adaptiveBreeding.apply(population ++ additionalIndividuals)
+      genomes <- adaptiveBreeding(archived).apply(population)
     } yield genomes
   }
 

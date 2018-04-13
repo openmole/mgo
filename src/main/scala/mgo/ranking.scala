@@ -151,6 +151,8 @@ object ranking {
       paretoRanking[M, I](fitness),
       crowdingDistance[M, I] { (i: I) => fitness(i) })
 
+  def worstParetoRanking = (Lazy(Int.MinValue), Lazy(Double.NegativeInfinity))
+
   def rank[M[_]: cats.Monad, I, K](ranking: Kleisli[M, Vector[I], Vector[K]]) = Kleisli[M, Vector[I], Vector[(I, K)]] { is =>
     for {
       rs <- ranking.run(is)
