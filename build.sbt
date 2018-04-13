@@ -16,7 +16,7 @@ resolvers += Resolver.sonatypeRepo("snapshots")
 sources in (Compile, doc) := Nil
 
 val monocleVersion = "1.5.0"
-val freedslVersion = "0.25-SNAPSHOT"
+val freedslVersion = "0.26"
 
 libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
 
@@ -77,6 +77,8 @@ releaseVersionBump := sbtrelease.Version.Bump.Minor
 releaseTagComment    := s"Releasing ${(version in ThisBuild).value}"
 
 releaseCommitMessage := s"Bump version to ${(version in ThisBuild).value}"
+
+sonatypeProfileName := "fr.iscpif"
 
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
