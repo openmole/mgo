@@ -72,9 +72,14 @@ package object mgo extends stop.Imports {
 
   }
 
-  def toAlgorithm[M[_]] = new {
-    def apply[T, I, G, S](t: T)(implicit algo: Algorithm[T, M, I, G, S]) = RunAlgorithm(t, algo)
+  implicit class RunAlgorithmDSLDecorator[T, I, G, S](f: RunAlgorithm[T, freedsl.dsl.DSL, I, G, S]) {
+    import freedsl.dsl._
+    def eval = f.evolution.eval
+    def tryEval = f.evolution.tryEval
   }
+
+  import freedsl.dsl._
+  implicit def toAlgorithm[T, I, G, S](t: T)(implicit algo: Algorithm[T, DSL, I, G, S]) = RunAlgorithm(t, algo)
 
   implicit def algorithmDecorator[T, M[_], I, G, S](t: T)(implicit algo: Algorithm[T, M, I, G, S]) = RunAlgorithm(t, algo)
 

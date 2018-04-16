@@ -138,6 +138,19 @@ case class OSE(
 
 object OSEOperation {
 
+  def filterAlreadyReached[M[_]: cats.Monad: ReachMap, G](origin: G => Vector[Int])(genomes: Vector[G]) = {
+    import cats.implicits._
+    import cats.data._
+
+    def keepNonReaching(g: G): M[Option[G]] =
+      implicitly[ReachMap[M]].reached(origin(g)) map {
+        case true => None
+        case false => Some(g)
+      }
+
+    genomes.flatTraverse(g => keepNonReaching(g).map(_.toVector))
+  }
+
   def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
@@ -154,15 +167,6 @@ object OSEOperation {
     import cats.implicits._
     import cats.data._
 
-    def filterAlreadyReached(genomes: Vector[G]) = {
-      def keepNonReaching(g: G): M[Option[G]] =
-        reachMap.reached(origin(continuousValues(g), discreteValues(g))) map {
-          case true => None
-          case false => Some(g)
-        }
-      genomes.flatTraverse(g => keepNonReaching(g).map(_.toVector))
-    }
-
     def adaptiveBreeding(archivedPopulation: Vector[I]) = Breeding[M, I, G] { population =>
       for {
         ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply population
@@ -178,7 +182,7 @@ object OSEOperation {
           discrete,
           operatorExploration,
           buildGenome) apply (population ++ archivedPopulation)
-        offspring <- breeding.flatMap(filterAlreadyReached).accumulate(lambda)
+        offspring <- breeding.flatMap(filterAlreadyReached[M, G] { g: G => origin(continuousValues(g), discreteValues(g)) }).accumulate(lambda)
         sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
       } yield sizedOffspringGenomes
     }
@@ -218,7 +222,8 @@ object OSEOperation {
       reaching <- newlyReaching
       _ <- reachMap.setReached(reaching.map(o))
       _ <- archive.put(reaching)
-      newPopulation <- NSGA2Operations.elitism[M, I](fitness, values, mu).apply(population)
+      filteredPopulation <- filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(population)
+      newPopulation <- NSGA2Operations.elitism[M, I](fitness, values, mu).apply(filteredPopulation)
     } yield newPopulation
   }
 

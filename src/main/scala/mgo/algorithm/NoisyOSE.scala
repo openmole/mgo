@@ -91,6 +91,27 @@ object NoisyOSE {
     s <- mgo.algorithm.state[M, OSEState]((arch.toArray, map.toArray))
   } yield s
 
+  object OSEImplicits {
+    def apply(state: EvolutionState[OSEState]): OSEImplicits =
+      OSEImplicits()(
+        GenerationInterpreter(state.generation),
+        RandomInterpreter(state.random),
+        StartTimeInterpreter(state.startTime),
+        IOInterpreter(),
+        ArchiveInterpreter(state.s._1.to[collection.mutable.Buffer]),
+        ReachMapInterpreter(state.s._2.to[collection.mutable.HashSet]),
+        SystemInterpreter())
+  }
+
+  case class OSEImplicits(implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, archiveInterpreter: ArchiveInterpreter, reachMapInterpreter: ReachMapInterpreter, systemInterpreter: SystemInterpreter)
+
+  def run[T](rng: util.Random)(f: OSEImplicits => T): T = {
+    val state = EvolutionState[OSEState](random = rng, s = (Array.empty, Array.empty))
+    run(state)(f)
+  }
+
+  def run[T, S](state: EvolutionState[OSEState])(f: OSEImplicits => T): T = f(OSEImplicits(state))
+
   implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime: ReachMap](implicit archive: Archive[M, Individual]): Algorithm[NoisyOSE, M, Individual, Genome, EvolutionState[OSEState]] = new Algorithm[NoisyOSE, M, Individual, Genome, EvolutionState[OSEState]] {
     def initialPopulation(t: NoisyOSE) =
       noisy.initialPopulation[M, Genome, Individual](
@@ -156,15 +177,6 @@ object NoisyOSEOperations {
     import cats.implicits._
     import cats.data._
 
-    def filterAlreadyReached(genomes: Vector[G]) = {
-      def keepNonReaching(g: G): M[Option[G]] =
-        reachMap.reached(origin(continuousValues(g), discreteValues(g))) map {
-          case true => None
-          case false => Some(g)
-        }
-      genomes.flatTraverse(g => keepNonReaching(g).map(_.toVector))
-    }
-
     def adaptiveBreeding(archivedPopulation: Vector[I]) = Breeding[M, I, G] { population =>
       for {
         ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history, aggregation)) apply population
@@ -180,7 +192,7 @@ object NoisyOSEOperations {
           discrete,
           operatorExploration,
           buildGenome) apply (population ++ archivedPopulation)
-        offspring <- breeding.flatMap(filterAlreadyReached).accumulate(lambda)
+        offspring <- breeding.flatMap(OSEOperation.filterAlreadyReached[M, G] { g => origin(continuousValues(g), discreteValues(g)) }).accumulate(lambda)
         sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
         gs <- clonesReplace[M, I, G](cloneProbability, population, genome, tournament(ranks, tournamentRounds)) apply sizedOffspringGenomes
       } yield gs
@@ -211,7 +223,8 @@ object NoisyOSEOperations {
         if (OSEOperation.patternIsReached(aggregated(history.get, aggregation)(i), limit))
           (reachMap.reached(o(i))) map {
             case true => None
-            case false => Some(i)
+            case false if history.get(i).size >= historySize => Some(i)
+            case _ => None
           }
         else (None: Option[I]).pure[M]
       population.flatTraverse(i => keepNewlyReaching(i).map(_.toVector))
@@ -221,7 +234,8 @@ object NoisyOSEOperations {
       reaching <- newlyReaching
       _ <- reachMap.setReached(reaching.map(o))
       _ <- archive.put(reaching)
-      newPopulation <- NoisyNSGA2Operations.elitism[M, I](history, aggregation, values, historyAge, historySize, mu).apply(population)
+      filteredPopulation <- OSEOperation.filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(population)
+      newPopulation <- NoisyNSGA2Operations.elitism[M, I](history, aggregation, values, historyAge, historySize, mu).apply(filteredPopulation)
     } yield newPopulation
   }
 }
