@@ -42,7 +42,7 @@ object NoisyOSE {
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: ReachMap](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double], discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int])(implicit archive: Archive[M, Individual]): Breeding[M, Individual, Genome] =
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: ReachMap](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double], discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual]): Breeding[M, Individual, Genome] =
     NoisyOSEOperations.adaptiveBreeding[M, Individual, Genome](
       vectorFitness.get,
       aggregation,
@@ -57,7 +57,8 @@ object NoisyOSE {
       lambda,
       operatorExploration,
       cloneProbability,
-      origin)
+      origin,
+      limit)
 
   def expression(fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): (util.Random, Genome) => Individual =
     NoisyIndividual.expression(fitness, continuous)
@@ -126,7 +127,8 @@ object NoisyOSE {
           t.cloneProbability,
           t.aggregation,
           t.discrete,
-          t.origin),
+          t.origin,
+          t.limit),
         NoisyOSE.expression(t.fitness, t.continuous),
         NoisyOSE.elitism[M](
           t.mu,
@@ -159,6 +161,11 @@ object NoisyOSEOperations {
   def aggregated[I](fitness: I => Vector[Vector[Double]], aggregation: Vector[Vector[Double]] => Vector[Double])(i: I): Vector[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
 
+  def promisingReachMap[I](fitness: I => Vector[Double], limit: Vector[Double], origin: I => Vector[Int], population: Vector[I]): Set[Vector[Int]] = {
+    val promising = population.filter(i => OSEOperation.patternIsReached(fitness(i), limit))
+    promising.map(origin).toSet
+  }
+
   def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G](
     history: I => Vector[Vector[Double]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
@@ -173,9 +180,24 @@ object NoisyOSEOperations {
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
-    origin: (Vector[Double], Vector[Int]) => Vector[Int])(implicit archive: Archive[M, I], reachMap: ReachMap[M]) = Breeding[M, I, G] { population =>
+    origin: (Vector[Double], Vector[Int]) => Vector[Int],
+    limit: Vector[Double])(implicit archive: Archive[M, I], reachMap: ReachMap[M]) = Breeding[M, I, G] { population =>
     import cats.implicits._
     import cats.data._
+
+    def genomeOrigin(g: G) = origin(continuousValues(g), discreteValues(g))
+
+    val promisingReachMapValue =
+      promisingReachMap[I](
+        aggregated(history, aggregation),
+        limit,
+        i => genomeOrigin(genome(i)),
+        population)
+
+    def filterAlreadyReachedAndNeighboursOfPromising(genomes: Vector[G]) =
+      for {
+        nonReached <- OSEOperation.filterAlreadyReached[M, G](genomeOrigin)(genomes)
+      } yield nonReached.filter(g => !promisingReachMapValue.contains(genomeOrigin(g)))
 
     def adaptiveBreeding(archivedPopulation: Vector[I]) = Breeding[M, I, G] { population =>
       for {
@@ -192,7 +214,7 @@ object NoisyOSEOperations {
           discrete,
           operatorExploration,
           buildGenome) apply (population ++ archivedPopulation)
-        offspring <- breeding.flatMap(OSEOperation.filterAlreadyReached[M, G] { g => origin(continuousValues(g), discreteValues(g)) }).accumulate(lambda)
+        offspring <- breeding.flatMap(filterAlreadyReachedAndNeighboursOfPromising).accumulate(lambda)
         sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
         gs <- clonesReplace[M, I, G](cloneProbability, population, genome, tournament(ranks, tournamentRounds)) apply sizedOffspringGenomes
       } yield gs
@@ -216,12 +238,11 @@ object NoisyOSEOperations {
 
     import cats.implicits._
 
-    def o(i: I) = Function.tupled(origin)(values(i))
-
+    def individualOrigin(i: I) = Function.tupled(origin)(values(i))
     def newlyReaching = {
       def keepNewlyReaching(i: I): M[Option[I]] =
         if (OSEOperation.patternIsReached(aggregated(history.get, aggregation)(i), limit))
-          (reachMap.reached(o(i))) map {
+          (reachMap.reached(individualOrigin(i))) map {
             case true => None
             case false if history.get(i).size >= historySize => Some(i)
             case _ => None
@@ -232,7 +253,7 @@ object NoisyOSEOperations {
 
     for {
       reaching <- newlyReaching
-      _ <- reachMap.setReached(reaching.map(o))
+      _ <- reachMap.setReached(reaching.map(individualOrigin))
       _ <- archive.put(reaching)
       filteredPopulation <- OSEOperation.filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(population)
       newPopulation <- NoisyNSGA2Operations.elitism[M, I](history, aggregation, values, historyAge, historySize, mu).apply(filteredPopulation)
