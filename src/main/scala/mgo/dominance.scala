@@ -29,7 +29,7 @@ object dominance {
    */
   lazy val nonStrictDominance = new Dominance {
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
-      !(p1 zip p2).exists { case (g1, g2) => g1 < g2 }
+      p1 != p2 && !(p1 zip p2).exists { case (g1, g2) => g1 < g2 }
   }
 
   /**
