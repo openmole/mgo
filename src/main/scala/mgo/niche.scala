@@ -36,7 +36,7 @@ object niche {
         max(0, min(d, p))
     }
 
-  def irregularGrid(axes: Vector[Vector[Double]])(values: Vector[Double]): Vector[Int] =
+  def irregularGrid[A: scala.math.Ordering](axes: Vector[Vector[A]])(values: Vector[A]): Vector[Int] =
     axes zip values map { case (axe, v) => findInterval(axe.sorted, v) }
 
   def continuousProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =

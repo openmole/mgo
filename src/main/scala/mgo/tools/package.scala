@@ -207,7 +207,7 @@ package object tools {
     select(s.toList, rng.nextDouble * totalWeight)
   }
 
-  def findInterval(s: Vector[Double], v: Double) = {
+  def findInterval[A: Ordering](s: Vector[A], v: A) = {
     import scala.collection.Searching._
     search(s).search(v) match {
       case InsertionPoint(x) => x - 1
