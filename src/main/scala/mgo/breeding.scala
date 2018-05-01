@@ -128,10 +128,13 @@ object breeding {
 
           val lb = 0.0
           val ub = 1.0
+
           val x0 = clamp(x0i, lb, ub)
           val x1 = clamp(x1i, lb, ub)
+
           val newX0 = 0.5 * ((1.0 + bq) * x0 + (1.0 - bq) * x1)
           val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
+
           (newX0, newX1)
         }
 
@@ -159,12 +162,15 @@ object breeding {
 
   def bga[M[_]: cats.Monad: Random](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
     Mutation { (g: Vector[Double]) =>
+      def alphai = Random[M].nextDouble.map(d => if (d < (1.0 / 16)) 1.0 else 0.0)
+      def roi(i: Int) = alphai.map(_ * math.pow(2, -i))
+
       g.traverse { x =>
+
         Random[M].nextDouble.map(_ < mutationRate(g.size)).flatMap { mutate =>
           if (mutate)
             for {
-              alphai <- Random[M].nextDouble.map(d => if (d < (1.0 / 16)) 1.0 else 0.0)
-              ro = (0 to 15).map { i => alphai * math.pow(2, -i) }.sum
+              ro <- (0 to 15).toVector.traverse { roi }.map(_.sum)
               sign <- Random[M].nextBoolean.map(b => if (b) 1.0 else -1.0)
             } yield x + (sign * mutationRange * ro)
           else x.pure[M]
