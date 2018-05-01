@@ -103,12 +103,9 @@ package object algorithm {
 
     def continuousCrossovers[M[_]: cats.Monad: Random]: Vector[Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
       Vector(
-        replicatePairC(blxC(0.1)),
-        replicatePairC(blxC(0.5)),
-        replicatePairC(blxC(2.0)),
-        sbxC(0.1),
-        sbxC(0.5),
-        sbxC(2.0))
+        sbxC(2.0),
+        sbxC(5.0),
+        sbxC(20.0))
 
     def discreteCrossovers[M[_]: cats.Monad: Random]: Vector[Crossover[M, (Vector[Int], Vector[Int]), (Vector[Int], Vector[Int])]] =
       Vector(
@@ -119,9 +116,9 @@ package object algorithm {
 
     def continuousMutations[M[_]: cats.Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
       Vector(
-        bga(mutationRate = 1.0 / _, mutationRange = 0.001),
-        bga(mutationRate = 1.0 / _, mutationRange = 0.01),
-        bga(mutationRate = 2.0 / _, mutationRange = 0.1),
+        bga(mutationRate = 1.0 / _, mutationRange = 0.0000001),
+        bga(mutationRate = 1.0 / _, mutationRange = 0.0001),
+        bga(mutationRate = 1.0 / _, mutationRange = 0.1),
         bga(mutationRate = _ => 0.1, mutationRange = 0.1),
         bga(mutationRate = _ => 0.5, mutationRange = 0.5))
 
