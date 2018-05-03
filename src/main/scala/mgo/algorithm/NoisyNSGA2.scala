@@ -84,11 +84,10 @@ object NoisyNSGA2 {
 
   def elitism[M[_]: cats.Monad: Random: Generation](mu: Int, historySize: Int, aggregation: Vector[Vector[Double]] => Vector[Double], components: Vector[C]): Elitism[M, Individual] =
     NoisyNSGA2Operations.elitism[M, Individual](
-      vectorFitness,
+      vectorFitness.get,
       aggregation,
       i => values(Individual.genome.get(i), components),
-      Individual.historyAge,
-      historySize,
+      mergeHistories(Individual.historyAge, vectorFitness)(historySize),
       mu)
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.algorithm.state[M, Unit](())
@@ -192,15 +191,14 @@ object NoisyNSGA2Operations {
   }
 
   def elitism[M[_]: cats.Monad: Random: Generation, I](
-    history: monocle.Lens[I, Vector[Vector[Double]]],
+    history: I => Vector[Vector[Double]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
-    historyAge: monocle.Lens[I, Long],
-    historySize: Int,
+    mergeHistories: UncloneStrategy[M, I],
     mu: Int): Elitism[M, I] = Elitism[M, I] { population =>
     for {
-      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, Vector[Double]](historyAge, history)(historySize)) apply filterNaN(population, aggregated(history.get, aggregation))
-      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history.get, aggregation)) apply cloneRemoved
+      cloneRemoved <- applyCloneStrategy(values, mergeHistories) apply filterNaN(population, aggregated(history, aggregation))
+      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history, aggregation)) apply cloneRemoved
       elite = keepHighestRanked(cloneRemoved, ranks, mu)
     } yield elite
   }

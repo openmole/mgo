@@ -236,11 +236,10 @@ object NoisyProfileOperations {
     muByNiche: Int): Elitism[M, I] = {
     def nsga2Elitism(population: Vector[I]) =
       NoisyNSGA2Operations.elitism[M, I](
-        history,
+        history.get,
         aggregation,
         values,
-        historyAge,
-        historySize,
+        mergeHistories[M, I, Vector[Double]](historyAge, history)(historySize),
         muByNiche).apply(population)
 
     Elitism[M, I] { nicheElitism(_, nsga2Elitism, niche) }

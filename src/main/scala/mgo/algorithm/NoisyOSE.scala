@@ -65,13 +65,13 @@ object NoisyOSE {
 
   def elitism[M[_]: cats.Monad: Random: Generation: ReachMap](mu: Int, historySize: Int, aggregation: Vector[Vector[Double]] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual]): Elitism[M, Individual] =
     NoisyOSEOperations.elitism[M, Individual](
-      vectorFitness,
+      vectorFitness.get,
       aggregation,
       i => values(Individual.genome.get(i), components),
       origin,
       limit,
-      Individual.historyAge,
       historySize,
+      mergeHistories(Individual.historyAge, vectorFitness)(historySize),
       mu)
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
@@ -227,13 +227,13 @@ object NoisyOSEOperations {
   }
 
   def elitism[M[_]: cats.Monad: Random: Generation, I](
-    history: monocle.Lens[I, Vector[Vector[Double]]],
+    history: I => Vector[Vector[Double]],
     aggregation: Vector[Vector[Double]] => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
     origin: (Vector[Double], Vector[Int]) => Vector[Int],
     limit: Vector[Double],
-    historyAge: monocle.Lens[I, Long],
     historySize: Int,
+    mergeHistories: UncloneStrategy[M, I],
     mu: Int)(implicit archive: Archive[M, I], reachMap: ReachMap[M]) = Elitism[M, I] { population =>
 
     import cats.implicits._
@@ -241,10 +241,10 @@ object NoisyOSEOperations {
     def individualOrigin(i: I) = Function.tupled(origin)(values(i))
     def newlyReaching = {
       def keepNewlyReaching(i: I): M[Option[I]] =
-        if (OSEOperation.patternIsReached(aggregated(history.get, aggregation)(i), limit))
+        if (OSEOperation.patternIsReached(aggregated(history, aggregation)(i), limit))
           (reachMap.reached(individualOrigin(i))) map {
             case true => None
-            case false if history.get(i).size >= historySize => Some(i)
+            case false if history(i).size >= historySize => Some(i)
             case _ => None
           }
         else (None: Option[I]).pure[M]
@@ -256,7 +256,7 @@ object NoisyOSEOperations {
       _ <- reachMap.setReached(reaching.map(individualOrigin))
       _ <- archive.put(reaching)
       filteredPopulation <- OSEOperation.filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(population)
-      newPopulation <- NoisyNSGA2Operations.elitism[M, I](history, aggregation, values, historyAge, historySize, mu).apply(filteredPopulation)
+      newPopulation <- NoisyNSGA2Operations.elitism[M, I](history, aggregation, values, mergeHistories, mu).apply(filteredPopulation)
     } yield newPopulation
   }
 }
