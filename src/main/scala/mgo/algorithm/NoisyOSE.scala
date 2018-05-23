@@ -86,7 +86,7 @@ object NoisyOSE {
     state.s._1.toVector.map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
       Result(c, d, f, r)
-    }
+    } ++ goodIndividuals
   }
 
   def result(noisyOSE: NoisyOSE, state: EvolutionState[OSEState], population: Vector[Individual]): Vector[Result] =
