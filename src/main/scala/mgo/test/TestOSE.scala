@@ -69,5 +69,5 @@ object NoisyRastriginOSE extends App {
         trace { (s, is) => println(s.generation + " " + s.s._1.size) }.eval
     }
 
-  File("/tmp/ose.csv") write NoisyOSE.result(ose, finalState).map(_.continuous.mkString(",")).mkString("\n")
+  File("/tmp/ose.csv") write NoisyOSE.result(ose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
 }

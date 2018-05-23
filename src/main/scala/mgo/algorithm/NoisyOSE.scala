@@ -76,15 +76,21 @@ object NoisyOSE {
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
 
-  def result(state: EvolutionState[OSEState], aggregation: Vector[Vector[Double]] => Vector[Double], continuous: Vector[C]) =
-    state.s._1.toVector.map {
-      i =>
+  def result(state: EvolutionState[OSEState], population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], continuous: Vector[C], limit: Vector[Double]) = {
+    def goodIndividuals =
+      population.flatMap { i =>
         val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
-        Result(c, d, f, r)
-    }
+        if (OSEOperation.patternIsReached(f, limit)) Some(Result(c, d, f, r)) else None
+      }
 
-  def result(noisyOSE: NoisyOSE, state: EvolutionState[OSEState]): Vector[Result] =
-    result(state, noisyOSE.aggregation, noisyOSE.continuous)
+    state.s._1.toVector.map { i =>
+      val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
+      Result(c, d, f, r)
+    }
+  }
+
+  def result(noisyOSE: NoisyOSE, state: EvolutionState[OSEState], population: Vector[Individual]): Vector[Result] =
+    result(state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit)
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit archive: Archive[M, Individual], reachMap: ReachMap[M]) = for {
     map <- reachMap.get()
