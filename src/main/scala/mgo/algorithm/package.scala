@@ -116,11 +116,11 @@ package object algorithm {
 
     def continuousMutations[M[_]: cats.Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
       Vector(
-        bga(mutationRate = 1.0 / _, mutationRange = 0.0000001),
-        bga(mutationRate = 1.0 / _, mutationRange = 0.0001),
-        bga(mutationRate = 1.0 / _, mutationRange = 0.1),
-        bga(mutationRate = _ => 0.1, mutationRange = 0.1),
-        bga(mutationRate = _ => 0.5, mutationRange = 0.5))
+        gaussianMutation(mutationRate = 1.0 / _, sigma = 0.0000001),
+        gaussianMutation(mutationRate = 1.0 / _, sigma = 0.0001),
+        gaussianMutation(mutationRate = 1.0 / _, sigma = 0.1),
+        gaussianMutation(mutationRate = _ => 0.1, sigma = 0.1),
+        gaussianMutation(mutationRate = _ => 0.5, sigma = 0.5))
 
     def discreteMutations[M[_]: cats.Monad: Random](discrete: Vector[D]): Vector[Mutation[M, Vector[Int], Vector[Int]]] =
       Vector(

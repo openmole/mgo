@@ -160,30 +160,37 @@ object breeding {
     def apply[M[_]: cats.Monad, G1, G2](f: G1 => M[G2]): Mutation[M, G1, G2] = Kleisli[M, G1, G2](f)
   }
 
-  def bga[M[_]: cats.Monad: Random](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
+  //  def bga[M[_]: cats.Monad: Random](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
+  //    Mutation { (g: Vector[Double]) =>
+  //      def alphai = Random[M].nextDouble.map(d => if (d < (1.0 / 16)) 1.0 else 0.0)
+  //      def roi(i: Int) = alphai.map(_ * math.pow(2, -i))
+  //
+  //      g.traverse { x =>
+  //
+  //        Random[M].nextDouble.map(_ < mutationRate(g.size)).flatMap { mutate =>
+  //          if (mutate)
+  //            for {
+  //              ro <- (0 to 15).toVector.traverse { roi }.map(_.sum)
+  //              r <- Random[M].nextDouble().map(_ * mutationRange)
+  //              sign <- Random[M].nextBoolean.map(b => if (b) 1.0 else -1.0)
+  //            } yield x + (sign * r * ro)
+  //          else x.pure[M]
+  //        }
+  //      }
+  //    }
+
+  def gaussianMutation[M[_]: cats.Monad: Random](mutationRate: Int => Double, sigma: Double): Mutation[M, Vector[Double], Vector[Double]] =
     Mutation { (g: Vector[Double]) =>
-      def alphai = Random[M].nextDouble.map(d => if (d < (1.0 / 16)) 1.0 else 0.0)
-      def roi(i: Int) = alphai.map(_ * math.pow(2, -i))
-
       g.traverse { x =>
-
         Random[M].nextDouble.map(_ < mutationRate(g.size)).flatMap { mutate =>
           if (mutate)
             for {
-              ro <- (0 to 15).toVector.traverse { roi }.map(_.sum)
-              sign <- Random[M].nextBoolean.map(b => if (b) 1.0 else -1.0)
-            } yield x + (sign * mutationRange * ro)
+              s <- Random[M].use(_.nextGaussian() * sigma)
+            } yield x + s
           else x.pure[M]
         }
       }
     }
-
-  //  def gaussianMutation[G, S](sigma: Double)(implicit values: monocle.Lens[G, Seq[Double] @@ genome.Value]): Mutation[G, S] = new Mutation[G, S] {
-  //    override def apply(g: G) =
-  //      for {
-  //        rng <- random[S]
-  //      } yield values.modify(g => g.map(_ + (rng.nextGaussian * sigma)))(g)
-  //  }
   //
   //  /**
   //   * Mutation of a genome based on gaussian distribution around the genome with adaptive sigma values.
