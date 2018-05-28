@@ -1,16 +1,19 @@
 organization := "fr.iscpif"
 name := "mgo"
 
-scalaVersion := "2.12.4"
-crossScalaVersions := Seq("2.12.4")
+scalaVersion := "2.12.6"
+crossScalaVersions := Seq("2.12.6")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
-addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M10" cross CrossVersion.full)
+addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M11" cross CrossVersion.full)
 scalacOptions += "-Xplugin-require:macroparadise"
 
 resolvers += Resolver.sonatypeRepo("public")
 resolvers += Resolver.sonatypeRepo("staging")
 resolvers += Resolver.sonatypeRepo("snapshots")
+
+scalacOptions ++= Seq("-target:jvm-1.8")
+javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
 
 // macro paradise doesn't work with scaladoc
 sources in (Compile, doc) := Nil
