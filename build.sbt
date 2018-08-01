@@ -1,4 +1,4 @@
-organization := "org.openmole"
+organization := "fr.iscpif"
 name := "mgo"
 
 scalaVersion := "2.12.6"
