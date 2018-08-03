@@ -222,8 +222,7 @@ object NoisyOSEOperations {
           buildGenome) apply (population ++ archivedPopulation)
         offspring <- breeding.flatMap(filterAlreadyReachedAndNeighboursOfPromising).accumulate(lambda)
         sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
-        reachedInPopulation = population.filter(i => OSEOperation.patternIsReached(aggregated(history, aggregation)(i), limit))
-        gs <- clonesReplace[M, I, G](cloneProbability, reachedInPopulation, genome, randomSelection) apply sizedOffspringGenomes
+        gs <- clonesReplace[M, I, G](cloneProbability, population, genome, tournament(ranks, tournamentRounds)) apply sizedOffspringGenomes
       } yield gs
     }
 

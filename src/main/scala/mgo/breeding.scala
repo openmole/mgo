@@ -291,16 +291,15 @@ object breeding {
   //  }
 
   /** Randomly replaces some of the genomes in gs by genomes taken from the original population of I */
-  def clonesReplace[M[_]: cats.Monad: Random, I, G](cloneProbability: Double, clonePool: Vector[I], genome: I => G, selection: Selection[M, I]): Breeding[M, G, G] =
+  def clonesReplace[M[_]: cats.Monad: Random, I, G](cloneProbability: Double, population: Vector[I], genome: I => G, selection: Selection[M, I]): Breeding[M, G, G] =
     Breeding { gs: Vector[G] =>
       def cloneOrKeep(g: G): M[G] =
         for {
           clone <- Random[M].nextDouble.map(_ < cloneProbability)
-          newG <- if (clone) selection(clonePool).map(genome) else g.pure[M]
+          newG <- if (clone) selection(population).map(genome) else g.pure[M]
         } yield newG
 
-      if (clonePool.isEmpty) gs.pure[M]
-      else gs traverse cloneOrKeep
+      gs traverse cloneOrKeep
     }
 
   //  def opOrClone[M[_]: cats.Monad: RandomGen, I, G](
