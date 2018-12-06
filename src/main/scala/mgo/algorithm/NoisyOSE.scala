@@ -22,29 +22,29 @@ object NoisyOSE {
   import CDGenome._
   import NoisyIndividual._
 
-  type OSEState = (Array[Individual], Array[Vector[Int]])
+  type OSEState[P] = (Array[Individual[P]], Array[Vector[Int]])
 
-  @tagless trait IndividualArchive {
-    def put(i: Seq[Individual]): FS[Unit]
-    def get(): FS[Vector[Individual]]
+  @tagless trait IndividualArchive[P] {
+    def put(i: Seq[Individual[P]]): FS[Unit]
+    def get(): FS[Vector[Individual[P]]]
   }
 
-  implicit def archiveConvert[M[_]](implicit vhm: IndividualArchive[M]) = new Archive[M, Individual] {
-    def put(i: Seq[Individual]) = vhm.put(i)
+  implicit def archiveConvert[M[_], P](implicit vhm: IndividualArchive[M, P]) = new Archive[M, Individual[P]] {
+    def put(i: Seq[Individual[P]]) = vhm.put(i)
     def get() = vhm.get()
   }
 
-  case class ArchiveInterpreter(val archive: collection.mutable.Buffer[Individual]) extends IndividualArchive.Handler[Evaluated] {
-    def put(i: Seq[Individual]) = freedsl.dsl.result(archive ++= i)
+  case class ArchiveInterpreter[P](val archive: collection.mutable.Buffer[Individual[P]]) extends IndividualArchive.Handler[Evaluated, P] {
+    def put(i: Seq[Individual[P]]) = freedsl.dsl.result(archive ++= i)
     def get() = freedsl.dsl.result(archive.toVector)
   }
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: ReachMap](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double], discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual]): Breeding[M, Individual, Genome] =
-    NoisyOSEOperations.adaptiveBreeding[M, Individual, Genome](
-      vectorFitness.get,
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: ReachMap, P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual[P]]): Breeding[M, Individual[P], Genome] =
+    NoisyOSEOperations.adaptiveBreeding[M, Individual[P], Genome, P](
+      vectorFitness[P].get,
       aggregation,
       Individual.genome.get,
       continuousValues.get,
@@ -60,26 +60,26 @@ object NoisyOSE {
       origin,
       limit)
 
-  def expression(fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): (util.Random, Genome) => Individual =
-    NoisyIndividual.expression(fitness, continuous)
+  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
+    NoisyIndividual.expression[P](fitness, continuous)
 
-  def elitism[M[_]: cats.Monad: Random: Generation: ReachMap](mu: Int, historySize: Int, aggregation: Vector[Vector[Double]] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual]): Elitism[M, Individual] =
-    NoisyOSEOperations.elitism[M, Individual](
-      vectorFitness.get,
+  def elitism[M[_]: cats.Monad: Random: Generation: ReachMap, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual[P]]): Elitism[M, Individual[P]] =
+    NoisyOSEOperations.elitism[M, Individual[P], P](
+      vectorFitness[P].get,
       aggregation,
       i => values(Individual.genome.get(i), components),
       origin,
       limit,
       historySize,
-      mergeHistories(Individual.historyAge, vectorFitness)(historySize),
+      mergeHistories(Individual.historyAge[P], vectorFitness[P])(historySize),
       mu)
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
 
-  def result(state: EvolutionState[OSEState], population: Vector[Individual], aggregation: Vector[Vector[Double]] => Vector[Double], continuous: Vector[C], limit: Vector[Double]) = {
+  def result[P: Manifest](state: EvolutionState[OSEState[P]], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double]) = {
     def goodIndividuals =
       population.flatMap { i =>
-        val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
+        val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
         if (OSEOperation.patternIsReached(f, limit)) Some(Result(c, d, f, r)) else None
       }
 
@@ -89,45 +89,52 @@ object NoisyOSE {
     } ++ goodIndividuals
   }
 
-  def result(noisyOSE: NoisyOSE, state: EvolutionState[OSEState], population: Vector[Individual]): Vector[Result] =
-    result(state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit)
+  def result[P: Manifest](noisyOSE: NoisyOSE[P], state: EvolutionState[OSEState[P]], population: Vector[Individual[P]]): Vector[Result] =
+    result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit)
 
-  def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit archive: Archive[M, Individual], reachMap: ReachMap[M]) = for {
+  def state[M[_]: cats.Monad: StartTime: Random: Generation, P](implicit archive: Archive[M, Individual[P]], reachMap: ReachMap[M]) = for {
     map <- reachMap.get()
     arch <- archive.get()
-    s <- mgo.algorithm.state[M, OSEState]((arch.toArray, map.toArray))
+    s <- mgo.algorithm.state[M, OSEState[P]]((arch.toArray, map.toArray))
   } yield s
 
   object OSEImplicits {
-    def apply(state: EvolutionState[OSEState]): OSEImplicits =
+    def apply[P](state: EvolutionState[OSEState[P]]): OSEImplicits[P] =
       OSEImplicits()(
         GenerationInterpreter(state.generation),
         RandomInterpreter(state.random),
         StartTimeInterpreter(state.startTime),
         IOInterpreter(),
-        ArchiveInterpreter(state.s._1.to[collection.mutable.Buffer]),
+        ArchiveInterpreter[P](state.s._1.to[collection.mutable.Buffer]),
         ReachMapInterpreter(state.s._2.to[collection.mutable.HashSet]),
         SystemInterpreter())
   }
 
-  case class OSEImplicits(implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, archiveInterpreter: ArchiveInterpreter, reachMapInterpreter: ReachMapInterpreter, systemInterpreter: SystemInterpreter)
+  case class OSEImplicits[P](implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, archiveInterpreter: ArchiveInterpreter[P], reachMapInterpreter: ReachMapInterpreter, systemInterpreter: SystemInterpreter)
 
-  def run[T](rng: util.Random)(f: OSEImplicits => T): T = {
-    val state = EvolutionState[OSEState](random = rng, s = (Array.empty, Array.empty))
+  def run[T](rng: util.Random)(f: OSEImplicits[Vector[Double]] => T): T = {
+    val state = EvolutionState[OSEState[Vector[Double]]](random = rng, s = (Array.empty, Array.empty))
     run(state)(f)
   }
 
-  def run[T, S](state: EvolutionState[OSEState])(f: OSEImplicits => T): T = f(OSEImplicits(state))
+  def runP[T, S, P](state: EvolutionState[OSEState[P]])(f: OSEImplicits[P] => T): T = f(OSEImplicits(state))
 
-  implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime: ReachMap](implicit archive: Archive[M, Individual]): Algorithm[NoisyOSE, M, Individual, Genome, EvolutionState[OSEState]] = new Algorithm[NoisyOSE, M, Individual, Genome, EvolutionState[OSEState]] {
-    def initialPopulation(t: NoisyOSE) =
-      noisy.initialPopulation[M, Genome, Individual](
+  def runP[T, P](rng: util.Random)(f: OSEImplicits[P] => T): T = {
+    val state = EvolutionState[OSEState[P]](random = rng, s = (Array.empty, Array.empty))
+    run(state)(f)
+  }
+
+  def run[T, S, P](state: EvolutionState[OSEState[P]])(f: OSEImplicits[P] => T): T = f(OSEImplicits(state))
+
+  implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime: ReachMap, P: Manifest](implicit archive: Archive[M, Individual[P]]): Algorithm[NoisyOSE[P], M, Individual[P], Genome, EvolutionState[OSEState[P]]] = new Algorithm[NoisyOSE[P], M, Individual[P], Genome, EvolutionState[OSEState[P]]] {
+    def initialPopulation(t: NoisyOSE[P]) =
+      noisy.initialPopulation[M, Genome, Individual[P]](
         NoisyOSE.initialGenomes[M](t.lambda, t.continuous, t.discrete),
-        NoisyOSE.expression(t.fitness, t.continuous))
+        NoisyOSE.expression[P](t.fitness, t.continuous))
 
-    def step(t: NoisyOSE): Kleisli[M, Vector[Individual], Vector[Individual]] =
-      noisy.step[M, Individual, Genome](
-        NoisyOSE.adaptiveBreeding[M](
+    def step(t: NoisyOSE[P]): Kleisli[M, Vector[Individual[P]], Vector[Individual[P]]] =
+      noisy.step[M, Individual[P], Genome](
+        NoisyOSE.adaptiveBreeding[M, P](
           t.lambda,
           t.operatorExploration,
           t.cloneProbability,
@@ -136,7 +143,7 @@ object NoisyOSE {
           t.origin,
           t.limit),
         NoisyOSE.expression(t.fitness, t.continuous),
-        NoisyOSE.elitism[M](
+        NoisyOSE.elitism[M, P](
           t.mu,
           t.historySize,
           t.aggregation,
@@ -144,18 +151,18 @@ object NoisyOSE {
           t.origin,
           t.limit))
 
-    def state = NoisyOSE.state[M]
+    def state = NoisyOSE.state[M, P]
   }
 
 }
 
-case class NoisyOSE(
+case class NoisyOSE[P](
   mu: Int,
   lambda: Int,
-  fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double],
+  fitness: (util.Random, Vector[Double], Vector[Int]) => P,
   limit: Vector[Double],
   origin: (Vector[Double], Vector[Int]) => Vector[Int],
-  aggregation: Vector[Vector[Double]] => Vector[Double],
+  aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
@@ -164,7 +171,7 @@ case class NoisyOSE(
 
 object NoisyOSEOperations {
 
-  def aggregated[I](fitness: I => Vector[Vector[Double]], aggregation: Vector[Vector[Double]] => Vector[Double])(i: I): Vector[Double] =
+  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double])(i: I): Vector[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
 
   def promisingReachMap[I](fitness: I => Vector[Double], limit: Vector[Double], origin: I => Vector[Int], population: Vector[I]): Set[Vector[Int]] = {
@@ -172,9 +179,9 @@ object NoisyOSEOperations {
     promising.map(origin).toSet
   }
 
-  def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G](
-    history: I => Vector[Vector[Double]],
-    aggregation: Vector[Vector[Double]] => Vector[Double],
+  def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G, P](
+    history: I => Vector[P],
+    aggregation: Vector[P] => Vector[Double],
     genome: I => G,
     continuousValues: G => Vector[Double],
     continuousOperator: G => Option[Int],
@@ -232,9 +239,9 @@ object NoisyOSEOperations {
     } yield genomes
   }
 
-  def elitism[M[_]: cats.Monad: Random: Generation, I](
-    history: I => Vector[Vector[Double]],
-    aggregation: Vector[Vector[Double]] => Vector[Double],
+  def elitism[M[_]: cats.Monad: Random: Generation, I, P](
+    history: I => Vector[P],
+    aggregation: Vector[P] => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
     origin: (Vector[Double], Vector[Int]) => Vector[Int],
     limit: Vector[Double],
@@ -262,7 +269,7 @@ object NoisyOSEOperations {
       _ <- reachMap.setReached(reaching.map(individualOrigin))
       _ <- archive.put(reaching)
       filteredPopulation <- OSEOperation.filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(population)
-      newPopulation <- NoisyNSGA2Operations.elitism[M, I](history, aggregation, values, mergeHistories, mu).apply(filteredPopulation)
+      newPopulation <- NoisyNSGA2Operations.elitism[M, I, P](history, aggregation, values, mergeHistories, mu).apply(filteredPopulation)
     } yield newPopulation
   }
 }

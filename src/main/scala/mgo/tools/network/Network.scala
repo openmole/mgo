@@ -17,6 +17,8 @@
 
 package mgo.tools.network
 
+import collection.JavaConverters._
+
 /**
  * N = Node data type
  * E = Edge data type
@@ -38,9 +40,9 @@ trait Network[N, E] {
     edgeAttr: E => Seq[(String, String)],
     additionalStatements: String): String =
     s"""$dotGraphType $graphId {
-       |${additionalStatements.lines.map { "  " ++ _ }.mkString { "\n" }}
-       |${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
-       |${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.mkString { "\n" }}
+       |${additionalStatements.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
+       |${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
+       |${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
        |}""".stripMargin
 
   def toDotNodes(nodeAttr: N => Seq[(String, String)]): String =
@@ -66,8 +68,8 @@ trait Network[N, E] {
 
   def toJSONNodeLink: String =
     s"""{
-  "nodes":${toJSONNodes.lines.map { "  " ++ _ }.mkString { "\n" }},
-  "links":${toJSONLinks.lines.map { "  " ++ _ }.mkString { "\n" }}
+  "nodes":${toJSONNodes.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }},
+  "links":${toJSONLinks.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
 }"""
 
   def toJSONNodes: String =

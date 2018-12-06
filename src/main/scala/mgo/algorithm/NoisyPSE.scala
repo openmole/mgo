@@ -35,97 +35,97 @@ object NoisyPSE {
 
   import CDGenome._
 
-  @Lenses case class Individual(
+  @Lenses case class Individual[P](
     genome: Genome,
     historyAge: Long,
-    phenotypeHistory: Array[Array[Double]],
+    phenotypeHistory: Array[P],
     mapped: Boolean = false,
     foundedIsland: Boolean = false)
 
-  def buildIndividual(genome: Genome, phenotype: Vector[Double]) = Individual(genome, 1, Array(phenotype.toArray))
-  def vectorPhenotype = Individual.phenotypeHistory composeLens array2ToVectorLens
+  def buildIndividual[P: Manifest](genome: Genome, phenotype: P) = Individual(genome, 1, Array(phenotype))
+  def vectorPhenotype[P: Manifest] = Individual.phenotypeHistory[P] composeLens arrayToVectorLens
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation: HitMap] = PSE.state[M]
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: HitMap](
+  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: HitMap, P: Manifest](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
-    aggregation: Vector[Vector[Double]] => Vector[Double],
+    aggregation: Vector[P] => Vector[Double],
     discrete: Vector[D],
-    pattern: Vector[Double] => Vector[Int]): Breeding[M, Individual, Genome] =
-    NoisyPSEOperations.adaptiveBreeding[M, Individual, Genome](
+    pattern: Vector[Double] => Vector[Int]): Breeding[M, Individual[P], Genome] =
+    NoisyPSEOperations.adaptiveBreeding[M, Individual[P], Genome](
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
       discreteOperator.get,
       discrete,
-      vectorPhenotype.get _ andThen aggregation andThen pattern,
+      vectorPhenotype[P].get _ andThen aggregation andThen pattern,
       buildGenome,
       lambda,
       operatorExploration,
       cloneProbability)
 
-  def elitism[M[_]: cats.Monad: Random: HitMap: Generation](
+  def elitism[M[_]: cats.Monad: Random: HitMap: Generation, P: CanBeNaN: Manifest](
     pattern: Vector[Double] => Vector[Int],
-    aggregation: Vector[Vector[Double]] => Vector[Double],
+    aggregation: Vector[P] => Vector[Double],
     historySize: Int,
     continuous: Vector[C]) =
-    NoisyPSEOperations.elitism[M, Individual, Vector[Double]](
+    NoisyPSEOperations.elitism[M, Individual[P], P](
       i => values(Individual.genome.get(i), continuous),
-      vectorPhenotype,
+      vectorPhenotype[P],
       aggregation,
       pattern,
       Individual.mapped,
       Individual.historyAge,
       historySize)
 
-  def expression(fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): (util.Random, Genome) => Individual =
-    noisy.expression[Genome, Individual](
+  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
+    noisy.expression[Genome, Individual[P], P](
       values(_, continuous),
-      buildIndividual)(fitness)
+      buildIndividual[P])(fitness)
 
-  def aggregate(i: Individual, aggregation: Vector[Vector[Double]] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]) =
+  def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]) =
     (
       scaleContinuousValues(continuousValues.get(i.genome), continuous),
-      Individual.genome composeLens discreteValues get i,
-      aggregation(vectorPhenotype.get(i)),
-      (vectorPhenotype.get _ andThen aggregation andThen pattern)(i),
-      Individual.phenotypeHistory.get(i).size)
+      Individual.genome[P] composeLens discreteValues get i,
+      aggregation(vectorPhenotype[P].get(i)),
+      (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),
+      Individual.phenotypeHistory[P].get(i).size)
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], phenotype: Vector[Double], pattern: Vector[Int], replications: Int)
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], aggregation: Vector[Double], pattern: Vector[Int], replications: Int)
 
-  def result(
-    population: Vector[Individual],
-    aggregation: Vector[Vector[Double]] => Vector[Double],
+  def result[P: Manifest](
+    population: Vector[Individual[P]],
+    aggregation: Vector[P] => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
     continuous: Vector[C]) =
     population.map {
       i =>
-        val (c, d, f, p, r) = aggregate(i, aggregation, pattern, continuous)
-        Result(c, d, f, p, r)
+        val (c, d, f, p, r) = aggregate[P](i, aggregation, pattern, continuous)
+        Result[P](c, d, f, p, r)
     }
 
-  def result(pse: NoisyPSE, population: Vector[Individual]): Vector[Result] =
+  def result[P: Manifest](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result(population, pse.aggregation, pse.pattern, pse.continuous)
 
   def run[T](rng: util.Random)(f: PSE.PSEImplicits => T): T = PSE.run(rng)(f)
   def run[T](state: EvolutionState[Map[Vector[Int], Int]])(f: PSE.PSEImplicits => T): T = PSE.run(state)(f)
 
-  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: HitMap: Generation] = new Algorithm[NoisyPSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] {
+  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: HitMap: Generation, P: Manifest: CanBeNaN] = new Algorithm[NoisyPSE[P], M, Individual[P], Genome, EvolutionState[Map[Vector[Int], Int]]] {
 
-    def initialPopulation(t: NoisyPSE) =
-      noisy.initialPopulation[M, Genome, Individual](
+    def initialPopulation(t: NoisyPSE[P]) =
+      noisy.initialPopulation[M, Genome, Individual[P]](
         NoisyPSE.initialGenomes[M](t.lambda, t.continuous, t.discrete),
         NoisyPSE.expression(t.phenotype, t.continuous))
 
-    def step(t: NoisyPSE) =
-      noisy.step[M, Individual, Genome](
-        NoisyPSE.adaptiveBreeding[M](
+    def step(t: NoisyPSE[P]) =
+      noisy.step[M, Individual[P], Genome](
+        NoisyPSE.adaptiveBreeding[M, P](
           t.lambda,
           t.operatorExploration,
           t.cloneProbability,
@@ -133,7 +133,7 @@ object NoisyPSE {
           t.discrete,
           t.pattern),
         NoisyPSE.expression(t.phenotype, t.continuous),
-        NoisyPSE.elitism[M](
+        NoisyPSE.elitism[M, P](
           t.pattern,
           t.aggregation,
           t.historySize,
@@ -144,11 +144,11 @@ object NoisyPSE {
   }
 }
 
-case class NoisyPSE(
+case class NoisyPSE[P](
   lambda: Int,
-  phenotype: (util.Random, Vector[Double], Vector[Int]) => Vector[Double],
+  phenotype: (util.Random, Vector[Double], Vector[Int]) => P,
   pattern: Vector[Double] => Vector[Int],
-  aggregation: Vector[Vector[Double]] => Vector[Double],
+  aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
@@ -188,8 +188,8 @@ object NoisyPSEOperations {
   def elitism[M[_]: cats.Monad: Random: Generation: HitMap, I, P: CanBeNaN](
     values: I => (Vector[Double], Vector[Int]),
     history: monocle.Lens[I, Vector[P]],
-    aggregation: Vector[P] => P,
-    pattern: P => Vector[Int],
+    aggregation: Vector[P] => Vector[Double],
+    pattern: Vector[Double] => Vector[Int],
     mapped: monocle.Lens[I, Boolean],
     historyAge: monocle.Lens[I, Long],
     historySize: Int): Elitism[M, I] = Elitism[M, I] { population =>

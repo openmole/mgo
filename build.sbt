@@ -1,8 +1,8 @@
 organization := "fr.iscpif"
 name := "mgo"
 
-scalaVersion := "2.12.6"
-crossScalaVersions := Seq("2.12.6")
+scalaVersion := "2.12.7"
+crossScalaVersions := Seq("2.12.7")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
 addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M11" cross CrossVersion.full)

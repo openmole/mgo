@@ -273,21 +273,21 @@ package object algorithm {
 
     object NoisyIndividual {
 
-      def aggregate(i: Individual, aggregation: Vector[Vector[Double]] => Vector[Double], continuous: Vector[C]) =
+      def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C]) =
         (
           scaleContinuousValues(continuousValues.get(i.genome), continuous),
           Individual.genome composeLens discreteValues get i,
-          aggregation(vectorFitness.get(i)),
+          aggregation(vectorFitness[P].get(i)),
           Individual.fitnessHistory.get(i).size)
 
-      @Lenses case class Individual(genome: Genome, historyAge: Long, fitnessHistory: Array[Array[Double]])
-      def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, 1, Array(f.toArray))
-      def vectorFitness = Individual.fitnessHistory composeLens array2ToVectorLens
+      @Lenses case class Individual[P](genome: Genome, historyAge: Long, fitnessHistory: Array[P])
+      def buildIndividual[P: Manifest](g: Genome, f: P) = Individual[P](g, 1, Array(f))
+      def vectorFitness[P: Manifest] = Individual.fitnessHistory[P] composeLens arrayToVectorLens[P]
 
-      def expression(fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): (util.Random, Genome) => Individual =
-        noisy.expression[Genome, Individual](
+      def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
+        noisy.expression[Genome, Individual[P], P](
           values(_, continuous),
-          buildIndividual)(fitness)
+          buildIndividual[P])(fitness)
     }
 
     @Lenses case class Genome(
@@ -377,12 +377,12 @@ package object algorithm {
       } yield elitePopulation
     }
 
-    def expression[G, I](
+    def expression[G, I, P](
       values: G => (Vector[Double], Vector[Int]),
-      build: (G, Vector[Double]) => I)(fitness: (util.Random, Vector[Double], Vector[Int]) => Vector[Double]): (util.Random, G) => I = {
+      build: (G, P) => I)(phenotype: (util.Random, Vector[Double], Vector[Int]) => P): (util.Random, G) => I = {
       case (rg, g) =>
         val (cs, ds) = values(g)
-        build(g, fitness(rg, cs, ds))
+        build(g, phenotype(rg, cs, ds))
     }
 
   }

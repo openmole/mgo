@@ -56,14 +56,13 @@ object NoisySphereProfile extends App {
   import algorithm._
 
   def aggregation(history: Vector[Vector[Double]]) = history.transpose.map(h => h.sum / h.size)
-  def niche = NoisyProfile.continuousProfile(x = 0, nX = 10)
 
   val algo = NoisyProfile(
     muByNiche = 20,
     lambda = 100,
     fitness = noisyDiscreteSphere.compute,
     aggregation = aggregation,
-    niche = niche,
+    niche = NoisyProfile.continuousProfile[Vector[Double]](x = 0, nX = 10),
     continuous = noisyDiscreteSphere.continuous(2),
     discrete = noisyDiscreteSphere.discrete(2))
 
