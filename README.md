@@ -13,7 +13,7 @@ MGO implements NGSAII, CP (Calibration Profile), PSE (Pattern Search Experiment
 Licence
 -------
 
-MGO is licenced under the GNU Affero GPLv3 software licence. 
+MGO is licenced under the GNU GPLv3 software licence. 
 
 Example
 -------
