@@ -17,6 +17,7 @@
 package mgo
 
 import math._
+import mgo.evolution._
 import scala.util.Random
 
 package object test {

@@ -34,16 +34,16 @@ trait Network[N, E] {
   /** Either digraph or graph */
   def dotGraphType: String
 
-  def toDot(
-    graphId: String,
-    nodeAttr: N => Seq[(String, String)],
-    edgeAttr: E => Seq[(String, String)],
-    additionalStatements: String): String =
-    s"""$dotGraphType $graphId {
-       |${additionalStatements.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
-       |${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
-       |${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
-       |}""".stripMargin
+  // def toDot(
+  //   graphId: String,
+  //   nodeAttr: N => Seq[(String, String)],
+  //   edgeAttr: E => Seq[(String, String)],
+  //   additionalStatements: String): String =
+  //   s"""$dotGraphType $graphId {
+  //      |${additionalStatements.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
+  //      |${toDotNodes(nodeAttr).lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
+  //      |${toDotEdges(edgeAttr).lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
+  //      |}""".stripMargin
 
   def toDotNodes(nodeAttr: N => Seq[(String, String)]): String =
     iternodes.map {
@@ -66,11 +66,11 @@ trait Network[N, E] {
       } ]"""
     }.mkString("\n")
 
-  def toJSONNodeLink: String =
-    s"""{
-  "nodes":${toJSONNodes.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }},
-  "links":${toJSONLinks.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
-}"""
+  //  def toJSONNodeLink: String =
+  //    s"""{
+  //  "nodes":${toJSONNodes.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }},
+  //  "links":${toJSONLinks.lines.map { "  " ++ _ }.iterator().asScala.mkString { "\n" }}
+  //}"""
 
   def toJSONNodes: String =
     "[\n" ++

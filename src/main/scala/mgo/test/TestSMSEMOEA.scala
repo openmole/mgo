@@ -16,8 +16,8 @@
 // */
 //package mgo.test
 //
-//import mgo._
-//import mgo.algorithm._
+//import mgo.evolution._
+//import mgo.evolution.algorithm._
 //
 //import scala.util.Random
 //import scalaz._

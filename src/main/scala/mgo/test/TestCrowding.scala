@@ -17,7 +17,7 @@
 //
 //package mgo.test
 //
-//import mgo._
+//import mgo.evolution._
 //import mgo.tools.metric.CrowdingDistance
 //
 //object TestCrowding extends App {
