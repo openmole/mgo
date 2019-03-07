@@ -20,9 +20,9 @@
 //import java.util.Locale
 //
 //import mgo.{ Individual, PopulationElement, Population }
-//import mgo.algorithm.{ HyperNEAT, NEAT }
-//import mgo.breed.{ NEATSpeciesFitnessSharing, NEATFeedforwardTopology }
-//import mgo.genome.NEATMinimalGenomeConnectedIO
+//import mgo.evolution.algorithm.{ HyperNEAT, NEAT }
+//import mgo.evolution.breed.{ NEATSpeciesFitnessSharing, NEATFeedforwardTopology }
+//import mgo.evolution.genome.NEATMinimalGenomeConnectedIO
 //import mgo.termination.ConditionalTermination
 //import mgo.tools.neuralnetwork.{ ActivationFunction, Feedforward, NeuralNetwork }
 //

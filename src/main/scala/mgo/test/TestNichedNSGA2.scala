@@ -1,7 +1,7 @@
 package mgo.test
 
-import mgo._
-import mgo.contexts._
+import mgo.evolution._
+import mgo.evolution.contexts._
 import freedsl.dsl._
 
 object NichedNSGAII extends App {

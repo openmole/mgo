@@ -215,7 +215,7 @@ package object tools {
     }
   }
 
-  def randomInt(random: util.Random, discrete: mgo.D) =
+  def randomInt(random: util.Random, discrete: mgo.evolution.D) =
     ((random.nextDouble() * (discrete.high - discrete.low + 1)) + discrete.low).floor.toInt
 
 }

@@ -21,9 +21,9 @@
 //import java.util.Locale
 //
 //import mgo.{ Individual, PopulationElement, Population }
-//import mgo.algorithm.NEAT
-//import mgo.breed.{ NEATSpeciesFitnessSharing, NEATSpeciesRescaledFitnessSharing, NEATFeedforwardTopology }
-//import mgo.genome.{ NEATMinimalGenomeUnconnected, NEATMinimalGenomeConnectedIO }
+//import mgo.evolution.algorithm.NEAT
+//import mgo.evolution.breed.{ NEATSpeciesFitnessSharing, NEATSpeciesRescaledFitnessSharing, NEATFeedforwardTopology }
+//import mgo.evolution.genome.{ NEATMinimalGenomeUnconnected, NEATMinimalGenomeConnectedIO }
 //import mgo.termination.ConditionalTermination
 //import mgo.tools.neuralnetwork.{ ActivationFunction, Feedforward, NeuralNetwork }
 //

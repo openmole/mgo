@@ -17,7 +17,7 @@
 
 package mgo.tools.metric
 
-import mgo.dominance._
+import mgo.evolution.dominance._
 import collection.mutable.{ IndexedSeq => MIndexedSeq }
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer

@@ -17,7 +17,7 @@
 //
 //package mgo.test
 //
-//import mgo._
+//import mgo.evolution._
 //import monocle.syntax._
 //import scala.util.Random
 //import scalax.io.Resource
