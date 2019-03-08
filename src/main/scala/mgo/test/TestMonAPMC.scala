@@ -90,7 +90,7 @@ object GaussianMix1DMonAPMC extends App {
     h.foreach {
       case (bin, height) =>
         println(f"$bin% 3.2f: $height%.3f " ++
-          Iterator.fill((height * 50).round.toInt)("o").mkString(""))
+          Iterator.fill((height * 50).round.toInt)("●").mkString(""))
     }
 
     Files.write(
@@ -131,8 +131,8 @@ object GaussianMix2DMonAPMC extends App {
 
   // Test MonAPMC and its Exposed interface
   val p = APMC.Params(
-    n = 10000,
-    nAlpha = 1000,
+    n = 5000,
+    nAlpha = 500,
     pAccMin = 0.01,
     priorSample = () => Array(
       rng.nextDouble() * 20 - 10,
@@ -194,7 +194,7 @@ object GaussianMix2DMonAPMC extends App {
         println(f"$xb% 3.2f: " ++
           zrow.map { z =>
             if (z < 0.01) "⬝"
-            else if (z < 0.1) "○"
+            else if (z < 0.1) "⚬"
             else if (z < 0.2) "◉"
             else "●"
           }.mkString(" "))
