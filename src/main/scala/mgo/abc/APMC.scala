@@ -58,6 +58,10 @@ object APMC {
     pAcc: Double,
     epsilon: Double)
 
+  def run(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): State = exposedEval(p).run(f)
+
+  def scan(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): Vector[State] = exposedEval(p).scan(f)
+
   def exposedEval(p: Params)(implicit rng: RandomGenerator): ExposedEval[State, RealMatrix, (State, State, RealMatrix, RealMatrix), Vector[Double], Vector[Double]] =
     ExposedEval(
       initPreEval = { () =>
@@ -82,24 +86,6 @@ object APMC {
         stepMerge(p, s, newS)
       },
       stop = stop(p, _))
-
-  def run(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): State = {
-    @tailrec def go(s: State): State = {
-      println(s.pAcc, s.epsilon)
-      if (stop(p, s)) { s }
-      else { go(step(p, f, s)) }
-    }
-
-    go(init(p, f))
-  }
-
-  def scan(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): Vector[State] = {
-    def go(s: State): Vector[State] =
-      if (stop(p, s)) Vector(s)
-      else s +: go(step(p, f, s))
-
-    go(init(p, f))
-  }
 
   def stop(p: Params, s: State): Boolean = s.pAcc <= p.pAccMin
 
@@ -135,35 +121,6 @@ object APMC {
   }
 
   def step(p: Params, f: Vector[Double] => Vector[Double], s: State)(implicit rng: RandomGenerator): State = stepMerge(p, s, stepGen(p, f, s))
-
-  /*def stepGen(p: Params, f: Vector[Double] => Vector[Double], s: State)(implicit rng: RandomGenerator): State = {
-    val dim = s.thetas.getColumnDimension()
-    val sigmaSquared = weightedCovariance(s.thetas, s.weights)
-      .scalarMultiply(2)
-    val weightedDistributionTheta = new EnumeratedIntegerDistribution(
-      rng, Array.range(0, p.nAlpha), s.weights)
-    val newThetas = MatrixUtils.createRealMatrix(
-      Array.fill(p.n - p.nAlpha) {
-        val resampledTheta = s.thetas.getRow(weightedDistributionTheta.sample)
-        new MultivariateNormalDistribution(
-          rng, resampledTheta, sigmaSquared.getData).sample
-      })
-    val newXs = MatrixUtils.createRealMatrix(
-      Array.tabulate(p.n) { i => f(newThetas.getRow(i).toVector).toArray })
-    val obs = MatrixUtils.createRealVector(p.observed)
-    val newRhos = MatrixUtils.createRealVector(
-      Array.tabulate(p.n) { i => newXs.getRowVector(i).getDistance(obs) })
-    val newPAcc = newRhos.toArray.count { r => r < s.epsilon } / (p.n - p.nAlpha).toDouble
-    val (thetasSelected, rhosSelected, newEpsilon) =
-      filterParticles(p.nAlpha, newThetas, newRhos)
-    val weightsSelected = compWeights(p, s, sigmaSquared, thetasSelected)
-    State(
-      thetas = thetasSelected,
-      weights = weightsSelected,
-      rhos = rhosSelected,
-      pAcc = newPAcc,
-      epsilon = s.epsilon)
-  }*/
 
   def stepGen(p: Params, f: Vector[Double] => Vector[Double], s: State)(implicit rng: RandomGenerator): State = {
     val (state1, sigmaSquared, newThetas) = stepGenPreEval(p, s)

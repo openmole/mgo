@@ -29,10 +29,11 @@ import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistributi
 import org.apache.commons.math3.random.RandomGenerator
 import org.apache.commons.math3.random.Well1024a
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+import scala.concurrent.ExecutionContext
 import scala.math._
+import scala.util.{ Try, Failure, Success }
 
 object GaussianMix1DMonAPMC extends App {
-
   implicit val rng = new Well1024a()
 
   // Gaussian Mixture 1D toy model
@@ -90,7 +91,7 @@ object GaussianMix1DMonAPMC extends App {
     h.foreach {
       case (bin, height) =>
         println(f"$bin% 3.2f: $height%.3f " ++
-          Iterator.fill((height * 50).round.toInt)("●").mkString(""))
+          Iterator.fill((height * 50).round.toInt)("◉").mkString(""))
     }
 
     Files.write(
@@ -102,13 +103,21 @@ object GaussianMix1DMonAPMC extends App {
   println("---- 1D Gaussian Mixture; MonAPMC.exposedEval ----")
   report(MonAPMC.exposedEval(p).scan(toyModel).map { case (MonAPMC.State(_, s)) => s })
 
-  println("---- 1D Gaussian Mixture; APMC.run ----")
+  println("---- 1D Gaussian Mixture; APMC.scan ----")
   report(APMC.scan(p, toyModel))
+
+  println("---- 1D Gaussian Mixture; MonAPMC.run using MonoidParallel ----")
+  implicit val ec = ExecutionContext.global
+  MonAPMC.run(1, 1, p, toyModel) match {
+    case Success(MonAPMC.State(_, s)) => reportS(s)
+  }
+
 }
 
 object GaussianMix2DMonAPMC extends App {
 
   implicit val rng = new Well1024a()
+  implicit val ec = ExecutionContext.global
 
   // Gaussian Mixture 1D toy model
   def toyModel(theta: Vector[Double])(implicit rng: RandomGenerator): Vector[Double] = {
@@ -174,34 +183,78 @@ object GaussianMix2DMonAPMC extends App {
   }
 
   def report(ss: Vector[APMC.State]): Unit = {
-    println(ss.map { s => (s.epsilon, s.pAcc) }.mkString("\n"))
+    println("epsilon\tpAcc\tsample size")
+    println(ss.map { s =>
+      s.epsilon.toString ++ "\t" ++
+        s.pAcc.toString ++ "\t" ++
+        s.weights.size.toString
+    }.mkString("\n"))
+    println("\n")
+    println("\n")
+    println("w q0.25\tw q0.5\tw q0.75")
+    println(ss.map { s =>
+      val wstat = new DescriptiveStatistics(s.weights)
+
+      "%.3f\t%.3f\t%.3f".format(
+        wstat.getPercentile(25.0),
+        wstat.getPercentile(50.0),
+        wstat.getPercentile(75.0))
+    }.mkString("\n"))
+    println("\n")
 
     reportS(ss.last)
   }
 
   def reportS(s: APMC.State): Unit = {
     println("Epsilon = " ++ s.epsilon.toString)
+    println()
 
     val thetasArray = s.thetas.getData.map { case Array(x, y) => (x, y) }
 
     println("\nThetas histogram:")
+
     val (xBins, yBins, z) = histogram(thetasArray.toVector, s.weights.toVector, (-3, -3), (4, 4), (30, 30))
+
+    val zstat = new DescriptiveStatistics(z.flatten.toArray.filter { _ > 0 })
+    val zquarts = (
+      zstat.getPercentile(25.0),
+      zstat.getPercentile(50.0),
+      zstat.getPercentile(75.0))
+    val zmin = zstat.getMin()
+    val zmax = zstat.getMax()
+    println(zquarts)
+
+    println("Z min quartiles max: %.4f %.4f %.4f %.4f %.4f".format(
+      zmin, zquarts._1, zquarts._2, zquarts._3, zmax))
+
     val maxWidth = 80
     val maxHeight = 80
-    val maxZ = z.map { _.max }.max
     (xBins zip z).reverse.foreach {
       case (xb, zrow) =>
         println(f"$xb% 3.2f: " ++
           zrow.map { z =>
-            if (z < 0.01) "⬝"
-            else if (z < 0.1) "⚬"
-            else if (z < 0.2) "◉"
+            if (z < zquarts._1) "⬝"
+            else if (z < zquarts._2) "⚬"
+            else if (z < zquarts._3) "○"
             else "●"
           }.mkString(" "))
     }
   }
-
-  println("---- 2D Gaussian Mixture; MonAPMC.exposedEval ----")
+  // "⬝ ⚬ ○ ◉ ●
+  println("---- 2D Gaussian Mixture; MonAPMC with ExposedEval ----")
   report(MonAPMC.exposedEval(p).scan(toyModel).map { case (MonAPMC.State(_, s)) => s })
+
+  println("---- 2D Gaussian Mixture; MonAPMC with MonoidParallel and ExposedEval ----")
+  val maev = MonAPMC.exposedEval(p)
+  val res = MonAPMC.monoidParallel().scan(
+    init = Vector.fill(1) { () => maev.init(toyModel) },
+    step = maev.step(toyModel),
+    stepSize = 1,
+    stop = maev.stop)
+
+  res match {
+    case Success(ss) => report(ss.map { case MonAPMC.State(_, s) => s })
+  }
+
 }
 

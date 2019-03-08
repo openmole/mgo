@@ -16,6 +16,7 @@
  */
 package mgo.tools.execution
 
+import scala.annotation.tailrec
 import scala.util.Random
 
 case class ExposedEval[S, SInit, SStep, X, Y](
@@ -37,6 +38,7 @@ case class ExposedEval[S, SInit, SStep, X, Y](
   }
 
   def run(f: X => Y): S = {
+    @tailrec
     def go(s: S): S = if (stop(s)) s else go(step(f)(s))
     go(init(f))
   }
