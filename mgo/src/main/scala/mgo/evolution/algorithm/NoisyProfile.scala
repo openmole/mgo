@@ -49,8 +49,11 @@ object NoisyProfile {
     population: Vector[Individual[P]],
     aggregation: Vector[P] => Vector[Double],
     niche: Individual[P] => N,
-    continuous: Vector[C]) = {
-    def nicheResult(population: Vector[Individual[P]]) = population.sortBy(_.fitnessHistory.size).headOption.toVector
+    continuous: Vector[C],
+    onlyOldest: Boolean) = {
+    def nicheResult(population: Vector[Individual[P]]) =
+      if (onlyOldest) population.sortBy(_.fitnessHistory.size).headOption.toVector
+      else keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness[P].get, aggregation))
 
     nicheElitism[Id, Individual[P], N](population, nicheResult, niche).map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
@@ -58,8 +61,8 @@ object NoisyProfile {
     }
   }
 
-  def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]]): Vector[Result[N]] =
-    result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous)
+  def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = false): Vector[Result[N]] =
+    result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, onlyOldest)
 
   def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =
     mgo.evolution.niche.continuousProfile[Individual[P]]((Individual.genome composeLens continuousValues).get _, x, nX)

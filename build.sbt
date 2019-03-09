@@ -43,8 +43,9 @@ lazy val tagtools = Project(id = "tagtools", base = file("tagtools")) settings(s
 /* Publish */
 
 publishMavenStyle in ThisBuild := true
-
 publishArtifact in Test in ThisBuild := false
+publishArtifact := false
+pomIncludeRepository in ThisBuild := { _ => false }
 
 publishTo in ThisBuild := {
   val nexus = "https://oss.sonatype.org/"
