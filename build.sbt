@@ -1,50 +1,52 @@
-organization := "fr.iscpif"
-name := "mgo"
 
-scalaVersion := "2.12.7"
-crossScalaVersions := Seq("2.12.7")
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4")
-addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M11" cross CrossVersion.full)
-scalacOptions += "-Xplugin-require:macroparadise"
-
-resolvers += Resolver.sonatypeRepo("public")
-resolvers += Resolver.sonatypeRepo("staging")
-resolvers += Resolver.sonatypeRepo("snapshots")
-
-scalacOptions ++= Seq("-target:jvm-1.8")
-javacOptions ++= Seq("-source", "1.8", "-target", "1.8")
-
-// macro paradise doesn't work with scaladoc
-sources in (Compile, doc) := Nil
+organization in ThisBuild := "fr.iscpif"
+scalaVersion in ThisBuild := "2.12.7"
+crossScalaVersions in ThisBuild := Seq("2.12.7")
 
 val monocleVersion = "1.5.0"
-val freedslVersion = "0.26"
 
-libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1"
+def settings = Seq(
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
+  addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M11" cross CrossVersion.full),
+  scalacOptions += "-Xplugin-require:macroparadise",
+  resolvers += Resolver.sonatypeRepo("public"),
+  resolvers += Resolver.sonatypeRepo("staging"),
+  resolvers += Resolver.sonatypeRepo("snapshots"),
+  scalacOptions ++= Seq("-target:jvm-1.8"),
+  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
+  scalariformAutoformat := true
+) ++ scalariformSettings(true)
 
-libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion
-libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion
-libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion
+lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
 
-libraryDependencies += "fr.iscpif.freedsl" %% "random" % freedslVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "io" % freedslVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "tool" % freedslVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "dsl" % freedslVersion
-libraryDependencies += "fr.iscpif.freedsl" %% "system" % freedslVersion
-libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0"
+  // macro paradise doesn't work with scaladoc
+  sources in (Compile, doc) := Nil,
+  libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1",
+
+  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion,
+  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
+  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
+
+  libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0",
+  libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.4.0",
+  testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
+) dependsOn(tagtools) 
 
 
-libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.4.0"
+lazy val tagtools = Project(id = "tagtools", base = file("tagtools")) settings(settings: _*) settings (
+  libraryDependencies += "io.frees" %% "frees-core" % "0.8.2",
+)
 
 
-testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 
-publishMavenStyle := true
+/* Publish */
 
-publishArtifact in Test := false
+publishMavenStyle in ThisBuild := true
 
-publishTo := {
+publishArtifact in Test in ThisBuild := false
+
+publishTo in ThisBuild := {
   val nexus = "https://oss.sonatype.org/"
   if (isSnapshot.value)
     Some("snapshots" at nexus + "content/repositories/snapshots")
@@ -52,15 +54,15 @@ publishTo := {
     Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
-pomIncludeRepository := { _ => false }
+pomIncludeRepository in ThisBuild := { _ => false }
 
-licenses := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
+licenses in ThisBuild := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
 
-homepage := Some(url("https://github.com/openmole/mgo"))
+homepage in ThisBuild := Some(url("https://github.com/openmole/mgo"))
 
-scmInfo := Some(ScmInfo(url("https://github.com/openmole/mgo.git"), "scm:git:git@github.com:openmole/mgo.git"))
+scmInfo in ThisBuild := Some(ScmInfo(url("https://github.com/openmole/mgo.git"), "scm:git:git@github.com:openmole/mgo.git"))
 
-pomExtra := (
+pomExtra in ThisBuild := (
   <developers>
     <developer>
       <id>romainreuillon</id>
@@ -73,19 +75,19 @@ pomExtra := (
   </developers>
 )
 
-releasePublishArtifactsAction := PgpKeys.publishSigned.value
+releasePublishArtifactsAction in ThisBuild := PgpKeys.publishSigned.value
 
-releaseVersionBump := sbtrelease.Version.Bump.Minor
+releaseVersionBump in ThisBuild := sbtrelease.Version.Bump.Minor
 
-releaseTagComment    := s"Releasing ${(version in ThisBuild).value}"
+releaseTagComment in ThisBuild := s"Releasing ${(version in ThisBuild).value}"
 
-releaseCommitMessage := s"Bump version to ${(version in ThisBuild).value}"
+releaseCommitMessage in ThisBuild := s"Bump version to ${(version in ThisBuild).value}"
 
-sonatypeProfileName := "fr.iscpif"
+sonatypeProfileName in ThisBuild := "fr.iscpif"
 
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
-releaseProcess := Seq[ReleaseStep](
+releaseProcess in ThisBuild := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
   runClean,
@@ -99,5 +101,4 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges
 )
 
-scalariformSettings(true)
 
