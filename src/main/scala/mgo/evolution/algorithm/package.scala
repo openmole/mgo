@@ -25,7 +25,6 @@ import mgo.tools._
 import cats._
 import cats.implicits._
 import cats.data._
-import freedsl.tool._
 
 package object algorithm {
 

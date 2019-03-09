@@ -50,8 +50,7 @@ object NoisyProfile {
     aggregation: Vector[P] => Vector[Double],
     niche: Individual[P] => N,
     continuous: Vector[C]) = {
-    def nicheResult(population: Vector[Individual[P]]) =
-      keepFirstFront(population, aggregatedFitness[N, P](aggregation))
+    def nicheResult(population: Vector[Individual[P]]) = population.sortBy(_.fitnessHistory.size).headOption.toVector
 
     nicheElitism[Id, Individual[P], N](population, nicheResult, niche).map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
