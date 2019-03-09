@@ -75,19 +75,19 @@ pomExtra in ThisBuild := (
   </developers>
 )
 
-releasePublishArtifactsAction in ThisBuild := PgpKeys.publishSigned.value
+releasePublishArtifactsAction := PgpKeys.publishSigned.value
 
-releaseVersionBump in ThisBuild := sbtrelease.Version.Bump.Minor
+releaseVersionBump := sbtrelease.Version.Bump.Minor
 
-releaseTagComment in ThisBuild := s"Releasing ${(version in ThisBuild).value}"
+releaseTagComment := s"Releasing ${(version in ThisBuild).value}"
 
-releaseCommitMessage in ThisBuild := s"Bump version to ${(version in ThisBuild).value}"
+releaseCommitMessage := s"Bump version to ${(version in ThisBuild).value}"
 
-sonatypeProfileName in ThisBuild := "fr.iscpif"
+sonatypeProfileName := "fr.iscpif"
 
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
-releaseProcess in ThisBuild := Seq[ReleaseStep](
+releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
   inquireVersions,
   runClean,
