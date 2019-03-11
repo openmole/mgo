@@ -37,7 +37,7 @@ case class ExposedEval[X, Y, S, U, V](
   pre: X => (S, U),
   post: (S, V) => Y) {
 
-  def step(f: U => V)(s: X): Y = {
+  def run(f: U => V)(s: X): Y = {
     val (pass, x) = pre(s)
     val ys = f(x)
     post(pass, ys)
