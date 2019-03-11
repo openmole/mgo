@@ -18,8 +18,6 @@
 package mgo.test
 
 import freedsl.dsl._
-import java.nio.file.Files
-import java.nio.file.Paths
 import mgo.abc._
 import mgo.evolution._
 import mgo.evolution.contexts._
@@ -34,6 +32,7 @@ import scala.math._
 import scala.util.{ Try, Failure, Success }
 
 object GaussianMix1DMonAPMC extends App {
+  implicit val ec = ExecutionContext.global
   implicit val rng = new Well1024a()
 
   // Gaussian Mixture 1D toy model
@@ -93,25 +92,25 @@ object GaussianMix1DMonAPMC extends App {
         println(f"$bin% 3.2f: $height%.3f " ++
           Iterator.fill((height * 50).round.toInt)("◉").mkString(""))
     }
-
-    Files.write(
-      Paths.get("/tmp/mgoTestMonAPMC.txt"),
-      thetasArray.mkString("\n").getBytes())
-
   }
 
-  println("---- 1D Gaussian Mixture; MonAPMC.exposedEval ----")
-  report(MonAPMC.exposedEval(p).scan(toyModel).map { case (MonAPMC.State(_, s)) => s })
-
-  println("---- 1D Gaussian Mixture; APMC.scan ----")
+  println("---- 1D Gaussian Mixture; APMC ----")
   report(APMC.scan(p, toyModel))
 
-  println("---- 1D Gaussian Mixture; MonAPMC.run using MonoidParallel ----")
-  implicit val ec = ExecutionContext.global
-  MonAPMC.run(1, 1, p, toyModel) match {
-    case Success(MonAPMC.State(_, s)) => reportS(s)
-  }
+  println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 1 ----")
+  report(
+    MonAPMC.scan(p, toyModel, 1, 1)
 
+      .collect { case MonAPMC.State(_, s) => s })
+
+  println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 2 ----")
+  report(MonAPMC.scan(p, toyModel, 1, 2)
+    .collect { case MonAPMC.State(_, s) => s })
+
+  println("---- 1D Gaussian Mixture; MonAPMC stepSize 2 parallel 1 ----")
+  report(
+    MonAPMC.scan(p, toyModel, 2, 1)
+      .collect { case MonAPMC.State(_, s) => s })
 }
 
 object GaussianMix2DMonAPMC extends App {
@@ -241,20 +240,13 @@ object GaussianMix2DMonAPMC extends App {
     }
   }
   // "⬝ ⚬ ○ ◉ ●
-  println("---- 2D Gaussian Mixture; MonAPMC with ExposedEval ----")
-  report(MonAPMC.exposedEval(p).scan(toyModel).map { case (MonAPMC.State(_, s)) => s })
+  println("---- 2D Gaussian Mixture; MonAPMC ----")
+  report(MonAPMC.scan(p, toyModel, 1, 1).collect { case MonAPMC.State(_, s) => s })
 
-  println("---- 2D Gaussian Mixture; MonAPMC with MonoidParallel and ExposedEval ----")
-  val maev = MonAPMC.exposedEval(p)
-  val res = MonAPMC.monoidParallel().scan(
-    init = Vector.fill(1) { () => maev.init(toyModel) },
-    step = maev.step(toyModel),
-    stepSize = 1,
-    stop = maev.stop)
+  println("---- 2D Gaussian Mixture; MonAPMC parallel 2----")
+  report(MonAPMC.scan(p, toyModel, 1, 2).collect { case MonAPMC.State(_, s) => s })
 
-  res match {
-    case Success(ss) => report(ss.map { case MonAPMC.State(_, s) => s })
-  }
-
+  println("---- 2D Gaussian Mixture; MonAPMC parallel 1, stepSize 2----")
+  report(MonAPMC.scan(p, toyModel, 2, 1).collect { case MonAPMC.State(_, s) => s })
 }
 

@@ -39,17 +39,28 @@ object SumMonoidParallel extends App {
   implicit val rng = new Well1024a()
   implicit val ec = ExecutionContext.global
 
-  val stepSize = 1
-  val parallel = 2
   val maxSum = 10
 
-  val mp = MonoidParallel[Int](0, { (a, b) => a + b }, { a => (a, 0) })
-
-  val init = Vector.fill(parallel) { () => 0 }
+  val empty = 0
+  val append = { (a: Int, b: Int) => a + b }
+  val split = { a: Int => (a, 0) }
   val step = (_: Int) + 1
   val stop = (_: Int) >= maxSum
-  val res = mp.scan(init, step, stepSize, stop)
 
-  println(res)
+  {
+    val parallel = 1
+    val stepSize = 1
+    val init = Vector.fill(parallel) { () => 1 }
+    val res = MonoidParallel[Int](empty, append, split, init, step, stepSize, stop).scan
+    println(res)
+  }
+
+  {
+    val parallel = 1
+    val stepSize = 2
+    val init = Vector.fill(parallel) { () => 1 }
+    val res = MonoidParallel[Int](empty, append, split, init, step, stepSize, stop).scan
+    println(res)
+  }
 }
 

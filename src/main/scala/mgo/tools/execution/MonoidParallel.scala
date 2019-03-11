@@ -33,25 +33,26 @@ import mgo.abc._
 case class MonoidParallel[S](
   empty: S,
   append: (S, S) => S,
-  split: S => (S, S)) {
+  split: S => (S, S),
+  init: Vector[() => S],
+  step: S => S,
+  stepSize: Int,
+  stop: S => Boolean) {
 
   def run(
-    init: Vector[() => S],
-    step: S => S,
-    stepSize: Int,
-    stop: S => Boolean,
-    )(
     implicit
-    rng: RandomGenerator,
     ec: ExecutionContext): Try[S] = {
 
     @tailrec
     def go(curS: S, running: Vector[Future[S]]): Try[S] = {
-      MonoidParallel.waitForNext(running) match {
+      waitForNextT(running) match {
         case Success((res, left)) => {
-          val (newS, inputS) = split(append(curS, res))
+          val newS = append(curS, res)
           if (stop(newS)) { new Success(newS) }
-          else go(newS, left :+ MonoidParallel.fullStepASync(step, stepSize)(inputS))
+          else {
+            val (newS_1, newS_2) = split(newS)
+            go(newS_1, left :+ Future(fullStep(step, stepSize, newS_2)))
+          }
         }
         case Failure(e) => Failure(e)
       }
@@ -61,57 +62,51 @@ case class MonoidParallel[S](
   }
 
   def scan(
-    init: Vector[() => S],
-    step: S => S,
-    stepSize: Int,
-    stop: S => Boolean)(
     implicit
-    rng: RandomGenerator,
-    ec: ExecutionContext): Try[Vector[S]] = {
+    ec: ExecutionContext): Vector[S] = {
 
     @tailrec
-    def go(curS: S, running: Vector[Future[S]], acc: Try[Vector[S]]): Try[Vector[S]] = {
-      acc match {
-        case Failure(err) =>
-          new Failure(new Throwable("Failure in MonoidParallel.scan accumulator", err))
-        case Success(acc_) =>
-          MonoidParallel.waitForNext(running) match {
-            case Success((res, remaining)) => {
-              val (newS, inputS) = split(append(curS, res))
-              if (stop(newS)) new Success( acc_ :+ newS )
-              else go(newS, remaining :+ MonoidParallel.fullStepASync(step, stepSize)(inputS), new Success(acc_ :+ newS))
-            }
-            case Failure(err) =>
-              new Failure(
-                new Throwable("Failure when waiting for next in MonoidParallel.scan", err))
+    def go(curS: S, running: Vector[Future[S]], acc: Vector[S]): Vector[S] = {
+      waitForNext(running) match {
+        case (res, remaining) => {
+          val newS = append(curS, res)
+          if (stop(newS)) { acc :+ newS }
+          else {
+            val (newS_1, newS_2) = split(newS)
+            go(newS_1, remaining :+ Future(fullStep(step, stepSize, newS_2)), acc :+ newS_1)
           }
+        }
       }
     }
 
-    go(empty, init.map { i => Future(i()) }, new Success(Vector.empty))
+    go(empty, init.map { i => Future(i()) }, Vector.empty)
   }
 
-}
-
-object MonoidParallel {
   @tailrec
-  def fullStep[S](step: S => S, stepSize: Int)(s: S): S =
-    if (stepSize == 0) s
-    else fullStep(step, stepSize - 1)(step(s))
-
-  def fullStepASync[S](step: S => S, stepSize: Int)(s: S)(
-    implicit
-    ec: ExecutionContext): Future[S] = Future(fullStep(step, stepSize)(s))
+  final def fullStep(step: S => S, stepSize: Int, s: S): S = {
+    if (stepSize <= 0) s
+    else fullStep(step, stepSize - 1, step(s))
+  }
 
   @tailrec
-  def waitForNext[S](running: Vector[Future[S]]): Try[(S, Vector[Future[S]])] = {
+  final def waitForNextT(running: Vector[Future[S]]): Try[(S, Vector[Future[S]])] = {
     val r = running.head
     val rs = running.tail
     r.value match {
-      case None => waitForNext(rs :+ r)
-      case Some(Failure(error)) => new Failure(new Throwable("Error in a running job.", error))
+      case None => waitForNextT(rs :+ r)
+      case Some(Failure(error)) =>
+        new Failure(new Throwable("Error in a running job: " ++ error.toString))
       case Some(Success(a)) => new Success((a, rs))
     }
   }
 
+  @tailrec
+  final def waitForNext(running: Vector[Future[S]]): (S, Vector[Future[S]]) = {
+    val r = running.head
+    val rs = running.tail
+    r.value match {
+      case None => waitForNext(rs :+ r)
+      case Some(ta) => (ta.get, rs)
+    }
+  }
 }
