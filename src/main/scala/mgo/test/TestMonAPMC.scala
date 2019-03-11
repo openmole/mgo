@@ -240,6 +240,9 @@ object GaussianMix2DMonAPMC extends App {
     }
   }
   // "⬝ ⚬ ○ ◉ ●
+  println("---- 2D Gaussian Mixture; APMC ----")
+  report(APMC.scan(p, toyModel))
+
   println("---- 2D Gaussian Mixture; MonAPMC ----")
   report(MonAPMC.scan(p, toyModel, 1, 1).collect { case MonAPMC.State(_, s) => s })
 
