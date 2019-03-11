@@ -41,8 +41,8 @@ object GaussianMix1DMonAPMC extends App {
 
   // Test MonAPMC and its Exposed interface
   val p = APMC.Params(
-    n = 10000,
-    nAlpha = 1000,
+    n = 5000,
+    nAlpha = 500,
     pAccMin = 0.01,
     priorSample = () => Array(rng.nextDouble() * 20 - 10),
     priorDensity = {
@@ -138,8 +138,8 @@ object GaussianMix2DMonAPMC extends App {
 
   // Test MonAPMC and its Exposed interface
   val p = APMC.Params(
-    n = 10000,
-    nAlpha = 1000,
+    n = 5000,
+    nAlpha = 500,
     pAccMin = 0.01,
     priorSample = () => Array(
       rng.nextDouble() * 20 - 10,
