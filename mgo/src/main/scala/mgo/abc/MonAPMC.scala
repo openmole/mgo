@@ -18,6 +18,7 @@
 package mgo.abc
 
 import mgo.tools.execution._
+import mgo.tools.LinearAlgebra.functorVectorVectorDoubleToRealMatrix
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealMatrix
 import org.apache.commons.math3.random.RandomGenerator
@@ -71,19 +72,19 @@ object MonAPMC {
       },
       split = { s =>
         val (s1, s2) = split(s)
-        (s, s1, s2) match {
-          case (State(_, s_), State(_, s1_), State(_, s2_)) =>
-          // println((s_.t0, s_.t).toString ++ " -> " ++ (s1_.t0, s1_.t).toString ++ ", " ++ (s2_.t0, s2_.t).toString)
-        }
+        //(s, s1, s2) match {
+        //  case (State(_, s_), State(_, s1_), State(_, s2_)) =>
+        //    println((s_.t0, s_.t).toString ++ " -> " ++ (s1_.t0, s1_.t).toString ++ ", " ++ (s2_.t0, s2_.t).toString)
+        //}
         (s1, s2)
       },
       init = Vector.fill(parallel) { () => init(p, f) },
       step = s => {
         val s1 = step(p, f, s)
-        (s, s1) match {
-          case (State(_, s_), State(_, s1_)) =>
-          // println("step " ++ (s_.t0, s_.t).toString ++ " > " ++ (s1_.t0, s1_.t).toString)
-        }
+        // (s, s1) match {
+        // case (State(_, s_), State(_, s1_)) =>
+        // println("step " ++ (s_.t0, s_.t).toString ++ " > " ++ (s1_.t0, s1_.t).toString)
+        // }
         s1
       },
       stepSize = stepSize,
@@ -103,15 +104,41 @@ object MonAPMC {
     monoidParallel(p, f, stepSize, parallel).scan
 
   /** The initial step of the algorithm */
-  def init(p: APMC.Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): MonState = State(p, APMC.init(p, f))
+  def init(p: APMC.Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): MonState = {
+    exposedInit(p).run(functorVectorVectorDoubleToRealMatrix(_.map { f }))(())
+  }
+
+  def exposedInit(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[Unit, MonState, RealMatrix, RealMatrix, RealMatrix] = {
+    val apmcInit = APMC.exposedInit(p)
+    ExposedEval(
+      pre = apmcInit.pre,
+      post = Function.untupled(
+        apmcInit.post.tupled andThen { State(p, _) }))
+  }
 
   /** The algorithm iteration step */
-  def step(p: APMC.Params, f: Vector[Double] => Vector[Double], s: MonState)(implicit rng: RandomGenerator): MonState = s match {
-    case Empty() => Empty()
-    case State(p, s) => {
-      val newS = APMC.step(p, f, s)
-      State(p, newS)
-    }
+  def step(p: APMC.Params, f: Vector[Double] => Vector[Double], s: MonState)(implicit rng: RandomGenerator): MonState =
+    exposedStep(p).run {
+      _.map {
+        functorVectorVectorDoubleToRealMatrix { _.map(f) }
+      }
+    }(s)
+
+  def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, MonState, Option[(APMC.State, APMC.State, RealMatrix, RealMatrix)], Option[RealMatrix], Option[RealMatrix]] = {
+    val apmcStep = APMC.exposedStep(p)
+    ExposedEval(
+      pre = _ match {
+        case Empty() => (None, None)
+        case State(_, s) =>
+          val (a, b) = apmcStep.pre(s)
+          (Some(a), Some(b))
+      },
+      post = { (pass: Option[(APMC.State, APMC.State, RealMatrix, RealMatrix)], xs: Option[RealMatrix]) =>
+        (pass, xs) match {
+          case (Some(pass_), Some(xs_)) => State(p, apmcStep.post(pass_, xs_))
+          case _ => Empty()
+        }
+      })
   }
 
   def stop(p: APMC.Params, s: MonState): Boolean = s match {
