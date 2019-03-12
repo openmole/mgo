@@ -26,6 +26,40 @@ import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.util.{ Try, Success, Failure }
 
+/**
+ * Parallel ABC algorithm based on APMC by Lenormand, Jabot and Deffuant (2012). MonAPMC stands for "Monoid APMC".
+ *
+ *  The simplest way to run the algorithm is to use the [[MonAPMC.run]] and [[MonAPMC.scan]] functions.
+ *
+ *  (OpenMOLE integration:) To get control of the evaluation of the function f (e.g. the model evaluations), use the objects returned by [[MonAPMC.exposedInit]] and [[MonAPMC.exposedStep]]. Their members, [[ExposedEval.pre]] and [[ExposedEval.post]] decompose the computation around the function evaluation. [[ExposedEval.pre]] returns an intermediate state and a value: (pass, x). You have to transform x yourself (val y = f(x)), and give (pass, y) back to [[ExposedEval.post]]. For example, to run the algorithm sequentially until it stops:
+ *
+ *  {{{
+ *  val init = MonAPMC.exposedInit(p)
+ *  val step = MonAPMC.exposedStep(p)
+ *
+ *  var (pass, thetas) = init.pre()
+ *  var newThetas = f(thetas) // evaluate thetas with the method you want
+ *  var state = init.post(pass, newThetas)
+ *
+ *  while (!MonAPMC.stop(p, state) {
+ *    (pass, thetas) = step.pre(state)
+ *    newThetas = f(thetas)
+ *    state = step.post(pass, newThetas)
+ *  }
+ *  }}}
+ *
+ *  To run the algorithm in parallel, use the functions [[MonAPMC.split]] to split a current algorithm state into 2, such that the algorithm can be continued in parallel. You can step over the two in parallel for as many steps as you like, and merge them back together with [[MonAPMC.append]].
+ *
+ *  {{{
+ *  val s1 = MonAPMC.init(p, f)
+ *  val (s1a, s1b) = MonAPMC.split(s)
+ *  val s2a = MonAPMC.step(s1a)
+ *  val s3b = MonAPMC.step(MonAPMC.step(s1b))
+ *  val s4 = MonAPMC.append(s2a, s3b)
+ *  }}}
+ *
+ */
+
 object MonAPMC {
 
   /** The type over which we are constructing a monoid. */
@@ -146,7 +180,8 @@ object MonAPMC {
     case State(p, s) => APMC.stop(p, s)
   }
 
-  def stepMerge(p: APMC.Params, s1: APMC.State, s2: APMC.State): APMC.State = {
+  def stepMerge(p: APMC.Params, s1a: APMC.State, s2a: APMC.State): APMC.State = {
+    val (s1, s2) = if (s1a.t0 <= s2a.t0) (s1a, s2a) else (s2a, s1a)
     val select2NoDup =
       s2.ts.zipWithIndex.filter { _._1 > s2.t0 }.map { _._2 }
     val indices = (0 until s1.thetas.getRowDimension()).map { (1, _) } ++
