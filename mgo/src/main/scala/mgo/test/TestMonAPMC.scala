@@ -22,6 +22,7 @@ import mgo.evolution._
 import mgo.evolution.contexts._
 import org.apache.commons.math3.linear.LUDecomposition
 import org.apache.commons.math3.linear.MatrixUtils
+import org.apache.commons.math3.distribution.NormalDistribution
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution
 import org.apache.commons.math3.random.RandomGenerator
 import org.apache.commons.math3.random.Well1024a
@@ -35,9 +36,26 @@ object GaussianMix1DMonAPMC extends App {
   implicit val rng = new Well1024a()
 
   // Gaussian Mixture 1D toy model
-  def toyModel(theta: Vector[Double])(implicit rng: RandomGenerator): Vector[Double] = Vector(
-    if (rng.nextBoolean) { theta.head + rng.nextGaussian * (1.0 / 10.0) }
-    else { theta.head + rng.nextGaussian })
+  object ToyModel {
+    val var1 = 1.0 / 100.0
+    val var2 = 1.0
+
+    def toyModel(theta: Vector[Double])(implicit rng: RandomGenerator): Vector[Double] = Vector(
+      if (rng.nextBoolean) { theta.head + rng.nextGaussian * sqrt(var1) }
+      else { theta.head + rng.nextGaussian * sqrt(var2) })
+
+    // P[Theta = theta | x]
+    def posterior(x: Double, theta: Double): Double =
+      0.5 * new NormalDistribution(rng, theta, sqrt(var1))
+        .density(x) +
+        0.5 * new NormalDistribution(rng, theta, sqrt(var2)).density(x)
+
+    // P[Theta < theta | x]
+    def posteriorCDF(x: Double, theta: Double): Double =
+      0.5 * new NormalDistribution(rng, theta, sqrt(var1))
+        .cumulativeProbability(x) +
+        0.5 * new NormalDistribution(rng, theta, sqrt(var2)).cumulativeProbability(x)
+  }
 
   // Test MonAPMC and its Exposed interface
   val p = APMC.Params(
@@ -52,13 +70,30 @@ object GaussianMix1DMonAPMC extends App {
     },
     observed = Array(0))
 
+  // Compute L2 between posterior sample and theoretical cumulative distribution function.
+  def posteriorL2(lowerBound: Double, upperBound: Double, bins: Int,
+    weightsXs: Vector[(Double, Double)]): Double = {
+    val binWidth = (upperBound - lowerBound) / bins.toDouble
+    def theoPostBin(bin: Double): Double =
+      (ToyModel.posteriorCDF(bin + binWidth, p.observed.head) -
+        ToyModel.posteriorCDF(bin, p.observed.head))
+    def toBin(x: Double): Double =
+      lowerBound + binWidth * floor((x - lowerBound) / binWidth)
+    val sumWeights = weightsXs.map { _._1 }.sum
+    val estPostBin = weightsXs
+      .groupBy { case (w, x) => toBin(x) }
+      .mapValues { _.map { _._1 }.sum / sumWeights }
+
+    sqrt(estPostBin.map { case (b, e) => pow(e - theoPostBin(b), 2) }.sum)
+  }
+
   def histogram(xs: Vector[Double], ws: Vector[Double], lowerBound: Double, upperBound: Double, bins: Int): Vector[(Double, Double)] = {
     val width = (upperBound - lowerBound) / bins.toDouble
     val total = ws.sum
     def toBin(x: Double): Double =
       width * (x / width).floor
     val histMap: Map[Double, Double] = (xs zip ws)
-      .groupBy { case (x, w) => toBin(x) }
+      .groupBy { case (x, w) => toBin(x + width / 2.0) }
       .mapValues { xws =>
         val wsum = xws.map { case (x, w) => w }.sum
         wsum / (width * total).toDouble
@@ -69,7 +104,12 @@ object GaussianMix1DMonAPMC extends App {
   }
 
   def report(ss: Vector[APMC.State]): Unit = {
-    println(ss.map { s => (s.epsilon, s.pAcc) }.mkString("\n"))
+    println("epsilon\tpAcc\tl2")
+    println(ss.map { s =>
+      val l2 = posteriorL2(-10, 10, 300,
+        (s.weights zip s.thetas.getData.map { _.head }).toVector)
+      "%f\t%f\t%f".format(s.epsilon, s.pAcc, l2)
+    }.mkString("\n"))
 
     reportS(ss.last)
   }
@@ -79,36 +119,41 @@ object GaussianMix1DMonAPMC extends App {
 
     val thetasArray = s.thetas.getData.map { _.head }
     val statsTheta = new DescriptiveStatistics(thetasArray)
+    val l2 = posteriorL2(-10, 10, 300,
+      (s.weights zip s.thetas.getData.map { _.head }).toVector)
     println("Theta Mean = " ++ statsTheta.getMean.toString)
     println("Theta Standard Deviation = " ++
       statsTheta.getStandardDeviation.toString)
+    println("L2 = " ++ l2.toString)
 
     println("\nThetas histogram:")
     val h = histogram(thetasArray.toVector, s.weights.toVector, -2.5, 2.5, 20)
-    val maxWidth = 50
+    val maxWidth = 30
+    println("  bin  theo  est")
     h.foreach {
       case (bin, height) =>
-        println(f"$bin% 3.2f: $height%.3f " ++
-          Iterator.fill((height * 50).round.toInt)("◉").mkString(""))
+        val theo = ToyModel.posterior(bin, p.observed.head)
+        println(f"$bin% 3.2f: $theo%.3f $height%.3f " ++
+          Iterator.fill((height * maxWidth).round.toInt)("●").mkString(""))
     }
   }
 
   println("---- 1D Gaussian Mixture; APMC ----")
-  report(APMC.scan(p, toyModel))
+  report(APMC.scan(p, ToyModel.toyModel))
 
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 1 ----")
   report(
-    MonAPMC.scan(p, toyModel, 1, 1)
+    MonAPMC.scan(p, ToyModel.toyModel, 1, 1)
 
       .collect { case MonAPMC.State(_, s) => s })
 
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 2 ----")
-  report(MonAPMC.scan(p, toyModel, 1, 2)
+  report(MonAPMC.scan(p, ToyModel.toyModel, 1, 2)
     .collect { case MonAPMC.State(_, s) => s })
 
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 2 parallel 1 ----")
   report(
-    MonAPMC.scan(p, toyModel, 2, 1)
+    MonAPMC.scan(p, ToyModel.toyModel, 2, 1)
       .collect { case MonAPMC.State(_, s) => s })
 }
 
@@ -136,7 +181,6 @@ object GaussianMix2DMonAPMC extends App {
     dist.sample.toVector
   }
 
-  // Test MonAPMC and its Exposed interface
   val p = APMC.Params(
     n = 5000,
     nAlpha = 500,
@@ -229,11 +273,11 @@ object GaussianMix2DMonAPMC extends App {
     val maxHeight = 80
     (xBins zip z).reverse.foreach {
       case (xb, zrow) =>
-        println(f"$xb% 3.2f: " ++
+        println("%- 3.2f| ".format(xb) ++
           zrow.map { z =>
             if (z < zquarts._1) "⬝"
-            else if (z < zquarts._2) "⚬"
-            else if (z < zquarts._3) "○"
+            else if (z < zquarts._2) "○"
+            else if (z < zquarts._3) "◉"
             else "●"
           }.mkString(" "))
     }
