@@ -29,35 +29,43 @@ import scala.util.{ Try, Success, Failure }
 /**
  * Parallel ABC algorithm based on APMC by Lenormand, Jabot and Deffuant (2012). MonAPMC stands for "Monoid APMC".
  *
- *  The simplest way to run the algorithm is to use the [[MonAPMC.run]] and [[MonAPMC.scan]] functions.
+ *  Given a stochastic function f: Vector[Double] => Vector[Double], and a value y: Vector[Double], the algorithm aims at finding what input vectors xs are likely to have resulted in the vector y through f. The objective is to estimate the probability distribution P(X|Y = y), where X represent f's input values, and Y its output values. The algorithm returns a sample of vectors that are distributed according to this distribution.
  *
- *  (OpenMOLE integration:) To get control of the evaluation of the function f (e.g. the model evaluations), use the objects returned by [[MonAPMC.exposedInit]] and [[MonAPMC.exposedStep]]. Their members, [[ExposedEval.pre]] and [[ExposedEval.post]] decompose the computation around the function evaluation. [[ExposedEval.pre]] returns an intermediate state and a value: (pass, x). You have to transform x yourself (val y = f(x)), and give (pass, y) back to [[ExposedEval.post]]. For example, to run the algorithm sequentially until it stops:
+ *  The simplest way to run the algorithm is to use the [[MonAPMC.run]] and [[MonAPMC.scan]] functions. The first returns the final algorithm state, and the second the sequence of states corresponding to the successive steps of the alorithm. The posterior sample is in the final state s: s.thetas contains the particles, and s.weights their weights. For example, the expected value of the particle according to the posterior is the weighted average of the particles.
+ *
+ *  **Controlling the function f evaluation:** During its course, the algorithm evaluates the user-provided function f many times. It can be useful to gain control of the function evaluation. For this purpose, use the [[ExposedEval]] object returned by [[MonAPMC.exposedStep]]. Its members, [[ExposedEval.pre]] and [[ExposedEval.post]] decompose the computation around the function evaluation. [[ExposedEval.pre]] returns an intermediate state and a [[org.apache.commons.math3.linear.RealMatrix]]: (pass, xs). The rows of the matrix xs are the input vectors with which to evaluate the function f. It is up to you to use these values to construct a new matrix, ys, such that its rows are the output values of f with the corresponding row in xs. The row order must be kept. Then, give (pass, ys) back to [[ExposedEval.post]] to get the new algorithm state, and reiterate. For example, to run the algorithm sequentially until it stops:
  *
  *  {{{
- *  val init = MonAPMC.exposedInit(p)
+ *  def f(x: Array[Double]): Array[Double] = ...
+ *
  *  val step = MonAPMC.exposedStep(p)
  *
- *  var (pass, thetas) = init.pre()
- *  var newThetas = f(thetas) // evaluate thetas with the method you want
- *  var state = init.post(pass, newThetas)
- *
+ *  var state = MonAPMC.Empty()
  *  while (!MonAPMC.stop(p, state) {
- *    (pass, thetas) = step.pre(state)
- *    newThetas = f(thetas)
- *    state = step.post(pass, newThetas)
+ *    (pass, xs) = step.pre(state)
+ *    ys = f(xs)
+ *    state = step.post(pass, ys)
  *  }
  *  }}}
  *
  *  To run the algorithm in parallel, use the functions [[MonAPMC.split]] to split a current algorithm state into 2, such that the algorithm can be continued in parallel. You can step over the two in parallel for as many steps as you like, and merge them back together with [[MonAPMC.append]].
  *
  *  {{{
- *  val s1 = MonAPMC.init(p, f)
- *  val (s1a, s1b) = MonAPMC.split(s)
- *  val s2a = MonAPMC.step(s1a)
- *  val s3b = MonAPMC.step(MonAPMC.step(s1b))
- *  val s4 = MonAPMC.append(s2a, s3b)
+ *  val s0 = MonAPMC.Empty()
+ *  val (s0a, s0b) = MonAPMC.split(s0)
+ *  val s1a = MonAPMC.step(s0a)
+ *  val s2b = MonAPMC.step(MonAPMC.step(s0b))
+ *  val s3 = MonAPMC.append(s1a, s2b)
  *  }}}
  *
+ * You can split states recursively as many times as you like to run more than 2 parallel threads:
+ *
+ *  {{{
+ *  var (s1,s2) = MonAPMC.split(MonAPMC.Empty())
+ *  var (s3,s4) = MonAPMC.split(s2)
+ *  /* step over all 4 states */
+ *  s = MonAPMC.append(s1,MonAPMC.append(s2,MonAPMC.append(s3, s4))),
+ *  }}}
  */
 
 object MonAPMC {
@@ -97,30 +105,19 @@ object MonAPMC {
         val s3 = append(s1, s2)
         (s1, s2, s3) match {
           case (State(_, s1_), State(_, s2_), State(_, s3_)) =>
-          // println((s3_.t0, s3_.t).toString ++ " <- " ++
-          //   (s1_.t0, s1_.t).toString ++ " + " ++
-          //   (s2_.t0, s2_.t).toString)
           case _ =>
         }
         s3
       },
       split = { s =>
         val (s1, s2) = split(s)
-        //(s, s1, s2) match {
-        //  case (State(_, s_), State(_, s1_), State(_, s2_)) =>
-        //    println((s_.t0, s_.t).toString ++ " -> " ++ (s1_.t0, s1_.t).toString ++ ", " ++ (s2_.t0, s2_.t).toString)
-        //}
         (s1, s2)
       },
-      init = Vector.fill(parallel) { () => init(p, f) },
       step = s => {
         val s1 = step(p, f, s)
-        // (s, s1) match {
-        // case (State(_, s_), State(_, s1_)) =>
-        // println("step " ++ (s_.t0, s_.t).toString ++ " > " ++ (s1_.t0, s1_.t).toString)
-        // }
         s1
       },
+      parallel = parallel,
       stepSize = stepSize,
       stop = stop(p, _))
 
@@ -137,46 +134,34 @@ object MonAPMC {
     rng: RandomGenerator, ec: ExecutionContext): Vector[MonState] =
     monoidParallel(p, f, stepSize, parallel).scan
 
-  /** The initial step of the algorithm */
-  def init(p: APMC.Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): MonState = {
-    exposedInit(p).run(functorVectorVectorDoubleToRealMatrix(_.map { f }))(())
-  }
-
-  def exposedInit(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[Unit, MonState, RealMatrix, RealMatrix, RealMatrix] = {
-    val apmcInit = APMC.exposedInit(p)
-    ExposedEval(
-      pre = apmcInit.pre,
-      post = Function.untupled(
-        apmcInit.post.tupled andThen { State(p, _) }))
-  }
-
   /** The algorithm iteration step */
   def step(p: APMC.Params, f: Vector[Double] => Vector[Double], s: MonState)(implicit rng: RandomGenerator): MonState =
     exposedStep(p).run {
-      _.map {
-        functorVectorVectorDoubleToRealMatrix { _.map(f) }
-      }
+      functorVectorVectorDoubleToRealMatrix { _.map(f) }
     }(s)
 
-  def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, MonState, Option[(APMC.State, APMC.State, RealMatrix, RealMatrix)], Option[RealMatrix], Option[RealMatrix]] = {
-    val apmcStep = APMC.exposedStep(p)
+  def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, RealMatrix, Either[RealMatrix, (APMC.State, RealMatrix, RealMatrix)], RealMatrix, MonState] = {
     ExposedEval(
       pre = _ match {
-        case Empty() => (None, None)
+        case Empty() =>
+          val thetas = APMC.initPreEval(p)
+          (Left(thetas), thetas)
         case State(_, s) =>
-          val (a, b) = apmcStep.pre(s)
-          (Some(a), Some(b))
+          val (sigmaSquared, thetas) = APMC.stepPreEval(p, s)
+          (Right(s, sigmaSquared, thetas), thetas)
       },
-      post = { (pass: Option[(APMC.State, APMC.State, RealMatrix, RealMatrix)], xs: Option[RealMatrix]) =>
-        (pass, xs) match {
-          case (Some(pass_), Some(xs_)) => State(p, apmcStep.post(pass_, xs_))
-          case _ => Empty()
+      post = { (pass: Either[RealMatrix, (APMC.State, RealMatrix, RealMatrix)],
+        xs: RealMatrix) =>
+        pass match {
+          case Left(thetas) => State(p, APMC.initPostEval(p, thetas, xs))
+          case Right((s, sigmaSquared, thetas)) =>
+            State(p, APMC.stepPostEval(p, s, sigmaSquared, thetas, xs))
         }
       })
   }
 
   def stop(p: APMC.Params, s: MonState): Boolean = s match {
-    case Empty() => return true
+    case Empty() => return false
     case State(p, s) => APMC.stop(p, s)
   }
 
@@ -217,38 +202,4 @@ object MonAPMC {
       pAcc = s2.pAcc,
       epsilon = newEpsilon)
   }
-
-  /*def exposedInit(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[Unit, MonState, RealMatrix, Vector[Vector[Double]], Vector[Vector[Double]]] =
-    ExposedEval(
-      pre = { Unit =>
-        val thetasRM = APMC.initPreEval(p)
-        val thetasV = thetasRM.getData().toVector.map { _.toVector }
-        (thetasRM, thetasV)
-      },
-      post = { (thetas, xsV) =>
-        val xs = MatrixUtils.createRealMatrix(xsV.toArray.map { _.toArray })
-        State(p, APMC.initPostEval(p, thetas, xs))
-      })
-      */
-
-  /*def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, MonState, Option[(APMC.State, APMC.State, RealMatrix, RealMatrix)], Vector[Vector[Double]], Vector[Vector[Double]]] =
-    ExposedEval(
-      pre = _ match {
-        case Empty() => (None, Vector.empty)
-        case State(_, s) =>
-          val (sPreEval, sigmaSquared, newThetas) = APMC.stepGenPreEval(p, s)
-          val newThetasV = newThetas.getData().toVector.map { _.toVector }
-          (Some(s, sPreEval, sigmaSquared, newThetas), newThetasV)
-      },
-      post = (sstep, newXsV) =>
-        sstep match {
-          case None => Empty()
-          case Some((s, sPreEval, sigmaSquared, newThetas)) =>
-            val newXs = MatrixUtils.createRealMatrix(
-              newXsV.toArray.map { _.toArray })
-            val newS = APMC.stepGenPostEval(p, sPreEval, sigmaSquared, newThetas, newXs)
-            State(p, newS)
-        })
-        */
-
 }

@@ -33,7 +33,7 @@ import scala.util.Random
  * result = post(si, y)
  *
  */
-case class ExposedEval[X, Y, S, U, V](
+case class ExposedEval[X, U, S, V, Y](
   pre: X => (S, U),
   post: (S, V) => Y) {
 

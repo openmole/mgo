@@ -34,8 +34,8 @@ case class MonoidParallel[S](
   empty: S,
   append: (S, S) => S,
   split: S => (S, S),
-  init: Vector[() => S],
   step: S => S,
+  parallel: Int,
   stepSize: Int,
   stop: S => Boolean) {
 
@@ -58,7 +58,7 @@ case class MonoidParallel[S](
       }
     }
 
-    go(empty, init.map { i => Future(i()) })
+    go(empty, init(empty, parallel).map { i => Future(i) })
   }
 
   def scan(
@@ -79,7 +79,16 @@ case class MonoidParallel[S](
       }
     }
 
-    go(empty, init.map { i => Future(i()) }, Vector.empty)
+    go(empty, init(empty, parallel).map { i => Future(i) }, Vector.empty)
+  }
+
+  def init(start: S, n: Int): Vector[S] = {
+    if (n <= 0) Vector.empty
+    else if (n == 1) Vector(start)
+    else {
+      val (s1, s2) = split(start)
+      (s2 +: init(s1, n - 1))
+    }
   }
 
   @tailrec

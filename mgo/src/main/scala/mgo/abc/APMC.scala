@@ -74,7 +74,7 @@ object APMC {
     exposedInit(p).run(functorVectorVectorDoubleToRealMatrix(_.map { f }))(())
   }
 
-  def exposedInit(p: Params)(implicit rng: RandomGenerator): ExposedEval[Unit, State, RealMatrix, RealMatrix, RealMatrix] =
+  def exposedInit(p: Params)(implicit rng: RandomGenerator): ExposedEval[Unit, RealMatrix, RealMatrix, RealMatrix, State] =
     ExposedEval(
       pre = { _: Unit =>
         val thetas = initPreEval(p)
@@ -120,19 +120,18 @@ object APMC {
   def step(p: Params, f: Vector[Double] => Vector[Double], s: State)(implicit rng: RandomGenerator): State =
     exposedStep(p).run(functorVectorVectorDoubleToRealMatrix(_.map { f }))(s)
 
-  def exposedStep(p: Params)(implicit rng: RandomGenerator): ExposedEval[State, State, (State, State, RealMatrix, RealMatrix), RealMatrix, RealMatrix] =
+  def exposedStep(p: Params)(implicit rng: RandomGenerator): ExposedEval[State, RealMatrix, (State, RealMatrix, RealMatrix), RealMatrix, State] =
     ExposedEval(
       pre = { s =>
-        val (sPreEval, sigmaSquared, newThetas) = stepPreEval(p, s)
-        ((s, sPreEval, sigmaSquared, newThetas), newThetas)
+        val (sigmaSquared, newThetas) = stepPreEval(p, s)
+        ((s, sigmaSquared, newThetas), newThetas)
       },
       post = { (sstep, newXs) =>
-        val (s, sPreEval, sigmaSquared, newThetas) = sstep
-        val newS = stepPostEval(p, sPreEval, sigmaSquared, newThetas, newXs)
-        newS
+        val (s, sigmaSquared, newThetas) = sstep
+        stepPostEval(p, s, sigmaSquared, newThetas, newXs)
       })
 
-  def stepPreEval(p: Params, s: State)(implicit rng: RandomGenerator): (State, RealMatrix, RealMatrix) = {
+  def stepPreEval(p: Params, s: State)(implicit rng: RandomGenerator): (RealMatrix, RealMatrix) = {
     val dim = s.thetas.getColumnDimension()
     val sigmaSquared = weightedCovariance(s.thetas, s.weights)
       .scalarMultiply(2)
@@ -145,7 +144,7 @@ object APMC {
           rng, resampledTheta, sigmaSquared.getData).sample
       })
 
-    (s, sigmaSquared, newThetas)
+    (sigmaSquared, newThetas)
   }
 
   def stepPostEval(

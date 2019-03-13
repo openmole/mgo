@@ -47,16 +47,14 @@ object SumMonoidParallel extends App {
   {
     val parallel = 1
     val stepSize = 1
-    val init = Vector.fill(parallel) { () => 1 }
-    val res = MonoidParallel[Int](empty, append, split, init, step, stepSize, stop).scan
+    val res = MonoidParallel[Int](empty, append, split, step, parallel, stepSize, stop).scan
     println(res)
   }
 
   {
     val parallel = 1
     val stepSize = 2
-    val init = Vector.fill(parallel) { () => 1 }
-    val res = MonoidParallel[Int](empty, append, split, init, step, stepSize, stop).scan
+    val res = MonoidParallel[Int](empty, append, split, step, parallel, stepSize, stop).scan
     println(res)
   }
 }

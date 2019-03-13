@@ -144,7 +144,6 @@ object GaussianMix1DMonAPMC extends App {
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 1 ----")
   report(
     MonAPMC.scan(p, ToyModel.toyModel, 1, 1)
-
       .collect { case MonAPMC.State(_, s) => s })
 
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 2 ----")
