@@ -195,8 +195,10 @@ object NoisyPSEOperations {
     historyAge: monocle.Lens[I, Long],
     historySize: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
 
-    def merged = mergeHistories(values, history, historyAge, historySize).apply(population, candidates).map(mapped.set(false))
-    def filtered = filterNaN(merged, history.get _ andThen aggregation)
+    val candidateValues = candidates.map(values).toSet
+
+    def merged = mergeHistories(values, history, historyAge, historySize).apply(population, candidates).map { i => if (candidateValues.contains(values(i))) mapped.set(false)(i) else i }
+    def filtered = filterNaN(merged, history.get _ andThen aggregation).map { i => if (candidateValues.contains(values(i))) mapped.set(false)(i) else i }
 
     for {
       mappedPopulation <- addHits[M, I](history.get _ andThen aggregation andThen pattern, mapped) apply filtered
