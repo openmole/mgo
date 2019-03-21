@@ -177,11 +177,12 @@ object PSEOperations {
     values: I => (Vector[Double], Vector[Int]),
     phenotype: I => P,
     pattern: P => Vector[Int],
-    mapped: monocle.Lens[I, Boolean]): Elitism[M, I] = Elitism[M, I] { population =>
+    mapped: monocle.Lens[I, Boolean]): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
+    val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), phenotype)
+
     for {
-      cloneRemoved <- applyCloneStrategy(values, keepFirst[M, I]) apply filterNaN(population, phenotype)
       mappedPopulation <- addHits[M, I](phenotype andThen pattern, mapped) apply cloneRemoved
-      elite <- keepNiches(phenotype andThen pattern, randomO[M, I](1)) apply mappedPopulation
+      elite <- keepNiches[M, I, Vector[Int]](phenotype andThen pattern, randomO[M, I](1)) apply mappedPopulation
     } yield elite
   }
 

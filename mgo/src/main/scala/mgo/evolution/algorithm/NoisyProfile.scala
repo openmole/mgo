@@ -119,41 +119,6 @@ object NoisyProfile {
   def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
   def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
 
-  //
-  //  def genomeProfile(x: Int, nX: Int): Niche[Individual, Int] =
-  //    genomeProfile[Individual]((Individual.genome composeLens vectorValues).get _, x, nX)
-  //
-  //  def result(algorithm: NoisyProfile, population: Vector[Individual]) =
-  //    profile(population, algorithm.niche).map { i =>
-  //      noisynsga2Operations.doubleValues(i.genome.values.toVector, algorithm.continuous) -> algorithm.aggregation(i.fitnessHistory.toVector)
-  //    }
-  //
-  //  def breeding[M[_]: cats.Monad: Random: Generation](lambda: Int, niche: Niche[Individual, Int], operatorExploration: Double, cloneProbability: Double, aggregation: Vector[Double] => Double): Breeding[M, Individual, Genome] =
-  //    noisyprofileOperations.breeding[M, Individual, Genome](
-  //      vectorFitness.get, aggregation, Individual.genome.get, vectorValues.get, Genome.operator.get, buildGenome)(lambda = lambda, niche = niche, operatorExploration = operatorExploration, cloneProbability = cloneProbability)
-  //
-  //  def expression(fitness: (util.Random, Vector[Double]) => Double, genome: Vector[C]): Expression[(util.Random, Genome), Individual] =
-  //    noisyprofileOperations.expression[Genome, Individual](vectorValues.get, genome, buildIndividual)(fitness)
-  //
-  //  def elitism[M[_]: cats.Monad: Random: Generation](muByNiche: Int, niche: Niche[Individual, Int], historySize: Int, aggregation: Vector[Double] => Double): Elitism[M, Individual] =
-  //    noisyprofileOperations.elitism[M, Individual](
-  //      history = vectorFitness,
-  //      aggregation = aggregation,
-  //      values = (Individual.genome composeLens vectorValues).get,
-  //      age = Individual.age,
-  //      historyAge = Individual.historyAge)(muByNiche, niche, historySize)
-  //
-  //  def profile(population: Vector[Individual], niche: Niche[Individual, Int]) =
-  //    noisyprofileOperations.profile(population, niche, Individual.historyAge.get)
-  //
-  //  def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.evolution.algorithm.state[M, Unit](())
-  //
-  //  object NoisyProfile {
-  //
-  //    def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
-  //    def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
-  //
-
   implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime, N, P: Manifest]: Algorithm[NoisyProfile[N, P], M, Individual[P], Genome, EvolutionState[Unit]] = new Algorithm[NoisyProfile[N, P], M, Individual[P], Genome, EvolutionState[Unit]] {
     def initialPopulation(t: NoisyProfile[N, P]) =
       noisy.initialPopulation[M, Genome, Individual[P]](
@@ -195,40 +160,6 @@ case class NoisyProfile[N, P](
 
 object NoisyProfileOperations {
 
-  //  def aggregatedFitness[I](fitness: I => Vector[Double], aggregation: Vector[Double] => Double)(i: I): Vector[Double] =
-  //    Vector(aggregation(fitness(i)), 1.0 / fitness(i).size.toDouble)
-  //
-  //  def breeding[M[_]: cats.Monad: Random: Generation, I, G](
-  //    history: I => Vector[Double],
-  //    aggregation: Vector[Double] => Double,
-  //    genome: I => G,
-  //    genomeValues: G => Vector[Double],
-  //    genomeOperator: G => Option[Int],
-  //    buildGenome: (Vector[Double], Option[Int]) => G)(
-  //    lambda: Int,
-  //    niche: Niche[I, Int],
-  //    operatorExploration: Double,
-  //    cloneProbability: Double): Breeding[M, I, G] = Breeding { population =>
-  //    for {
-  //      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregatedFitness(history, aggregation)) apply population
-  //      operatorStatistics = operatorProportions(genome andThen genomeOperator, population)
-  //      breeding = applyContinuousDynamicOperators[M, I](
-  //        tournament[M, I, (Lazy[Int], Lazy[Double])](ranks, rounds = size => math.round(math.log10(size).toInt)),
-  //        genome andThen genomeValues,
-  //        operatorStatistics,
-  //        operatorExploration) apply population
-  //      offspring <- breeding repeat ((lambda + 1) / 2)
-  //      offspringGenomes = offspring.flatMap {
-  //        case ((o1, o2), op) =>
-  //          def gv1 = o1.map(clamp(_))
-  //          def gv2 = o2.map(clamp(_))
-  //          Vector(buildGenome(gv1, Some(op)), buildGenome(gv2, Some(op)))
-  //      }
-  //      sizedOffspringGenomes <- randomTake[M, G](offspringGenomes, lambda)
-  //      withClones <- clonesReplace[M, I, G](cloneProbability, population, genome) apply sizedOffspringGenomes
-  //    } yield withClones
-  //  }
-
   def elitism[M[_]: cats.Monad: Random: Generation, I, N, P](
     history: monocle.Lens[I, Vector[P]],
     aggregation: Vector[P] => Vector[Double],
@@ -236,50 +167,19 @@ object NoisyProfileOperations {
     historyAge: monocle.Lens[I, Long],
     historySize: Int,
     niche: Niche[I, N],
-    muByNiche: Int): Elitism[M, I] = {
-    def nsga2Elitism(population: Vector[I]) =
+    muByNiche: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
+    val merged = mergeHistories(values, history, historyAge, historySize)(population, candidates)
+    val filtered = filterNaN(merged, NoisyNSGA2Operations.aggregated(history.get, aggregation))
+
+    def nsga2Elitism(p: Vector[I]) =
       NoisyNSGA2Operations.elitism[M, I, P](
         history.get,
         aggregation,
         values,
-        mergeHistories[M, I, P](historyAge, history)(historySize),
-        muByNiche).apply(population)
+        (v, _) => v,
+        muByNiche).apply(p, Vector.empty)
 
-    Elitism[M, I] { nicheElitism(_, nsga2Elitism, niche) }
-
-    //    Elitism[M, I] { population =>
-    //    for {
-    //      cloneRemoved <- applyCloneStrategy(values, mergeHistories[M, I, Double](historyAge, history)(historySize)) apply filterNaN(population, aggregatedFitness(history.get, aggregation))
-    //      elite <- keepNiches[M, I, Int](
-    //        niche = niche,
-    //        objective =
-    //          for {
-    //            ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregatedFitness(history.get, aggregation))
-    //            nicheElite <- Elitism[M, I] { population => keepHighestRanked(population, ranks, muByNiche).pure[M] }
-    //          } yield nicheElite) apply cloneRemoved
-    //      aged <- incrementGeneration[M, I](age) apply elite
-    //    } yield aged
+    nicheElitism(filtered, nsga2Elitism, niche)
   }
 
-  //  def doubleValues(values: Vector[Double], continuous: Vector[C]) =
-  //    (values zip continuous).map { case (v, c) => v.scale(c) }
-  //
-  //  def expression[G, I](
-  //    values: G => Vector[Double],
-  //    continuous: Vector[C],
-  //    builder: (G, Double) => I)(fitness: (util.Random, Vector[Double]) => Double): Expression[(util.Random, G), I] = {
-  //    case (rg, g) =>
-  //      val vs = doubleValues(values(g), continuous)
-  //      builder(g, fitness(rg, vs))
-  //  }
-  //
-  //  def step[M[_]: cats.Monad: Random: Generation, I, G](
-  //    breeding: Breeding[M, I, G],
-  //    expression: Expression[(util.Random, G), I],
-  //    elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = noisyStep(breeding, expression, elitism)
-  //
-  //  def profile[I](population: Vector[I], niche: Niche[I, Int], historyAge: I => Long): Vector[I] =
-  //    population.groupBy(niche).toVector.unzip._2.map {
-  //      _.maxBy(historyAge)
-  //    }
 }

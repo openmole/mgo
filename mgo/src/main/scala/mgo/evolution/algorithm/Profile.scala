@@ -186,9 +186,10 @@ object ProfileOperations {
     fitness: I => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
     niche: Niche[I, N],
-    muByNiche: Int) = {
-    def nsga2Elitism(population: Vector[I]) = NSGA2Operations.elitism[M, I](fitness, values, muByNiche).apply(population)
-    Elitism[M, I] { nicheElitism(_, nsga2Elitism, niche) }
+    muByNiche: Int) = Elitism[M, I] { (population, candidates) =>
+    val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), fitness)
+    def nsga2Elitism(p: Vector[I]) = NSGA2Operations.elitism[M, I](fitness, values, muByNiche).apply(p, Vector.empty)
+    nicheElitism(cloneRemoved, nsga2Elitism, niche)
   }
 
 }

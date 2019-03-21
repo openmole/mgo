@@ -87,7 +87,7 @@ object NoisyNSGA2 {
       vectorFitness[P].get,
       aggregation,
       i => values(Individual.genome.get(i), components),
-      mergeHistories(Individual.historyAge[P], vectorFitness[P])(historySize),
+      mergeHistories(Individual.genome[P].get, vectorFitness[P], Individual.historyAge[P], historySize),
       mu)
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.evolution.algorithm.state[M, Unit](())
@@ -194,12 +194,13 @@ object NoisyNSGA2Operations {
     history: I => Vector[P],
     aggregation: Vector[P] => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
-    mergeHistories: UncloneStrategy[M, I],
-    mu: Int): Elitism[M, I] = Elitism[M, I] { population =>
+    mergeHistories: (Vector[I], Vector[I]) => Vector[I],
+    mu: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
+    val merged = filterNaN(mergeHistories(population, candidates), aggregated(history, aggregation))
+
     for {
-      cloneRemoved <- applyCloneStrategy(values, mergeHistories) apply filterNaN(population, aggregated(history, aggregation))
-      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history, aggregation)) apply cloneRemoved
-      elite = keepHighestRanked(cloneRemoved, ranks, mu)
+      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history, aggregation)) apply merged
+      elite = keepHighestRanked(merged, ranks, mu)
     } yield elite
   }
 

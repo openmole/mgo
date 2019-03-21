@@ -193,19 +193,14 @@ object NoisyPSEOperations {
     pattern: Vector[Double] => Vector[Int],
     mapped: monocle.Lens[I, Boolean],
     historyAge: monocle.Lens[I, Long],
-    historySize: Int): Elitism[M, I] = Elitism[M, I] { population =>
+    historySize: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
 
-    def unclone: UncloneStrategy[M, I] = (is: Vector[I]) => {
-      def merged: M[I] = mergeHistories[M, I, P](historyAge, history)(historySize).apply(is)
-      merged.map(mapped.set(false))
-    }
+    def merged = mergeHistories(values, history, historyAge, historySize).apply(population, candidates).map(mapped.set(false))
+    def filtered = filterNaN(merged, history.get _ andThen aggregation)
 
     for {
-      cloneRemoved <- applyCloneStrategy(
-        values,
-        unclone) apply filterNaN(population, history.get _ andThen aggregation)
-      mappedPopulation <- addHits[M, I](history.get _ andThen aggregation andThen pattern, mapped) apply cloneRemoved
-      elite <- keepNiches(history.get _ andThen aggregation andThen pattern, maximiseO[M, I, Long](i => history.get(i).size, 1)) apply mappedPopulation
+      mappedPopulation <- addHits[M, I](history.get _ andThen aggregation andThen pattern, mapped) apply filtered
+      elite = keepNiches[Id, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, maximiseO(i => history.get(i).size, 1)) apply mappedPopulation
     } yield elite
   }
 

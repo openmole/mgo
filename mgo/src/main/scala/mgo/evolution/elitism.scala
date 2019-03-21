@@ -9,25 +9,28 @@ import mgo.tagtools._
 
 object elitism {
 
-  type Elitism[M[_], I] = Kleisli[M, Vector[I], Vector[I]]
+  type Elitism[M[_], I] = Kleisli[M, (Vector[I], Vector[I]), Vector[I]]
 
   object Elitism {
-    def apply[M[_]: cats.Monad, I](f: Vector[I] => M[Vector[I]]): Elitism[M, I] = Kleisli(f)
+    def apply[M[_]: cats.Monad, I](f: (Vector[I], Vector[I]) => M[Vector[I]]): Elitism[M, I] = Kleisli[M, (Vector[I], Vector[I]), Vector[I]](Function.tupled(f))
   }
 
-  def minimiseO[M[_]: Applicative, I, F](f: I => F, mu: Int)(implicit MM: cats.Monad[M], FO: Order[F]): Elitism[M, I] =
-    Elitism[M, I](individuals => individuals.sorted(FO.contramap[I](f).toOrdering).take(mu).pure[M])
+  //  def minimiseO[M[_]: Applicative, I, F](f: I => F, mu: Int)(implicit MM: cats.Monad[M], FO: Order[F]): Elitism[M, I] =
+  //    Elitism[M, I](individuals => individuals.sorted(FO.contramap[I](f).toOrdering).take(mu).pure[M])
+  //
+  //  def maximiseO[M[_]: Applicative, I, F](f: I => F, mu: Int)(implicit MM: cats.Monad[M], FO: Order[F]): Elitism[M, I] =
+  //    Elitism(individuals => individuals.sorted(Order.reverse(FO.contramap[I](f)).toOrdering).take(mu).pure[M])
+  //
+  //  /** Returns n individuals randomly. */
+  //  def randomO[M[_]: cats.Monad, I](n: Int)(implicit randomM: Random[M]): Elitism[M, I] =
+  //    Elitism(
+  //      individuals => Vector.fill(n)(randomM.randomElement(individuals)).sequence)
 
-  def maximiseO[M[_]: Applicative, I, F](f: I => F, mu: Int)(implicit MM: cats.Monad[M], FO: Order[F]): Elitism[M, I] =
-    Elitism(individuals => individuals.sorted(Order.reverse(FO.contramap[I](f)).toOrdering).take(mu).pure[M])
+  def maximiseO[I, F](f: I => F, mu: Int)(implicit FO: Order[F]) = (individuals: Vector[I]) =>
+    individuals.sorted(Order.reverse(FO.contramap[I](f)).toOrdering).take(mu)
 
-  /** Returns n individuals randomly. */
-  def randomO[M[_]: cats.Monad, I](n: Int)(implicit randomM: Random[M]): Elitism[M, I] =
-    Elitism(
-      individuals => Vector.fill(n)(randomM.randomElement(individuals)).sequence)
-
-  def incrementAge[M[_]: cats.Monad, I](age: monocle.Lens[I, Long]) =
-    Elitism { (individuals: Vector[I]) => individuals.map(age.modify(_ + 1)).pure[M] }
+  def randomO[M[_]: cats.Applicative, I](n: Int)(implicit randomM: Random[M]) =
+    (individuals: Vector[I]) => Vector.fill(n)(randomM.randomElement(individuals)).sequence
 
   def incrementGeneration[M[_]: Generation] = Generation[M].increment
 
@@ -60,43 +63,54 @@ object elitism {
     niches.map { case (_, individuals) => keep(individuals) }.sequence.map(_.flatten)
   }
 
-  type UncloneStrategy[M[_], I] = Vector[I] => M[I]
+  //type UncloneStrategy[M[_], I] = Vector[I] => M[I]
 
 /**** Clone strategies ****/
 
-  def applyCloneStrategy[M[_]: cats.Monad, I, G](getGenome: I => G, cloneStrategy: UncloneStrategy[M, I]): Elitism[M, I] = {
-    import mgo.tools._
-    def unclone(clones: Vector[I]) =
-      if (clones.size == 1) clones.head.pure[M]
-      else cloneStrategy(clones)
+  //  def applyCloneStrategy[M[_]: cats.Monad, I, G](getGenome: I => G, cloneStrategy: UncloneStrategy[M, I]): Elitism[M, I] = {
+  //    import mgo.tools._
+  //    def unclone(clones: Vector[I]) =
+  //      if (clones.size == 1) clones.head.pure[M]
+  //      else cloneStrategy(clones)
+  //
+  //    Elitism(_.groupByOrdered(getGenome).valuesIterator.map(_.toVector).toVector.traverse(unclone))
+  //  }
+  //
+  //  def keepOldest[M[_]: cats.Monad, I](age: I => Long): UncloneStrategy[M, I] =
+  //    (clones: Vector[I]) => clones.maxBy(age).pure[M]
+  //
+  //  def keepFirst[M[_]: cats.Monad, I]: UncloneStrategy[M, I] =
+  //    (clones: Vector[I]) => clones.head.pure[M]
 
-    Elitism(_.groupByOrdered(getGenome).valuesIterator.map(_.toVector).toVector.traverse(unclone))
+  def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]) = {
+    val filteredClone = {
+      val existingGenomes = population.map(genome).toSet
+      newIndividuals.filter(i => !existingGenomes.contains(genome(i)))
+    }
+
+    population ++ filteredClone
   }
 
-  def keepOldest[M[_]: cats.Monad, I](age: I => Long): UncloneStrategy[M, I] =
-    (clones: Vector[I]) => clones.maxBy(age).pure[M]
-
-  def keepFirst[M[_]: cats.Monad, I]: UncloneStrategy[M, I] =
-    (clones: Vector[I]) => clones.head.pure[M]
-
-  def mergeHistories[M[_]: cats.Monad: Random, I, P](historyAge: monocle.Lens[I, Long], history: monocle.Lens[I, Vector[P]])(historySize: Int): UncloneStrategy[M, I] =
-    (clones: Vector[I]) =>
-      implicitly[Random[M]].use { rng =>
-        def merged: I =
-          clones.reduce { (i1, i2) =>
-            val i1HistoryAge = historyAge.get(i1)
-            val i2HistoryAge = historyAge.get(i2)
-
-            (i1HistoryAge, i2HistoryAge) match {
-              case (_, 0) => i1
-              case (0, _) => i2
-              case _ =>
-                def ownHistory(i: I) = history.get(i).takeRight(scala.math.min(historyAge.get(i), historySize).toInt)
-                def updatedHistory = history.set(rng.shuffle((ownHistory(i1) ++ ownHistory(i2)).take(historySize)))(i1)
-                historyAge.set(i1HistoryAge + i2HistoryAge)(updatedHistory)
-            }
-          }
-        merged
+  def mergeHistories[G, I, P](genome: I => G, history: monocle.Lens[I, Vector[P]], historyAge: monocle.Lens[I, Long], historySize: Int) =
+    (population: Vector[I], newIndividuals: Vector[I]) => {
+      val mergedClones = {
+        val indexedNI = newIndividuals.groupByOrdered(genome)
+        for {
+          i <- population
+          clones = indexedNI.getOrElse(genome(i), List())
+        } yield {
+          val additionalHistory = clones.flatMap(history.get)
+          history.modify(h => (h ++ additionalHistory).take(historySize)) andThen
+            historyAge.modify(_ + additionalHistory.size) apply (i)
+        }
       }
+
+      val filteredClone = {
+        val filter = population.map(genome).toSet
+        newIndividuals.filter(i => !filter.contains(genome(i)))
+      }
+
+      mergedClones ++ filteredClone
+    }
 
 }

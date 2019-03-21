@@ -159,9 +159,10 @@ object NSGA2Operations {
   def elitism[M[_]: cats.Monad: Random: Generation, I](
     fitness: I => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
-    mu: Int) = Elitism[M, I] { population =>
+    mu: Int) = Elitism[M, I] { (population, candidates) =>
+    val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), fitness)
+
     for {
-      cloneRemoved <- applyCloneStrategy(values, keepFirst[M, I]) apply filterNaN(population, fitness)
       ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply cloneRemoved
       elite = keepHighestRanked(cloneRemoved, ranks, mu)
     } yield elite

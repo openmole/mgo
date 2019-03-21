@@ -89,11 +89,6 @@ package object evolution extends stop.Imports {
   def anyReaches[M[_]: cats.Monad, I](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
     (population: Vector[I]) => population.exists(goalReached).pure[M]
 
-/**** Replacement strategies ****/
-
-  def muPlusLambda[I](p1: Vector[I], p2: Vector[I]) = (p1 ++ p2)
-  def muCommaLambda[I](parents: Vector[I], offsprings: Vector[I]): Vector[I] = offsprings
-
 /**** Breeding ****/
 
   def bindB[M[_]: cats.Monad, I, G1, G2](b1: Breeding[M, I, G1], b2: Vector[G1] => Breeding[M, I, G2]): Breeding[M, I, G2] =
@@ -144,41 +139,40 @@ package object evolution extends stop.Imports {
   //  def withE[G, P](f: G => P): Expression[G, P] = f
 
 /**** Objectives ****/
+  //
+  //  def bindO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Vector[I] => Elitism[M, I]): Elitism[M, I] =
+  //    Elitism((phenotypes: Vector[I]) =>
+  //      for {
+  //        selected1s <- o1(phenotypes)
+  //        selected2s <- o2(selected1s)(phenotypes)
+  //      } yield selected2s)
+  //
+  //  def andO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+  //    Elitism((phenotypes: Vector[I]) =>
+  //      for {
+  //        selected1s <- o1(phenotypes)
+  //        selected2s <- o2(phenotypes)
+  //      } yield selected1s.intersect(selected2s))
+  //
+  //  def orO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+  //    Elitism((phenotypes: Vector[I]) =>
+  //      for {
+  //        selected1s <- o1(phenotypes)
+  //        selected2s <- o2(phenotypes)
+  //      } yield selected1s.union(selected2s))
+  //
+  //  def thenO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
+  //    Elitism((phenotypes: Vector[I]) =>
+  //      for {
+  //        selected1s <- o1(phenotypes)
+  //        selected2s <- o2(selected1s)
+  //      } yield selected2s)
 
-  def bindO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Vector[I] => Elitism[M, I]): Elitism[M, I] =
-    Elitism((phenotypes: Vector[I]) =>
-      for {
-        selected1s <- o1(phenotypes)
-        selected2s <- o2(selected1s)(phenotypes)
-      } yield selected2s)
-
-  def andO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
-    Elitism((phenotypes: Vector[I]) =>
-      for {
-        selected1s <- o1(phenotypes)
-        selected2s <- o2(phenotypes)
-      } yield selected1s.intersect(selected2s))
-
-  def orO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
-    Elitism((phenotypes: Vector[I]) =>
-      for {
-        selected1s <- o1(phenotypes)
-        selected2s <- o2(phenotypes)
-      } yield selected1s.union(selected2s))
-
-  def thenO[M[_]: cats.Monad, I](o1: Elitism[M, I], o2: Elitism[M, I]): Elitism[M, I] =
-    Elitism((phenotypes: Vector[I]) =>
-      for {
-        selected1s <- o1(phenotypes)
-        selected2s <- o2(selected1s)
-      } yield selected2s)
-
-  def keepNiches[M[_]: cats.Monad, I, N](niche: I => N, objective: Elitism[M, I]): Elitism[M, I] =
-    Elitism((individuals: Vector[I]) => {
+  def keepNiches[M[_]: cats.Monad, I, N](niche: I => N, objective: Vector[I] => M[Vector[I]]) =
+    (individuals: Vector[I]) => {
       val indivsByNiche = individuals.groupBy(niche)
-      val res = indivsByNiche.values.toVector.traverse(objective.apply)
-      res.map(_.flatten)
-    })
+      indivsByNiche.values.toVector.flatTraverse(objective.apply)
+    }
 
 /**** Helper functions ****/
 

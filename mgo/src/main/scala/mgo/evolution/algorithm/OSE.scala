@@ -198,7 +198,9 @@ object OSEOperation {
     limit: Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
     origin: (Vector[Double], Vector[Int]) => Vector[Int],
-    mu: Int)(implicit archive: Archive[M, I], reachMap: ReachMap[M]) = Elitism[M, I] { population =>
+    mu: Int)(implicit archive: Archive[M, I], reachMap: ReachMap[M]) = Elitism[M, I] { (population, candidates) =>
+
+    val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), fitness)
 
     import cats.implicits._
 
@@ -212,15 +214,15 @@ object OSEOperation {
             case false => Some(i)
           }
         else (None: Option[I]).pure[M]
-      population.flatTraverse(i => keepNewlyReaching(i).map(_.toVector))
+      cloneRemoved.flatTraverse(i => keepNewlyReaching(i).map(_.toVector))
     }
 
     for {
       reaching <- newlyReaching
       _ <- reachMap.setReached(reaching.map(o))
       _ <- archive.put(reaching)
-      filteredPopulation <- filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(population)
-      newPopulation <- NSGA2Operations.elitism[M, I](fitness, values, mu).apply(filteredPopulation)
+      filteredPopulation <- filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(cloneRemoved)
+      newPopulation <- NSGA2Operations.elitism[M, I](fitness, values, mu).apply(filteredPopulation, Vector.empty)
     } yield newPopulation
   }
 

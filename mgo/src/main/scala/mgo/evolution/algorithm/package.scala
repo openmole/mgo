@@ -335,8 +335,7 @@ package object algorithm {
       for {
         newGenomes <- breeding(population)
         newPopulation = newGenomes.map(expression)
-        mergedPopulation = muPlusLambda(population, newPopulation)
-        elitePopulation <- elitism(mergedPopulation)
+        elitePopulation <- elitism(population, newPopulation)
         _ <- incrementGeneration
       } yield elitePopulation
     }
@@ -371,8 +370,7 @@ package object algorithm {
       for {
         newGenomes <- breeding(population)
         newPopulation <- newGenomes.traverse { evaluate }
-        mergedPopulation = muPlusLambda(population, newPopulation)
-        elitePopulation <- elitism(mergedPopulation)
+        elitePopulation <- elitism(population, newPopulation)
         _ <- incrementGeneration
       } yield elitePopulation
     }
