@@ -16,35 +16,31 @@
  */
 package mgo.tools.execution
 
+import scala.annotation.tailrec
 import scala.util.Random
 
-case class ExposedEval[S, SInit, SStep, X, Y](
-  initPreEval: () => (SInit, Vector[X]),
-  initPostEval: (SInit, Vector[Y]) => S,
-  stepPreEval: S => (SStep, Vector[X]),
-  stepPostEval: (SStep, Vector[Y]) => S,
-  stop: S => Boolean) {
+/**
+ * An datastructure describing an computation which at some points delegates
+ * some work to the user. The user receives an intermediate state
+ * (type SI) and a value of type X by calling pre.
+ * The value needs to be transformed into another of type
+ * Y that is fed back to the computation, along with the intermediate
+ * state with the functions post. e.g. pseudo-code to
+ * run the whole computation:
+ *
+ * (si, x) = pre()
+ * y = f(x)
+ * result = post(si, y)
+ *
+ */
+case class ExposedEval[X, U, S, V, Y](
+  pre: X => (S, U),
+  post: (S, V) => Y) {
 
-  def init(f: X => Y): S = {
-    val (pass, xs) = initPreEval()
-    val ys = xs.map(f)
-    initPostEval(pass, ys)
+  def run(f: U => V)(s: X): Y = {
+    val (pass, x) = pre(s)
+    val ys = f(x)
+    post(pass, ys)
   }
-  def step(f: X => Y)(s: S): S = {
-    val (pass, xs) = stepPreEval(s)
-    val ys = xs.map(f)
-    stepPostEval(pass, ys)
-  }
-
-  def run(f: X => Y): S = {
-    def go(s: S): S = if (stop(s)) s else go(step(f)(s))
-    go(init(f))
-  }
-
-  def scan(f: X => Y): Vector[S] = {
-    def go(s: S): Vector[S] = if (stop(s)) Vector(s) else s +: go(step(f)(s))
-    go(init(f))
-  }
-
 }
 
