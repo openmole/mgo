@@ -197,7 +197,7 @@ object NoisyPSEOperations {
 
     val candidateValues = candidates.map(values).toSet
 
-    def merged = mergeHistories(values, history, historyAge, historySize).apply(population, candidates).map { i => if (candidateValues.contains(values(i))) mapped.set(false)(i) else i }
+    def merged = mergeHistories(values, history, historyAge, historySize).apply(population, candidates)
     def filtered = filterNaN(merged, history.get _ andThen aggregation).map { i => if (candidateValues.contains(values(i))) mapped.set(false)(i) else i }
 
     for {
