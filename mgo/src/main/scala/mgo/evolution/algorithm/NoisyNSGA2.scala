@@ -82,13 +82,16 @@ object NoisyNSGA2 {
   def expression[P: Manifest](phenotype: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
     NoisyIndividual.expression[P](phenotype, continuous)
 
-  def elitism[M[_]: cats.Monad: Random: Generation, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[M, Individual[P]] =
+  def elitism[M[_]: cats.Monad: Random: Generation, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[M, Individual[P]] = {
+    def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
+
     NoisyNSGA2Operations.elitism[M, Individual[P], P](
       vectorFitness[P].get,
       aggregation,
-      i => values(Individual.genome.get(i), components),
-      mergeHistories(Individual.genome[P].get, vectorFitness[P], Individual.historyAge[P], historySize),
+      individualValues,
+      mergeHistories(individualValues, vectorFitness[P], Individual.historyAge[P], historySize),
       mu)
+  }
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.evolution.algorithm.state[M, Unit](())
 
