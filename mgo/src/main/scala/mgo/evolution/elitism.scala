@@ -100,7 +100,7 @@ object elitism {
           clones = indexedNI.getOrElse(genome(i), List())
         } yield {
           val additionalHistory = clones.flatMap(history.get)
-          history.modify(h => (h ++ additionalHistory).take(historySize)) andThen
+          history.modify(h => (h ++ additionalHistory).takeRight(historySize)) andThen
             historyAge.modify(_ + additionalHistory.size) apply (i)
         }
       }
