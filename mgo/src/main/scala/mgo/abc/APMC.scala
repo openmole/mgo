@@ -54,7 +54,6 @@ object APMC {
 
   case class State(
     thetas: RealMatrix,
-    t0: Int,
     t: Int,
     ts: Vector[Int],
     weights: Array[Double],
@@ -108,7 +107,6 @@ object APMC {
     val weightsSelected = Array.fill(p.nAlpha)(1.0)
     State(
       thetas = thetasSelected,
-      t0 = 0,
       t = t,
       ts = tsSelected,
       weights = weightsSelected,
@@ -166,7 +164,6 @@ object APMC {
     val newTsSelected = Vector.fill(newThetasSelected.getRowDimension())(newT)
     val newWeightsSelected = compWeights(p, s, sigmaSquared, newThetasSelected)
     State(
-      t0 = s.t0,
       t = newT,
       thetas = MatrixUtils.createRealMatrix(
         thetasSelected.getData() ++ newThetasSelected.getData()),
