@@ -75,21 +75,21 @@ object MonAPMC {
   /** The monoid identity element */
   case class Empty() extends MonState
   /** Other monoid elements*/
-  case class State(p: APMC.Params, s: APMC.State) extends MonState
+  case class State(p: APMC.Params, t0: Int, s: APMC.State) extends MonState
 
   /** Monoid binary operation for MonState. */
   def append(s1: MonState, s2: MonState): MonState =
     (s1, s2) match {
       case (a, Empty()) => a
       case (Empty(), a) => a
-      case (State(p, s1), State(_, s2)) =>
-        State(p, stepMerge(p, s1, s2))
+      case (State(p, t0a, sa), State(_, t0b, sb)) =>
+        stepMerge(State(p, t0a, sa), State(p, t0b, sb))
     }
 
   def split(s: MonState): (MonState, MonState) =
     s match {
       case Empty() => (Empty(), Empty())
-      case State(p, s_) => (s, State(p, s_.copy(t0 = s_.t)))
+      case State(p, t0, s_) => (s, State(p = p, t0 = s_.t, s = s_))
     }
 
   def monoidParallel(
@@ -104,7 +104,7 @@ object MonAPMC {
       append = (s1, s2) => {
         val s3 = append(s1, s2)
         (s1, s2, s3) match {
-          case (State(_, s1_), State(_, s2_), State(_, s3_)) =>
+          case (State(_, _, s1_), State(_, _, s2_), State(_, _, s3_)) =>
           case _ =>
         }
         s3
@@ -140,66 +140,68 @@ object MonAPMC {
       functorVectorVectorDoubleToRealMatrix { _.map(f) }
     }(s)
 
-  def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, RealMatrix, Either[RealMatrix, (APMC.State, RealMatrix, RealMatrix)], RealMatrix, MonState] = {
+  def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, RealMatrix, Either[RealMatrix, (APMC.State, Int, RealMatrix, RealMatrix)], RealMatrix, MonState] = {
     ExposedEval(
       pre = _ match {
         case Empty() =>
           val thetas = APMC.initPreEval(p)
           (Left(thetas), thetas)
-        case State(_, s) =>
+        case State(_, t0, s) =>
           val (sigmaSquared, thetas) = APMC.stepPreEval(p, s)
-          (Right(s, sigmaSquared, thetas), thetas)
+          (Right(s, t0, sigmaSquared, thetas), thetas)
       },
-      post = { (pass: Either[RealMatrix, (APMC.State, RealMatrix, RealMatrix)],
+      post = { (pass: Either[RealMatrix, (APMC.State, Int, RealMatrix, RealMatrix)],
         xs: RealMatrix) =>
         pass match {
-          case Left(thetas) => State(p, APMC.initPostEval(p, thetas, xs))
-          case Right((s, sigmaSquared, thetas)) =>
-            State(p, APMC.stepPostEval(p, s, sigmaSquared, thetas, xs))
+          case Left(thetas) => State(p, 0, APMC.initPostEval(p, thetas, xs))
+          case Right((s, t0, sigmaSquared, thetas)) =>
+            State(p, t0, APMC.stepPostEval(p, s, sigmaSquared, thetas, xs))
         }
       })
   }
 
   def stop(p: APMC.Params, s: MonState): Boolean = s match {
     case Empty() => return false
-    case State(p, s) => APMC.stop(p, s)
+    case State(p, t0, s) => APMC.stop(p, s)
   }
 
-  def stepMerge(p: APMC.Params, s1a: APMC.State, s2a: APMC.State): APMC.State = {
-    val (s1, s2) = if (s1a.t0 <= s2a.t0) (s1a, s2a) else (s2a, s1a)
+  def stepMerge(_s1: State, _s2: State): State = {
+    val (s1, s2) = if (_s1.t0 <= _s2.t0) (_s1, _s2) else (_s2, _s1)
     val select2NoDup =
-      s2.ts.zipWithIndex.filter { _._1 > s2.t0 }.map { _._2 }
-    val indices = (0 until s1.thetas.getRowDimension()).map { (1, _) } ++
+      s2.s.ts.zipWithIndex.filter { _._1 > s2.t0 }.map { _._2 }
+    val indices = (0 until s1.s.thetas.getRowDimension()).map { (1, _) } ++
       select2NoDup.map { (2, _) }.toVector
     val selectBoth =
       indices.sortBy {
         case (b, i) =>
-          if (b == 1) { s1.rhos.getEntry(i) }
-          else { s2.rhos.getEntry(i) }
-      }.take(p.nAlpha)
+          if (b == 1) { s1.s.rhos.getEntry(i) }
+          else { s2.s.rhos.getEntry(i) }
+      }.take(s1.p.nAlpha)
     val select1 = selectBoth.filter { _._1 == 1 }.map { _._2 }.toArray
     val select2 = selectBoth.filter { _._1 == 2 }.map { _._2 }.toArray
-    val rhosSelected = select1.map { s1.rhos.getEntry(_) } ++
-      select2.map { s2.rhos.getEntry(_) }
-    val tsSelected = select1.map { s1.ts(_) } ++
-      select2.map { s2.ts(_) - s2.t0 + s1.t }
+    val rhosSelected = select1.map { s1.s.rhos.getEntry(_) } ++
+      select2.map { s2.s.rhos.getEntry(_) }
+    val tsSelected = select1.map { s1.s.ts(_) } ++
+      select2.map { s2.s.ts(_) - s2.t0 + s1.s.t }
     val newEpsilon = selectBoth.last match {
-      case (b, i) => if (b == 1) { s1.rhos.getEntry(i) }
-      else { s2.rhos.getEntry(i) }
+      case (b, i) => if (b == 1) { s1.s.rhos.getEntry(i) }
+      else { s2.s.rhos.getEntry(i) }
     }
     val thetasSelected = MatrixUtils.createRealMatrix(
-      (select1.map { s1.thetas.getRow(_) } ++
-        select2.map { s2.thetas.getRow(_) }).toArray)
+      (select1.map { s1.s.thetas.getRow(_) } ++
+        select2.map { s2.s.thetas.getRow(_) }).toArray)
     val weightsSelected =
-      select1.map { s1.weights(_) } ++ select2.map { s2.weights(_) }
-    APMC.State(
-      thetas = thetasSelected,
+      select1.map { s1.s.weights(_) } ++ select2.map { s2.s.weights(_) }
+    State(
+      p = s1.p,
       t0 = s1.t0,
-      t = s2.t,
-      ts = tsSelected.toVector,
-      weights = weightsSelected,
-      rhos = MatrixUtils.createRealVector(rhosSelected),
-      pAcc = s2.pAcc,
-      epsilon = newEpsilon)
+      s = APMC.State(
+        t = s1.s.t + s2.s.t - s2.t0,
+        ts = tsSelected.toVector,
+        thetas = thetasSelected,
+        weights = weightsSelected,
+        rhos = MatrixUtils.createRealVector(rhosSelected),
+        pAcc = select2.size.toDouble / (s1.p.n - s1.p.nAlpha),
+        epsilon = newEpsilon))
   }
 }
