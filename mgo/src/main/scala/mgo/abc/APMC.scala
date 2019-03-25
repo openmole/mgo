@@ -19,10 +19,10 @@ package mgo.abc
 
 import mgo.tools.LinearAlgebra._
 import mgo.tools.execution._
+import mgo.tools._
 import mgo.tools.stats.weightedCovariance
 import org.apache.commons.math3.distribution.{ EnumeratedIntegerDistribution, MultivariateNormalDistribution }
 import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix, RealVector }
-import org.apache.commons.math3.random.RandomGenerator
 
 import scala.math._
 
@@ -37,7 +37,7 @@ object APMC {
     n: Int,
     nAlpha: Int,
     pAccMin: Double,
-    priorSample: () => Array[Double],
+    priorSample: util.Random => Array[Double],
     priorDensity: Array[Double] => Double,
     observed: Array[Double])
 
@@ -50,19 +50,19 @@ object APMC {
     pAcc: Double,
     epsilon: Double)
 
-  def sequential(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): Sequential[State] = Sequential[State](() => init(p, f), step(p, f, _), stop(p, _))
+  def sequential(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Sequential[State] = Sequential[State](() => init(p, f), step(p, f, _), stop(p, _))
 
-  def run(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): State = sequential(p, f).run
+  def run(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State = sequential(p, f).run
 
-  def scan(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): Vector[State] = sequential(p, f).scan
+  def scan(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Vector[State] = sequential(p, f).scan
 
   def stop(p: Params, s: State): Boolean = s.pAcc <= p.pAccMin
 
-  def init(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): State = {
-    exposedInit(p).run(functorVectorVectorDoubleToMatrix(_.map { f }))(())
+  def init(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State = {
+    exposedInit(p).run(functorVectorVectorDoubleToMatrix(_.map { f(_, rng) }))(())
   }
 
-  def exposedInit(p: Params)(implicit rng: RandomGenerator): ExposedEval[Unit, Matrix, Matrix, Matrix, State] =
+  def exposedInit(p: Params)(implicit rng: util.Random): ExposedEval[Unit, Matrix, Matrix, Matrix, State] =
     ExposedEval(
       pre = (_: Unit) => {
         val thetas = initPreEval(p)
@@ -70,9 +70,9 @@ object APMC {
       },
       post = (thetas, xs) => { initPostEval(p, thetas, xs) })
 
-  def initPreEval(p: Params)(implicit rng: RandomGenerator): Matrix = Array.fill(p.n)(p.priorSample())
+  def initPreEval(p: Params)(implicit rng: util.Random): Matrix = Array.fill(p.n)(p.priorSample(rng))
 
-  def initPostEval(p: Params, thetas: Matrix, xs: Matrix)(implicit rng: RandomGenerator): State = {
+  def initPostEval(p: Params, thetas: Matrix, xs: Matrix)(implicit rng: util.Random): State = {
     val thetasM = MatrixUtils.createRealMatrix(thetas)
     val xsM = MatrixUtils.createRealMatrix(xs)
 
@@ -100,10 +100,10 @@ object APMC {
       epsilon = epsilon)
   }
 
-  def step(p: Params, f: Vector[Double] => Vector[Double], s: State)(implicit rng: RandomGenerator): State =
-    exposedStep(p).run(functorVectorVectorDoubleToMatrix(_.map { f }))(s)
+  def step(p: Params, f: (Vector[Double], util.Random) => Vector[Double], s: State)(implicit rng: util.Random): State =
+    exposedStep(p).run(functorVectorVectorDoubleToMatrix(_.map { f(_, rng) }))(s)
 
-  def exposedStep(p: Params)(implicit rng: RandomGenerator): ExposedEval[State, Matrix, (State, Matrix, Matrix), Matrix, State] =
+  def exposedStep(p: Params)(implicit rng: util.Random): ExposedEval[State, Matrix, (State, Matrix, Matrix), Matrix, State] =
     ExposedEval(
       pre = { s =>
         val (sigmaSquared, newThetas) = stepPreEval(p, s)
@@ -114,19 +114,18 @@ object APMC {
         stepPostEval(p, s, sigmaSquared, newThetas, newXs)
       })
 
-  def stepPreEval(p: Params, s: State)(implicit rng: RandomGenerator): (Matrix, Matrix) = {
+  def stepPreEval(p: Params, s: State)(implicit rng: util.Random): (Matrix, Matrix) = {
 
     val thetasM = MatrixUtils.createRealMatrix(s.thetas)
 
     val dim = thetasM.getColumnDimension()
     val sigmaSquared = weightedCovariance(thetasM, s.weights).scalarMultiply(2)
-    val weightedDistributionTheta = new EnumeratedIntegerDistribution(
-      rng, Array.range(0, p.nAlpha), s.weights)
+
+    val weightedDistributionTheta = new EnumeratedIntegerDistribution(apacheRandom(rng), Array.range(0, p.nAlpha), s.weights)
     val newThetas =
       Array.fill(p.n - p.nAlpha) {
         val resampledTheta = thetasM.getRow(weightedDistributionTheta.sample)
-        new MultivariateNormalDistribution(
-          rng, resampledTheta, sigmaSquared.getData).sample
+        new MultivariateNormalDistribution(apacheRandom(rng), resampledTheta, sigmaSquared.getData).sample
       }
 
     (sigmaSquared.getData, newThetas)

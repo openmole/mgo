@@ -221,4 +221,19 @@ package object tools {
   def randomInt(random: util.Random, discrete: mgo.evolution.D) =
     ((random.nextDouble() * (discrete.high - discrete.low + 1)) + discrete.low).floor.toInt
 
+  def apacheRandom(random: util.Random) = new org.apache.commons.math3.random.RandomGenerator {
+    override def setSeed(seed: Int): Unit = ???
+    override def setSeed(seed: Array[Int]): Unit = ???
+    override def setSeed(seed: Long): Unit = ???
+
+    override def nextBytes(bytes: Array[Byte]): Unit = random.nextBytes(bytes)
+    override def nextInt(): Int = random.nextInt()
+    override def nextInt(n: Int): Int = random.nextInt(n)
+    override def nextLong(): Long = random.nextLong()
+    override def nextBoolean(): Boolean = random.nextBoolean()
+    override def nextFloat(): Float = random.nextFloat()
+    override def nextDouble(): Double = random.nextDouble()
+    override def nextGaussian(): Double = random.nextGaussian()
+  }
+
 }

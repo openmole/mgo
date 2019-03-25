@@ -20,8 +20,6 @@ package mgo.abc
 import mgo.tools.execution._
 import mgo.tools.LinearAlgebra._
 import org.apache.commons.math3.linear.MatrixUtils
-import org.apache.commons.math3.linear.RealMatrix
-import org.apache.commons.math3.random.RandomGenerator
 import scala.annotation.tailrec
 import scala.concurrent.ExecutionContext
 import scala.util.{ Try, Success, Failure }
@@ -92,13 +90,14 @@ object MonAPMC {
       case State(p, t0, s_) => (s, State(p = p, t0 = s_.t, s = s_))
     }
 
+  /// /!\ FIXME Take care of random generator parallelization, there is a racing issue here
   def monoidParallel(
     p: APMC.Params,
-    f: Vector[Double] => Vector[Double],
+    f: (Vector[Double], util.Random) => Vector[Double],
     stepSize: Int,
     parallel: Int)(
     implicit
-    rng: RandomGenerator, ec: ExecutionContext): MonoidParallel[MonState] =
+    rng: util.Random, ec: ExecutionContext): MonoidParallel[MonState] =
     MonoidParallel(
       empty = Empty(),
       append = (s1, s2) => {
@@ -121,24 +120,23 @@ object MonAPMC {
       stepSize = stepSize,
       stop = stop(p, _))
 
-  def run(p: APMC.Params, f: Vector[Double] => Vector[Double],
+  def run(p: APMC.Params, f: (Vector[Double], util.Random) => Vector[Double],
     stepSize: Int, parallel: Int)(
     implicit
-    rng: RandomGenerator, ec: ExecutionContext): Try[MonState] = {
+    rng: util.Random, ec: ExecutionContext): Try[MonState] = {
     monoidParallel(p, f, stepSize, parallel).run
   }
 
-  def scan(p: APMC.Params, f: Vector[Double] => Vector[Double],
-    stepSize: Int, parallel: Int)(
+  def scan(p: APMC.Params, f: (Vector[Double], util.Random) => Vector[Double], stepSize: Int, parallel: Int)(
     implicit
-    rng: RandomGenerator, ec: ExecutionContext): Vector[MonState] =
+    rng: util.Random, ec: ExecutionContext): Vector[MonState] =
     monoidParallel(p, f, stepSize, parallel).scan
 
   /** The algorithm iteration step */
-  def step(p: APMC.Params, f: Vector[Double] => Vector[Double], s: MonState)(implicit rng: RandomGenerator): MonState =
-    exposedStep(p).run { functorVectorVectorDoubleToMatrix { _.map(f) } }(s)
+  def step(p: APMC.Params, f: (Vector[Double], util.Random) => Vector[Double], s: MonState)(implicit rng: util.Random): MonState =
+    exposedStep(p).run { functorVectorVectorDoubleToMatrix { _.map(f(_, rng)) } }(s)
 
-  def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] = {
+  def exposedStep(p: APMC.Params)(implicit rng: util.Random): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] = {
     ExposedEval(
       pre = _ match {
         case Empty() =>

@@ -18,6 +18,7 @@
 package mgo.test
 
 import mgo.abc._
+import mgo.tools._
 import mgo.evolution._
 import mgo.evolution.contexts._
 import org.apache.commons.math3.linear.LUDecomposition
@@ -33,22 +34,22 @@ import scala.util.{ Try, Failure, Success }
 
 object GaussianMix1DMonAPMC extends App {
   implicit val ec = ExecutionContext.global
-  implicit val rng = new Well1024a()
+  implicit val rng = new util.Random(42)
 
   // Gaussian Mixture 1D toy model
   object ToyModel {
     val var1 = 1.0 / 100.0
     val var2 = 1.0
 
-    def toyModel(theta: Vector[Double])(implicit rng: RandomGenerator): Vector[Double] = Vector(
+    def toyModel(theta: Vector[Double], rng: util.Random): Vector[Double] = Vector(
       if (rng.nextBoolean) { theta.head + rng.nextGaussian * sqrt(var1) }
       else { theta.head + rng.nextGaussian * sqrt(var2) })
 
     // P[Theta = theta | x]
     def posterior(x: Double, theta: Double): Double =
-      0.5 * new NormalDistribution(rng, theta, sqrt(var1))
+      0.5 * new NormalDistribution(apacheRandom(rng), theta, sqrt(var1))
         .density(x) +
-        0.5 * new NormalDistribution(rng, theta, sqrt(var2)).density(x)
+        0.5 * new NormalDistribution(apacheRandom(rng), theta, sqrt(var2)).density(x)
 
     // P[Theta < theta | x]
     def posteriorCDF(x: Double, theta: Double): Double =
@@ -62,7 +63,7 @@ object GaussianMix1DMonAPMC extends App {
     n = 5000,
     nAlpha = 500,
     pAccMin = 0.01,
-    priorSample = () => Array(rng.nextDouble() * 20 - 10),
+    priorSample = rng => Array(rng.nextDouble() * 20 - 10),
     priorDensity = {
       case Array(x) =>
         if (x >= -10 && x <= 10) { 1.0 / 20.0 }
@@ -158,11 +159,11 @@ object GaussianMix1DMonAPMC extends App {
 
 object GaussianMix2DMonAPMC extends App {
 
-  implicit val rng = new Well1024a()
+  implicit val rng = new util.Random(42)
   implicit val ec = ExecutionContext.global
 
   // Gaussian Mixture 1D toy model
-  def toyModel(theta: Vector[Double])(implicit rng: RandomGenerator): Vector[Double] = {
+  def toyModel(theta: Vector[Double], rng: util.Random): Vector[Double] = {
     val cov1: Array[Array[Double]] = Array(
       Array(1.0 / 2.0, -0.4),
       Array(-0.4, 1.0 / 2.0))
@@ -184,7 +185,7 @@ object GaussianMix2DMonAPMC extends App {
     n = 5000,
     nAlpha = 500,
     pAccMin = 0.01,
-    priorSample = () => Array(
+    priorSample = rng => Array(
       rng.nextDouble() * 20 - 10,
       rng.nextDouble() * 20 - 10),
     priorDensity = {
