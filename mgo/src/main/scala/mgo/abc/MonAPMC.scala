@@ -136,24 +136,29 @@ object MonAPMC {
   def step(p: APMC.Params, f: (Vector[Double], util.Random) => Vector[Double], s: MonState)(implicit rng: util.Random): MonState =
     exposedStep(p).run { functorVectorVectorDoubleToMatrix { _.map(f(_, rng)) } }(s)
 
-  def exposedStep(p: APMC.Params)(implicit rng: util.Random): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] = {
+  type StepState = Either[Matrix, (APMC.State, Int, Matrix, Matrix)]
+
+  def preStep(p: APMC.Params, state: MonState)(implicit rng: util.Random): (StepState, Matrix) =
+    state match {
+      case Empty() =>
+        val thetas = APMC.initPreEval(p)
+        (Left(thetas), thetas)
+      case State(_, t0, s) =>
+        val (sigmaSquared, thetas) = APMC.stepPreEval(p, s)
+        (Right(s, t0, sigmaSquared, thetas), thetas)
+    }
+
+  def postStep(p: APMC.Params, stepState: StepState, xs: Matrix)(implicit rng: util.Random) =
+    stepState match {
+      case Left(thetas) => State(p, 0, APMC.initPostEval(p, thetas, xs))
+      case Right((s, t0, sigmaSquared, thetas)) =>
+        State(p, t0, APMC.stepPostEval(p, s, sigmaSquared, thetas, xs))
+    }
+
+  def exposedStep(p: APMC.Params)(implicit rng: util.Random): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] =
     ExposedEval(
-      pre = _ match {
-        case Empty() =>
-          val thetas = APMC.initPreEval(p)
-          (Left(thetas), thetas)
-        case State(_, t0, s) =>
-          val (sigmaSquared, thetas) = APMC.stepPreEval(p, s)
-          (Right(s, t0, sigmaSquared, thetas), thetas)
-      },
-      post = { (pass: Either[Matrix, (APMC.State, Int, Matrix, Matrix)], xs: Matrix) =>
-        pass match {
-          case Left(thetas) => State(p, 0, APMC.initPostEval(p, thetas, xs))
-          case Right((s, t0, sigmaSquared, thetas)) =>
-            State(p, t0, APMC.stepPostEval(p, s, sigmaSquared, thetas, xs))
-        }
-      })
-  }
+      pre = preStep(p, _),
+      post = postStep(p, _, _))
 
   def stop(p: APMC.Params, s: MonState): Boolean = s match {
     case Empty() => return false
