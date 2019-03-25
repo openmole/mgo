@@ -18,7 +18,7 @@
 package mgo.abc
 
 import mgo.tools.execution._
-import mgo.tools.LinearAlgebra.functorVectorVectorDoubleToRealMatrix
+import mgo.tools.LinearAlgebra._
 import org.apache.commons.math3.linear.MatrixUtils
 import org.apache.commons.math3.linear.RealMatrix
 import org.apache.commons.math3.random.RandomGenerator
@@ -136,11 +136,9 @@ object MonAPMC {
 
   /** The algorithm iteration step */
   def step(p: APMC.Params, f: Vector[Double] => Vector[Double], s: MonState)(implicit rng: RandomGenerator): MonState =
-    exposedStep(p).run {
-      functorVectorVectorDoubleToRealMatrix { _.map(f) }
-    }(s)
+    exposedStep(p).run { functorVectorVectorDoubleToMatrix { _.map(f) } }(s)
 
-  def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, RealMatrix, Either[RealMatrix, (APMC.State, Int, RealMatrix, RealMatrix)], RealMatrix, MonState] = {
+  def exposedStep(p: APMC.Params)(implicit rng: RandomGenerator): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] = {
     ExposedEval(
       pre = _ match {
         case Empty() =>
@@ -150,8 +148,7 @@ object MonAPMC {
           val (sigmaSquared, thetas) = APMC.stepPreEval(p, s)
           (Right(s, t0, sigmaSquared, thetas), thetas)
       },
-      post = { (pass: Either[RealMatrix, (APMC.State, Int, RealMatrix, RealMatrix)],
-        xs: RealMatrix) =>
+      post = { (pass: Either[Matrix, (APMC.State, Int, Matrix, Matrix)], xs: Matrix) =>
         pass match {
           case Left(thetas) => State(p, 0, APMC.initPostEval(p, thetas, xs))
           case Right((s, t0, sigmaSquared, thetas)) =>
@@ -166,32 +163,36 @@ object MonAPMC {
   }
 
   def stepMerge(_s1: State, _s2: State): State = {
+
     val (s1, s2) = if (_s1.t0 <= _s2.t0) (_s1, _s2) else (_s2, _s1)
+    val thetaM1 = MatrixUtils.createRealMatrix(s1.s.thetas)
+    val thetaM2 = MatrixUtils.createRealMatrix(s2.s.thetas)
+
     val select2NoDup =
       s2.s.ts.zipWithIndex.filter { _._1 > s2.t0 }.map { _._2 }
-    val indices = (0 until s1.s.thetas.getRowDimension()).map { (1, _) } ++
+    val indices = (0 until thetaM1.getRowDimension()).map { (1, _) } ++
       select2NoDup.map { (2, _) }.toVector
     val selectBoth =
       indices.sortBy {
         case (b, i) =>
-          if (b == 1) { s1.s.rhos.getEntry(i) }
-          else { s2.s.rhos.getEntry(i) }
+          if (b == 1) { s1.s.rhos(i) }
+          else { s2.s.rhos(i) }
       }.take(s1.p.nAlpha)
     val select1 = selectBoth.filter { _._1 == 1 }.map { _._2 }.toArray
     val select2 = selectBoth.filter { _._1 == 2 }.map { _._2 }.toArray
-    val rhosSelected = select1.map { s1.s.rhos.getEntry(_) } ++
-      select2.map { s2.s.rhos.getEntry(_) }
+    val rhosSelected = select1.map { s1.s.rhos(_) } ++
+      select2.map { s2.s.rhos(_) }
     val tsSelected = select1.map { s1.s.ts(_) } ++
       select2.map { s2.s.ts(_) - s2.t0 + s1.s.t }
     val newEpsilon = selectBoth.last match {
-      case (b, i) => if (b == 1) { s1.s.rhos.getEntry(i) }
-      else { s2.s.rhos.getEntry(i) }
+      case (b, i) => if (b == 1) { s1.s.rhos(i) } else { s2.s.rhos(i) }
     }
-    val thetasSelected = MatrixUtils.createRealMatrix(
-      (select1.map { s1.s.thetas.getRow(_) } ++
-        select2.map { s2.s.thetas.getRow(_) }).toArray)
+
+    val thetasSelected = select1.map { thetaM1.getRow(_) } ++ select2.map { thetaM2.getRow(_) }
+
     val weightsSelected =
       select1.map { s1.s.weights(_) } ++ select2.map { s2.s.weights(_) }
+
     State(
       p = s1.p,
       t0 = s1.t0,
@@ -200,7 +201,7 @@ object MonAPMC {
         ts = tsSelected.toVector,
         thetas = thetasSelected,
         weights = weightsSelected,
-        rhos = MatrixUtils.createRealVector(rhosSelected),
+        rhos = rhosSelected,
         pAcc = select2.size.toDouble / (s1.p.n - s1.p.nAlpha),
         epsilon = newEpsilon))
   }

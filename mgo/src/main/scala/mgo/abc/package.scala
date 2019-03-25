@@ -25,5 +25,5 @@ package mgo
  */
 
 package object abc {
-
+  type Matrix = Array[Array[Double]]
 }

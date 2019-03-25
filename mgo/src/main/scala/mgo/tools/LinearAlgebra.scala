@@ -24,7 +24,8 @@ object LinearAlgebra {
 
   def functorVectorVectorDoubleToRealMatrix(f: Vector[Vector[Double]] => Vector[Vector[Double]])(thetas: RealMatrix): RealMatrix =
     MatrixUtils.createRealMatrix(
-      f(thetas.getData.map { _.toVector }.toVector)
-        .map { _.toArray }.toArray)
+      f(thetas.getData.map { _.toVector }.toVector).map { _.toArray }.toArray)
 
+  def functorVectorVectorDoubleToMatrix(f: Vector[Vector[Double]] => Vector[Vector[Double]])(thetas: Array[Array[Double]]): Array[Array[Double]] =
+    f(thetas.map { _.toVector }.toVector).map { _.toArray }.toArray
 }

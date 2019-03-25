@@ -17,24 +17,13 @@
 
 package mgo.abc
 
-import org.apache.commons.math3.analysis.function.Sqrt
-import org.apache.commons.math3.distribution.EnumeratedIntegerDistribution
-import org.apache.commons.math3.distribution.MultivariateNormalDistribution
-import org.apache.commons.math3.distribution.NormalDistribution
-import org.apache.commons.math3.linear.LUDecomposition
-import org.apache.commons.math3.linear.MatrixUtils
-import org.apache.commons.math3.linear.RealMatrix
-import org.apache.commons.math3.linear.RealVector
-import org.apache.commons.math3.random.RandomGenerator
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
-import org.apache.commons.math3.stat.StatUtils
-import mgo.tools.stats.weightedCovariance
-import mgo.tools.stats.weightedSample
+import mgo.tools.LinearAlgebra._
 import mgo.tools.execution._
-import mgo.tools.LinearAlgebra.functorVectorVectorDoubleToRealMatrix
-import scala.annotation.tailrec
-import scala.collection.immutable.Queue
-import scala.collection.SortedSet
+import mgo.tools.stats.weightedCovariance
+import org.apache.commons.math3.distribution.{ EnumeratedIntegerDistribution, MultivariateNormalDistribution }
+import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix, RealVector }
+import org.apache.commons.math3.random.RandomGenerator
+
 import scala.math._
 
 /**
@@ -53,11 +42,11 @@ object APMC {
     observed: Array[Double])
 
   case class State(
-    thetas: RealMatrix,
+    thetas: Matrix,
     t: Int,
     ts: Vector[Int],
     weights: Array[Double],
-    rhos: RealVector,
+    rhos: Array[Double],
     pAcc: Double,
     epsilon: Double)
 
@@ -70,55 +59,51 @@ object APMC {
   def stop(p: Params, s: State): Boolean = s.pAcc <= p.pAccMin
 
   def init(p: Params, f: Vector[Double] => Vector[Double])(implicit rng: RandomGenerator): State = {
-    exposedInit(p).run(functorVectorVectorDoubleToRealMatrix(_.map { f }))(())
+    exposedInit(p).run(functorVectorVectorDoubleToMatrix(_.map { f }))(())
   }
 
-  def exposedInit(p: Params)(implicit rng: RandomGenerator): ExposedEval[Unit, RealMatrix, RealMatrix, RealMatrix, State] =
+  def exposedInit(p: Params)(implicit rng: RandomGenerator): ExposedEval[Unit, Matrix, Matrix, Matrix, State] =
     ExposedEval(
-      pre = { _: Unit =>
+      pre = (_: Unit) => {
         val thetas = initPreEval(p)
         (thetas, thetas)
       },
-      post = { (thetas, xs) =>
-        initPostEval(p, thetas, xs)
-      })
+      post = (thetas, xs) => { initPostEval(p, thetas, xs) })
 
-  def initPreEval(p: Params)(implicit rng: RandomGenerator): RealMatrix = {
-    val thetas = MatrixUtils.createRealMatrix(Array.fill(p.n)(p.priorSample()))
-    thetas
-  }
+  def initPreEval(p: Params)(implicit rng: RandomGenerator): Matrix = Array.fill(p.n)(p.priorSample())
 
-  def initPostEval(p: Params, thetas: RealMatrix, xs: RealMatrix)(implicit rng: RandomGenerator): State = {
-    val dim = thetas.getColumnDimension()
+  def initPostEval(p: Params, thetas: Matrix, xs: Matrix)(implicit rng: RandomGenerator): State = {
+    val thetasM = MatrixUtils.createRealMatrix(thetas)
+    val xsM = MatrixUtils.createRealMatrix(xs)
+
+    val dim = thetasM.getColumnDimension()
     val obs = MatrixUtils.createRealVector(p.observed)
-    val rhos = MatrixUtils.createRealVector(
-      Array.tabulate(p.n) { i =>
-        xs.getRowVector(i).getDistance(obs)
-      })
+    val rhos = MatrixUtils.createRealVector(Array.tabulate(p.n) { i => xsM.getRowVector(i).getDistance(obs) })
+
     val (rhosSelected, select) =
       rhos.toArray().zipWithIndex
         .sortBy { _._1 }
         .take(p.nAlpha)
         .unzip
     val epsilon = rhosSelected.last
-    val thetasSelected = thetas.getSubMatrix(select, (0 until dim).toArray)
+    val thetasSelected = thetasM.getSubMatrix(select, (0 until dim).toArray)
     val t = 1
     val tsSelected = Vector.fill(p.nAlpha)(t)
     val weightsSelected = Array.fill(p.nAlpha)(1.0)
     State(
-      thetas = thetasSelected,
+      thetas = thetasSelected.getData,
       t = t,
       ts = tsSelected,
       weights = weightsSelected,
-      rhos = MatrixUtils.createRealVector(rhosSelected),
+      rhos = rhosSelected,
       pAcc = 1,
       epsilon = epsilon)
   }
 
   def step(p: Params, f: Vector[Double] => Vector[Double], s: State)(implicit rng: RandomGenerator): State =
-    exposedStep(p).run(functorVectorVectorDoubleToRealMatrix(_.map { f }))(s)
+    exposedStep(p).run(functorVectorVectorDoubleToMatrix(_.map { f }))(s)
 
-  def exposedStep(p: Params)(implicit rng: RandomGenerator): ExposedEval[State, RealMatrix, (State, RealMatrix, RealMatrix), RealMatrix, State] =
+  def exposedStep(p: Params)(implicit rng: RandomGenerator): ExposedEval[State, Matrix, (State, Matrix, Matrix), Matrix, State] =
     ExposedEval(
       pre = { s =>
         val (sigmaSquared, newThetas) = stepPreEval(p, s)
@@ -129,46 +114,52 @@ object APMC {
         stepPostEval(p, s, sigmaSquared, newThetas, newXs)
       })
 
-  def stepPreEval(p: Params, s: State)(implicit rng: RandomGenerator): (RealMatrix, RealMatrix) = {
-    val dim = s.thetas.getColumnDimension()
-    val sigmaSquared = weightedCovariance(s.thetas, s.weights)
-      .scalarMultiply(2)
+  def stepPreEval(p: Params, s: State)(implicit rng: RandomGenerator): (Matrix, Matrix) = {
+
+    val thetasM = MatrixUtils.createRealMatrix(s.thetas)
+
+    val dim = thetasM.getColumnDimension()
+    val sigmaSquared = weightedCovariance(thetasM, s.weights).scalarMultiply(2)
     val weightedDistributionTheta = new EnumeratedIntegerDistribution(
       rng, Array.range(0, p.nAlpha), s.weights)
-    val newThetas = MatrixUtils.createRealMatrix(
+    val newThetas =
       Array.fill(p.n - p.nAlpha) {
-        val resampledTheta = s.thetas.getRow(weightedDistributionTheta.sample)
+        val resampledTheta = thetasM.getRow(weightedDistributionTheta.sample)
         new MultivariateNormalDistribution(
           rng, resampledTheta, sigmaSquared.getData).sample
-      })
+      }
 
-    (sigmaSquared, newThetas)
+    (sigmaSquared.getData, newThetas)
   }
 
   def stepPostEval(
     p: Params,
     s: State,
-    sigmaSquared: RealMatrix,
-    newThetas: RealMatrix,
-    newXs: RealMatrix): State = {
+    sigmaSquared: Matrix,
+    newThetas: Matrix,
+    newXs: Matrix): State = {
+
+    val thetasM = MatrixUtils.createRealMatrix(s.thetas)
+    val newThetasM = MatrixUtils.createRealMatrix(newThetas)
+    val newXsM = MatrixUtils.createRealMatrix(newXs)
+    val rhosV = MatrixUtils.createRealVector(s.rhos)
+    val sigmaSquaredM = MatrixUtils.createRealMatrix(sigmaSquared)
+
     val obs = MatrixUtils.createRealVector(p.observed)
     val newRhos = MatrixUtils.createRealVector(
-      Array.tabulate(p.n - p.nAlpha) { i =>
-        newXs.getRowVector(i).getDistance(obs)
-      })
+      Array.tabulate(p.n - p.nAlpha) { i => newXsM.getRowVector(i).getDistance(obs) })
+
     val (thetasSelected, rhosSelected, weightsSelected, tsSelected, newThetasSelected, newRhosSelected, newEpsilon) =
-      filterParticles(p.nAlpha, s.thetas, s.rhos, s.weights, s.ts,
-        newThetas, newRhos)
+      filterParticles(p.nAlpha, thetasM, rhosV, s.weights, s.ts, newThetasM, newRhos)
+
     val newPAcc = newRhosSelected.getDimension().toDouble / (p.n - p.nAlpha).toDouble
     val newT = s.t + 1
     val newTsSelected = Vector.fill(newThetasSelected.getRowDimension())(newT)
-    val newWeightsSelected = compWeights(p, s, sigmaSquared, newThetasSelected)
+    val newWeightsSelected = compWeights(p, s, sigmaSquaredM, newThetasSelected)
     State(
       t = newT,
-      thetas = MatrixUtils.createRealMatrix(
-        thetasSelected.getData() ++ newThetasSelected.getData()),
-      rhos = MatrixUtils.createRealVector(
-        rhosSelected.toArray() ++ newRhosSelected.toArray()),
+      thetas = thetasSelected.getData() ++ newThetasSelected.getData(),
+      rhos = rhosSelected.toArray() ++ newRhosSelected.toArray(),
       weights = weightsSelected ++ newWeightsSelected,
       ts = tsSelected ++ newTsSelected,
       pAcc = newPAcc,
@@ -210,6 +201,8 @@ object APMC {
 
   def compWeights(p: Params, s: State, sigmaSquared: RealMatrix, thetasSelected: RealMatrix): Array[Double] = {
     val weightsSum = s.weights.sum
+    val sThetasM = MatrixUtils.createRealMatrix(s.thetas)
+
     val sqrtDet2PiSigmaSquared = sqrt(abs(new LUDecomposition(
       sigmaSquared.scalarMultiply(2.0 * Pi)).getDeterminant()))
     val inverseSigmaSquared = new LUDecomposition(sigmaSquared).getSolver()
@@ -220,7 +213,7 @@ object APMC {
         p.priorDensity(thetaI.toArray) /
           (0 until p.nAlpha).map { j =>
             val weightJ = s.weights(j)
-            val thetaJ = s.thetas.getRowVector(j)
+            val thetaJ = sThetasM.getRowVector(j)
             val thetaDiff = MatrixUtils.createRowRealMatrix(
               thetaI.subtract(thetaJ).toArray())
             (weightJ / weightsSum) *

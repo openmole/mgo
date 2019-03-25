@@ -107,7 +107,7 @@ object GaussianMix1DMonAPMC extends App {
     println("epsilon\tpAcc\tl2")
     println(ss.map { s =>
       val l2 = posteriorL2(-10, 10, 300,
-        (s.weights zip s.thetas.getData.map { _.head }).toVector)
+        (s.weights zip s.thetas.map { _.head }).toVector)
       "%f\t%f\t%f".format(s.epsilon, s.pAcc, l2)
     }.mkString("\n"))
 
@@ -117,10 +117,10 @@ object GaussianMix1DMonAPMC extends App {
   def reportS(s: APMC.State): Unit = {
     println("Epsilon = " ++ s.epsilon.toString)
 
-    val thetasArray = s.thetas.getData.map { _.head }
+    val thetasArray = s.thetas.map { _.head }
     val statsTheta = new DescriptiveStatistics(thetasArray)
     val l2 = posteriorL2(-10, 10, 300,
-      (s.weights zip s.thetas.getData.map { _.head }).toVector)
+      (s.weights zip s.thetas.map { _.head }).toVector)
     println("Theta Mean = " ++ statsTheta.getMean.toString)
     println("Theta Standard Deviation = " ++
       statsTheta.getStandardDeviation.toString)
@@ -250,7 +250,7 @@ object GaussianMix2DMonAPMC extends App {
     println("Epsilon = " ++ s.epsilon.toString)
     println()
 
-    val thetasArray = s.thetas.getData.map { case Array(x, y) => (x, y) }
+    val thetasArray = s.thetas.map { case Array(x, y) => (x, y) }
 
     println("\nThetas histogram:")
 
