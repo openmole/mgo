@@ -50,7 +50,7 @@ object APMC {
     pAcc: Double,
     epsilon: Double)
 
-  def sequential(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Sequential[State] = Sequential[State](() => init(p, f), step(p, f, _), stop(p, _))
+  def sequential(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Sequential[State] = Sequential[State](() => init(p.n, p.nAlpha, p.observed, p.priorSample, f), step(p, f, _), stop(p, _))
 
   def run(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State = sequential(p, f).run
 
@@ -58,38 +58,37 @@ object APMC {
 
   def stop(p: Params, s: State): Boolean = s.pAcc <= p.pAccMin
 
-  def init(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State = {
-    exposedInit(p).run(functorVectorVectorDoubleToMatrix(_.map { f(_, rng) }))(())
-  }
+  def init(n: Int, nAlpha: Int, observed: Array[Double], priorSample: util.Random => Array[Double], f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State =
+    exposedInit(n, nAlpha, observed, priorSample).run(functorVectorVectorDoubleToMatrix(_.map { f(_, rng) }))(())
 
-  def exposedInit(p: Params)(implicit rng: util.Random): ExposedEval[Unit, Matrix, Matrix, Matrix, State] =
+  def exposedInit(n: Int, nAlpha: Int, observed: Array[Double], priorSample: util.Random => Array[Double])(implicit rng: util.Random): ExposedEval[Unit, Matrix, Matrix, Matrix, State] =
     ExposedEval(
       pre = (_: Unit) => {
-        val thetas = initPreEval(p)
+        val thetas = initPreEval(n, priorSample)
         (thetas, thetas)
       },
-      post = (thetas, xs) => { initPostEval(p, thetas, xs) })
+      post = (thetas, xs) => { initPostEval(n, nAlpha, observed, thetas, xs) })
 
-  def initPreEval(p: Params)(implicit rng: util.Random): Matrix = Array.fill(p.n)(p.priorSample(rng))
+  def initPreEval(n: Int, priorSample: util.Random => Array[Double])(implicit rng: util.Random): Matrix = Array.fill(n)(priorSample(rng))
 
-  def initPostEval(p: Params, thetas: Matrix, xs: Matrix)(implicit rng: util.Random): State = {
+  def initPostEval(n: Int, nAlpha: Int, observed: Array[Double], thetas: Matrix, xs: Matrix)(implicit rng: util.Random): State = {
     val thetasM = MatrixUtils.createRealMatrix(thetas)
     val xsM = MatrixUtils.createRealMatrix(xs)
 
     val dim = thetasM.getColumnDimension()
-    val obs = MatrixUtils.createRealVector(p.observed)
-    val rhos = MatrixUtils.createRealVector(Array.tabulate(p.n) { i => xsM.getRowVector(i).getDistance(obs) })
+    val obs = MatrixUtils.createRealVector(observed)
+    val rhos = MatrixUtils.createRealVector(Array.tabulate(n) { i => xsM.getRowVector(i).getDistance(obs) })
 
     val (rhosSelected, select) =
       rhos.toArray().zipWithIndex
         .sortBy { _._1 }
-        .take(p.nAlpha)
+        .take(nAlpha)
         .unzip
     val epsilon = rhosSelected.last
     val thetasSelected = thetasM.getSubMatrix(select, (0 until dim).toArray)
     val t = 1
-    val tsSelected = Vector.fill(p.nAlpha)(t)
-    val weightsSelected = Array.fill(p.nAlpha)(1.0)
+    val tsSelected = Vector.fill(nAlpha)(t)
+    val weightsSelected = Array.fill(nAlpha)(1.0)
     State(
       thetas = thetasSelected.getData,
       t = t,
@@ -106,24 +105,23 @@ object APMC {
   def exposedStep(p: Params)(implicit rng: util.Random): ExposedEval[State, Matrix, (State, Matrix, Matrix), Matrix, State] =
     ExposedEval(
       pre = { s =>
-        val (sigmaSquared, newThetas) = stepPreEval(p, s)
+        val (sigmaSquared, newThetas) = stepPreEval(p.n, p.nAlpha, s)
         ((s, sigmaSquared, newThetas), newThetas)
       },
       post = { (sstep, newXs) =>
         val (s, sigmaSquared, newThetas) = sstep
-        stepPostEval(p, s, sigmaSquared, newThetas, newXs)
+        stepPostEval(p.n, p.nAlpha, p.priorDensity, p.observed, s, sigmaSquared, newThetas, newXs)
       })
 
-  def stepPreEval(p: Params, s: State)(implicit rng: util.Random): (Matrix, Matrix) = {
-
+  def stepPreEval(n: Int, nAlpha: Int, s: State)(implicit rng: util.Random): (Matrix, Matrix) = {
     val thetasM = MatrixUtils.createRealMatrix(s.thetas)
 
     val dim = thetasM.getColumnDimension()
     val sigmaSquared = weightedCovariance(thetasM, s.weights).scalarMultiply(2)
 
-    val weightedDistributionTheta = new EnumeratedIntegerDistribution(apacheRandom(rng), Array.range(0, p.nAlpha), s.weights)
+    val weightedDistributionTheta = new EnumeratedIntegerDistribution(apacheRandom(rng), Array.range(0, nAlpha), s.weights)
     val newThetas =
-      Array.fill(p.n - p.nAlpha) {
+      Array.fill(n - nAlpha) {
         val resampledTheta = thetasM.getRow(weightedDistributionTheta.sample)
         new MultivariateNormalDistribution(apacheRandom(rng), resampledTheta, sigmaSquared.getData).sample
       }
@@ -132,7 +130,10 @@ object APMC {
   }
 
   def stepPostEval(
-    p: Params,
+    n: Int,
+    nAlpha: Int,
+    priorDensity: Array[Double] => Double,
+    observed: Array[Double],
     s: State,
     sigmaSquared: Matrix,
     newThetas: Matrix,
@@ -144,17 +145,17 @@ object APMC {
     val rhosV = MatrixUtils.createRealVector(s.rhos)
     val sigmaSquaredM = MatrixUtils.createRealMatrix(sigmaSquared)
 
-    val obs = MatrixUtils.createRealVector(p.observed)
+    val obs = MatrixUtils.createRealVector(observed)
     val newRhos = MatrixUtils.createRealVector(
-      Array.tabulate(p.n - p.nAlpha) { i => newXsM.getRowVector(i).getDistance(obs) })
+      Array.tabulate(n - nAlpha) { i => newXsM.getRowVector(i).getDistance(obs) })
 
     val (thetasSelected, rhosSelected, weightsSelected, tsSelected, newThetasSelected, newRhosSelected, newEpsilon) =
-      filterParticles(p.nAlpha, thetasM, rhosV, s.weights, s.ts, newThetasM, newRhos)
+      filterParticles(nAlpha, thetasM, rhosV, s.weights, s.ts, newThetasM, newRhos)
 
-    val newPAcc = newRhosSelected.getDimension().toDouble / (p.n - p.nAlpha).toDouble
+    val newPAcc = newRhosSelected.getDimension().toDouble / (n - nAlpha).toDouble
     val newT = s.t + 1
     val newTsSelected = Vector.fill(newThetasSelected.getRowDimension())(newT)
-    val newWeightsSelected = compWeights(p, s, sigmaSquaredM, newThetasSelected)
+    val newWeightsSelected = compWeights(nAlpha, priorDensity, s, sigmaSquaredM, newThetasSelected)
     State(
       t = newT,
       thetas = thetasSelected.getData() ++ newThetasSelected.getData(),
@@ -198,7 +199,7 @@ object APMC {
       newEpsilon)
   }
 
-  def compWeights(p: Params, s: State, sigmaSquared: RealMatrix, thetasSelected: RealMatrix): Array[Double] = {
+  def compWeights(nAlpha: Int, priorDensity: Array[Double] => Double, s: State, sigmaSquared: RealMatrix, thetasSelected: RealMatrix): Array[Double] = {
     val weightsSum = s.weights.sum
     val sThetasM = MatrixUtils.createRealMatrix(s.thetas)
 
@@ -209,8 +210,8 @@ object APMC {
     val weightsSelected =
       (0 until thetasSelected.getRowDimension()).map { i =>
         val thetaI = thetasSelected.getRowVector(i)
-        p.priorDensity(thetaI.toArray) /
-          (0 until p.nAlpha).map { j =>
+        priorDensity(thetaI.toArray) /
+          (0 until nAlpha).map { j =>
             val weightJ = s.weights(j)
             val thetaJ = sThetasM.getRowVector(j)
             val thetaDiff = MatrixUtils.createRowRealMatrix(

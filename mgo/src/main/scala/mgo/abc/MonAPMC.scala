@@ -73,21 +73,20 @@ object MonAPMC {
   /** The monoid identity element */
   case class Empty() extends MonState
   /** Other monoid elements*/
-  case class State(p: APMC.Params, t0: Int, s: APMC.State) extends MonState
+  case class State(t0: Int, s: APMC.State) extends MonState
 
   /** Monoid binary operation for MonState. */
-  def append(s1: MonState, s2: MonState): MonState =
+  def append(n: Int, nAlpha: Int, s1: MonState, s2: MonState): MonState =
     (s1, s2) match {
       case (a, Empty()) => a
       case (Empty(), a) => a
-      case (State(p, t0a, sa), State(_, t0b, sb)) =>
-        stepMerge(State(p, t0a, sa), State(p, t0b, sb))
+      case (State(t0a, sa), State(t0b, sb)) => stepMerge(n, nAlpha, State(t0a, sa), State(t0b, sb))
     }
 
   def split(s: MonState): (MonState, MonState) =
     s match {
       case Empty() => (Empty(), Empty())
-      case State(p, t0, s_) => (s, State(p = p, t0 = s_.t, s = s_))
+      case State(_, s_) => (s, State(t0 = s_.t, s = s_))
     }
 
   /// /!\ FIXME Take care of random generator parallelization, there is a racing issue here
@@ -101,9 +100,9 @@ object MonAPMC {
     MonoidParallel(
       empty = Empty(),
       append = (s1, s2) => {
-        val s3 = append(s1, s2)
+        val s3 = append(p.n, p.nAlpha, s1, s2)
         (s1, s2, s3) match {
-          case (State(_, _, s1_), State(_, _, s2_), State(_, _, s3_)) =>
+          case (State(_, s1_), State(_, s2_), State(_, s3_)) =>
           case _ =>
         }
         s3
@@ -138,34 +137,40 @@ object MonAPMC {
 
   type StepState = Either[Matrix, (APMC.State, Int, Matrix, Matrix)]
 
-  def preStep(p: APMC.Params, state: MonState)(implicit rng: util.Random): (StepState, Matrix) =
+  def preStep(n: Int, nAlpha: Int, priorSample: util.Random => Array[Double], state: MonState)(implicit rng: util.Random): (StepState, Matrix) =
     state match {
       case Empty() =>
-        val thetas = APMC.initPreEval(p)
+        val thetas = APMC.initPreEval(n, priorSample)
         (Left(thetas), thetas)
-      case State(_, t0, s) =>
-        val (sigmaSquared, thetas) = APMC.stepPreEval(p, s)
+      case State(t0, s) =>
+        val (sigmaSquared, thetas) = APMC.stepPreEval(n, nAlpha, s)
         (Right(s, t0, sigmaSquared, thetas), thetas)
     }
 
-  def postStep(p: APMC.Params, stepState: StepState, xs: Matrix)(implicit rng: util.Random) =
+  def postStep(n: Int, nAlpha: Int, priorDensity: Array[Double] => Double, observed: Array[Double], stepState: StepState, xs: Matrix)(implicit rng: util.Random) =
     stepState match {
-      case Left(thetas) => State(p, 0, APMC.initPostEval(p, thetas, xs))
+      case Left(thetas) => State(0, APMC.initPostEval(n, nAlpha, observed, thetas, xs))
       case Right((s, t0, sigmaSquared, thetas)) =>
-        State(p, t0, APMC.stepPostEval(p, s, sigmaSquared, thetas, xs))
+        State(t0, APMC.stepPostEval(n, nAlpha, priorDensity, observed, s, sigmaSquared, thetas, xs))
     }
 
   def exposedStep(p: APMC.Params)(implicit rng: util.Random): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] =
     ExposedEval(
-      pre = preStep(p, _),
-      post = postStep(p, _, _))
+      pre = preStep(p.n, p.nAlpha, p.priorSample, _),
+      post = postStep(p.n, p.nAlpha, p.priorDensity, p.observed, _, _))
+
+
+  def steps(s: MonState) = s match {
+    case Empty() => 0
+    case s: State => s.s.t
+  }
 
   def stop(p: APMC.Params, s: MonState): Boolean = s match {
     case Empty() => return false
-    case State(p, t0, s) => APMC.stop(p, s)
+    case State(t0, s) => APMC.stop(p, s)
   }
 
-  def stepMerge(_s1: State, _s2: State): State = {
+  def stepMerge(n: Int, nAlpha: Int, _s1: State, _s2: State): State = {
 
     val (s1, s2) = if (_s1.t0 <= _s2.t0) (_s1, _s2) else (_s2, _s1)
     val thetaM1 = MatrixUtils.createRealMatrix(s1.s.thetas)
@@ -180,7 +185,7 @@ object MonAPMC {
         case (b, i) =>
           if (b == 1) { s1.s.rhos(i) }
           else { s2.s.rhos(i) }
-      }.take(s1.p.nAlpha)
+      }.take(nAlpha)
     val select1 = selectBoth.filter { _._1 == 1 }.map { _._2 }.toArray
     val select2 = selectBoth.filter { _._1 == 2 }.map { _._2 }.toArray
     val rhosSelected = select1.map { s1.s.rhos(_) } ++
@@ -197,7 +202,6 @@ object MonAPMC {
       select1.map { s1.s.weights(_) } ++ select2.map { s2.s.weights(_) }
 
     State(
-      p = s1.p,
       t0 = s1.t0,
       s = APMC.State(
         t = s1.s.t + s2.s.t - s2.t0,
@@ -205,7 +209,7 @@ object MonAPMC {
         thetas = thetasSelected,
         weights = weightsSelected,
         rhos = rhosSelected,
-        pAcc = select2.size.toDouble / (s1.p.n - s1.p.nAlpha),
+        pAcc = select2.size.toDouble / (n - nAlpha),
         epsilon = newEpsilon))
   }
 }

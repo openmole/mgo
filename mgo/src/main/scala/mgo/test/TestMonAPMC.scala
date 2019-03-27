@@ -145,16 +145,16 @@ object GaussianMix1DMonAPMC extends App {
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 1 ----")
   report(
     MonAPMC.scan(p, ToyModel.toyModel, 1, 1)
-      .collect { case MonAPMC.State(_, _, s) => s })
+      .collect { case MonAPMC.State(_, s) => s })
 
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 2 ----")
   report(MonAPMC.scan(p, ToyModel.toyModel, 1, 2)
-    .collect { case MonAPMC.State(_, _, s) => s })
+    .collect { case MonAPMC.State(_, s) => s })
 
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 2 parallel 1 ----")
   report(
     MonAPMC.scan(p, ToyModel.toyModel, 2, 1)
-      .collect { case MonAPMC.State(_, _, s) => s })
+      .collect { case MonAPMC.State(_, s) => s })
 }
 
 object GaussianMix2DMonAPMC extends App {
@@ -287,12 +287,12 @@ object GaussianMix2DMonAPMC extends App {
   report(APMC.scan(p, toyModel))
 
   println("---- 2D Gaussian Mixture; MonAPMC ----")
-  report(MonAPMC.scan(p, toyModel, 1, 1).collect { case MonAPMC.State(_, _, s) => s })
+  report(MonAPMC.scan(p, toyModel, 1, 1).collect { case MonAPMC.State(_, s) => s })
 
   println("---- 2D Gaussian Mixture; MonAPMC parallel 2----")
-  report(MonAPMC.scan(p, toyModel, 1, 2).collect { case MonAPMC.State(_, _, s) => s })
+  report(MonAPMC.scan(p, toyModel, 1, 2).collect { case MonAPMC.State(_, s) => s })
 
   println("---- 2D Gaussian Mixture; MonAPMC parallel 1, stepSize 2----")
-  report(MonAPMC.scan(p, toyModel, 2, 1).collect { case MonAPMC.State(_, _, s) => s })
+  report(MonAPMC.scan(p, toyModel, 2, 1).collect { case MonAPMC.State(_, s) => s })
 }
 
