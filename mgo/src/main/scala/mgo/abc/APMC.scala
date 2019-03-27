@@ -50,13 +50,13 @@ object APMC {
     pAcc: Double,
     epsilon: Double)
 
-  def sequential(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Sequential[State] = Sequential[State](() => init(p.n, p.nAlpha, p.observed, p.priorSample, f), step(p, f, _), stop(p, _))
+  def sequential(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Sequential[State] = Sequential[State](() => init(p.n, p.nAlpha, p.observed, p.priorSample, f), step(p, f, _), stop(p.pAccMin, _))
 
   def run(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State = sequential(p, f).run
 
   def scan(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Vector[State] = sequential(p, f).scan
 
-  def stop(p: Params, s: State): Boolean = s.pAcc <= p.pAccMin
+  def stop(pAccMin: Double, s: State): Boolean = s.pAcc <= pAccMin
 
   def init(n: Int, nAlpha: Int, observed: Array[Double], priorSample: util.Random => Array[Double], f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State =
     exposedInit(n, nAlpha, observed, priorSample).run(functorVectorVectorDoubleToMatrix(_.map { f(_, rng) }))(())

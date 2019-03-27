@@ -117,7 +117,7 @@ object MonAPMC {
       },
       parallel = parallel,
       stepSize = stepSize,
-      stop = stop(p, _))
+      stop = stop(p.pAccMin, _))
 
   def run(p: APMC.Params, f: (Vector[Double], util.Random) => Vector[Double],
     stepSize: Int, parallel: Int)(
@@ -159,15 +159,14 @@ object MonAPMC {
       pre = preStep(p.n, p.nAlpha, p.priorSample, _),
       post = postStep(p.n, p.nAlpha, p.priorDensity, p.observed, _, _))
 
-
   def steps(s: MonState) = s match {
     case Empty() => 0
     case s: State => s.s.t
   }
 
-  def stop(p: APMC.Params, s: MonState): Boolean = s match {
-    case Empty() => return false
-    case State(t0, s) => APMC.stop(p, s)
+  def stop(pAccMin: Double, s: MonState): Boolean = s match {
+    case Empty() => false
+    case State(t0, s) => APMC.stop(pAccMin, s)
   }
 
   def stepMerge(n: Int, nAlpha: Int, _s1: State, _s2: State): State = {
