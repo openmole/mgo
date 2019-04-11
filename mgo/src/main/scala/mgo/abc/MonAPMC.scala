@@ -76,11 +76,11 @@ object MonAPMC {
   case class State(t0: Int, s: APMC.State) extends MonState
 
   /** Monoid binary operation for MonState. */
-  def append(n: Int, nAlpha: Int, s1: MonState, s2: MonState): MonState =
+  def append(nAlpha: Int, s1: MonState, s2: MonState): MonState =
     (s1, s2) match {
       case (a, Empty()) => a
       case (Empty(), a) => a
-      case (State(t0a, sa), State(t0b, sb)) => stepMerge(n, nAlpha, State(t0a, sa), State(t0b, sb))
+      case (State(t0a, sa), State(t0b, sb)) => stepMerge(nAlpha, State(t0a, sa), State(t0b, sb))
     }
 
   def split(s: MonState): (MonState, MonState) =
@@ -100,7 +100,7 @@ object MonAPMC {
     MonoidParallel(
       empty = Empty(),
       append = (s1, s2) => {
-        val s3 = append(p.n, p.nAlpha, s1, s2)
+        val s3 = append(p.nAlpha, s1, s2)
         (s1, s2, s3) match {
           case (State(_, s1_), State(_, s2_), State(_, s3_)) =>
           case _ =>
@@ -169,7 +169,7 @@ object MonAPMC {
     case State(t0, s) => APMC.stop(pAccMin, s)
   }
 
-  def stepMerge(n: Int, nAlpha: Int, _s1: State, _s2: State): State = {
+  def stepMerge(nAlpha: Int, _s1: State, _s2: State): State = {
 
     val (s1, s2) = if (_s1.t0 <= _s2.t0) (_s1, _s2) else (_s2, _s1)
     val thetaM1 = MatrixUtils.createRealMatrix(s1.s.thetas)
@@ -208,7 +208,7 @@ object MonAPMC {
         thetas = thetasSelected,
         weights = weightsSelected,
         rhos = rhosSelected,
-        pAcc = select2.size.toDouble / (n - nAlpha),
+        pAcc = select2.size.toDouble * s2.s.pAcc / s2.s.thetas.size,
         epsilon = newEpsilon))
   }
 }
