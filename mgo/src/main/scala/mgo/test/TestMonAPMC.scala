@@ -32,37 +32,19 @@ import scala.concurrent.ExecutionContext
 import scala.math._
 import scala.util.{ Try, Failure, Success }
 
-object GaussianMix1DMonAPMC extends App {
+object IdentityMonAPMC extends App {
   implicit val ec = ExecutionContext.global
   implicit val rng = new util.Random(42)
 
-  // Gaussian Mixture 1D toy model
-  object ToyModel {
-    val var1 = 1.0 / 100.0
-    val var2 = 1.0
-
-    def toyModel(theta: Vector[Double], rng: util.Random): Vector[Double] = Vector(
-      if (rng.nextBoolean) { theta.head + rng.nextGaussian * sqrt(var1) }
-      else { theta.head + rng.nextGaussian * sqrt(var2) })
-
-    // P[Theta = theta | x]
-    def posterior(x: Double, theta: Double): Double =
-      0.5 * new NormalDistribution(apacheRandom(rng), theta, sqrt(var1))
-        .density(x) +
-        0.5 * new NormalDistribution(apacheRandom(rng), theta, sqrt(var2)).density(x)
-
-    // P[Theta < theta | x]
-    def posteriorCDF(x: Double, theta: Double): Double =
-      0.5 * new NormalDistribution(rng, theta, sqrt(var1))
-        .cumulativeProbability(x) +
-        0.5 * new NormalDistribution(rng, theta, sqrt(var2)).cumulativeProbability(x)
-  }
+  // A deterministic model.
+  def toyModel(theta: Vector[Double], rng: util.Random): Vector[Double] =
+    theta.map { _ + rng.nextDouble / Double.PositiveInfinity }
 
   // Test MonAPMC and its Exposed interface
   val p = MonAPMC.Params(
     apmcP = APMC.Params(
-      n = 5000,
-      nAlpha = 500,
+      n = 20,
+      nAlpha = 10,
       pAccMin = 0.01,
       priorSample = rng => Array(rng.nextDouble() * 20 - 10),
       priorDensity = {
@@ -70,100 +52,23 @@ object GaussianMix1DMonAPMC extends App {
           if (x >= -10 && x <= 10) { 1.0 / 20.0 }
           else 0
       },
-      observed = Array(0)),
+      observed = Array(1.3)),
     stopSampleSizeFactor = 5)
 
-  // Compute L2 between posterior sample and theoretical cumulative distribution function.
-  def posteriorL2(lowerBound: Double, upperBound: Double, bins: Int,
-    weightsXs: Vector[(Double, Double)]): Double = {
-    val binWidth = (upperBound - lowerBound) / bins.toDouble
-    def theoPostBin(bin: Double): Double =
-      (ToyModel.posteriorCDF(bin + binWidth, p.apmcP.observed.head) -
-        ToyModel.posteriorCDF(bin, p.apmcP.observed.head))
-    def toBin(x: Double): Double =
-      lowerBound + binWidth * floor((x - lowerBound) / binWidth)
-    val sumWeights = weightsXs.map { _._1 }.sum
-    val estPostBin = weightsXs
-      .groupBy { case (w, x) => toBin(x) }
-      .mapValues { _.map { _._1 }.sum / sumWeights }
-
-    sqrt(estPostBin.map { case (b, e) => pow(e - theoPostBin(b), 2) }.sum)
+  var exceptionCaught: Option[APMC.SingularCovarianceException] = None
+  try {
+    MonAPMC.scan(p, toyModel, 1, 1)
+  } catch {
+    case e: APMC.SingularCovarianceException =>
+      exceptionCaught = Some(e)
   }
 
-  def histogram(xs: Vector[Double], ws: Vector[Double], lowerBound: Double, upperBound: Double, bins: Int): Vector[(Double, Double)] = {
-    val width = (upperBound - lowerBound) / bins.toDouble
-    val total = ws.sum
-    def toBin(x: Double): Double =
-      width * (x / width).floor
-    val histMap: Map[Double, Double] = (xs zip ws)
-      .groupBy { case (x, w) => toBin(x + width / 2.0) }
-      .mapValues { xws =>
-        val wsum = xws.map { case (x, w) => w }.sum
-        wsum / (width * total).toDouble
-      }
-
-    (lowerBound to upperBound by width).toVector
-      .map { b => (b, histMap.getOrElse(toBin(b), 0.0)) }
+  exceptionCaught match {
+    case Some(e) =>
+      println("Test successful: SingularCovarianceException thrown as expected with a deterministic model.")
+      println(e)
+    case None => println("Test failed: SingularCovarianceException expected.")
   }
-
-  def report(ss: Vector[APMC.State]): Unit = {
-    println("epsilon\tpAcc\tl2")
-    println(ss.map { s =>
-      val l2 = posteriorL2(-10, 10, 300,
-        (s.weights zip s.thetas.map { _.head }).toVector)
-      "%f\t%f\t%f".format(s.epsilon, s.pAcc, l2)
-    }.mkString("\n"))
-
-    reportS(ss.last)
-  }
-
-  def reportS(s: APMC.State): Unit = {
-    println("Epsilon = " ++ s.epsilon.toString)
-
-    val thetasArray = s.thetas.map { _.head }
-    val statsTheta = new DescriptiveStatistics(thetasArray)
-    val l2 = posteriorL2(-10, 10, 300,
-      (s.weights zip s.thetas.map { _.head }).toVector)
-    println("Theta Mean = " ++ statsTheta.getMean.toString)
-    println("Theta Standard Deviation = " ++
-      statsTheta.getStandardDeviation.toString)
-    println("L2 = " ++ l2.toString)
-
-    println("\nThetas histogram:")
-    val h = histogram(thetasArray.toVector, s.weights.toVector, -2.5, 2.5, 20)
-    val maxWidth = 30
-    println("  bin  theo  est")
-    h.foreach {
-      case (bin, height) =>
-        val theo = ToyModel.posterior(bin, p.apmcP.observed.head)
-        println(f"$bin% 3.2f: $theo%.3f $height%.3f " ++
-          Iterator.fill((height * maxWidth).round.toInt)("●").mkString(""))
-    }
-  }
-
-  println("---- 1D Gaussian Mixture; APMC ----")
-  report(APMC.scan(p.apmcP, ToyModel.toyModel))
-
-  println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 1 ----")
-  report(
-    MonAPMC.scan(p, ToyModel.toyModel, 1, 1)
-      .collect { case MonAPMC.State(_, s) => s })
-
-  println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 2 ----")
-  report(MonAPMC.scan(p, ToyModel.toyModel, 1, 2)
-    .collect { case MonAPMC.State(_, s) => s })
-
-  println("---- 1D Gaussian Mixture; MonAPMC stepSize 2 parallel 1 ----")
-  report(
-    MonAPMC.scan(p, ToyModel.toyModel, 2, 1)
-      .collect { case MonAPMC.State(_, s) => s })
-
-  println("---- 1D Gaussian Mixture; MonAPMC n=501 nAlpha=500----")
-  MonAPMC.run(
-    p.copy(apmcP = p.apmcP.copy(n = p.apmcP.nAlpha + 1)),
-    ToyModel.toyModel, 1, 1).collect {
-      case MonAPMC.State(_, s) => reportS(s)
-    }
 }
 
 object GaussianMix2DMonAPMC extends App {

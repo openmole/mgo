@@ -23,6 +23,7 @@ import mgo.tools._
 import mgo.tools.stats.weightedCovariance
 import org.apache.commons.math3.distribution.{ EnumeratedIntegerDistribution, MultivariateNormalDistribution }
 import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix, RealVector }
+import org.apache.commons.math3.linear.SingularMatrixException
 
 import scala.math._
 
@@ -56,7 +57,8 @@ object APMC {
 
   def scan(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Vector[State] = sequential(p, f).scan
 
-  def stop(pAccMin: Double, s: State): Boolean = s.pAcc <= pAccMin
+  def stop(pAccMin: Double, s: State): Boolean =
+    s.pAcc <= pAccMin
 
   def init(n: Int, nAlpha: Int, observed: Array[Double], priorSample: util.Random => Array[Double], f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State =
     exposedInit(n, nAlpha, observed, priorSample).run(functorVectorVectorDoubleToMatrix(_.map { f(_, rng) }))(())
@@ -234,8 +236,12 @@ object APMC {
 
     val sqrtDet2PiSigmaSquared = sqrt(abs(new LUDecomposition(
       sigmaSquared.scalarMultiply(2.0 * Pi)).getDeterminant()))
-    val inverseSigmaSquared = new LUDecomposition(sigmaSquared).getSolver()
-      .getInverse()
+    val inverseSigmaSquared = try {
+      new LUDecomposition(sigmaSquared).getSolver().getInverse()
+    } catch {
+      case e: SingularMatrixException =>
+        throw new SingularCovarianceException(s, "The weighted covariance matrix of the particles thetas is singular. Possible cause: the model is deterministic.")
+    }
     val weightsSelected =
       (0 until thetasSelected.size).map { i =>
         val thetaI = MatrixUtils.createRealVector(thetasSelected(i))
@@ -254,5 +260,6 @@ object APMC {
       }.toArray
     weightsSelected
   }
-}
 
+  case class SingularCovarianceException(s: State, msg: String) extends RuntimeException(msg)
+}
