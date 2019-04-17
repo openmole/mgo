@@ -59,25 +59,27 @@ object GaussianMix1DMonAPMC extends App {
   }
 
   // Test MonAPMC and its Exposed interface
-  val p = APMC.Params(
-    n = 5000,
-    nAlpha = 500,
-    pAccMin = 0.01,
-    priorSample = rng => Array(rng.nextDouble() * 20 - 10),
-    priorDensity = {
-      case Array(x) =>
-        if (x >= -10 && x <= 10) { 1.0 / 20.0 }
-        else 0
-    },
-    observed = Array(0))
+  val p = MonAPMC.Params(
+    apmcP = APMC.Params(
+      n = 5000,
+      nAlpha = 500,
+      pAccMin = 0.01,
+      priorSample = rng => Array(rng.nextDouble() * 20 - 10),
+      priorDensity = {
+        case Array(x) =>
+          if (x >= -10 && x <= 10) { 1.0 / 20.0 }
+          else 0
+      },
+      observed = Array(0)),
+    stopSampleSizeFactor = 5)
 
   // Compute L2 between posterior sample and theoretical cumulative distribution function.
   def posteriorL2(lowerBound: Double, upperBound: Double, bins: Int,
     weightsXs: Vector[(Double, Double)]): Double = {
     val binWidth = (upperBound - lowerBound) / bins.toDouble
     def theoPostBin(bin: Double): Double =
-      (ToyModel.posteriorCDF(bin + binWidth, p.observed.head) -
-        ToyModel.posteriorCDF(bin, p.observed.head))
+      (ToyModel.posteriorCDF(bin + binWidth, p.apmcP.observed.head) -
+        ToyModel.posteriorCDF(bin, p.apmcP.observed.head))
     def toBin(x: Double): Double =
       lowerBound + binWidth * floor((x - lowerBound) / binWidth)
     val sumWeights = weightsXs.map { _._1 }.sum
@@ -133,14 +135,14 @@ object GaussianMix1DMonAPMC extends App {
     println("  bin  theo  est")
     h.foreach {
       case (bin, height) =>
-        val theo = ToyModel.posterior(bin, p.observed.head)
+        val theo = ToyModel.posterior(bin, p.apmcP.observed.head)
         println(f"$bin% 3.2f: $theo%.3f $height%.3f " ++
           Iterator.fill((height * maxWidth).round.toInt)("●").mkString(""))
     }
   }
 
   println("---- 1D Gaussian Mixture; APMC ----")
-  report(APMC.scan(p, ToyModel.toyModel))
+  report(APMC.scan(p.apmcP, ToyModel.toyModel))
 
   println("---- 1D Gaussian Mixture; MonAPMC stepSize 1 parallel 1 ----")
   report(
@@ -155,6 +157,13 @@ object GaussianMix1DMonAPMC extends App {
   report(
     MonAPMC.scan(p, ToyModel.toyModel, 2, 1)
       .collect { case MonAPMC.State(_, s) => s })
+
+  println("---- 1D Gaussian Mixture; MonAPMC n=501 nAlpha=500----")
+  MonAPMC.run(
+    p.copy(apmcP = p.apmcP.copy(n = p.apmcP.nAlpha + 1)),
+    ToyModel.toyModel, 1, 1).collect {
+      case MonAPMC.State(_, s) => reportS(s)
+    }
 }
 
 object GaussianMix2DMonAPMC extends App {
@@ -181,21 +190,23 @@ object GaussianMix2DMonAPMC extends App {
     dist.sample.toVector
   }
 
-  val p = APMC.Params(
-    n = 5000,
-    nAlpha = 500,
-    pAccMin = 0.01,
-    priorSample = rng => Array(
-      rng.nextDouble() * 20 - 10,
-      rng.nextDouble() * 20 - 10),
-    priorDensity = {
-      case Array(x, y) =>
-        if (x >= -10 && x <= 10 &&
-          y >= -10 && y <= 10) {
-          1.0 / (20.0 * 20.0)
-        } else 0
-    },
-    observed = Array(0, 0))
+  val p = MonAPMC.Params(
+    apmcP = APMC.Params(
+      n = 5000,
+      nAlpha = 500,
+      pAccMin = 0.01,
+      priorSample = rng => Array(
+        rng.nextDouble() * 20 - 10,
+        rng.nextDouble() * 20 - 10),
+      priorDensity = {
+        case Array(x, y) =>
+          if (x >= -10 && x <= 10 &&
+            y >= -10 && y <= 10) {
+            1.0 / (20.0 * 20.0)
+          } else 0
+      },
+      observed = Array(0, 0)),
+    stopSampleSizeFactor = 5)
 
   def histogram(xs: Vector[(Double, Double)], ws: Vector[Double],
     lowerBound: (Double, Double),
@@ -284,7 +295,7 @@ object GaussianMix2DMonAPMC extends App {
   }
   // "⬝ ⚬ ○ ◉ ●
   println("---- 2D Gaussian Mixture; APMC ----")
-  report(APMC.scan(p, toyModel))
+  report(APMC.scan(p.apmcP, toyModel))
 
   println("---- 2D Gaussian Mixture; MonAPMC ----")
   report(MonAPMC.scan(p, toyModel, 1, 1).collect { case MonAPMC.State(_, s) => s })

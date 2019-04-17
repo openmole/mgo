@@ -87,8 +87,8 @@ object APMC {
     val epsilon = rhosSelected.last
     val thetasSelected = thetasM.getSubMatrix(select, (0 until dim).toArray)
     val t = 1
-    val tsSelected = Vector.fill(nAlpha)(t)
-    val weightsSelected = Array.fill(nAlpha)(1.0)
+    val tsSelected = Vector.fill(rhosSelected.size)(t)
+    val weightsSelected = Array.fill(rhosSelected.size)(1.0)
     State(
       thetas = thetasSelected.getData,
       t = t,
@@ -149,17 +149,31 @@ object APMC {
     val newRhos = MatrixUtils.createRealVector(
       Array.tabulate(n - nAlpha) { i => newXsM.getRowVector(i).getDistance(obs) })
 
-    val (thetasSelected, rhosSelected, weightsSelected, tsSelected, newThetasSelected, newRhosSelected, newEpsilon) =
+    val (resSelected, resNewSelected, resNewEpsilon) =
       filterParticles(nAlpha, thetasM, rhosV, s.weights, s.ts, newThetasM, newRhos)
 
-    val newPAcc = newRhosSelected.getDimension().toDouble / (n - nAlpha).toDouble
-    val newT = s.t + 1
-    val newTsSelected = Vector.fill(newThetasSelected.getRowDimension())(newT)
+    val (thetasSelected, rhosSelected, weightsSelected, tsSelected) =
+      resSelected match {
+        case None => (Array.empty, Array.empty, Array.empty, Vector.empty)
+        case Some((th, r, w, ts)) => (th.getData(), r.toArray(), w, ts)
+      }
+
+    val (newThetasSelected, newRhosSelected) =
+      resNewSelected match {
+        case None => (Array.empty[Array[Double]], Array.empty)
+        case Some((th, r)) => (th.getData(), r.toArray())
+      }
+
     val newWeightsSelected = compWeights(nAlpha, priorDensity, s, sigmaSquaredM, newThetasSelected)
+
+    val newEpsilon: Double = resNewEpsilon.getOrElse(0)
+    val newPAcc = newRhosSelected.size.toDouble / (n - nAlpha).toDouble
+    val newT = s.t + 1
+    val newTsSelected = Vector.fill(newThetasSelected.size)(newT)
     State(
       t = newT,
-      thetas = thetasSelected.getData() ++ newThetasSelected.getData(),
-      rhos = rhosSelected.toArray() ++ newRhosSelected.toArray(),
+      thetas = thetasSelected ++ newThetasSelected,
+      rhos = rhosSelected ++ newRhosSelected,
       weights = weightsSelected ++ newWeightsSelected,
       ts = tsSelected ++ newTsSelected,
       pAcc = newPAcc,
@@ -173,7 +187,7 @@ object APMC {
     weights: Array[Double],
     ts: Vector[Int],
     newThetas: RealMatrix,
-    newRhos: RealVector): (RealMatrix, RealVector, Array[Double], Vector[Int], RealMatrix, RealVector, Double) = {
+    newRhos: RealVector): (Option[(RealMatrix, RealVector, Array[Double], Vector[Int])], Option[(RealMatrix, RealVector)], Option[Double]) = {
     val dim = thetas.getColumnDimension()
     val select_ =
       (rhos.toArray().zipWithIndex.map { case (r, i) => (r, 1, i) } ++
@@ -183,23 +197,38 @@ object APMC {
         .partition { _._2 == 1 }
     val (rhosSelected, _, select) = select_._1.unzip3
     val (newRhosSelected, _, newSelect) = select_._2.unzip3
-    val newEpsilon = max(rhosSelected.last, newRhosSelected.last)
-    val thetasSelected = thetas.getSubMatrix(select, (0 until dim).toArray)
-    val newThetasSelected = newThetas.getSubMatrix(newSelect, (0 until dim).toArray)
-    val weightsSelected = select.map { weights(_) }.toArray
-    val tsSelected = select.map { ts(_) }.toVector
+    val resSelected =
+      if (select.isEmpty) None
+      else {
+        val thetasSelected = thetas.getSubMatrix(select, (0 until dim).toArray)
+        val weightsSelected = select.map { weights(_) }.toArray
+        val tsSelected = select.map { ts(_) }.toVector
+        Some(
+          thetasSelected,
+          MatrixUtils.createRealVector(rhosSelected),
+          weightsSelected,
+          tsSelected)
+      }
+    val resNewSelected =
+      if (newSelect.isEmpty) None
+      else {
+        val newThetasSelected =
+          newThetas.getSubMatrix(newSelect, (0 until dim).toArray)
+        Some(
+          newThetasSelected,
+          MatrixUtils.createRealVector(newRhosSelected))
+      }
 
-    (
-      thetasSelected,
-      MatrixUtils.createRealVector(rhosSelected),
-      weightsSelected,
-      tsSelected,
-      newThetasSelected,
-      MatrixUtils.createRealVector(newRhosSelected),
-      newEpsilon)
+    val newEpsilon =
+      if (rhosSelected.isEmpty && newRhosSelected.isEmpty) None
+      else if (rhosSelected.isEmpty) Some(newRhosSelected.last)
+      else if (newRhosSelected.isEmpty) Some(rhosSelected.last)
+      else Some(max(rhosSelected.last, newRhosSelected.last))
+
+    (resSelected, resNewSelected, newEpsilon)
   }
 
-  def compWeights(nAlpha: Int, priorDensity: Array[Double] => Double, s: State, sigmaSquared: RealMatrix, thetasSelected: RealMatrix): Array[Double] = {
+  def compWeights(nAlpha: Int, priorDensity: Array[Double] => Double, s: State, sigmaSquared: RealMatrix, thetasSelected: Array[Array[Double]]): Array[Double] = {
     val weightsSum = s.weights.sum
     val sThetasM = MatrixUtils.createRealMatrix(s.thetas)
 
@@ -208,8 +237,8 @@ object APMC {
     val inverseSigmaSquared = new LUDecomposition(sigmaSquared).getSolver()
       .getInverse()
     val weightsSelected =
-      (0 until thetasSelected.getRowDimension()).map { i =>
-        val thetaI = thetasSelected.getRowVector(i)
+      (0 until thetasSelected.size).map { i =>
+        val thetaI = MatrixUtils.createRealVector(thetasSelected(i))
         priorDensity(thetaI.toArray) /
           (0 until nAlpha).map { j =>
             val weightJ = s.weights(j)

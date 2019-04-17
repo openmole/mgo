@@ -68,6 +68,11 @@ import scala.util.{ Try, Success, Failure }
 
 object MonAPMC {
 
+  /** Parameters for MonAPMC. */
+  case class Params(
+    apmcP: APMC.Params,
+    stopSampleSizeFactor: Int)
+
   /** The type over which we are constructing a monoid. */
   sealed trait MonState
   /** The monoid identity element */
@@ -91,7 +96,7 @@ object MonAPMC {
 
   /// /!\ FIXME Take care of random generator parallelization, there is a racing issue here
   def monoidParallel(
-    p: APMC.Params,
+    p: Params,
     f: (Vector[Double], util.Random) => Vector[Double],
     stepSize: Int,
     parallel: Int)(
@@ -100,7 +105,7 @@ object MonAPMC {
     MonoidParallel(
       empty = Empty(),
       append = (s1, s2) => {
-        val s3 = append(p.nAlpha, s1, s2)
+        val s3 = append(p.apmcP.nAlpha, s1, s2)
         (s1, s2, s3) match {
           case (State(_, s1_), State(_, s2_), State(_, s3_)) =>
           case _ =>
@@ -117,56 +122,78 @@ object MonAPMC {
       },
       parallel = parallel,
       stepSize = stepSize,
-      stop = stop(p.pAccMin, _))
+      stop = stop(p.apmcP.n, p.apmcP.nAlpha, p.apmcP.pAccMin, p.stopSampleSizeFactor, _))
 
-  def run(p: APMC.Params, f: (Vector[Double], util.Random) => Vector[Double],
+  def run(p: Params, f: (Vector[Double], util.Random) => Vector[Double],
     stepSize: Int, parallel: Int)(
     implicit
     rng: util.Random, ec: ExecutionContext): Try[MonState] = {
     monoidParallel(p, f, stepSize, parallel).run
   }
 
-  def scan(p: APMC.Params, f: (Vector[Double], util.Random) => Vector[Double], stepSize: Int, parallel: Int)(
+  def scan(p: Params, f: (Vector[Double], util.Random) => Vector[Double], stepSize: Int, parallel: Int)(
     implicit
     rng: util.Random, ec: ExecutionContext): Vector[MonState] =
     monoidParallel(p, f, stepSize, parallel).scan
 
   /** The algorithm iteration step */
-  def step(p: APMC.Params, f: (Vector[Double], util.Random) => Vector[Double], s: MonState)(implicit rng: util.Random): MonState =
+  def step(p: Params, f: (Vector[Double], util.Random) => Vector[Double], s: MonState)(implicit rng: util.Random): MonState =
     exposedStep(p).run { functorVectorVectorDoubleToMatrix { _.map(f(_, rng)) } }(s)
 
   type StepState = Either[Matrix, (APMC.State, Int, Matrix, Matrix)]
 
-  def preStep(n: Int, nAlpha: Int, priorSample: util.Random => Array[Double], state: MonState)(implicit rng: util.Random): (StepState, Matrix) =
+  def preStep(n: Int, nAlpha: Int, priorSample: util.Random => Array[Double], state: MonState)(implicit rng: util.Random): (StepState, Matrix) = {
+    /* If s is empty or the number of particles it contains hasn't reach nAlpha yet, keep generating particles (n - nAlpha by n - nAlpha) from the prior using the function APMC.stepOne and setting the parameter n to (n - nAlpha)*/
+
+    val reducedN = n - nAlpha
+
     state match {
       case Empty() =>
-        val thetas = APMC.initPreEval(n, priorSample)
+        val thetas = APMC.initPreEval(reducedN, priorSample)
         (Left(thetas), thetas)
+
       case State(t0, s) =>
-        val (sigmaSquared, thetas) = APMC.stepPreEval(n, nAlpha, s)
-        (Right(s, t0, sigmaSquared, thetas), thetas)
+        if (s.thetas.size < nAlpha) {
+          val thetas = APMC.initPreEval(reducedN, priorSample)
+          (Left(thetas), thetas)
+        } else {
+          val (sigmaSquared, thetas) = APMC.stepPreEval(n, nAlpha, s)
+          (Right((s, t0, sigmaSquared, thetas)), thetas)
+        }
     }
+  }
 
-  def postStep(n: Int, nAlpha: Int, priorDensity: Array[Double] => Double, observed: Array[Double], stepState: StepState, xs: Matrix)(implicit rng: util.Random) =
+  def postStep(n: Int, nAlpha: Int, priorDensity: Array[Double] => Double, observed: Array[Double], stepState: StepState, xs: Matrix)(implicit rng: util.Random) = {
+    val reducedN = n - nAlpha
     stepState match {
-      case Left(thetas) => State(0, APMC.initPostEval(n, nAlpha, observed, thetas, xs))
+      case Left(thetas) => State(0, APMC.initPostEval(reducedN, nAlpha, observed, thetas, xs))
       case Right((s, t0, sigmaSquared, thetas)) =>
-        State(t0, APMC.stepPostEval(n, nAlpha, priorDensity, observed, s, sigmaSquared, thetas, xs))
+        if (s.thetas.size < nAlpha) {
+          append(nAlpha, State(t0, s), State(0, APMC.initPostEval(reducedN, nAlpha, observed, thetas, xs)))
+        } else {
+          State(t0, APMC.stepPostEval(n, nAlpha, priorDensity, observed, s, sigmaSquared, thetas, xs))
+        }
     }
+  }
 
-  def exposedStep(p: APMC.Params)(implicit rng: util.Random): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] =
+  def exposedStep(p: Params)(implicit rng: util.Random): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] =
     ExposedEval(
-      pre = preStep(p.n, p.nAlpha, p.priorSample, _),
-      post = postStep(p.n, p.nAlpha, p.priorDensity, p.observed, _, _))
+      pre = preStep(p.apmcP.n, p.apmcP.nAlpha, p.apmcP.priorSample, _),
+      post = postStep(p.apmcP.n, p.apmcP.nAlpha, p.apmcP.priorDensity, p.apmcP.observed, _, _))
 
   def steps(s: MonState) = s match {
     case Empty() => 0
     case s: State => s.s.t
   }
 
-  def stop(pAccMin: Double, s: MonState): Boolean = s match {
+  def stop(n: Int, nAlpha: Int, pAccMin: Double, stopSampleSizeFactor: Int, s: MonState): Boolean = s match {
     case Empty() => false
-    case State(t0, s) => APMC.stop(pAccMin, s)
+    case State(t0, s) =>
+      val tSpan = ((stopSampleSizeFactor * nAlpha).toDouble /
+        (n - nAlpha).toDouble).ceil
+      val count = s.ts.count { _ > s.t - tSpan }
+      val pAcc = count.toDouble / (tSpan * (n - nAlpha)).toDouble
+      (s.t >= tSpan) && (pAccMin >= pAcc)
   }
 
   def stepMerge(nAlpha: Int, _s1: State, _s2: State): State = {
