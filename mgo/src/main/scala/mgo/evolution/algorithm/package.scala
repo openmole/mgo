@@ -246,14 +246,6 @@ package object algorithm {
   def scaleContinuousValues(values: Vector[Double], genomeComponents: Vector[C]) =
     (values zip genomeComponents).map { case (v, c) => v.scale(c) }
 
-  def keepFirstFront[I](population: Vector[I], fitness: I => Vector[Double]) =
-    if (population.isEmpty) population
-    else {
-      val dominating = ranking.numberOfDominating(fitness, population)
-      val minDominating = dominating.map(_.value).min
-      (population zip dominating).filter { case (_, d) => d.value == minDominating }.map(_._1)
-    }
-
   object CDGenome {
 
     import monocle.macros._

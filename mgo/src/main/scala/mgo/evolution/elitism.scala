@@ -63,6 +63,14 @@ object elitism {
     niches.map { case (_, individuals) => keep(individuals) }.sequence.map(_.flatten)
   }
 
+  def keepFirstFront[I](population: Vector[I], fitness: I => Vector[Double]) =
+    if (population.isEmpty) population
+    else {
+      val dominating = ranking.numberOfDominating(fitness, population)
+      val minDominating = dominating.map(_.value).min
+      (population zip dominating).filter { case (_, d) => d.value == minDominating }.map(_._1)
+    }
+
   //type UncloneStrategy[M[_], I] = Vector[I] => M[I]
 
 /**** Clone strategies ****/

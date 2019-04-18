@@ -168,18 +168,14 @@ object NoisyProfileOperations {
     historySize: Int,
     niche: Niche[I, N],
     muByNiche: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
+
+    def agg = NoisyNSGA2Operations.aggregated(history.get, aggregation) _
+    def inNicheElitism(p: Vector[I]) = keepFirstFront(p, agg).pure[M]
+
     val merged = mergeHistories(values, history, historyAge, historySize)(population, candidates)
-    val filtered = filterNaN(merged, NoisyNSGA2Operations.aggregated(history.get, aggregation))
+    val filtered = filterNaN(merged, agg)
 
-    def nsga2Elitism(p: Vector[I]) =
-      NoisyNSGA2Operations.elitism[M, I, P](
-        history.get,
-        aggregation,
-        values,
-        (v, _) => v,
-        muByNiche).apply(p, Vector.empty)
-
-    nicheElitism(filtered, nsga2Elitism, niche)
+    nicheElitism(filtered, inNicheElitism, niche)
   }
 
 }
