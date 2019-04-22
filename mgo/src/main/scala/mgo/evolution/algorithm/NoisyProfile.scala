@@ -52,8 +52,10 @@ object NoisyProfile {
     continuous: Vector[C],
     onlyOldest: Boolean) = {
     def nicheResult(population: Vector[Individual[P]]) =
-      if (onlyOldest) population.sortBy(_.fitnessHistory.size).headOption.toVector
-      else keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness[P].get, aggregation))
+      if (onlyOldest) {
+        val front = keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness[P].get, aggregation))
+        front.sortBy(-_.fitnessHistory.size).headOption.toVector
+      } else keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness[P].get, aggregation))
 
     nicheElitism[Id, Individual[P], N](population, nicheResult, niche).map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
@@ -61,7 +63,7 @@ object NoisyProfile {
     }
   }
 
-  def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = false): Vector[Result[N]] =
+  def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = true): Vector[Result[N]] =
     result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, onlyOldest)
 
   def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =
@@ -170,7 +172,7 @@ object NoisyProfileOperations {
     muByNiche: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
 
     def agg = NoisyNSGA2Operations.aggregated(history.get, aggregation) _
-    def inNicheElitism(p: Vector[I]) = keepFirstFront(p, agg).pure[M]
+    def inNicheElitism(p: Vector[I]) = keepOnFirstFront(p, agg, muByNiche)
 
     val merged = mergeHistories(values, history, historyAge, historySize)(population, candidates)
     val filtered = filterNaN(merged, agg)

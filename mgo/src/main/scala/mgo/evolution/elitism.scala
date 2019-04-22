@@ -2,8 +2,9 @@ package mgo.evolution
 
 import cats.data._
 import cats.implicits._
-import cats.{ Order, Applicative }
+import cats.{ Applicative, Order }
 import contexts._
+import mgo.evolution.diversity.crowdingDistance
 import mgo.tools._
 import mgo.tagtools._
 
@@ -70,6 +71,13 @@ object elitism {
       val minDominating = dominating.map(_.value).min
       (population zip dominating).filter { case (_, d) => d.value == minDominating }.map(_._1)
     }
+
+  def keepOnFirstFront[M[_]: Random: cats.Monad, I](population: Vector[I], fitness: I => Vector[Double], mu: Int) = {
+    val first = keepFirstFront(population, fitness)
+    for {
+      crowding <- crowdingDistance[M, I](fitness).run(first)
+    } yield keepHighestRanked(first, crowding, mu)
+  }
 
   //type UncloneStrategy[M[_], I] = Vector[I] => M[I]
 
