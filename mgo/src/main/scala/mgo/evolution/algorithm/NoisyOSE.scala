@@ -269,7 +269,7 @@ object NoisyOSEOperations {
       _ <- reachMap.setReached(reaching.map(individualOrigin))
       _ <- archive.put(reaching)
       filteredPopulation <- OSEOperation.filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(merged)
-      newPopulation <- NoisyNSGA2Operations.elitism[M, I, P](history, aggregation, values, mergeHistories, mu).apply(filteredPopulation, Vector.empty)
+      newPopulation <- NoisyNSGA2Operations.elitism[M, I, P](aggregated(history, aggregation), values, mergeHistories, mu).apply(filteredPopulation, Vector.empty)
     } yield newPopulation
   }
 }

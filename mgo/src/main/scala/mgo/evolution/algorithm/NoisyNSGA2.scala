@@ -43,7 +43,7 @@ object NoisyNSGA2 {
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
 
   def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C]) =
-    keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness[P].get, aggregation)).map {
+    keepFirstFront(population, fitness(aggregation)).map {
       i =>
         val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
         Result(c, d, f, r)
@@ -51,6 +51,12 @@ object NoisyNSGA2 {
 
   def result[P: Manifest](nsga2: NoisyNSGA2[P], population: Vector[Individual[P]]): Vector[Result] =
     result[P](population, nsga2.aggregation, nsga2.continuous)
+
+  def fitness[P: Manifest](aggregation: Vector[P] => Vector[Double]) =
+    NoisyNSGA2Operations.aggregated[Individual[P], P](
+      vectorFitness[P].get,
+      aggregation,
+      i => Individual.fitnessHistory[P].get(i).size.toDouble)(_)
 
   //  def breeding[M[_]: cats.Monad: Random: Generation](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
   //    noisynsga2Operations.breeding[M, Individual, Genome](
@@ -65,8 +71,7 @@ object NoisyNSGA2 {
 
   def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D]): Breeding[M, Individual[P], Genome] =
     NoisyNSGA2Operations.adaptiveBreeding[M, Individual[P], Genome, P](
-      vectorFitness[P].get,
-      aggregation,
+      fitness(aggregation),
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -86,8 +91,7 @@ object NoisyNSGA2 {
     def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
 
     NoisyNSGA2Operations.elitism[M, Individual[P], P](
-      vectorFitness[P].get,
-      aggregation,
+      fitness[P](aggregation),
       individualValues,
       mergeHistories(individualValues, vectorFitness[P], Individual.historyAge[P], historySize),
       mu)
@@ -142,8 +146,8 @@ case class NoisyNSGA2[P](
 
 object NoisyNSGA2Operations {
 
-  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double])(i: I): Vector[Double] =
-    aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
+  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double], accuracy: I => Double)(i: I): Vector[Double] =
+    aggregation(fitness(i)) ++ Vector(1.0 / accuracy(i))
 
   //  def breeding[M[_]: cats.Monad: Random: Generation, I, G](
   //    history: I => Vector[Vector[Double]],
@@ -161,8 +165,7 @@ object NoisyNSGA2Operations {
   //    } yield gs
 
   def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, I, G, P](
-    history: I => Vector[P],
-    aggregation: Vector[P] => Vector[Double],
+    fitness: I => Vector[Double],
     genome: I => G,
     continuousValues: G => Vector[Double],
     continuousOperator: G => Option[Int],
@@ -175,7 +178,7 @@ object NoisyNSGA2Operations {
     operatorExploration: Double,
     cloneProbability: Double): Breeding[M, I, G] = Breeding { population =>
     for {
-      ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history, aggregation)) apply population
+      ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply population
       continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
       breeding = applyDynamicOperators[M, I, G](
@@ -194,15 +197,14 @@ object NoisyNSGA2Operations {
   }
 
   def elitism[M[_]: cats.Monad: Random: Generation, I, P](
-    history: I => Vector[P],
-    aggregation: Vector[P] => Vector[Double],
+    fitness: I => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     mu: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
-    val merged = filterNaN(mergeHistories(population, candidates), aggregated(history, aggregation))
+    val merged = filterNaN(mergeHistories(population, candidates), fitness)
 
     for {
-      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history, aggregation)) apply merged
+      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply merged
       elite = keepHighestRanked(merged, ranks, mu)
     } yield elite
   }

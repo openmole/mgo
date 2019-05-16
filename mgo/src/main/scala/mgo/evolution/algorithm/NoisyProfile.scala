@@ -41,7 +41,7 @@ object NoisyProfile {
   import NoisyIndividual._
 
   def aggregatedFitness[N, P: Manifest](aggregation: Vector[P] => Vector[Double]) =
-    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorFitness[P].get, aggregation)(_)
+    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorFitness[P].get, aggregation, Individual.fitnessHistory[P].get(_).size)(_)
 
   case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, replications: Int)
 
@@ -53,9 +53,9 @@ object NoisyProfile {
     onlyOldest: Boolean) = {
     def nicheResult(population: Vector[Individual[P]]) =
       if (onlyOldest) {
-        val front = keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness[P].get, aggregation))
+        val front = keepFirstFront(population, aggregatedFitness(aggregation))
         front.sortBy(-_.fitnessHistory.size).headOption.toVector
-      } else keepFirstFront(population, NoisyNSGA2Operations.aggregated(vectorFitness[P].get, aggregation))
+      } else keepFirstFront(population, aggregatedFitness(aggregation))
 
     nicheElitism[Id, Individual[P], N](population, nicheResult, niche).map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
@@ -86,8 +86,7 @@ object NoisyProfile {
 
   def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D]): Breeding[M, Individual[P], Genome] =
     NoisyNSGA2Operations.adaptiveBreeding[M, Individual[P], Genome, P](
-      vectorFitness[P].get,
-      aggregation,
+      aggregatedFitness(aggregation),
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -100,15 +99,17 @@ object NoisyProfile {
       operatorExploration,
       cloneProbability)
 
-  def elitism[M[_]: cats.Monad: Random: Generation, N, P: Manifest](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[M, Individual[P]] =
+  def elitism[M[_]: cats.Monad: Random: Generation, N, P: Manifest](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[M, Individual[P]] = {
+
+    def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
+
     NoisyProfileOperations.elitism[M, Individual[P], N, P](
-      vectorFitness,
-      aggregation,
-      i => values(Individual.genome.get(i), components),
-      Individual.historyAge,
-      historySize,
+      aggregatedFitness(aggregation),
+      mergeHistories(individualValues, vectorFitness, Individual.historyAge, historySize),
+      individualValues,
       niche,
       muByNiche)
+  }
 
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
     NoisyIndividual.expression[P](fitness, continuous)
@@ -163,19 +164,16 @@ case class NoisyProfile[N, P](
 object NoisyProfileOperations {
 
   def elitism[M[_]: cats.Monad: Random: Generation, I, N, P](
-    history: monocle.Lens[I, Vector[P]],
-    aggregation: Vector[P] => Vector[Double],
+    fitness: I => Vector[Double],
+    mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     values: I => (Vector[Double], Vector[Int]),
-    historyAge: monocle.Lens[I, Long],
-    historySize: Int,
     niche: Niche[I, N],
     muByNiche: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
 
-    def agg = NoisyNSGA2Operations.aggregated(history.get, aggregation) _
-    def inNicheElitism(p: Vector[I]) = keepOnFirstFront(p, agg, muByNiche)
+    def inNicheElitism(p: Vector[I]) = keepOnFirstFront(p, fitness, muByNiche)
 
-    val merged = mergeHistories(values, history, historyAge, historySize)(population, candidates)
-    val filtered = filterNaN(merged, agg)
+    val merged = mergeHistories(population, candidates)
+    val filtered = filterNaN(merged, fitness)
 
     nicheElitism(filtered, inNicheElitism, niche)
   }
