@@ -59,9 +59,7 @@ object PSE {
 
   @Lenses case class Individual(
     genome: Genome,
-    phenotype: Array[Double],
-    mapped: Boolean = false,
-    foundedIsland: Boolean = false)
+    phenotype: Array[Double])
 
   def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray)
   def vectorPhenotype = Individual.phenotype composeLens arrayToVectorLens
@@ -90,8 +88,7 @@ object PSE {
     PSEOperations.elitism[M, Individual, Vector[Double]](
       i => values(Individual.genome.get(i), continuous),
       vectorPhenotype.get,
-      pattern,
-      Individual.mapped)
+      pattern)
 
   def expression(phenotype: (Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): Genome => Individual =
     deterministic.expression[Genome, Individual](
@@ -176,13 +173,13 @@ object PSEOperations {
   def elitism[M[_]: cats.Monad: Random: Generation: HitMap, I, P: CanBeNaN](
     values: I => (Vector[Double], Vector[Int]),
     phenotype: I => P,
-    pattern: P => Vector[Int],
-    mapped: monocle.Lens[I, Boolean]): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
-    val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), phenotype)
+    pattern: P => Vector[Int]): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
+    val noNan = filterNaN(candidates, phenotype)
+    def keepFirst(i: Vector[I]) = Vector(i.head).pure[M]
 
     for {
-      mappedPopulation <- addHits[M, I](phenotype andThen pattern, mapped) apply cloneRemoved
-      elite <- keepNiches[M, I, Vector[Int]](phenotype andThen pattern, randomO[M, I](1)) apply mappedPopulation
+      _ <- addHits[M, I](phenotype andThen pattern) apply noNan
+      elite <- keepNiches[M, I, Vector[Int]](phenotype andThen pattern, keepFirst) apply (population ++ noNan)
     } yield elite
   }
 

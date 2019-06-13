@@ -168,12 +168,6 @@ package object evolution extends stop.Imports {
   //        selected2s <- o2(selected1s)
   //      } yield selected2s)
 
-  def keepNiches[M[_]: cats.Monad, I, N](niche: I => N, objective: Vector[I] => M[Vector[I]]) =
-    (individuals: Vector[I]) => {
-      val indivsByNiche = individuals.groupBy(niche)
-      indivsByNiche.values.toVector.flatTraverse(objective.apply)
-    }
-
 /**** Helper functions ****/
 
   //  def zipWithRandom[M[_]: Applicative, G](gs: Vector[G])(implicit MR: ParallelRandom[M]): M[Vector[(util.Random, G)]] =

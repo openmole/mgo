@@ -39,9 +39,7 @@ object NoisyPSE {
   @Lenses case class Individual[P](
     genome: Genome,
     historyAge: Long,
-    phenotypeHistory: Array[P],
-    mapped: Boolean = false,
-    foundedIsland: Boolean = false)
+    phenotypeHistory: Array[P])
 
   def buildIndividual[P: Manifest](genome: Genome, phenotype: P) = Individual(genome, 1, Array(phenotype))
   def vectorPhenotype[P: Manifest] = Individual.phenotypeHistory[P] composeLens arrayToVectorLens
@@ -81,7 +79,6 @@ object NoisyPSE {
       vectorPhenotype[P],
       aggregation,
       pattern,
-      Individual.mapped,
       Individual.historyAge,
       historySize)
 
@@ -191,18 +188,17 @@ object NoisyPSEOperations {
     history: monocle.Lens[I, Vector[P]],
     aggregation: Vector[P] => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
-    mapped: monocle.Lens[I, Boolean],
     historyAge: monocle.Lens[I, Long],
     historySize: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
 
     val candidateValues = candidates.map(values).toSet
+    val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get _ andThen aggregation)
 
-    def merged = mergeHistories(values, history, historyAge, historySize).apply(population, candidates)
-    def filtered = filterNaN(merged, history.get _ andThen aggregation).map { i => if (candidateValues.contains(values(i))) mapped.set(false)(i) else i }
+    def newHits = merged.flatMap { i => if (candidateValues.contains(values(i))) Some(i) else None }
 
     for {
-      mappedPopulation <- addHits[M, I](history.get _ andThen aggregation andThen pattern, mapped) apply filtered
-      elite = keepNiches[Id, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, maximiseO(i => history.get(i).size, 1)) apply mappedPopulation
+      _ <- addHits[M, I](history.get _ andThen aggregation andThen pattern) apply newHits
+      elite = keepNiches[Id, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, maximiseO(i => history.get(i).size, 1)) apply merged
     } yield elite
   }
 

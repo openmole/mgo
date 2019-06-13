@@ -35,18 +35,14 @@ object elitism {
 
   def incrementGeneration[M[_]: Generation] = Generation[M].increment
 
-  def addHits[M[_]: cats.Monad: HitMap, I](cell: I => Vector[Int], mapped: monocle.Lens[I, Boolean]) = {
+  def addHits[M[_]: cats.Monad: HitMap, I](cell: I => Vector[Int]) = {
     def hits(cells: Vector[Vector[Int]]) =
       modifier(implicitly[HitMap[M]].get, implicitly[HitMap[M]].set).modify { map =>
         def newValues = cells.map { c => (c, map.getOrElse(c, 0) + 1) }
         map ++ newValues
       }
 
-    Kleisli[M, Vector[I], Vector[I]] { (is: Vector[I]) =>
-      for {
-        _ <- hits(is.filter(i => !mapped.get(i)).map(cell))
-      } yield is.map(mapped.set(true))
-    }
+    Kleisli { (is: Vector[I]) => hits(is.map(cell)) }
   }
 
   /** Returns the mu individuals with the highest ranks. */
@@ -97,6 +93,12 @@ object elitism {
   //
   //  def keepFirst[M[_]: cats.Monad, I]: UncloneStrategy[M, I] =
   //    (clones: Vector[I]) => clones.head.pure[M]
+
+  def keepNiches[M[_]: cats.Monad, I, N](niche: I => N, objective: Vector[I] => M[Vector[I]]) =
+    (individuals: Vector[I]) => {
+      val indivsByNiche = individuals.groupByOrdered(niche)
+      indivsByNiche.values.toVector.map(_.toVector).flatTraverse(objective.apply)
+    }
 
   def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]) = {
     val filteredClone = {
