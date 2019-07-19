@@ -1,13 +1,13 @@
 
 
 organization in ThisBuild := "fr.iscpif"
-scalaVersion in ThisBuild := "2.12.7"
-crossScalaVersions in ThisBuild := Seq("2.12.7")
+scalaVersion in ThisBuild := "2.12.8"
+crossScalaVersions in ThisBuild := Seq("2.12.8")
 
-val monocleVersion = "1.5.0"
+val monocleVersion = "1.6.0"
 
 def settings = Seq(
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.4"),
+  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
   addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M11" cross CrossVersion.full),
   scalacOptions += "-Xplugin-require:macroparadise",
   resolvers += Resolver.sonatypeRepo("public"),
@@ -28,8 +28,8 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
   libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
 
-  libraryDependencies += "org.typelevel"  %% "squants"  % "1.3.0",
-  libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.4.0",
+  libraryDependencies += "org.typelevel"  %% "squants"  % "1.4.0",
+  libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0",
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 ) dependsOn(tagtools) 
 
