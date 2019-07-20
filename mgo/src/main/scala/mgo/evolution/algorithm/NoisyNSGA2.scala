@@ -54,9 +54,9 @@ object NoisyNSGA2 {
 
   def fitness[P: Manifest](aggregation: Vector[P] => Vector[Double]) =
     NoisyNSGA2Operations.aggregated[Individual[P], P](
-      vectorFitness[P].get,
+      vectorPhenotype[P].get,
       aggregation,
-      i => Individual.fitnessHistory[P].get(i).size.toDouble)(_)
+      i => Individual.phenotypeHistory[P].get(i).size.toDouble)(_)
 
   //  def breeding[M[_]: cats.Monad: Random: Generation](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
   //    noisynsga2Operations.breeding[M, Individual, Genome](
@@ -93,7 +93,7 @@ object NoisyNSGA2 {
     NoisyNSGA2Operations.elitism[M, Individual[P], P](
       fitness[P](aggregation),
       individualValues,
-      mergeHistories(individualValues, vectorFitness[P], Individual.historyAge[P], historySize),
+      mergeHistories(individualValues, vectorPhenotype[P], Individual.historyAge[P], historySize),
       mu)
   }
 

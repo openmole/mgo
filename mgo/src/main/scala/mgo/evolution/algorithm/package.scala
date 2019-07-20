@@ -269,12 +269,12 @@ package object algorithm {
         (
           scaleContinuousValues(continuousValues.get(i.genome), continuous),
           Individual.genome composeLens discreteValues get i,
-          aggregation(vectorFitness[P].get(i)),
-          Individual.fitnessHistory.get(i).size)
+          aggregation(vectorPhenotype[P].get(i)),
+          Individual.phenotypeHistory.get(i).size)
 
-      @Lenses case class Individual[P](genome: Genome, historyAge: Long, fitnessHistory: Array[P])
+      @Lenses case class Individual[P](genome: Genome, historyAge: Long, phenotypeHistory: Array[P])
       def buildIndividual[P: Manifest](g: Genome, f: P) = Individual[P](g, 1, Array(f))
-      def vectorFitness[P: Manifest] = Individual.fitnessHistory[P] composeLens arrayToVectorLens[P]
+      def vectorPhenotype[P: Manifest] = Individual.phenotypeHistory[P] composeLens arrayToVectorLens[P]
 
       def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
         noisy.expression[Genome, Individual[P], P](

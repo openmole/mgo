@@ -41,7 +41,7 @@ object NoisyProfile {
   import NoisyIndividual._
 
   def aggregatedFitness[N, P: Manifest](aggregation: Vector[P] => Vector[Double]) =
-    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorFitness[P].get, aggregation, Individual.fitnessHistory[P].get(_).size)(_)
+    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorPhenotype[P].get, aggregation, Individual.phenotypeHistory[P].get(_).size)(_)
 
   case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, replications: Int)
 
@@ -54,7 +54,7 @@ object NoisyProfile {
     def nicheResult(population: Vector[Individual[P]]) =
       if (onlyOldest) {
         val front = keepFirstFront(population, aggregatedFitness(aggregation))
-        front.sortBy(-_.fitnessHistory.size).headOption.toVector
+        front.sortBy(-_.phenotypeHistory.size).headOption.toVector
       } else keepFirstFront(population, aggregatedFitness(aggregation))
 
     nicheElitism[Id, Individual[P], N](population, nicheResult, niche).map { i =>
@@ -105,7 +105,7 @@ object NoisyProfile {
 
     NoisyProfileOperations.elitism[M, Individual[P], N, P](
       aggregatedFitness(aggregation),
-      mergeHistories(individualValues, vectorFitness, Individual.historyAge, historySize),
+      mergeHistories(individualValues, vectorPhenotype, Individual.historyAge, historySize),
       individualValues,
       niche,
       muByNiche)

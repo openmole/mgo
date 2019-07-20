@@ -40,7 +40,7 @@ object NoisyOSE {
 
   def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: ReachMap, P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual[P]]): Breeding[M, Individual[P], Genome] =
     NoisyOSEOperations.adaptiveBreeding[M, Individual[P], Genome, P](
-      vectorFitness[P].get,
+      vectorPhenotype[P].get,
       aggregation,
       Individual.genome.get,
       continuousValues.get,
@@ -63,13 +63,13 @@ object NoisyOSE {
     def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
 
     NoisyOSEOperations.elitism[M, Individual[P], P](
-      vectorFitness[P].get,
+      vectorPhenotype[P].get,
       aggregation,
       individualValues,
       origin,
       limit,
       historySize,
-      mergeHistories(individualValues, vectorFitness[P], Individual.historyAge[P], historySize),
+      mergeHistories(individualValues, vectorPhenotype[P], Individual.historyAge[P], historySize),
       mu)
   }
 
