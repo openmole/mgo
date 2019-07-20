@@ -42,11 +42,11 @@ object Profile {
   case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N)
 
   def result[N](population: Vector[Individual], niche: Individual => N, continuous: Vector[C]) =
-    nicheElitism[Id, Individual, N](population, keepFirstFront(_, vectorFitness.get), niche).map { i =>
+    nicheElitism[Id, Individual, N](population, keepFirstFront(_, vectorPhenotype.get), niche).map { i =>
       Result(
         scaleContinuousValues(continuousValues.get(i.genome), continuous),
         Individual.genome composeLens discreteValues get i,
-        i.fitness.toVector,
+        DeterministicIndividual.vectorPhenotype.get(i),
         niche(i))
     }
 
@@ -66,17 +66,17 @@ object Profile {
     mgo.evolution.niche.gridContinuousProfile[Individual](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, intervals)
 
   def boundedObjectiveProfile(x: Int, nX: Int, min: Double, max: Double): Niche[Individual, Int] =
-    mgo.evolution.niche.boundedContinuousProfile[Individual](vectorFitness.get _, x, nX, min, max)
+    mgo.evolution.niche.boundedContinuousProfile[Individual](vectorPhenotype.get _, x, nX, min, max)
 
   def gridObjectiveProfile(x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
-    mgo.evolution.niche.gridContinuousProfile[Individual](vectorFitness.get _, x, intervals)
+    mgo.evolution.niche.gridContinuousProfile[Individual](vectorPhenotype.get _, x, intervals)
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
   def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double, discrete: Vector[D]): Breeding[M, Individual, Genome] =
     NSGA2Operations.adaptiveBreeding[M, Individual, Genome](
-      vectorFitness.get,
+      vectorPhenotype.get,
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -93,7 +93,7 @@ object Profile {
 
   def elitism[M[_]: cats.Monad: Random: Generation, N](niche: Niche[Individual, N], mu: Int, components: Vector[C]): Elitism[M, Individual] =
     ProfileOperations.elitism[M, Individual, N](
-      vectorFitness.get,
+      vectorPhenotype.get,
       i => values(Individual.genome.get(i), components),
       niche,
       mu)

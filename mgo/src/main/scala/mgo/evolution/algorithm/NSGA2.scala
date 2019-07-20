@@ -46,7 +46,7 @@ object NSGA2 {
 
   def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double, discrete: Vector[D]): Breeding[M, Individual, Genome] =
     NSGA2Operations.adaptiveBreeding[M, Individual, Genome](
-      vectorFitness.get,
+      vectorPhenotype.get,
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -63,15 +63,15 @@ object NSGA2 {
 
   def elitism[M[_]: cats.Monad: Random: Generation](mu: Int, components: Vector[C]): Elitism[M, Individual] =
     NSGA2Operations.elitism[M, Individual](
-      vectorFitness.get,
+      vectorPhenotype.get,
       i => values(Individual.genome.get(i), components),
       mu)
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
 
   def result(population: Vector[Individual], continuous: Vector[C]) =
-    keepFirstFront(population, vectorFitness.get).map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, i.fitness.toVector)
+    keepFirstFront(population, vectorPhenotype.get).map { i =>
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, DeterministicIndividual.vectorPhenotype.get(i))
     }
 
   def result(nsga2: NSGA2, population: Vector[Individual]): Vector[Result] = result(population, nsga2.continuous)

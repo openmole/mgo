@@ -43,7 +43,7 @@ object OSE {
 
   def adaptiveBreeding[M[_]: Generation: Random: cats.Monad: ReachMap](lambda: Int, operatorExploration: Double, discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int])(implicit archive: Archive[M, Individual]): Breeding[M, Individual, Genome] =
     OSEOperation.adaptiveBreeding[M, Individual, Genome](
-      vectorFitness.get,
+      vectorPhenotype.get,
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -61,7 +61,7 @@ object OSE {
 
   def elitism[M[_]: cats.Monad: Random: ReachMap: Generation](mu: Int, limit: Vector[Double], origin: (Vector[Double], Vector[Int]) => Vector[Int], components: Vector[C])(implicit archive: Archive[M, Individual]): Elitism[M, Individual] =
     OSEOperation.elitism[M, Individual](
-      vectorFitness.get,
+      vectorPhenotype.get,
       limit,
       i => values(Individual.genome.get(i), components),
       origin,
@@ -71,7 +71,7 @@ object OSE {
 
   def result(state: EvolutionState[OSEState], continuous: Vector[C]) =
     state.s._1.toVector.map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, i.fitness.toVector)
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, DeterministicIndividual.vectorPhenotype.get(i))
     }
 
   def result(ose: OSE, state: EvolutionState[OSEState]): Vector[Result] =
