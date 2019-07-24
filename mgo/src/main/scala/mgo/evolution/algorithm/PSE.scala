@@ -91,7 +91,7 @@ object PSE {
       pattern)
 
   def expression(phenotype: (Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): Genome => Individual =
-    deterministic.expression[Genome, Individual](
+    deterministic.expression[Genome, Vector[Double], Individual](
       values(_, continuous),
       buildIndividual,
       phenotype)

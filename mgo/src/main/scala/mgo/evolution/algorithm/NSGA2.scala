@@ -44,9 +44,9 @@ object NSGA2 {
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
-  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad](lambda: Int, operatorExploration: Double, discrete: Vector[D]): Breeding[M, Individual, Genome] =
-    NSGA2Operations.adaptiveBreeding[M, Individual, Genome](
-      vectorPhenotype.get,
+  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad, P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double]): Breeding[M, Individual[P], Genome] =
+    NSGA2Operations.adaptiveBreeding[M, Individual[P], Genome](
+      individualFitness[P](fitness),
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -58,42 +58,42 @@ object NSGA2 {
       lambda,
       operatorExploration)
 
-  def expression(fitness: (Vector[Double], Vector[Int]) => Vector[Double], components: Vector[C]): Genome => Individual =
-    DeterministicIndividual.expression(fitness, components)
+  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
+    DeterministicIndividual.expression(express, components)
 
-  def elitism[M[_]: cats.Monad: Random: Generation](mu: Int, components: Vector[C]): Elitism[M, Individual] =
-    NSGA2Operations.elitism[M, Individual](
-      vectorPhenotype.get,
-      i => values(Individual.genome.get(i), components),
+  def elitism[M[_]: cats.Monad: Random: Generation, P](mu: Int, components: Vector[C], fitness: P => Vector[Double]): Elitism[M, Individual[P]] =
+    NSGA2Operations.elitism[M, Individual[P]](
+      individualFitness[P](fitness),
+      i => values(Individual.genome[P].get(i), components),
       mu)
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
 
-  def result(population: Vector[Individual], continuous: Vector[C]) =
-    keepFirstFront(population, vectorPhenotype.get).map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, DeterministicIndividual.vectorPhenotype.get(i))
+  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double]) =
+    keepFirstFront(population, individualFitness(fitness)).map { i =>
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i))
     }
-
-  def result(nsga2: NSGA2, population: Vector[Individual]): Vector[Result] = result(population, nsga2.continuous)
 
   def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.evolution.algorithm.state[M, Unit](())
 
   def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
   def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
 
-  implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] =
-    new Algorithm[NSGA2, M, Individual, Genome, EvolutionState[Unit]] {
+  implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime]: Algorithm[NSGA2, M, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
+    new Algorithm[NSGA2, M, Individual[Vector[Double]], Genome, EvolutionState[Unit]] {
       override def initialPopulation(t: NSGA2) =
-        deterministic.initialPopulation[M, Genome, Individual](
+        deterministic.initialPopulation[M, Genome, Individual[Vector[Double]]](
           NSGA2.initialGenomes[M](t.lambda, t.continuous, t.discrete),
           NSGA2.expression(t.fitness, t.continuous))
       override def step(t: NSGA2) =
-        deterministic.step[M, Individual, Genome](
-          NSGA2.adaptiveBreeding[M](t.lambda, t.operatorExploration, t.discrete),
+        deterministic.step[M, Individual[Vector[Double]], Genome](
+          NSGA2.adaptiveBreeding[M, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity),
           NSGA2.expression(t.fitness, t.continuous),
-          NSGA2.elitism(t.mu, t.continuous))
+          NSGA2.elitism[M, Vector[Double]](t.mu, t.continuous, identity))
       override def state = NSGA2.state[M]
     }
+
+  def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]): Vector[Result] = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _)
 
 }
 

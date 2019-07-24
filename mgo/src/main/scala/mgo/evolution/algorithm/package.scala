@@ -251,15 +251,16 @@ package object algorithm {
     import monocle.macros._
 
     object DeterministicIndividual {
-      @Lenses case class Individual(genome: Genome, phenotype: Array[Double])
-      def vectorPhenotype = Individual.phenotype composeLens arrayToVectorLens
-      def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray)
+      @Lenses case class Individual[P](genome: Genome, phenotype: P)
+      //def vectorPhenotype = Individual.phenotype[Array[Double]] composeLens arrayToVectorLens
+      def individualFitness[P](fitness: P => Vector[Double]) = DeterministicIndividual.Individual.phenotype[P].get _ andThen fitness
+      def buildIndividual[P](g: Genome, p: P) = Individual(g, p)
 
-      def expression(fitness: (Vector[Double], Vector[Int]) => Vector[Double], components: Vector[C]): Genome => Individual =
-        deterministic.expression[Genome, Individual](
+      def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
+        deterministic.expression[Genome, P, Individual[P]](
           values(_, components),
-          buildIndividual,
-          fitness)
+          buildIndividual[P],
+          express)
 
     }
 
@@ -332,10 +333,10 @@ package object algorithm {
       } yield elitePopulation
     }
 
-    def expression[G, I](
+    def expression[G, P, I](
       values: G => (Vector[Double], Vector[Int]),
-      build: (G, Vector[Double]) => I,
-      fitness: (Vector[Double], Vector[Int]) => Vector[Double]): G => I = {
+      build: (G, P) => I,
+      fitness: (Vector[Double], Vector[Int]) => P): G => I = {
       (g: G) =>
         val (cs, ds) = values(g)
         build(g, fitness(cs, ds))

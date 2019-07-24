@@ -1,5 +1,5 @@
 
-
+name := "mgo"
 organization in ThisBuild := "fr.iscpif"
 scalaVersion in ThisBuild := "2.12.8"
 crossScalaVersions in ThisBuild := Seq("2.12.8")

@@ -21,29 +21,34 @@ object OSE {
   import DeterministicIndividual._
   import mgo.tagtools._
 
-  type OSEState = (Array[Individual], Array[Vector[Int]])
+  type OSEState[P] = (Array[Individual[P]], Array[Vector[Int]])
 
-  @tagless trait IndividualArchive {
-    def put(i: Seq[Individual]): FS[Unit]
-    def get(): FS[Vector[Individual]]
+  @tagless trait IndividualArchive[P] {
+    def put(i: Seq[Individual[P]]): FS[Unit]
+    def get(): FS[Vector[Individual[P]]]
   }
 
-  implicit def archiveConvert[M[_]](implicit vhm: IndividualArchive[M]) = new Archive[M, Individual] {
-    def put(i: Seq[Individual]) = vhm.put(i)
+  implicit def archiveConvert[M[_], P](implicit vhm: IndividualArchive[M, P]) = new Archive[M, Individual[P]] {
+    def put(i: Seq[Individual[P]]) = vhm.put(i)
     def get() = vhm.get()
   }
 
-  case class ArchiveInterpreter(val archive: collection.mutable.Buffer[Individual]) extends IndividualArchive.Handler[Evaluated] {
-    def put(i: Seq[Individual]) = mgo.tagtools.result(archive ++= i)
+  case class ArchiveInterpreter[P](val archive: collection.mutable.Buffer[Individual[P]]) extends IndividualArchive.Handler[Evaluated, P] {
+    def put(i: Seq[Individual[P]]) = mgo.tagtools.result(archive ++= i)
     def get() = mgo.tagtools.result(archive.toVector)
   }
 
   def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
     CDGenome.initialGenomes[M](lambda, continuous, discrete)
 
-  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad: ReachMap](lambda: Int, operatorExploration: Double, discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int])(implicit archive: Archive[M, Individual]): Breeding[M, Individual, Genome] =
-    OSEOperation.adaptiveBreeding[M, Individual, Genome](
-      vectorPhenotype.get,
+  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad: ReachMap, P](
+    lambda: Int,
+    operatorExploration: Double,
+    discrete: Vector[D],
+    origin: (Vector[Double], Vector[Int]) => Vector[Int],
+    fitness: P => Vector[Double])(implicit archive: Archive[M, Individual[P]]): Breeding[M, Individual[P], Genome] =
+    OSEOperation.adaptiveBreeding[M, Individual[P], Genome](
+      individualFitness(fitness),
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -56,12 +61,12 @@ object OSE {
       lambda,
       operatorExploration)
 
-  def expression(fitness: (Vector[Double], Vector[Int]) => Vector[Double], components: Vector[C]): Genome => Individual =
+  def expression[P](fitness: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
     DeterministicIndividual.expression(fitness, components)
 
-  def elitism[M[_]: cats.Monad: Random: ReachMap: Generation](mu: Int, limit: Vector[Double], origin: (Vector[Double], Vector[Int]) => Vector[Int], components: Vector[C])(implicit archive: Archive[M, Individual]): Elitism[M, Individual] =
-    OSEOperation.elitism[M, Individual](
-      vectorPhenotype.get,
+  def elitism[M[_]: cats.Monad: Random: ReachMap: Generation, P](mu: Int, limit: Vector[Double], origin: (Vector[Double], Vector[Int]) => Vector[Int], components: Vector[C], fitness: P => Vector[Double])(implicit archive: Archive[M, Individual[P]]): Elitism[M, Individual[P]] =
+    OSEOperation.elitism[M, Individual[P]](
+      individualFitness(fitness),
       limit,
       i => values(Individual.genome.get(i), components),
       origin,
@@ -69,16 +74,13 @@ object OSE {
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
 
-  def result(state: EvolutionState[OSEState], continuous: Vector[C]) =
+  def result[P](state: EvolutionState[OSEState[P]], continuous: Vector[C], fitness: P => Vector[Double]) =
     state.s._1.toVector.map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, DeterministicIndividual.vectorPhenotype.get(i))
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, DeterministicIndividual.individualFitness(fitness)(i))
     }
 
-  def result(ose: OSE, state: EvolutionState[OSEState]): Vector[Result] =
-    result(state = state, continuous = ose.continuous)
-
   object OSEImplicits {
-    def apply(state: EvolutionState[OSEState]): OSEImplicits =
+    def apply[P](state: EvolutionState[OSEState[P]]): OSEImplicits[P] =
       OSEImplicits()(
         GenerationInterpreter(state.generation),
         RandomInterpreter(state.random),
@@ -89,37 +91,39 @@ object OSE {
         SystemInterpreter())
   }
 
-  case class OSEImplicits(implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, archiveInterpreter: ArchiveInterpreter, reachMapInterpreter: ReachMapInterpreter, systemInterpreter: SystemInterpreter)
+  case class OSEImplicits[P](implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, archiveInterpreter: ArchiveInterpreter[P], reachMapInterpreter: ReachMapInterpreter, systemInterpreter: SystemInterpreter)
 
-  def run[T](rng: util.Random)(f: OSEImplicits => T): T = {
-    val state = EvolutionState[OSEState](random = rng, s = (Array.empty, Array.empty))
-    run(state)(f)
-  }
+  def run[T, S, P](state: EvolutionState[OSEState[P]])(f: OSEImplicits[P] => T): T = f(OSEImplicits(state))
 
-  def run[T, S](state: EvolutionState[OSEState])(f: OSEImplicits => T): T = f(OSEImplicits(state))
-
-  def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit archive: Archive[M, Individual], reachMap: ReachMap[M]) = for {
+  def state[M[_]: cats.Monad: StartTime: Random: Generation, P](implicit archive: Archive[M, Individual[P]], reachMap: ReachMap[M]) = for {
     map <- reachMap.get()
     arch <- archive.get()
-    s <- mgo.evolution.algorithm.state[M, OSEState]((arch.toArray, map.toArray))
+    s <- mgo.evolution.algorithm.state[M, OSEState[P]]((arch.toArray, map.toArray))
   } yield s
 
-  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: Generation: ReachMap](implicit archive: Archive[M, Individual]): Algorithm[OSE, M, Individual, Genome, EvolutionState[OSEState]] = new Algorithm[OSE, M, Individual, Genome, EvolutionState[OSEState]] {
+  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: Generation: ReachMap](implicit archive: Archive[M, Individual[Vector[Double]]]): Algorithm[OSE, M, Individual[Vector[Double]], Genome, EvolutionState[OSEState[Vector[Double]]]] = new Algorithm[OSE, M, Individual[Vector[Double]], Genome, EvolutionState[OSEState[Vector[Double]]]] {
 
     override def initialPopulation(t: OSE) =
-      deterministic.initialPopulation[M, Genome, Individual](
+      deterministic.initialPopulation[M, Genome, Individual[Vector[Double]]](
         OSE.initialGenomes[M](t.lambda, t.continuous, t.discrete),
         OSE.expression(t.fitness, t.continuous))
 
     def step(t: OSE) =
-      deterministic.step[M, Individual, Genome](
-        OSE.adaptiveBreeding[M](t.lambda, t.operatorExploration, t.discrete, t.origin),
+      deterministic.step[M, Individual[Vector[Double]], Genome](
+        OSE.adaptiveBreeding[M, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, t.origin, identity),
         OSE.expression(t.fitness, t.continuous),
-        OSE.elitism(t.mu, t.limit, t.origin, t.continuous))
+        OSE.elitism(t.mu, t.limit, t.origin, t.continuous, identity))
 
-    def state = OSE.state[M]
+    def state = OSE.state[M, Vector[Double]]
 
   }
+
+  def run[T](rng: util.Random)(f: OSEImplicits[Vector[Double]] => T): T = {
+    val state = EvolutionState[OSEState[Vector[Double]]](random = rng, s = (Array.empty, Array.empty))
+    run(state)(f)
+  }
+  def result(ose: OSE, state: EvolutionState[OSEState[Vector[Double]]]): Vector[Result] =
+    result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity)
 
 }
 
