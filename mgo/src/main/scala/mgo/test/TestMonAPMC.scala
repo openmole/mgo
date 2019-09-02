@@ -18,19 +18,11 @@
 package mgo.test
 
 import mgo.abc._
-import mgo.tools._
-import mgo.evolution._
-import mgo.evolution.contexts._
-import org.apache.commons.math3.linear.LUDecomposition
-import org.apache.commons.math3.linear.MatrixUtils
-import org.apache.commons.math3.distribution.NormalDistribution
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution
-import org.apache.commons.math3.random.RandomGenerator
-import org.apache.commons.math3.random.Well1024a
+import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils }
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
+
 import scala.concurrent.ExecutionContext
-import scala.math._
-import scala.util.{ Try, Failure, Success }
 
 object IdentityMonAPMC extends App {
   implicit val ec = ExecutionContext.global

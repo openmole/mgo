@@ -17,10 +17,8 @@
 
 package mgo
 
-import cats.{ Functor, Monad }
 import cats.kernel._
-import mgo.evolution.contexts._
-
+import cats.Later
 import shapeless.Lazy
 import org.apache.commons.math3.random.RandomGenerator
 
@@ -29,11 +27,11 @@ import scala.math.{ abs, max, min, pow, sqrt }
 
 package object tools {
 
-  implicit def lazyOrdering[T](implicit ord: scala.Ordering[T]): scala.Ordering[Lazy[T]] = scala.Ordering.by(_.value)
-
-  implicit def lazyOrder[T](implicit OT: Order[T]): Order[Lazy[T]] = new Order[Lazy[T]] {
-    def compare(x: Lazy[T], y: Lazy[T]) = OT.compare(x.value, y.value)
-  }
+  //  implicit def lazyOrdering[T](implicit ord: scala.Ordering[T]): scala.Ordering[Lazy[T]] = scala.Ordering.by(_.value)
+  //
+  //  implicit def lazyOrder[T](implicit OT: Order[T]): Order[Lazy[T]] = new Order[Lazy[T]] {
+  //    def compare(x: Lazy[T], y: Lazy[T]) = OT.compare(x.value, y.value)
+  //  }
 
   implicit class ArrayDecorator[A](array: Array[A]) {
     def get(i: Int) =
@@ -197,7 +195,7 @@ package object tools {
     average(sequence.map { v ⇒ pow(v - avg, 2) })
   }
 
-  def multinomialDraw[T](s: Vector[(Double, T)])(implicit rng: util.Random) = {
+  def multinomialDraw[T](s: Vector[(Double, T)], rng: util.Random) = {
     assert(!s.isEmpty, "Input sequence should not be empty")
     def select(remaining: List[(Double, T)], value: Double, begin: List[(Double, T)] = List.empty): (T, List[(Double, T)]) =
       remaining match {

@@ -18,8 +18,6 @@
 package mgo.test
 
 import mgo.evolution._
-import mgo.evolution.contexts._
-import mgo.tagtools._
 
 object SphereProfile extends App {
 
@@ -33,16 +31,12 @@ object SphereProfile extends App {
     continuous = discreteSphere.continuous(2),
     discrete = discreteSphere.discrete(2))
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+  def evolution =
     algo.
-      until(afterGeneration(0)).
-      trace((s, is) => println(s.generation)).evolution
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) =
-    Profile.run(new util.Random(42)) { imp =>
-      import imp._
-      evolution[DSL].eval
-    }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(
     Profile.result(algo, finalPopulation).map {
@@ -66,17 +60,12 @@ object NoisySphereProfile extends App {
     continuous = noisyDiscreteSphere.continuous(2),
     discrete = noisyDiscreteSphere.discrete(2))
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+  def evolution =
     algo.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      evolution
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) =
-    NoisyProfile.run(new util.Random(42)) { imp =>
-      import imp._
-      evolution[DSL].eval
-    }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(
     NoisyProfile.result(algo, finalPopulation).map {

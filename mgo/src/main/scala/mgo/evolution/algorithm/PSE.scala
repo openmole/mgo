@@ -16,27 +16,23 @@
  */
 package mgo.evolution.algorithm
 
+import cats.implicits._
 import mgo.evolution._
+import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
-import mgo.evolution.contexts._
-import mgo.evolution.ranking._
 import mgo.evolution.elitism._
+import mgo.evolution.ranking._
 import mgo.tools._
 import mgo.tools.execution._
-import mgo.evolution.niche._
-import GenomeVectorDouble._
-import monocle.macros.{ GenLens, Lenses }
+import monocle.macros.Lenses
 
-import shapeless._
 import scala.language.higherKinds
-import cats._
-import cats.implicits._
-import mgo.tagtools._
-import freestyle.tagless._
 
 object PSE {
 
   import CDGenome._
+
+  type PSEState = EvolutionState[HitMap]
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: Vector[Double])
 
@@ -52,11 +48,6 @@ object PSE {
   def result(pse: PSE, population: Vector[Individual]): Vector[Result] =
     result(population, pse.continuous, pse.pattern)
 
-  def state[M[_]: cats.Monad: StartTime: Random: Generation](implicit hitmap: HitMap[M]) = for {
-    map <- hitmap.get
-    s <- mgo.evolution.algorithm.state[M, Map[Vector[Int], Int]](map)
-  } yield s
-
   @Lenses case class Individual(
     genome: Genome,
     phenotype: Array[Double])
@@ -64,15 +55,15 @@ object PSE {
   def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray)
   def vectorPhenotype = Individual.phenotype composeLens arrayToVectorLens
 
-  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
-    CDGenome.initialGenomes[M](lambda, continuous, discrete)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  def adaptiveBreeding[M[_]: Generation: Random: cats.Monad: HitMap](
+  def adaptiveBreeding(
     lambda: Int,
     operatorExploration: Double,
     discrete: Vector[D],
-    pattern: Vector[Double] => Vector[Int]): Breeding[M, Individual, Genome] =
-    PSEOperations.adaptiveBreeding[M, Individual, Genome](
+    pattern: Vector[Double] => Vector[Int]): Breeding[PSEState, Individual, Genome] =
+    PSEOperations.adaptiveBreeding[PSEState, Individual, Genome](
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -82,13 +73,15 @@ object PSE {
       vectorPhenotype.get _ andThen pattern,
       buildGenome,
       lambda,
-      operatorExploration)
+      operatorExploration,
+      EvolutionState.s[HitMap])
 
-  def elitism[M[_]: cats.Monad: StartTime: Random: HitMap: Generation](pattern: Vector[Double] => Vector[Int], continuous: Vector[C]) =
-    PSEOperations.elitism[M, Individual, Vector[Double]](
+  def elitism(pattern: Vector[Double] => Vector[Int], continuous: Vector[C]) =
+    PSEOperations.elitism[PSEState, Individual, Vector[Double]](
       i => values(Individual.genome.get(i), continuous),
       vectorPhenotype.get,
-      pattern)
+      pattern,
+      EvolutionState.s[HitMap])
 
   def expression(phenotype: (Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): Genome => Individual =
     deterministic.expression[Genome, Vector[Double], Individual](
@@ -96,35 +89,21 @@ object PSE {
       buildIndividual,
       phenotype)
 
-  object PSEImplicits {
-    def apply(state: EvolutionState[Map[Vector[Int], Int]]): PSEImplicits =
-      PSEImplicits()(GenerationInterpreter(state.generation), RandomInterpreter(state.random), StartTimeInterpreter(state.startTime), IOInterpreter(), HitMapInterpreter(state.s), SystemInterpreter())
-  }
+  implicit def isAlgorithm: Algorithm[PSE, Individual, Genome, EvolutionState[HitMap]] = new Algorithm[PSE, Individual, Genome, EvolutionState[HitMap]] {
+    def initialState(t: PSE, rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
-  case class PSEImplicits(implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, hitMapInterpreter: HitMapInterpreter, systemInterpreter: SystemInterpreter)
-
-  def run[T](rng: util.Random)(f: PSEImplicits => T): T = {
-    val state = EvolutionState[Map[Vector[Int], Int]](random = rng, s = Map.empty)
-    run(state)(f)
-  }
-
-  def run[T, S](state: EvolutionState[HitMapState])(f: PSEImplicits => T): T = f(PSEImplicits(state))
-
-  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: Generation: HitMap]: Algorithm[PSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] = new Algorithm[PSE, M, Individual, Genome, EvolutionState[Map[Vector[Int], Int]]] {
-
-    // def initialState(t: PSE, rng: util.Random) = EvolutionState[HitMap](random = rng, s = Map.empty)
-    override def initialPopulation(t: PSE) =
-      deterministic.initialPopulation[M, Genome, Individual](
-        PSE.initialGenomes[M](t.lambda, t.continuous, t.discrete),
+    override def initialPopulation(t: PSE, rng: scala.util.Random) =
+      deterministic.initialPopulation[Genome, Individual](
+        PSE.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
         PSE.expression(t.phenotype, t.continuous))
 
     def step(t: PSE) =
-      deterministic.step[M, Individual, Genome](
-        PSE.adaptiveBreeding[M](t.lambda, t.operatorExploration, t.discrete, t.pattern),
-        PSE.expression(t.phenotype, t.continuous),
-        PSE.elitism(t.pattern, t.continuous))
-
-    def state = PSE.state[M]
+      (s, pop, rng) =>
+        deterministic.step[EvolutionState[HitMap], Individual, Genome](
+          PSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, t.pattern),
+          PSE.expression(t.phenotype, t.continuous),
+          PSE.elitism(t.pattern, t.continuous),
+          EvolutionState.generation)(s, pop, rng)
 
   }
 
@@ -140,7 +119,7 @@ case class PSE(
 
 object PSEOperations {
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: HitMap, I, G](
+  def adaptiveBreeding[S, I, G](
     genome: I => G,
     continuousValues: G => Vector[Double],
     continuousOperator: G => Option[Int],
@@ -150,13 +129,13 @@ object PSEOperations {
     pattern: I => Vector[Int],
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     lambda: Int,
-    operatorExploration: Double): Breeding[M, I, G] = Breeding { population =>
-
-    for {
-      ranks <- reversedRanking(hitCountRanking[M, I](pattern)) apply population
-      continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
-      discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
-      breeding = applyDynamicOperators[M, I, G](
+    operatorExploration: Double,
+    hitmap: monocle.Lens[S, HitMap]): Breeding[S, I, G] =
+    (s, population, rng) => {
+      val ranks = hitCountRanking(s, population, pattern, hitmap).map(x => -x)
+      val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
+      val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+      val breeding = applyDynamicOperators[S, I, G](
         tournament(ranks, logOfPopulationSize),
         genome andThen continuousValues,
         genome andThen discreteValues,
@@ -164,23 +143,22 @@ object PSEOperations {
         discreteOperatorStatistics,
         discrete,
         operatorExploration,
-        buildGenome) apply population
-      offspring <- breeding.accumulate(lambda)
-      sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
-    } yield sizedOffspringGenomes
-  }
+        buildGenome)
+      val offspring = breed[S, I, G](breeding, lambda)(s, population, rng)
+      randomTake(offspring, lambda, rng)
+    }
 
-  def elitism[M[_]: cats.Monad: Random: Generation: HitMap, I, P: CanBeNaN](
+  def elitism[S, I, P: CanBeNaN](
     values: I => (Vector[Double], Vector[Int]),
     phenotype: I => P,
-    pattern: P => Vector[Int]): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
-    val noNan = filterNaN(candidates, phenotype)
-    def keepFirst(i: Vector[I]) = Vector(i.head).pure[M]
-
-    for {
-      _ <- addHits[M, I](phenotype andThen pattern) apply noNan
-      elite <- keepNiches[M, I, Vector[Int]](phenotype andThen pattern, keepFirst) apply (population ++ noNan)
-    } yield elite
-  }
+    pattern: P => Vector[Int],
+    hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =
+    (s, population, candidates, rng) => {
+      val noNan = filterNaN(candidates, phenotype)
+      def keepFirst(i: Vector[I]) = Vector(i.head)
+      val hm2 = addHits(phenotype andThen pattern, noNan, hitmap.get(s))
+      val elite = keepNiches(phenotype andThen pattern, keepFirst)(population ++ noNan)
+      (hitmap.set(hm2)(s), elite)
+    }
 
 }

@@ -1,20 +1,18 @@
 package mgo.evolution
 
-import cats.data._
+import cats.Order
 import cats.implicits._
-import cats.{ Applicative, Order }
-import contexts._
+import mgo.evolution.algorithm.HitMap
 import mgo.evolution.diversity.crowdingDistance
 import mgo.tools._
-import mgo.tagtools._
 
 object elitism {
 
-  type Elitism[M[_], I] = Kleisli[M, (Vector[I], Vector[I]), Vector[I]]
+  type Elitism[S, I] = (S, Vector[I], Vector[I], scala.util.Random) => (S, Vector[I])
 
-  object Elitism {
-    def apply[M[_]: cats.Monad, I](f: (Vector[I], Vector[I]) => M[Vector[I]]): Elitism[M, I] = Kleisli[M, (Vector[I], Vector[I]), Vector[I]](Function.tupled(f))
-  }
+  //  object Elitism {
+  //    def apply[M[_]: cats.Monad, I](f: (Vector[I], Vector[I]) => M[Vector[I]]): Elitism[M, I] = Kleisli[M, (Vector[I], Vector[I]), Vector[I]](Function.tupled(f))
+  //  }
 
   //  def minimiseO[M[_]: Applicative, I, F](f: I => F, mu: Int)(implicit MM: cats.Monad[M], FO: Order[F]): Elitism[M, I] =
   //    Elitism[M, I](individuals => individuals.sorted(FO.contramap[I](f).toOrdering).take(mu).pure[M])
@@ -30,34 +28,27 @@ object elitism {
   def maximiseO[I, F](f: I => F, mu: Int)(implicit FO: Order[F]) = (individuals: Vector[I]) =>
     individuals.sorted(Order.reverse(FO.contramap[I](f)).toOrdering).take(mu)
 
-  def randomO[M[_]: cats.Applicative, I](n: Int)(implicit randomM: Random[M]) =
-    (individuals: Vector[I]) => Vector.fill(n)(randomM.randomElement(individuals)).sequence
+  //  def randomO[M[_]: cats.Applicative, I](n: Int)(implicit randomM: Random[M]) =
+  //    (individuals: Vector[I]) => Vector.fill(n)(randomM.randomElement(individuals)).sequence
 
-  def incrementGeneration[M[_]: Generation] = Generation[M].increment
+  //  def incrementGeneration[M[_]: Generation] = Generation[M].increment
 
-  def addHits[M[_]: cats.Monad: HitMap, I](cell: I => Vector[Int]) = {
-    def hits(cells: Vector[Vector[Int]]) =
-      modifier(implicitly[HitMap[M]].get, implicitly[HitMap[M]].set).modify { map =>
-        def newValues = cells.map { c => (c, map.getOrElse(c, 0) + 1) }
-        map ++ newValues
-      }
-
-    Kleisli { (is: Vector[I]) => hits(is.map(cell)) }
+  def addHits[I](cell: I => Vector[Int], population: Vector[I], hitmap: HitMap) = {
+    def hits(map: HitMap, c: Vector[Int]) = hitmap.updated(c, map.getOrElse(c, 0) + 1)
+    population.foldLeft(hitmap)((m, i) => hits(m, cell(i)))
   }
 
   /** Returns the mu individuals with the highest ranks. */
-  // FIXME: unbiais when several individuals have the exact same rank (random draw)
-  def keepHighestRanked[I, K](population: Vector[I], ranks: Vector[K], mu: Int)(implicit KO: Order[K]) = {
+  def keepHighestRanked[I, K](population: Vector[I], ranks: Vector[K], mu: Int, rng: scala.util.Random)(implicit KO: Order[K]) =
     if (population.size < mu) population
     else {
       val sortedBestToWorst = (population zip ranks).sortBy { _._2 }(Order.reverse(KO).toOrdering).map { _._1 }
       sortedBestToWorst.take(mu)
     }
-  }
 
-  def nicheElitism[M[_]: cats.Monad, I, N](population: Vector[I], keep: Vector[I] => M[Vector[I]], niche: I => N): M[Vector[I]] = {
+  def nicheElitism[I, N](population: Vector[I], keep: Vector[I] => Vector[I], niche: I => N) = {
     val niches = population.groupBy(niche).toVector
-    niches.map { case (_, individuals) => keep(individuals) }.sequence.map(_.flatten)
+    niches.flatMap { case (_, individuals) => keep(individuals) }
   }
 
   def keepFirstFront[I](population: Vector[I], fitness: I => Vector[Double]) =
@@ -68,11 +59,10 @@ object elitism {
       (population zip dominating).filter { case (_, d) => d.value == minDominating }.map(_._1)
     }
 
-  def keepOnFirstFront[M[_]: Random: cats.Monad, I](population: Vector[I], fitness: I => Vector[Double], mu: Int) = {
+  def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random) = {
     val first = keepFirstFront(population, fitness)
-    for {
-      crowding <- crowdingDistance[M, I](fitness).run(first)
-    } yield keepHighestRanked(first, crowding, mu)
+    val crowding = crowdingDistance[I](first, fitness, random)
+    keepHighestRanked(first, crowding, mu, random)
   }
 
   //type UncloneStrategy[M[_], I] = Vector[I] => M[I]
@@ -94,10 +84,10 @@ object elitism {
   //  def keepFirst[M[_]: cats.Monad, I]: UncloneStrategy[M, I] =
   //    (clones: Vector[I]) => clones.head.pure[M]
 
-  def keepNiches[M[_]: cats.Monad, I, N](niche: I => N, objective: Vector[I] => M[Vector[I]]) =
+  def keepNiches[I, N](niche: I => N, keep: Vector[I] => Vector[I]) =
     (individuals: Vector[I]) => {
       val indivsByNiche = individuals.groupByOrdered(niche)
-      indivsByNiche.values.toVector.map(_.toVector).flatTraverse(objective.apply)
+      indivsByNiche.values.toVector.map(_.toVector).flatMap(keep.apply)
     }
 
   def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]) = {

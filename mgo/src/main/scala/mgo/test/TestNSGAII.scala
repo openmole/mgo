@@ -18,8 +18,6 @@
 package mgo.test
 
 import mgo.evolution._
-import mgo.evolution.contexts._
-import mgo.tagtools._
 
 object SphereNSGAII extends App {
 
@@ -31,17 +29,12 @@ object SphereNSGAII extends App {
     fitness = (v: Vector[Double], _) => Vector(sphere.compute(v)),
     continuous = sphere.genome(6))
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      evolution
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) =
-    NSGA2.run(new util.Random(42)) { imp =>
-      import imp._
-      evolution[DSL].eval
-    }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
 
@@ -58,17 +51,12 @@ object DiscreteNSGAII extends App {
     continuous = discreteSphere.continuous(6),
     discrete = discreteSphere.discrete(3))
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      evolution
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) =
-    NSGA2.run(new util.Random(42)) { imp =>
-      import imp._
-      evolution[DSL].eval
-    }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
 
@@ -87,17 +75,12 @@ object NoisySphereNSGAII extends App {
       continuous = noisyDiscreteSphere.continuous(2),
       discrete = noisyDiscreteSphere.discrete(2))
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      evolution
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) =
-    NoisyNSGA2.run(new util.Random(42)) { imp =>
-      import imp._
-      evolution[DSL].eval
-    }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(NoisyNSGA2.result(nsga2, finalPopulation).mkString("\n"))
 
@@ -114,16 +97,12 @@ object ZDT4NSGAII extends App {
       fitness = zdt4.compute,
       continuous = zdt4.continuous(10))
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      evolution
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) = NSGA2.run(new util.Random(42)) { impl =>
-    import impl._
-    evolution[DSL].eval
-  }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
 
@@ -139,17 +118,12 @@ object RastriginNSGAII extends App {
     fitness = (x, _) => Vector(rastrigin.compute(x)),
     continuous = rastrigin.continuous(2))
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
-      trace { (s, is) => println(s.generation) }.
-      evolution
+      trace { (s, is) => println(s.generation) }
 
-  val (finalState, finalPopulation) =
-    NSGA2.run(new util.Random(42)) { imp =>
-      import imp._
-      evolution[DSL].eval
-    }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
 }

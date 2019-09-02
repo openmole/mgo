@@ -17,19 +17,10 @@
 
 package mgo.test
 
-import mgo.evolution._
-import mgo.evolution.contexts._
-import org.apache.commons.math3.linear.LUDecomposition
-import org.apache.commons.math3.linear.MatrixUtils
-import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution
-import org.apache.commons.math3.random.RandomGenerator
-import org.apache.commons.math3.random.Well1024a
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
-import scala.concurrent.ExecutionContext
-import scala.math._
-import scala.util.{ Try, Failure, Success }
-
 import mgo.tools.execution.MonoidParallel
+import org.apache.commons.math3.random.Well1024a
+
+import scala.concurrent.ExecutionContext
 
 object SumMonoidParallel extends App {
 

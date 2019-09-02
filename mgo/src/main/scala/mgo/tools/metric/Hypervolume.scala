@@ -17,13 +17,12 @@
 
 package mgo.tools.metric
 
+import cats._
 import mgo.evolution.dominance._
-import collection.mutable.{ IndexedSeq => MIndexedSeq }
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import math._
 import mgo.tools._
-import shapeless._
+
+import scala.collection.mutable.{ ArrayBuffer, IndexedSeq => MIndexedSeq }
+import scala.math._
 
 // A translation/adaptation based on the python source code by Simon Wessing :
 // http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
@@ -43,13 +42,13 @@ object Hypervolume {
   /**
    * Compute the hypervolume contribution for each front
    */
-  def contributions(front: Vector[Vector[Double]], referencePoint: Vector[Double]): Vector[Lazy[Double]] = {
+  def contributions(front: Vector[Vector[Double]], referencePoint: Vector[Double]): Vector[Later[Double]] = {
 
     lazy val globalHypervolume = Hypervolume(front, referencePoint)
 
     //compute a new collection with automatic removed incremental of frontValues item by item
     front.shadows.map {
-      case (e) => Lazy(globalHypervolume - Hypervolume.apply(e, referencePoint))
+      case (e) => Later(globalHypervolume - Hypervolume.apply(e, referencePoint))
     }.toVector
   }
 

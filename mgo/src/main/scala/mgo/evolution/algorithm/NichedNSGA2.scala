@@ -93,13 +93,14 @@
 //
 //object nichedNSGA2Operations {
 //
-//  def elitism[M[_]: Monad: Random: Generation, I, N](
+//  def elitism[S, I, N](
 //    fitness: I => Vector[Double],
 //    values: I => Vector[Double],
-//    age: monocle.Lens[I, Long])(niche: I => N, mu: Int) = Elitism[M, I] { population =>
-//    def nicheElitism(population: Vector[I]) = nsga2Operations.elitism[M, I](fitness, values, age)(mu).apply(population)
-//    byNiche(population, nicheElitism, niche)
-//  }
+//    age: monocle.Lens[I, Long])(niche: I => N, mu: Int): Elitism[S, I] =
+//    (s, population, rng) => {
+//      def nicheElitism(population: Vector[I]) = NSGA2Operations.elitism[S, I](fitness, values, age)(mu).apply(population)
+//      byNiche(population, nicheElitism, niche)
+//    }
 //
 //  def expression[G, I, P](
 //    values: G => Vector[Double],

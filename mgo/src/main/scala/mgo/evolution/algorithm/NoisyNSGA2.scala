@@ -16,22 +16,14 @@
  */
 package mgo.evolution.algorithm
 
-import mgo.evolution.algorithm.GenomeVectorDouble._
-import monocle.macros.{ Lenses, GenLens }
-
+import cats.implicits._
 import mgo.evolution._
+import mgo.evolution.algorithm.GenomeVectorDouble._
+import mgo.evolution.breeding._
+import mgo.evolution.elitism._
 import mgo.evolution.ranking._
 import mgo.tools._
 import mgo.tools.execution._
-import mgo.evolution.breeding._
-import mgo.evolution.elitism._
-import mgo.evolution.contexts._
-
-import cats.data._
-import cats.implicits._
-
-import mgo.tagtools._
-import shapeless._
 
 import scala.language.higherKinds
 
@@ -39,6 +31,8 @@ object NoisyNSGA2 {
 
   import CDGenome._
   import NoisyIndividual._
+
+  type NSGA2State = EvolutionState[Unit]
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
 
@@ -58,19 +52,11 @@ object NoisyNSGA2 {
       aggregation,
       i => Individual.phenotypeHistory[P].get(i).size.toDouble)(_)
 
-  //  def breeding[M[_]: cats.Monad: Random: Generation](crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int, cloneProbability: Double, aggregation: Vector[Vector[Double]] => Vector[Double]): Breeding[M, Individual, Genome] =
-  //    noisynsga2Operations.breeding[M, Individual, Genome](
-  //      vectorFitness.get,
-  //      aggregation,
-  //      Individual.genome.get,
-  //      vectorValues.get,
-  //      buildGenome(_, None))(crossover, mutation, lambda, cloneProbability)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
-    CDGenome.initialGenomes[M](lambda, continuous, discrete)
-
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D]): Breeding[M, Individual[P], Genome] =
-    NoisyNSGA2Operations.adaptiveBreeding[M, Individual[P], Genome, P](
+  def adaptiveBreeding[S, P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D]): Breeding[S, Individual[P], Genome] =
+    NoisyNSGA2Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Individual.genome.get,
       continuousValues.get,
@@ -87,48 +73,42 @@ object NoisyNSGA2 {
   def expression[P: Manifest](phenotype: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
     NoisyIndividual.expression[P](phenotype, continuous)
 
-  def elitism[M[_]: cats.Monad: Random: Generation, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[M, Individual[P]] = {
+  def elitism[S, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] = {
     def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
 
-    NoisyNSGA2Operations.elitism[M, Individual[P], P](
+    NoisyNSGA2Operations.elitism[S, Individual[P], P](
       fitness[P](aggregation),
       individualValues,
       mergeHistories(individualValues, vectorPhenotype[P], Individual.historyAge[P], historySize),
       mu)
   }
 
-  def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.evolution.algorithm.state[M, Unit](())
+  implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] = new Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] {
+    def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = Unit)
 
-  def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
-  def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
+    def initialPopulation(t: NoisyNSGA2[P], rng: scala.util.Random) =
+      noisy.initialPopulation[Genome, Individual[P]](
+        NoisyNSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        NoisyNSGA2.expression[P](t.fitness, t.continuous),
+        rng)
 
-  implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime, P: Manifest]: Algorithm[NoisyNSGA2[P], M, Individual[P], Genome, EvolutionState[Unit]] = new Algorithm[NoisyNSGA2[P], M, Individual[P], Genome, EvolutionState[Unit]] {
-    def initialPopulation(t: NoisyNSGA2[P]) =
-      noisy.initialPopulation[M, Genome, Individual[P]](
-        NoisyNSGA2.initialGenomes[M](t.lambda, t.continuous, t.discrete),
-        NoisyNSGA2.expression[P](t.fitness, t.continuous))
+    def step(t: NoisyNSGA2[P]) =
+      (s, population, rng) =>
+        noisy.step[NSGA2State, Individual[P], Genome](
+          NoisyNSGA2.adaptiveBreeding[NSGA2State, P](
+            t.lambda,
+            t.operatorExploration,
+            t.cloneProbability,
+            t.aggregation,
+            t.discrete),
+          NoisyNSGA2.expression(t.fitness, t.continuous),
+          NoisyNSGA2.elitism[NSGA2State, P](
+            t.mu,
+            t.historySize,
+            t.aggregation,
+            t.continuous),
+          EvolutionState.generation)(s, population, rng)
 
-    def step(t: NoisyNSGA2[P]): Kleisli[M, Vector[Individual[P]], Vector[Individual[P]]] =
-      noisy.step[M, Individual[P], Genome](
-        NoisyNSGA2.adaptiveBreeding[M, P](
-          t.lambda,
-          t.operatorExploration,
-          t.cloneProbability,
-          t.aggregation,
-          t.discrete),
-        NoisyNSGA2.expression(t.fitness, t.continuous),
-        NoisyNSGA2.elitism[M, P](
-          t.mu,
-          t.historySize,
-          t.aggregation,
-          t.continuous))
-    //          case ManualOperators(crossover, mutation) =>
-    //            noisynsga2Operations.step[M, Individual, Genome](
-    //              noisynsga2.breeding[M](crossover, mutation, t.lambda, t.cloneProbability, t.aggregation),
-    //              noisynsga2.expression(t.fitness),
-    //              noisynsga2.elitism[M](t.mu, t.historySize, t.aggregation))
-
-    def state = NoisyNSGA2.state[M]
   }
 
 }
@@ -149,22 +129,7 @@ object NoisyNSGA2Operations {
   def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double], accuracy: I => Double)(i: I): Vector[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / accuracy(i))
 
-  //  def breeding[M[_]: cats.Monad: Random: Generation, I, G](
-  //    history: I => Vector[Vector[Double]],
-  //    aggregation: Vector[Vector[Double]] => Vector[Double],
-  //    genome: I => G,
-  //    genomeValues: G => Vector[Double],
-  //    buildGenome: Vector[Double] => G)(crossover: GACrossover[M], mutation: GAMutation[M], lambda: Int, cloneProbability: Double): Breeding[M, I, G] =
-  //    for {
-  //      population <- Kleisli.ask[M, Vector[I]]
-  //      gs <- nsga2Operations.breeding[M, I, G](
-  //        aggregated(history, aggregation),
-  //        genome,
-  //        genomeValues,
-  //        buildGenome)(crossover, mutation, lambda) andThen clonesReplace[M, I, G](cloneProbability, population, genome)
-  //    } yield gs
-
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, I, G, P](
+  def adaptiveBreeding[S, I, G, P](
     fitness: I => Vector[Double],
     genome: I => G,
     continuousValues: G => Vector[Double],
@@ -176,12 +141,12 @@ object NoisyNSGA2Operations {
     tournamentRounds: Int => Int,
     lambda: Int,
     operatorExploration: Double,
-    cloneProbability: Double): Breeding[M, I, G] = Breeding { population =>
-    for {
-      ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply population
-      continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
-      discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
-      breeding = applyDynamicOperators[M, I, G](
+    cloneProbability: Double): Breeding[S, I, G] =
+    (s, population, rng) => {
+      val ranks = ranking.paretoRankingMinAndCrowdingDiversity(population, fitness, rng)
+      val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
+      val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+      val breeding = applyDynamicOperators[S, I, G](
         tournament(ranks, tournamentRounds),
         genome andThen continuousValues,
         genome andThen discreteValues,
@@ -189,24 +154,22 @@ object NoisyNSGA2Operations {
         discreteOperatorStatistics,
         discrete,
         operatorExploration,
-        buildGenome) apply population
-      offspring <- breeding accumulate lambda
-      sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
-      gs <- clonesReplace[M, I, G](cloneProbability, population, genome, tournament(ranks, tournamentRounds)) apply sizedOffspringGenomes
-    } yield gs
-  }
+        buildGenome)
 
-  def elitism[M[_]: cats.Monad: Random: Generation, I, P](
+      val offspring = breed[S, I, G](breeding, lambda)(s, population, rng)
+      val sizedOffspringGenomes = randomTake(offspring, lambda, rng)
+      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
+    }
+
+  def elitism[S, I, P](
     fitness: I => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
-    mu: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
-    val merged = filterNaN(mergeHistories(population, candidates), fitness)
-
-    for {
-      ranks <- paretoRankingMinAndCrowdingDiversity[M, I](fitness) apply merged
-      elite = keepHighestRanked(merged, ranks, mu)
-    } yield elite
-  }
+    mu: Int): Elitism[S, I] =
+    (s, population, candidates, rng) => {
+      val merged = filterNaN(mergeHistories(population, candidates), fitness)
+      val ranks = paretoRankingMinAndCrowdingDiversity[I](merged, fitness, rng)
+      (s, keepHighestRanked(merged, ranks, mu, rng))
+    }
 
 }

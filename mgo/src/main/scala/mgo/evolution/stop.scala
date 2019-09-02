@@ -20,30 +20,22 @@ package mgo.evolution
 
 import cats.data._
 import cats.implicits._
-import mgo.evolution.contexts._
 import squants.time._
 
 object stop {
 
-  type StopCondition[M[_], I] = Kleisli[M, Vector[I], Boolean]
+  type StopCondition[S, I] = (S, Vector[I]) => Boolean
 
-  trait Imports {
+  def afterGeneration[S, I](g: Long, generation: monocle.Lens[S, Long]): StopCondition[S, I] =
+    (s, is) => generation.get(s) >= g
 
-    def afterGeneration[M[_]: cats.Monad, I](g: Long)(implicit mGeneration: Generation[M]): StopCondition[M, I] =
-      Kleisli { (individuals: Vector[I]) =>
-        for {
-          cg <- mGeneration.get
-        } yield cg >= g
-      }
+  def afterDuration[S, I](d: Time, start: monocle.Lens[S, Long]): StopCondition[S, I] =
+    (s, is) => {
+      val now = java.lang.System.currentTimeMillis()
+      val st = start.get(s)
+      (st + d.toMilliseconds) <= now
+    }
 
-    def afterDuration[M[_]: cats.Monad: System, I](d: Time)(implicit mStartTime: StartTime[M]): StopCondition[M, I] =
-      Kleisli { (individuals: Vector[I]) =>
-        for {
-          st <- mStartTime.get
-          now <- System[M].currentTime()
-        } yield (d.millis + st) <= now
-      }
+  def never[S, I]: StopCondition[S, I] = (s, i) => false
 
-    def never[M[_]: cats.Monad, I]: StopCondition[M, I] = Kleisli { _ => false.pure[M] }
-  }
 }

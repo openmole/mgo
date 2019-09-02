@@ -3,18 +3,18 @@ package mgo.evolution
 import cats._
 import cats.data._
 import cats.implicits._
-import mgo.evolution.contexts._
 import mgo.tools
 import mgo.tools._
 import mgo.tools.execution._
 
 object breeding {
 
-  type Breeding[M[_], I, G] = Kleisli[M, Vector[I], Vector[G]]
+  type Breeding[S, I, G] = (S, Vector[I], scala.util.Random) => Vector[G]
 
-  object Breeding {
-    def apply[M[_]: cats.Monad, I, G](f: Vector[I] => M[Vector[G]]): Breeding[M, I, G] = Kleisli[M, Vector[I], Vector[G]](f)
-  }
+  //  object Breeding {
+  //    def apply[S, I, G](f: (S, Vector[I]) => Vector[G]): Breeding[S, I, G] =
+  //      Kleisli[State[S, ?], Vector[I], Vector[G]](i => State.pure(f(i)))
+  //  }
 
   //implicit def breedingToFunction[I, M[_]: cats.Monad, G](b: Breeding[I, M, G]): Vector[I] => M[Vector[G]] = b.run
   //implicit def functionToBreeding[I, M[_]: cats.Monad, G](f: Vector[I] => M[Vector[G]]): Breeding[I, M, G] = Kleisli.kleisli[M, Vector[I], Vector[G]](f)
@@ -26,17 +26,16 @@ object breeding {
 
 /**** Selection ****/
 
-  type Selection[M[_], I] = Kleisli[M, Vector[I], I]
+  type Selection[S, I] = (S, Vector[I], scala.util.Random) => I
 
-  def tournament[M[_]: cats.Monad: Random, I, K: Order](
+  def tournament[S, I, K: Order](
     ranks: Vector[K],
-    rounds: Int => Int = _ => 1): Selection[M, I] = Kleisli { individuals: Vector[I] =>
-    val populationSize = individuals.size
-    for {
-      challengersIndices <- Vector.fill(rounds(populationSize) + 1)(Random[M].nextInt(populationSize)).sequence
-    } yield // Unbiased since individual are placed in random order in the vector
-    individuals(challengersIndices.maxBy(i => ranks(i))(implicitly[Order[K]].toOrdering))
-  }
+    rounds: Int => Int = _ => 1): Selection[S, I] =
+    (s, individuals, rng) => {
+      val populationSize = individuals.size
+      val challengersIndices = Vector.fill(rounds(populationSize) + 1)(() => rng.nextInt(populationSize)).map(_())
+      individuals(challengersIndices.maxBy(i => ranks(i))(implicitly[Order[K]].toOrdering))
+    }
 
   def log2(x: Int) = (math.log(x) / math.log(2)).toInt
   lazy val log2_256 = log2(256)
@@ -45,17 +44,19 @@ object breeding {
   def logOfPopulationSize(size: Int): Int =
     math.max(log2(size) - log2_256 + 2, 1)
 
-  def randomSelection[M[_]: cats.Monad: Random, I] = Kleisli { population: Vector[I] =>
-    Random[M].randomElement(population)
-  }
+  def randomSelection[S, I]: Selection[S, I] =
+    (s, population, rng) => {
+      val i = rng.nextInt(population.size)
+      population(i)
+    }
 
 /**** Mating ****/
 
   //  def groupConsecutive[M[_]: cats.Monad, I](groupSize: Int): Breeding[M, I, Vector[I]] =
   //    (individuals: Vector[I]) => individuals.grouped(groupSize).toVector.pure[M]
 
-  def pairConsecutive[M[_]: cats.Monad, I] =
-    (individuals: Vector[I]) => individuals.grouped(2).collect { case Vector(a, b) => (a, b) }.toVector
+  //  def pairConsecutive[M[_]: cats.Monad, I] =
+  //    (individuals: Vector[I]) => individuals.grouped(2).collect { case Vector(a, b) => (a, b) }.toVector
 
 /**** Crossover ****/
 
@@ -67,37 +68,19 @@ object breeding {
    *
    * The type G can also represent more than one genome.
    */
-  type Crossover[M[_], P, O] = Kleisli[M, P, O]
-  type GACrossover[M[_]] = Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]
 
-  object Crossover {
-    def apply[M[_]: cats.Monad, P, O](f: P => M[O]): Crossover[M, P, O] = Kleisli[M, P, O](f)
-  }
+  type Crossover[S, P, O] = (S, P, scala.util.Random) => O
+  type GACrossover[S] = Crossover[S, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]
 
-  //  def replicateC[M[_]: cats.Monad, P, O](n: Int, c: Crossover[M, P, O]): Crossover[M, P, Vector[O]] =
-  //    Crossover((mates: P) =>
-  //      for {
-  //        gs <- c(mates).replicateM(n)
-  //      } yield gs.toVector)
-  //
-  def replicatePairC[M[_]: cats.Monad, P, O](c: Crossover[M, P, O]): Crossover[M, P, (O, O)] =
-    Crossover((mates: P) =>
-      for {
-        g1 <- c(mates)
-        g2 <- c(mates)
-      } yield (g1, g2))
-
-  //def identityC[M[_]: cats.Monad, I]: Crossover[M, I, I] = Crossover(_.point[M])
-
-  def blxC[M[_]: cats.Monad: Random](alpha: Double = 0.5): Crossover[M, (Vector[Double], Vector[Double]), Vector[Double]] =
-    Crossover((mates: (Vector[Double], Vector[Double])) =>
-      (mates._1 zip mates._2).traverse {
+  def blxC[S](alpha: Double = 0.5): Crossover[S, (Vector[Double], Vector[Double]), Vector[Double]] =
+    (s, mates, random) =>
+      (mates._1 zip mates._2).map {
         case (c1, c2) =>
           val cmin = math.min(c1, c2)
           val cmax = math.max(c1, c2)
           val range = cmax - cmin
-          Random[M].nextDouble.map(_.scale(cmin - alpha * range, cmax + alpha * range))
-      })
+          random.nextDouble.scale(cmin - alpha * range, cmax + alpha * range)
+      }
 
   /**
    * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :
@@ -118,49 +101,42 @@ object breeding {
    * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
    *
    */
-  def sbxC[M[_]: cats.Monad: Random](distributionIndex: Double = 2.0): Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])] =
-    Crossover((mates: (Vector[Double], Vector[Double])) => {
+  def sbxC[S](distributionIndex: Double = 2.0): GACrossover[S] =
+    (s, mates: (Vector[Double], Vector[Double]), random) => {
       val exponent = 1.0 / (distributionIndex + 1.0)
 
-      def elementCrossover(x0i: Double, x1i: Double): M[(Double, Double)] =
-        for { u <- Random[M].nextDouble } yield {
-          val bq =
-            if (u <= 0.5) math.pow(2 * u, exponent)
-            else math.pow(1.0 / (2.0 * (1.0 - u)), exponent)
+      def elementCrossover(x0i: Double, x1i: Double): (Double, Double) = {
+        val u = random.nextDouble
+        val bq =
+          if (u <= 0.5) math.pow(2 * u, exponent)
+          else math.pow(1.0 / (2.0 * (1.0 - u)), exponent)
 
-          val lb = 0.0
-          val ub = 1.0
+        val lb = 0.0
+        val ub = 1.0
 
-          val x0 = clamp(x0i, lb, ub)
-          val x1 = clamp(x1i, lb, ub)
+        val x0 = clamp(x0i, lb, ub)
+        val x1 = clamp(x1i, lb, ub)
 
-          val newX0 = 0.5 * ((1.0 + bq) * x0 + (1.0 - bq) * x1)
-          val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
+        val newX0 = 0.5 * ((1.0 + bq) * x0 + (1.0 - bq) * x1)
+        val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
 
-          (newX0, newX1)
-        }
+        (newX0, newX1)
+      }
 
       val (g1, g2) = mates
       val zippedgs = g1 zip g2
 
-      for {
-        r <- zippedgs.traverse { case (g1e, g2e) => elementCrossover(g1e, g2e) }
-        (o1, o2) = r.unzip
-      } yield {
-        assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-        (o1, o2)
-      }
-    })
+      val r = zippedgs.map { case (g1e, g2e) => elementCrossover(g1e, g2e) }
+      val (o1, o2) = r.unzip
+      assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
+      (o1, o2)
+    }
 
 /**** Mutation ****/
 
   /** A mutation is a function from a single genome to another single genome */
-  type Mutation[M[_], G1, G2] = Kleisli[M, G1, G2]
-  type GAMutation[M[_]] = Mutation[M, Vector[Double], Vector[Double]]
-
-  object Mutation {
-    def apply[M[_]: cats.Monad, G1, G2](f: G1 => M[G2]): Mutation[M, G1, G2] = Kleisli[M, G1, G2](f)
-  }
+  type Mutation[S, G1, G2] = (S, G1, scala.util.Random) => G2
+  type GAMutation[S] = Mutation[S, Vector[Double], Vector[Double]]
 
   //  def bga[M[_]: cats.Monad: Random](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
   //    Mutation { (g: Vector[Double]) =>
@@ -181,18 +157,16 @@ object breeding {
   //      }
   //    }
 
-  def gaussianMutation[M[_]: cats.Monad: Random](mutationRate: Int => Double, sigma: Double): Mutation[M, Vector[Double], Vector[Double]] =
-    Mutation { (g: Vector[Double]) =>
-      g.traverse { x =>
-        Random[M].nextDouble.map(_ < mutationRate(g.size)).flatMap { mutate =>
-          if (mutate)
-            for {
-              s <- Random[M].use(_.nextGaussian() * sigma)
-            } yield x + s
-          else x.pure[M]
-        }
+  def gaussianMutation[S](mutationRate: Int => Double, sigma: Double): GAMutation[S] =
+    (s, g, random) =>
+      g.map { x =>
+        val mutate = random.nextDouble < mutationRate(g.size)
+        if (mutate) {
+          val s = random.nextGaussian() * sigma
+          x + s
+        } else x
       }
-    }
+
   //
   //  /**
   //   * Mutation of a genome based on gaussian distribution around the genome with adaptive sigma values.
@@ -293,15 +267,14 @@ object breeding {
   //  }
 
   /** Randomly replaces some of the genomes in gs by genomes taken from the original population of I */
-  def clonesReplace[M[_]: cats.Monad: Random, I, G](cloneProbability: Double, population: Vector[I], genome: I => G, selection: Selection[M, I]): Breeding[M, G, G] =
-    Breeding { gs: Vector[G] =>
-      def cloneOrKeep(g: G): M[G] =
-        for {
-          clone <- Random[M].nextDouble.map(_ < cloneProbability)
-          newG <- if (clone) selection(population).map(genome) else g.pure[M]
-        } yield newG
+  def clonesReplace[S, I, G](cloneProbability: Double, population: Vector[I], genome: I => G, selection: Selection[S, I]): Breeding[S, G, G] =
+    (s, gs, rng) => {
+      def cloneOrKeep(g: G): G = {
+        val clone = rng.nextDouble < cloneProbability
+        if (clone) genome(selection(s, population, rng)) else g
+      }
 
-      gs traverse cloneOrKeep
+      gs map cloneOrKeep
     }
 
   //  def opOrClone[M[_]: cats.Monad: RandomGen, I, G](
@@ -323,20 +296,28 @@ object breeding {
 
   /* ----------------- Discrete operators ----------------------- */
 
-  def randomMutation[M[_]: cats.Monad: Random](mutationRate: Int => Double, discrete: Vector[D]) = Mutation[M, Vector[Int], Vector[Int]] { values =>
-    Random[M].use { rng =>
+  def randomMutation[S](mutationRate: Int => Double, discrete: Vector[D]): Mutation[S, Vector[Int], Vector[Int]] =
+    (s, values, rng) =>
       (values zip discrete) map {
         case (v, d) =>
-          if (rng.nextDouble() < mutationRate(values.size)) tools.randomInt(rng, d)
-          else v
+          if (rng.nextDouble() < mutationRate(values.size)) tools.randomInt(rng, d) else v
       }
-    }
+
+  def binaryCrossover[S, V](rate: Int => Double): Crossover[S, (Vector[V], Vector[V]), (Vector[V], Vector[V])] = {
+    (s, v, rng) =>
+      val (v1, v2) = v
+      def switch(x: V, y: V) = if (rng.nextDouble() < rate(v1.size)) (y, x) else (x, y)
+      (v1 zip v2).map(Function.tupled(switch)).unzip
   }
 
-  def binaryCrossover[M[_]: cats.Monad: Random, V](rate: Int => Double) = Crossover[M, (Vector[V], Vector[V]), (Vector[V], Vector[V])] {
-    case (v1, v2) =>
-      def switch(x: V, y: V) = Random[M].nextDouble().map(d => if (d < rate(v1.size)) (y, x) else (x, y))
-      (v1 zip v2).traverse(Function.tupled(switch)).map(_.unzip)
-  }
+  /* tool functions */
+
+  def breed[S, I, G](breeding: Breeding[S, I, G], lambda: Int): Breeding[S, I, G] =
+    (s, population, rng) => {
+      def accumulate(acc: Vector[G] = Vector()): Vector[G] =
+        if (acc.size >= lambda) acc else accumulate(breeding(s, population, rng) ++ acc)
+
+      accumulate()
+    }
 
 }

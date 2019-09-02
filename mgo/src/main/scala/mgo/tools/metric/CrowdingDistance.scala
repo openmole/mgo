@@ -17,11 +17,7 @@
 
 package mgo.tools.metric
 
-import mgo.tools._
-import cats._
 import cats.implicits._
-import shapeless.Lazy
-import mgo.evolution.contexts._
 
 /**
  * Crowding distance computation see Deb, K., Agrawal, S., Pratap, A. & Meyarivan, T.
@@ -37,9 +33,9 @@ object CrowdingDistance {
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
-  def apply[M[_]: cats.Monad](data: Vector[Vector[Double]])(implicit randomM: Random[M]): M[Vector[Lazy[Double]]] = {
-    def res = data.transpose.map {
-      d: Vector[Double] =>
+  def apply(data: Vector[Vector[Double]], random: scala.util.Random): Vector[Double] = {
+    def res =
+      data.transpose.map { d: Vector[Double] =>
         val grouped: Map[Double, Seq[Int]] =
           d.zipWithIndex.groupBy { case (d, _) => d }.mapValues { _.map { case (_, i) => i } }
 
@@ -47,38 +43,33 @@ object CrowdingDistance {
 
         type Crowding = (Double, Int)
 
-        def groupCrowding(group: Seq[Int], c: Double): M[List[(Double, Int)]] =
-          randomM.nextInt(group.size).map { randomIndex =>
-            (c -> group(randomIndex)) :: group.patch(randomIndex, Seq.empty, 1).toList.map { t => 0.0 -> t }
-          }
+        def groupCrowding(group: Seq[Int], c: Double): List[(Double, Int)] = {
+          val randomIndex = random.nextInt(group.size)
+          (c -> group(randomIndex)) :: group.patch(randomIndex, Seq.empty, 1).toList.map { t => 0.0 -> t }
+        }
 
-        val res: M[Vector[Crowding]] =
+        val res: Vector[Crowding] =
           if (sortedDistances.size <= 2)
-            sortedDistances.traverse {
-              d => groupCrowding(grouped(d), Double.PositiveInfinity)
-            }.map(_.flatten)
+            sortedDistances.flatMap { d => groupCrowding(grouped(d), Double.PositiveInfinity) }
           else {
-            def crowding(distances: List[Double], acc: List[Crowding]): M[List[Crowding]] =
+            def crowding(distances: List[Double], acc: List[Crowding]): List[Crowding] =
               distances match {
                 case d1 :: d2 :: Nil =>
-                  for {
-                    g1 <- groupCrowding(grouped(sortedDistances.head), Double.PositiveInfinity)
-                    g2 <- groupCrowding(grouped(sortedDistances.last), Double.PositiveInfinity)
-                  } yield g1 ::: (g2 ::: acc).reverse
+                  val g1 = groupCrowding(grouped(sortedDistances.head), Double.PositiveInfinity)
+                  val g2 = groupCrowding(grouped(sortedDistances.last), Double.PositiveInfinity)
+                  g1 ::: (g2 ::: acc).reverse
                 case d1 :: d2 :: d3 :: _ =>
-                  for {
-                    gc <- groupCrowding(grouped(d2), d3 - d1)
-                    c <- crowding(distances.tail, gc ::: acc)
-                  } yield c
+                  val gc = groupCrowding(grouped(d2), d3 - d1)
+                  crowding(distances.tail, gc ::: acc)
                 case _ => sys.error("Should never be empty")
               }
 
-            crowding(sortedDistances.toList, List.empty).map(_.toVector)
+            crowding(sortedDistances.toList, List.empty).toVector
           }
-        res.map(_.sortBy { case (_, index) => index }.map { case (c, _) => c })
-    }.sequence
+        res.sortBy { case (_, index) => index }.map { case (c, _) => c }
+      }
 
-    res.map(_.transpose.map { _.sum }.map(Lazy(_)))
+    res.transpose.map { _.sum }
   }
 
 }

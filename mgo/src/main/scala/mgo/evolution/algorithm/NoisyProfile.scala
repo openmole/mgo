@@ -16,21 +16,12 @@
  */
 package mgo.evolution.algorithm
 
+import cats.implicits._
 import mgo.evolution._
+import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
-import mgo.evolution.diversity._
-import monocle.macros.{ GenLens, Lenses }
 import mgo.evolution.niche._
-import mgo.evolution.contexts._
-import mgo.evolution.ranking._
-import GenomeVectorDouble._
-import cats.data._
-import cats.implicits._
-import shapeless._
-import mgo.tagtools._
-import mgo.evolution.niche
-import mgo.tools._
 import mgo.tools.execution._
 
 import scala.language.higherKinds
@@ -39,6 +30,8 @@ object NoisyProfile {
 
   import CDGenome._
   import NoisyIndividual._
+
+  type ProfileState = EvolutionState[Unit]
 
   def aggregatedFitness[N, P: Manifest](aggregation: Vector[P] => Vector[Double]) =
     NoisyNSGA2Operations.aggregated[Individual[P], P](vectorPhenotype[P].get, aggregation, Individual.phenotypeHistory[P].get(_).size)(_)
@@ -57,7 +50,7 @@ object NoisyProfile {
         front.sortBy(-_.phenotypeHistory.size).headOption.toVector
       } else keepFirstFront(population, aggregatedFitness(aggregation))
 
-    nicheElitism[Id, Individual[P], N](population, nicheResult, niche).map { i =>
+    nicheElitism[Individual[P], N](population, nicheResult, niche).map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
       Result(c, d, f, niche(i), r)
     }
@@ -84,8 +77,8 @@ object NoisyProfile {
   def gridObjectiveProfile[P: Manifest](aggregation: Vector[P] => Vector[Double], x: Int, intervals: Vector[Double]): Niche[Individual[P], Int] =
     mgo.evolution.niche.gridContinuousProfile[Individual[P]](aggregatedFitness(aggregation), x, intervals)
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation, P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D]): Breeding[M, Individual[P], Genome] =
-    NoisyNSGA2Operations.adaptiveBreeding[M, Individual[P], Genome, P](
+  def adaptiveBreeding[P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D]) =
+    NoisyNSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome, P](
       aggregatedFitness(aggregation),
       Individual.genome.get,
       continuousValues.get,
@@ -99,11 +92,11 @@ object NoisyProfile {
       operatorExploration,
       cloneProbability)
 
-  def elitism[M[_]: cats.Monad: Random: Generation, N, P: Manifest](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[M, Individual[P]] = {
+  def elitism[N, P: Manifest](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]) = {
 
     def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
 
-    NoisyProfileOperations.elitism[M, Individual[P], N, P](
+    NoisyProfileOperations.elitism[ProfileState, Individual[P], N, P](
       aggregatedFitness(aggregation),
       mergeHistories(individualValues, vectorPhenotype, Individual.historyAge, historySize),
       individualValues,
@@ -114,37 +107,35 @@ object NoisyProfile {
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
     NoisyIndividual.expression[P](fitness, continuous)
 
-  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
-    CDGenome.initialGenomes[M](lambda, continuous, discrete)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  def state[M[_]: cats.Monad: StartTime: Random: Generation] = mgo.evolution.algorithm.state[M, Unit](())
+  implicit def isAlgorithm[N, P: Manifest]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] = new Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] {
+    override def initialState(t: NoisyProfile[N, P], rng: scala.util.Random) = EvolutionState(s = Unit)
 
-  def run[T](rng: util.Random)(f: contexts.run.Implicits => T): T = contexts.run(rng)(f)
-  def run[T](state: EvolutionState[Unit])(f: contexts.run.Implicits => T): T = contexts.run(state)(f)
-
-  implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime, N, P: Manifest]: Algorithm[NoisyProfile[N, P], M, Individual[P], Genome, EvolutionState[Unit]] = new Algorithm[NoisyProfile[N, P], M, Individual[P], Genome, EvolutionState[Unit]] {
-    def initialPopulation(t: NoisyProfile[N, P]) =
-      noisy.initialPopulation[M, Genome, Individual[P]](
-        NoisyProfile.initialGenomes[M](t.lambda, t.continuous, t.discrete),
-        NoisyProfile.expression[P](t.fitness, t.continuous))
+    def initialPopulation(t: NoisyProfile[N, P], rng: scala.util.Random) =
+      noisy.initialPopulation[Genome, Individual[P]](
+        NoisyProfile.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        NoisyProfile.expression[P](t.fitness, t.continuous),
+        rng)
 
     def step(t: NoisyProfile[N, P]) =
-      noisy.step[M, Individual[P], Genome](
-        NoisyProfile.adaptiveBreeding[M, P](
+      noisy.step[ProfileState, Individual[P], Genome](
+        NoisyProfile.adaptiveBreeding[P](
           t.lambda,
           t.operatorExploration,
           t.cloneProbability,
           t.aggregation,
           t.discrete),
         NoisyProfile.expression(t.fitness, t.continuous),
-        NoisyProfile.elitism[M, N, P](
+        NoisyProfile.elitism[N, P](
           t.niche,
           t.muByNiche,
           t.historySize,
           t.aggregation,
-          t.continuous))
+          t.continuous),
+        EvolutionState.generation)
 
-    def state = NoisyProfile.state[M]
   }
 
 }
@@ -163,19 +154,20 @@ case class NoisyProfile[N, P](
 
 object NoisyProfileOperations {
 
-  def elitism[M[_]: cats.Monad: Random: Generation, I, N, P](
+  def elitism[S, I, N, P](
     fitness: I => Vector[Double],
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     values: I => (Vector[Double], Vector[Int]),
     niche: Niche[I, N],
-    muByNiche: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
+    muByNiche: Int): Elitism[S, I] =
+    (s, population, candidates, rng) => {
 
-    def inNicheElitism(p: Vector[I]) = keepOnFirstFront(p, fitness, muByNiche)
+      def inNicheElitism(random: scala.util.Random)(p: Vector[I]) = keepOnFirstFront(p, fitness, muByNiche, random)
 
-    val merged = mergeHistories(population, candidates)
-    val filtered = filterNaN(merged, fitness)
+      val merged = mergeHistories(population, candidates)
+      val filtered = filterNaN(merged, fitness)
 
-    nicheElitism(filtered, inNicheElitism, niche)
-  }
+      (s, nicheElitism[I, N](filtered, inNicheElitism(rng), niche))
+    }
 
 }

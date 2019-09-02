@@ -117,6 +117,6 @@ package object test {
     }
   }
 
-  def sourceOf[T](v: sourcecode.Text[T]) = (v.value, v.source)
+  //def sourceOf[T](v: sourcecode.Text[T]) = (v.value, v.source)
 
 }

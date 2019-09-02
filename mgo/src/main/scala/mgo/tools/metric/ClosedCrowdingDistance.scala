@@ -17,7 +17,7 @@
 
 package mgo.tools.metric
 
-import shapeless.Lazy
+import cats._
 
 /**
  * Modification of the crowding distance to avoid infinite values for the first and last
@@ -37,8 +37,8 @@ object ClosedCrowdingDistance {
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
-  def apply(data: Seq[Seq[Double]]): Seq[Lazy[Double]] = {
-    if (data.size < 2) data.map(d => Lazy(Double.PositiveInfinity))
+  def apply(data: Seq[Seq[Double]]): Seq[Later[Double]] = {
+    if (data.size < 2) data.map(d => Later(Double.PositiveInfinity))
     else {
       class CrowdingInfo(val d: Seq[Double], var crowding: Double = 0.0)
 
@@ -79,7 +79,7 @@ object ClosedCrowdingDistance {
         }
       }
 
-      crowding.map(c => Lazy(c.crowding))
+      crowding.map(c => Later(c.crowding))
     }
   }
 
@@ -91,8 +91,8 @@ object ClosedCrowdingDistance {
    * @return the closed crowding distance of the point relative to the data
    */
 
-  def of(i: Int, data: Seq[Seq[Double]]): Lazy[Double] = {
-    if (data.size < 2) Lazy(Double.PositiveInfinity)
+  def of(i: Int, data: Seq[Seq[Double]]): Later[Double] = {
+    if (data.size < 2) Later(Double.PositiveInfinity)
     else {
       var crowdingOfI: Double = 0.0
 
@@ -122,7 +122,7 @@ object ClosedCrowdingDistance {
         }
       }
 
-      Lazy(crowdingOfI)
+      Later(crowdingOfI)
     }
   }
 }

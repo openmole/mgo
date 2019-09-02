@@ -18,8 +18,6 @@
 package mgo.test
 
 import mgo.evolution._
-import mgo.evolution.contexts._
-import mgo.tagtools._
 import niche._
 
 object ZDT4PSE extends App {
@@ -37,19 +35,14 @@ object ZDT4PSE extends App {
         definition = Vector(10, 10)),
     continuous = zdt4.continuous(10))
 
-  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMap] =
+  def evolution =
     pse.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      evolution
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) = PSE.run(new util.Random(42)) { imp =>
-    import imp._
-    evolution[DSL].eval
-  }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(result(pse, finalPopulation).mkString("\n"))
-
 }
 
 object ZDT4NoisyPSE extends App {
@@ -68,16 +61,12 @@ object ZDT4NoisyPSE extends App {
     continuous = zdt4.continuous(10),
     aggregation = averageAggregation(_))
 
-  def evolution[M[_]: cats.Monad: StartTime: Random: Generation: IO: HitMap] =
+  def evolution =
     pse.
       until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation)).
-      evolution
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) = NoisyPSE.run(new util.Random(42)) { imp =>
-    import imp._
-    evolution[DSL].eval
-  }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(result(pse, finalPopulation).mkString("\n"))
 

@@ -17,24 +17,20 @@
  */
 package mgo.evolution.algorithm
 
-import mgo.evolution._
-import mgo.tools._
-import mgo.tools.execution._
-
-import elitism._
-import breeding._
-import mgo.tools.CanBeNaN
-import contexts._
-import GenomeVectorDouble._
-import cats._
-import cats.data._
 import cats.implicits._
+import mgo.evolution._
+import mgo.evolution.algorithm.GenomeVectorDouble._
+import mgo.evolution.breeding._
+import mgo.evolution.elitism._
+import mgo.tools.CanBeNaN
+import mgo.tools.execution._
 import monocle.macros._
-import mgo.tagtools._
 
 object NoisyPSE {
 
   import CDGenome._
+
+  type PSEState = EvolutionState[HitMap]
 
   @Lenses case class Individual[P](
     genome: Genome,
@@ -44,19 +40,19 @@ object NoisyPSE {
   def buildIndividual[P: Manifest](genome: Genome, phenotype: P) = Individual(genome, 1, Array(phenotype))
   def vectorPhenotype[P: Manifest] = Individual.phenotypeHistory[P] composeLens arrayToVectorLens
 
-  def state[M[_]: cats.Monad: StartTime: Random: Generation: HitMap] = PSE.state[M]
+  //  def state[M[_]: cats.Monad: StartTime: Random: Generation: HitMap] = PSE.state[M]
 
-  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
-    CDGenome.initialGenomes[M](lambda, continuous, discrete)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: HitMap, P: Manifest](
+  def adaptiveBreeding[P: Manifest](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
     aggregation: Vector[P] => Vector[Double],
     discrete: Vector[D],
-    pattern: Vector[Double] => Vector[Int]): Breeding[M, Individual[P], Genome] =
-    NoisyPSEOperations.adaptiveBreeding[M, Individual[P], Genome](
+    pattern: Vector[Double] => Vector[Int]): Breeding[PSEState, Individual[P], Genome] =
+    NoisyPSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Individual.genome.get,
       continuousValues.get,
       continuousOperator.get,
@@ -67,20 +63,22 @@ object NoisyPSE {
       buildGenome,
       lambda,
       operatorExploration,
-      cloneProbability)
+      cloneProbability,
+      EvolutionState.s[HitMap])
 
-  def elitism[M[_]: cats.Monad: Random: HitMap: Generation, P: CanBeNaN: Manifest](
+  def elitism[P: CanBeNaN: Manifest](
     pattern: Vector[Double] => Vector[Int],
     aggregation: Vector[P] => Vector[Double],
     historySize: Int,
     continuous: Vector[C]) =
-    NoisyPSEOperations.elitism[M, Individual[P], P](
+    NoisyPSEOperations.elitism[PSEState, Individual[P], P](
       i => values(Individual.genome.get(i), continuous),
       vectorPhenotype[P],
       aggregation,
       pattern,
       Individual.historyAge,
-      historySize)
+      historySize,
+      EvolutionState.s[HitMap])
 
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
     noisy.expression[Genome, Individual[P], P](
@@ -111,33 +109,33 @@ object NoisyPSE {
   def result[P: Manifest](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result(population, pse.aggregation, pse.pattern, pse.continuous)
 
-  def run[T](rng: util.Random)(f: PSE.PSEImplicits => T): T = PSE.run(rng)(f)
-  def run[T](state: EvolutionState[Map[Vector[Int], Int]])(f: PSE.PSEImplicits => T): T = PSE.run(state)(f)
+  implicit def isAlgorithm[P: Manifest: CanBeNaN] = new Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] {
 
-  implicit def isAlgorithm[M[_]: cats.Monad: StartTime: Random: HitMap: Generation, P: Manifest: CanBeNaN] = new Algorithm[NoisyPSE[P], M, Individual[P], Genome, EvolutionState[Map[Vector[Int], Int]]] {
+    def initialState(t: NoisyPSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
-    def initialPopulation(t: NoisyPSE[P]) =
-      noisy.initialPopulation[M, Genome, Individual[P]](
-        NoisyPSE.initialGenomes[M](t.lambda, t.continuous, t.discrete),
-        NoisyPSE.expression(t.phenotype, t.continuous))
+    def initialPopulation(t: NoisyPSE[P], rng: scala.util.Random) =
+      noisy.initialPopulation[Genome, Individual[P]](
+        NoisyPSE.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        NoisyPSE.expression(t.phenotype, t.continuous),
+        rng)
 
     def step(t: NoisyPSE[P]) =
-      noisy.step[M, Individual[P], Genome](
-        NoisyPSE.adaptiveBreeding[M, P](
-          t.lambda,
-          t.operatorExploration,
-          t.cloneProbability,
-          t.aggregation,
-          t.discrete,
-          t.pattern),
-        NoisyPSE.expression(t.phenotype, t.continuous),
-        NoisyPSE.elitism[M, P](
-          t.pattern,
-          t.aggregation,
-          t.historySize,
-          t.continuous))
-
-    def state = NoisyPSE.state[M]
+      (s, pop, rng) =>
+        noisy.step[PSEState, Individual[P], Genome](
+          NoisyPSE.adaptiveBreeding[P](
+            t.lambda,
+            t.operatorExploration,
+            t.cloneProbability,
+            t.aggregation,
+            t.discrete,
+            t.pattern),
+          NoisyPSE.expression(t.phenotype, t.continuous),
+          NoisyPSE.elitism[P](
+            t.pattern,
+            t.aggregation,
+            t.historySize,
+            t.continuous),
+          EvolutionState.generation)(s, pop, rng)
 
   }
 }
@@ -155,7 +153,7 @@ case class NoisyPSE[P](
 
 object NoisyPSEOperations {
 
-  def adaptiveBreeding[M[_]: cats.Monad: Random: HitMap: Generation, I, G](
+  def adaptiveBreeding[S, I, G](
     genome: I => G,
     continuousValues: G => Vector[Double],
     continuousOperator: G => Option[Int],
@@ -166,9 +164,10 @@ object NoisyPSEOperations {
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     lambda: Int,
     cloneProbability: Double,
-    operatorExploration: Double) = Breeding[M, I, G] { population =>
-    for {
-      gs <- PSEOperations.adaptiveBreeding[M, I, G](
+    operatorExploration: Double,
+    hitmap: monocle.Lens[S, HitMap]): Breeding[S, I, G] =
+    (s, population, rng) => {
+      val gs = PSEOperations.adaptiveBreeding[S, I, G](
         genome,
         continuousValues,
         continuousOperator,
@@ -178,28 +177,28 @@ object NoisyPSEOperations {
         pattern,
         buildGenome,
         lambda,
-        operatorExploration) apply population
-      withClones <- clonesReplace[M, I, G](cloneProbability, population, genome, randomSelection) apply gs
-    } yield withClones
-  }
+        operatorExploration,
+        hitmap)(s, population, rng)
+      clonesReplace[S, I, G](cloneProbability, population, genome, randomSelection)(s, gs, rng)
+    }
 
-  def elitism[M[_]: cats.Monad: Random: Generation: HitMap, I, P: CanBeNaN](
+  def elitism[S, I, P: CanBeNaN](
     values: I => (Vector[Double], Vector[Int]),
     history: monocle.Lens[I, Vector[P]],
     aggregation: Vector[P] => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
     historyAge: monocle.Lens[I, Long],
-    historySize: Int): Elitism[M, I] = Elitism[M, I] { (population, candidates) =>
+    historySize: Int,
+    hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =
+    (s, population, candidates, rng) => {
+      val candidateValues = candidates.map(values).toSet
+      val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get _ andThen aggregation)
 
-    val candidateValues = candidates.map(values).toSet
-    val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get _ andThen aggregation)
+      def newHits = merged.flatMap { i => if (candidateValues.contains(values(i))) Some(i) else None }
 
-    def newHits = merged.flatMap { i => if (candidateValues.contains(values(i))) Some(i) else None }
-
-    for {
-      _ <- addHits[M, I](history.get _ andThen aggregation andThen pattern) apply newHits
-      elite = keepNiches[Id, I, Vector[Int]](history.get _ andThen aggregation andThen pattern, maximiseO(i => history.get(i).size, 1)) apply merged
-    } yield elite
-  }
+      val hm2 = addHits[I](history.get _ andThen aggregation andThen pattern, newHits, hitmap.get(s))
+      val elite = keepNiches[I, Vector[Int]](history.get _ andThen aggregation andThen pattern, maximiseO(i => history.get(i).size, 1)) apply merged
+      (hitmap.set(hm2)(s), elite)
+    }
 
 }

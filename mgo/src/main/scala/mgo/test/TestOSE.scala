@@ -1,12 +1,9 @@
 package mgo.test
 
 import mgo.evolution._
-import mgo.evolution.contexts._
-import mgo.tagtools._
 import better.files._
 
 object RastriginOSE extends App {
-
   import algorithm._
   import niche._
   import OSE._
@@ -27,13 +24,10 @@ object RastriginOSE extends App {
     continuous = rastrigin.continuous(dimensions))
 
   val (finalState, finalPopulation) =
-    OSE.run(new util.Random(42)) { imp =>
-      import imp._
-
-      ose.
-        until(afterGeneration(5000)).
-        trace { (s, is) => println(s.generation + " " + s.s._1.size) }.eval
-    }
+    ose.
+      until(afterGeneration(5000)).
+      trace { (s, is) => println(s.generation + " " + s.s._1.size) }.
+      eval(new util.Random(42))
 
   File("/tmp/ose.csv") write OSE.result(ose, finalState).map(_.continuous.mkString(",")).mkString("\n")
 }
@@ -61,13 +55,10 @@ object NoisyRastriginOSE extends App {
     continuous = rastrigin.continuous(dimensions))
 
   val (finalState, finalPopulation) =
-    NoisyOSE.run(new util.Random(42)) { imp =>
-      import imp._
-
-      ose.
-        until(afterGeneration(50000)).
-        trace { (s, is) => println(s.generation + " " + s.s._1.size) }.eval
-    }
+    ose.
+      until(afterGeneration(50000)).
+      trace { (s, is) => println(s.generation + " " + s.s._1.size) }.
+      eval(new util.Random(42))
 
   File("/tmp/ose.csv") write NoisyOSE.result(ose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
 }

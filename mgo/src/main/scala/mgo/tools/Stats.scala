@@ -56,7 +56,7 @@ object stats {
     val cumul = weights.drop(1).scanLeft(weights(0)) {
       case (acc, x) => acc + x
     }
-    val randoms = Vector.fill(n)(rng.nextDouble())
+    val randoms = Vector.fill(n)(() => rng.nextDouble()).map(_())
     randoms.map { r => data(cumul.search(r).insertionPoint) }
   }
 }

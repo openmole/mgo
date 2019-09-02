@@ -1,45 +1,32 @@
 package mgo.evolution.algorithm
 
-import freestyle.tagless.tagless
+import cats.implicits._
 import mgo.evolution._
-import mgo.evolution.ranking._
+import mgo.evolution.algorithm.GenomeVectorDouble._
+import mgo.evolution.algorithm.OSEOperation.ReachMap
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
-import mgo.evolution.contexts._
-import mgo.tools._
+import mgo.evolution.ranking._
 import mgo.tools.execution._
-import mgo.tagtools._
-import cats.data._
-import cats.implicits._
-import GenomeVectorDouble._
-import shapeless._
+import monocle.function
+
+import scala.reflect.ClassTag
 
 object NoisyOSE {
   import CDGenome._
   import NoisyIndividual._
 
-  type OSEState[P] = (Array[Individual[P]], Array[Vector[Int]])
+  type StateType[P] = (Archive[Individual[P]], OSEOperation.ReachMap)
+  type OSEState[P] = EvolutionState[StateType[P]]
 
-  @tagless trait IndividualArchive[P] {
-    def put(i: Seq[Individual[P]]): FS[Unit]
-    def get(): FS[Vector[Individual[P]]]
-  }
+  def archiveLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.first
+  def reachMapLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.second
 
-  implicit def archiveConvert[M[_], P](implicit vhm: IndividualArchive[M, P]) = new Archive[M, Individual[P]] {
-    def put(i: Seq[Individual[P]]) = vhm.put(i)
-    def get() = vhm.get()
-  }
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  case class ArchiveInterpreter[P](val archive: collection.mutable.Buffer[Individual[P]]) extends IndividualArchive.Handler[Evaluated, P] {
-    def put(i: Seq[Individual[P]]) = mgo.tagtools.result(archive ++= i)
-    def get() = mgo.tagtools.result(archive.toVector)
-  }
-
-  def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]) =
-    CDGenome.initialGenomes[M](lambda, continuous, discrete)
-
-  def adaptiveBreeding[M[_]: cats.Monad: Random: Generation: ReachMap, P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual[P]]): Breeding[M, Individual[P], Genome] =
-    NoisyOSEOperations.adaptiveBreeding[M, Individual[P], Genome, P](
+  def adaptiveBreeding[P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]) =
+    NoisyOSEOperations.adaptiveBreeding[OSEState[P], Individual[P], Genome, P](
       vectorPhenotype[P].get,
       aggregation,
       Individual.genome.get,
@@ -54,15 +41,17 @@ object NoisyOSE {
       operatorExploration,
       cloneProbability,
       origin,
-      limit)
+      limit,
+      archiveLens.get,
+      reachMapLens.get)
 
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
     NoisyIndividual.expression[P](fitness, continuous)
 
-  def elitism[M[_]: cats.Monad: Random: Generation: ReachMap, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double])(implicit archive: Archive[M, Individual[P]]): Elitism[M, Individual[P]] = {
+  def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] = {
     def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
 
-    NoisyOSEOperations.elitism[M, Individual[P], P](
+    NoisyOSEOperations.elitism[OSEState[P], Individual[P], P](
       vectorPhenotype[P].get,
       aggregation,
       individualValues,
@@ -70,12 +59,14 @@ object NoisyOSE {
       limit,
       historySize,
       mergeHistories(individualValues, vectorPhenotype[P], Individual.historyAge[P], historySize),
-      mu)
+      mu,
+      archiveLens,
+      reachMapLens)
   }
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
 
-  def result[P: Manifest](state: EvolutionState[OSEState[P]], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double]) = {
+  def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double]) = {
     def goodIndividuals =
       population.flatMap { i =>
         val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
@@ -88,52 +79,21 @@ object NoisyOSE {
     } ++ goodIndividuals
   }
 
-  def result[P: Manifest](noisyOSE: NoisyOSE[P], state: EvolutionState[OSEState[P]], population: Vector[Individual[P]]): Vector[Result] =
+  def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result] =
     result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit)
 
-  def state[M[_]: cats.Monad: StartTime: Random: Generation, P](implicit archive: Archive[M, Individual[P]], reachMap: ReachMap[M]) = for {
-    map <- reachMap.get()
-    arch <- archive.get()
-    s <- mgo.evolution.algorithm.state[M, OSEState[P]]((arch.toArray, map.toArray))
-  } yield s
+  implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] = new Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] {
+    def initialState(t: NoisyOSE[P], rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))
 
-  object OSEImplicits {
-    def apply[P](state: EvolutionState[OSEState[P]]): OSEImplicits[P] =
-      OSEImplicits()(
-        GenerationInterpreter(state.generation),
-        RandomInterpreter(state.random),
-        StartTimeInterpreter(state.startTime),
-        IOInterpreter(),
-        ArchiveInterpreter[P](state.s._1.to[collection.mutable.Buffer]),
-        ReachMapInterpreter(state.s._2.to[collection.mutable.HashSet]),
-        SystemInterpreter())
-  }
+    def initialPopulation(t: NoisyOSE[P], rng: scala.util.Random) =
+      noisy.initialPopulation[Genome, Individual[P]](
+        NoisyOSE.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        NoisyOSE.expression[P](t.fitness, t.continuous),
+        rng)
 
-  case class OSEImplicits[P](implicit generationInterpreter: GenerationInterpreter, randomInterpreter: RandomInterpreter, startTimeInterpreter: StartTimeInterpreter, iOInterpreter: IOInterpreter, archiveInterpreter: ArchiveInterpreter[P], reachMapInterpreter: ReachMapInterpreter, systemInterpreter: SystemInterpreter)
-
-  def run[T](rng: util.Random)(f: OSEImplicits[Vector[Double]] => T): T = {
-    val state = EvolutionState[OSEState[Vector[Double]]](random = rng, s = (Array.empty, Array.empty))
-    run(state)(f)
-  }
-
-  def runP[T, S, P](state: EvolutionState[OSEState[P]])(f: OSEImplicits[P] => T): T = f(OSEImplicits(state))
-
-  def runP[T, P](rng: util.Random)(f: OSEImplicits[P] => T): T = {
-    val state = EvolutionState[OSEState[P]](random = rng, s = (Array.empty, Array.empty))
-    run(state)(f)
-  }
-
-  def run[T, S, P](state: EvolutionState[OSEState[P]])(f: OSEImplicits[P] => T): T = f(OSEImplicits(state))
-
-  implicit def isAlgorithm[M[_]: Generation: Random: cats.Monad: StartTime: ReachMap, P: Manifest](implicit archive: Archive[M, Individual[P]]): Algorithm[NoisyOSE[P], M, Individual[P], Genome, EvolutionState[OSEState[P]]] = new Algorithm[NoisyOSE[P], M, Individual[P], Genome, EvolutionState[OSEState[P]]] {
-    def initialPopulation(t: NoisyOSE[P]) =
-      noisy.initialPopulation[M, Genome, Individual[P]](
-        NoisyOSE.initialGenomes[M](t.lambda, t.continuous, t.discrete),
-        NoisyOSE.expression[P](t.fitness, t.continuous))
-
-    def step(t: NoisyOSE[P]): Kleisli[M, Vector[Individual[P]], Vector[Individual[P]]] =
-      noisy.step[M, Individual[P], Genome](
-        NoisyOSE.adaptiveBreeding[M, P](
+    def step(t: NoisyOSE[P]) =
+      noisy.step[OSEState[P], Individual[P], Genome](
+        NoisyOSE.adaptiveBreeding[P](
           t.lambda,
           t.operatorExploration,
           t.cloneProbability,
@@ -142,15 +102,15 @@ object NoisyOSE {
           t.origin,
           t.limit),
         NoisyOSE.expression(t.fitness, t.continuous),
-        NoisyOSE.elitism[M, P](
+        NoisyOSE.elitism[P](
           t.mu,
           t.historySize,
           t.aggregation,
           t.continuous,
           t.origin,
-          t.limit))
+          t.limit),
+        EvolutionState.generation)
 
-    def state = NoisyOSE.state[M, P]
   }
 
 }
@@ -178,7 +138,7 @@ object NoisyOSEOperations {
     promising.map(origin).toSet
   }
 
-  def adaptiveBreeding[M[_]: cats.Monad: Generation: Random, I, G, P](
+  def adaptiveBreeding[S, I, G, P](
     history: I => Vector[P],
     aggregation: Vector[P] => Vector[Double],
     genome: I => G,
@@ -193,52 +153,51 @@ object NoisyOSEOperations {
     operatorExploration: Double,
     cloneProbability: Double,
     origin: (Vector[Double], Vector[Int]) => Vector[Int],
-    limit: Vector[Double])(implicit archive: Archive[M, I], reachMap: ReachMap[M]) = Breeding[M, I, G] { population =>
-    import cats.implicits._
-    import cats.data._
+    limit: Vector[Double],
+    archive: S => Archive[I],
+    reachMap: S => OSEOperation.ReachMap): Breeding[S, I, G] =
+    (s, population, rng) => {
 
-    def genomeOrigin(g: G) = origin(continuousValues(g), discreteValues(g))
+      def genomeOrigin(g: G) = origin(continuousValues(g), discreteValues(g))
 
-    val promisingReachMapValue =
-      promisingReachMap[I](
-        aggregated(history, aggregation),
-        limit,
-        i => genomeOrigin(genome(i)),
-        population)
+      val promisingReachMapValue =
+        promisingReachMap[I](
+          aggregated(history, aggregation),
+          limit,
+          i => genomeOrigin(genome(i)),
+          population)
 
-    def filterAlreadyReachedAndNeighboursOfPromising(genomes: Vector[G]) =
-      for {
-        nonReached <- OSEOperation.filterAlreadyReached[M, G](genomeOrigin)(genomes)
-      } yield nonReached.filter(g => !promisingReachMapValue.contains(genomeOrigin(g)))
+      val reached = reachMap(s).toSet
 
-    def adaptiveBreeding(archivedPopulation: Vector[I]) = Breeding[M, I, G] { population =>
-      for {
-        ranks <- ranking.paretoRankingMinAndCrowdingDiversity[M, I](aggregated(history, aggregation)) apply population
-        allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
-        continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
-        discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
-        breeding = applyDynamicOperators[M, I, G](
-          tournament(allRanks, tournamentRounds),
-          genome andThen continuousValues,
-          genome andThen discreteValues,
-          continuousOperatorStatistics,
-          discreteOperatorStatistics,
-          discrete,
-          operatorExploration,
-          buildGenome) apply (population ++ archivedPopulation)
-        offspring <- breeding.flatMap(filterAlreadyReachedAndNeighboursOfPromising).accumulate(lambda)
-        sizedOffspringGenomes <- randomTake[M, G](offspring, lambda)
-        gs <- clonesReplace[M, I, G](cloneProbability, population, genome, tournament(ranks, tournamentRounds)) apply sizedOffspringGenomes
-      } yield gs
+      def filterAlreadyReachedAndNeighboursOfPromising(genomes: Vector[G]) =
+        OSEOperation.filterAlreadyReached[G](genomeOrigin, reached)(genomes).filter(g => !promisingReachMapValue.contains(genomeOrigin(g)))
+
+      val archivedPopulation = archive(s)
+      val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, aggregated(history, aggregation), rng)
+      val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
+      val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
+      val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+
+      def breeding: Breeding[S, I, G] =
+        (s, pop, g) => {
+          val breed = applyDynamicOperators[S, I, G](
+            tournament(allRanks, tournamentRounds),
+            genome andThen continuousValues,
+            genome andThen discreteValues,
+            continuousOperatorStatistics,
+            discreteOperatorStatistics,
+            discrete,
+            operatorExploration,
+            buildGenome)(s, pop, rng) //apply ()
+          filterAlreadyReachedAndNeighboursOfPromising(breed)
+        }
+
+      val offspring = breed(breeding, lambda)(s, population ++ archivedPopulation, rng)
+      val sizedOffspringGenomes = randomTake[G](offspring, lambda, rng)
+      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
     }
 
-    for {
-      archived <- archive.get()
-      genomes <- adaptiveBreeding(archived).apply(population)
-    } yield genomes
-  }
-
-  def elitism[M[_]: cats.Monad: Random: Generation, I, P](
+  def elitism[S, I: ClassTag, P](
     history: I => Vector[P],
     aggregation: Vector[P] => Vector[Double],
     values: I => (Vector[Double], Vector[Int]),
@@ -246,30 +205,30 @@ object NoisyOSEOperations {
     limit: Vector[Double],
     historySize: Int,
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
-    mu: Int)(implicit archive: Archive[M, I], reachMap: ReachMap[M]) = Elitism[M, I] { (population, candidates) =>
-    val merged = filterNaN(mergeHistories(population, candidates), aggregated(history, aggregation))
+    mu: Int,
+    archive: monocle.Lens[S, Archive[I]],
+    reachMap: monocle.Lens[S, ReachMap]): Elitism[S, I] =
+    (s, population, candidates, rng) => {
+      val merged = filterNaN(mergeHistories(population, candidates), aggregated(history, aggregation))
+      val reached = reachMap.get(s).toSet
 
-    import cats.implicits._
+      def individualOrigin(i: I) = Function.tupled(origin)(values(i))
+      def newlyReaching = {
+        def keepNewlyReaching(i: I): Option[I] =
+          if (OSEOperation.patternIsReached(aggregated(history, aggregation)(i), limit))
+            (reached.contains(individualOrigin(i))) match {
+              case true => None
+              case false if history(i).size >= historySize => Some(i)
+              case _ => None
+            }
+          else None
 
-    def individualOrigin(i: I) = Function.tupled(origin)(values(i))
-    def newlyReaching = {
-      def keepNewlyReaching(i: I): M[Option[I]] =
-        if (OSEOperation.patternIsReached(aggregated(history, aggregation)(i), limit))
-          (reachMap.reached(individualOrigin(i))) map {
-            case true => None
-            case false if history(i).size >= historySize => Some(i)
-            case _ => None
-          }
-        else (None: Option[I]).pure[M]
-      merged.flatTraverse(i => keepNewlyReaching(i).map(_.toVector))
+        merged.flatMap(i => keepNewlyReaching(i).toVector)
+      }
+
+      val reaching = newlyReaching
+      val s2 = reachMap.modify(_ ++ reaching.map(individualOrigin)).compose(archive.modify(_ ++ reaching))(s)
+      val filteredPopulation = OSEOperation.filterAlreadyReached[I](i => Function.tupled(origin)(values(i)), reachMap.get(s2).toSet)(merged)
+      NoisyNSGA2Operations.elitism[S, I, P](aggregated(history, aggregation), values, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
     }
-
-    for {
-      reaching <- newlyReaching
-      _ <- reachMap.setReached(reaching.map(individualOrigin))
-      _ <- archive.put(reaching)
-      filteredPopulation <- OSEOperation.filterAlreadyReached[M, I] { i: I => Function.tupled(origin)(values(i)) }(merged)
-      newPopulation <- NoisyNSGA2Operations.elitism[M, I, P](aggregated(history, aggregation), values, mergeHistories, mu).apply(filteredPopulation, Vector.empty)
-    } yield newPopulation
-  }
 }

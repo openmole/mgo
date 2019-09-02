@@ -1,8 +1,6 @@
 package mgo.test
 
 import mgo.evolution._
-import mgo.evolution.contexts._
-import mgo.tagtools._
 
 object NichedNSGAII extends App {
 
@@ -17,18 +15,12 @@ object NichedNSGAII extends App {
     discrete = discreteSphere.discrete(3),
     niche = i => i.genome.discreteValues.take(2).toSeq)
 
-  def evolution[M[_]: Generation: Random: cats.Monad: StartTime: IO] = {
+  def evolution =
     nsga2.
       until(afterGeneration(100)).
-      trace((s, is) => println(s.generation)).
-      evolution
-  }
+      trace((s, is) => println(s.generation))
 
-  val (finalState, finalPopulation) =
-    Profile.run(new util.Random(42)) { imp =>
-      import imp._
-      evolution[DSL].eval
-    }
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(Profile.result(nsga2, finalPopulation).mkString("\n"))
 

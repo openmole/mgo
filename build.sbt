@@ -19,7 +19,6 @@ def settings = Seq(
 ) ++ scalariformSettings(true)
 
 lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
-
   // macro paradise doesn't work with scaladoc
   sources in (Compile, doc) := Nil,
   libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1",
@@ -29,15 +28,11 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
 
   libraryDependencies += "org.typelevel"  %% "squants"  % "1.4.0",
+
+  libraryDependencies += "org.typelevel" %% "cats-core" % "1.6.1",
   libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0",
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
-) dependsOn(tagtools) 
-
-
-lazy val tagtools = Project(id = "tagtools", base = file("tagtools")) settings(settings: _*) settings (
-  libraryDependencies += "io.frees" %% "frees-core" % "0.8.2",
 )
-
 
 
 /* Publish */

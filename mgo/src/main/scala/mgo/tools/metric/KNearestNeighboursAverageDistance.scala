@@ -17,7 +17,7 @@
 
 package mgo.tools.metric
 
-import shapeless._
+import cats._
 import mgo.tools.KDTree
 
 /**
@@ -32,7 +32,7 @@ object KNearestNeighboursAverageDistance {
 
     values.map {
       v =>
-        Lazy({
+        Later({
           val neighbours: Seq[Seq[Double]] = tree.knearest(k, v)
           neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur, v) } / neighbours.size
         })

@@ -17,7 +17,6 @@
 package mgo.evolution
 
 import breeding._
-import contexts._
 import elitism._
 import mgo.tools
 import mgo.tools._
@@ -26,25 +25,26 @@ import cats._
 import cats.implicits._
 import cats.data._
 
+import monocle.macros._
+
 package object algorithm {
 
   type HitMapState = Map[Vector[Int], Int]
+  type Archive[I] = Array[I]
 
-  case class EvolutionState[S](
+  @Lenses case class EvolutionState[S](
     generation: Long = 0,
     startTime: Long = java.lang.System.currentTimeMillis(),
-    random: util.Random = newRNG(java.lang.System.currentTimeMillis()),
     s: S)
 
-  def state[M[_]: cats.Monad: StartTime: Random: Generation, T](t: T) =
-    for {
-      s <- implicitly[StartTime[M]].get
-      rng <- implicitly[Random[M]].use(identity)
-      g <- implicitly[Generation[M]].get
-    } yield EvolutionState[T](g, s, rng, t)
+  //  def state[M[_]: cats.Monad: StartTime: Random: Generation, T](t: T) =
+  //    for {
+  //      s <- implicitly[StartTime[M]].get
+  //      rng <- implicitly[Random[M]].use(identity)
+  //      g <- implicitly[Generation[M]].get
+  //    } yield EvolutionState[T](g, s, rng, t)
 
-  def randomTake[M[_]: cats.Monad, G](gs: Vector[G], lambda: Int)(implicit randomM: Random[M]) =
-    randomM.shuffle(gs).map { _.take(lambda) }
+  def randomTake[G](gs: Vector[G], lambda: Int, random: scala.util.Random) = random.shuffle(gs).take(lambda)
 
   def operatorProportions[I](operation: I => Option[Int], is: Vector[I]) =
     is.map { operation }.
@@ -52,69 +52,68 @@ package object algorithm {
       groupBy(identity).
       mapValues(_.length.toDouble / is.size)
 
-  def selectOperator[M[_]: cats.Monad, G](
-    operators: Vector[Kleisli[M, G, G]],
+  def selectOperator[S, G](
+    operators: Vector[(S, G, scala.util.Random) => G],
     opStats: Map[Int, Double],
-    exploration: Double)(implicit MR: Random[M]) = {
+    exploration: Double) = {
 
     def allOps =
       operators.zipWithIndex.map {
         case (op, index) => (op, opStats.getOrElse(index, 0.0))
       }
 
-    probabilisticOperatorB[M, G](allOps, exploration)
+    (s: S, g: G, rng: scala.util.Random) => {
+      val (op, i) = drawOperator(allOps, exploration, rng)
+      (op(s, g, rng), i)
+    }
   }
 
-  def probabilisticOperatorB[M[_]: cats.Monad, G](opsAndWeights: Vector[(Kleisli[M, G, G], Double)], exploration: Double)(implicit randomM: Random[M]): Kleisli[M, G, (G, Int)] =
-    Kleisli((mates: G) => {
-      for {
-        explore <- randomM.nextDouble
-        op <- if (explore < exploration) randomM.nextInt(opsAndWeights.size)
-        else randomM.multinomial(opsAndWeights.zipWithIndex.map { case ((op, w), i) => (i, w) })
-        g <- opsAndWeights(op)._1.run(mates)
-      } yield (g, op)
-    })
+  def drawOperator[O](opsAndWeights: Vector[(O, Double)], exploration: Double, rng: scala.util.Random) = {
+    val explore = rng.nextDouble
+
+    val i =
+      if (explore < exploration) rng.nextInt(opsAndWeights.size)
+      else multinomialDraw(opsAndWeights.zipWithIndex.map { case ((op, w), i) => (w, i) }, rng)._1
+
+    (opsAndWeights(i)._1, i)
+  }
 
   object GenomeVectorDouble {
 
-    def randomUnscaledContinuousValues[M[_]: cats.Monad](n: Int, genomeLength: Int)(
-      implicit
-      randomM: Random[M]): M[Vector[Vector[Double]]] = {
-      def genome = randomM.use(rng => Vector.fill(genomeLength)(rng.nextDouble()))
-      Vector.fill(n)(genome).sequence
+    def randomUnscaledContinuousValues(n: Int, genomeLength: Int, rng: scala.util.Random) = {
+      def genome = Vector.fill(genomeLength)(() => rng.nextDouble()).map(_())
+      Vector.fill(n)(genome)
     }
 
-    def randomDiscreteValues[M[_]: cats.Monad](n: Int, genome: Vector[D])(
-      implicit
-      randomM: Random[M]): M[Vector[Vector[Int]]] = {
-      def part(d: D) = randomM.use(rng => tools.randomInt(rng, d))
-      def random = genome.map(part).sequence
-      Vector.fill(n)(random).sequence
+    def randomDiscreteValues(n: Int, genome: Vector[D], rng: scala.util.Random): Vector[Vector[Int]] = {
+      def part(d: D) = tools.randomInt(rng, d)
+      def random = genome.map(part)
+      Vector.fill(n)(random)
     }
 
-    def randomGenomes[M[_]: cats.Monad: Random, G](cons: (Vector[Double], Vector[Int]) => G)(mu: Int, continuous: Vector[C], discrete: Vector[D]): M[Vector[G]] =
-      for {
-        discreteGenomes <- randomDiscreteValues[M](mu, discrete)
-        continuousGenomes <- randomUnscaledContinuousValues[M](mu, continuous.size)
-      } yield (continuousGenomes zip discreteGenomes).map(Function.tupled(cons))
+    def randomGenomes[G](cons: (Vector[Double], Vector[Int]) => G)(mu: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random): Vector[G] = {
+      val discreteGenomes = randomDiscreteValues(mu, discrete, rng)
+      val continuousGenomes = randomUnscaledContinuousValues(mu, continuous.size, rng)
+      (continuousGenomes zip discreteGenomes).map(Function.tupled(cons))
+    }
 
     def filterNaN[I, T](values: Vector[I], value: I => T)(implicit cbn: CanBeNaN[T]) =
       values.filter { i => !cbn.isNaN(value(i)) }
 
-    def continuousCrossovers[M[_]: cats.Monad: Random]: Vector[Crossover[M, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]] =
+    def continuousCrossovers[S]: Vector[GACrossover[S]] =
       Vector(
         sbxC(2.0),
         sbxC(5.0),
         sbxC(20.0))
 
-    def discreteCrossovers[M[_]: cats.Monad: Random]: Vector[Crossover[M, (Vector[Int], Vector[Int]), (Vector[Int], Vector[Int])]] =
+    def discreteCrossovers[S]: Vector[Crossover[S, (Vector[Int], Vector[Int]), (Vector[Int], Vector[Int])]] =
       Vector(
         binaryCrossover(1.0 / _),
         binaryCrossover(2.0 / _),
         binaryCrossover(_ => 0.1),
         binaryCrossover(_ => 0.5))
 
-    def continuousMutations[M[_]: cats.Monad: Random]: Vector[Mutation[M, Vector[Double], Vector[Double]]] =
+    def continuousMutations[S]: Vector[GAMutation[S]] =
       Vector(
         gaussianMutation(mutationRate = 1.0 / _, sigma = 0.0000001),
         gaussianMutation(mutationRate = 1.0 / _, sigma = 0.0001),
@@ -122,72 +121,66 @@ package object algorithm {
         gaussianMutation(mutationRate = _ => 0.1, sigma = 0.1),
         gaussianMutation(mutationRate = _ => 0.5, sigma = 0.5))
 
-    def discreteMutations[M[_]: cats.Monad: Random](discrete: Vector[D]): Vector[Mutation[M, Vector[Int], Vector[Int]]] =
+    def discreteMutations[S](discrete: Vector[D]): Vector[Mutation[S, Vector[Int], Vector[Int]]] =
       Vector(
         randomMutation(1.0 / _, discrete),
         randomMutation(2.0 / _, discrete),
         randomMutation(_ => 0.1, discrete),
         randomMutation(_ => 0.5, discrete))
 
-    type CrossoverAndMutation[M[_], G] = Kleisli[M, (G, G), (G, G)]
+    type CrossoverAndMutation[S, G] = (S, G, scala.util.Random) => G
 
-    def continuousCrossoversAndMutations[M[_]: cats.Monad: Random]: Vector[CrossoverAndMutation[M, Vector[Double]]] =
+    def continuousCrossoversAndMutations[S] =
       for {
-        c <- continuousCrossovers[M]
-        m <- continuousMutations[M]
-      } yield crossoverAndMutation(c, m)
+        c <- continuousCrossovers[S]
+        m <- continuousMutations[S]
+      } yield crossoverAndMutation[S, Vector[Double]](c, m)
 
-    def discreteCrossoversAndMutations[M[_]: cats.Monad: Random](discrete: Vector[D]): Vector[CrossoverAndMutation[M, Vector[Int]]] =
+    def discreteCrossoversAndMutations[S](discrete: Vector[D]) =
       for {
-        c <- discreteCrossovers[M]
-        m <- discreteMutations[M](discrete)
-      } yield crossoverAndMutation(c, m)
+        c <- discreteCrossovers[S]
+        m <- discreteMutations[S](discrete)
+      } yield crossoverAndMutation[S, Vector[Int]](c, m)
 
-    def crossoverAndMutation[M[_]: cats.Monad, G](crossover: Crossover[M, (G, G), (G, G)], mutation: Mutation[M, G, G]) =
-      Kleisli[M, (G, G), (G, G)] { mates =>
-        for {
-          crossed <- crossover.run(mates)
-          m1 <- mutation.run(crossed._1)
-          m2 <- mutation.run(crossed._2)
-        } yield (m1, m2)
+    def crossoverAndMutation[S, G](crossover: Crossover[S, (G, G), (G, G)], mutation: Mutation[S, G, G]): CrossoverAndMutation[S, (G, G)] =
+      (s, mates, rng) => {
+        val crossed = crossover(s, mates, rng)
+        val m1 = mutation(s, crossed._1, rng)
+        val m2 = mutation(s, crossed._2, rng)
+        (m1, m2)
       }
 
-    def applyOperators[M[_]: cats.Monad: Random, I, G](
-      crossover: Crossover[M, (G, G), (G, G)],
-      mutation: Mutation[M, G, G],
-      selection: Selection[M, I],
-      genome: I => G) =
-      Kleisli { population: Vector[I] =>
-        for {
-          m1 <- selection apply population
-          m2 <- selection apply population
-          offspring <- crossoverAndMutation[M, G](crossover, mutation) apply ((genome(m1), genome(m2)))
-        } yield offspring
-      }
+    def applyOperators[S, I, G](
+      crossover: Crossover[S, (G, G), (G, G)],
+      mutation: Mutation[S, G, G],
+      selection: Selection[S, I],
+      genome: I => G)(s: S, population: Vector[I], rng: scala.util.Random) = {
+      val m1 = selection(s, population, rng)
+      val m2 = selection(s, population, rng)
+      crossoverAndMutation[S, G](crossover, mutation) apply (s, (genome(m1), genome(m2)), rng)
+    }
 
-    def applyContinuousDynamicOperators[M[_]: cats.Monad: Random, I](
-      selection: Selection[M, I],
+    def applyContinuousDynamicOperators[S, I](
+      selection: Selection[S, I],
       genome: I => Vector[Double],
       operatorStatistics: Map[Int, Double],
       operatorExploration: Double) = {
 
       def applyOperator =
         selectOperator(
-          continuousCrossoversAndMutations[M],
+          continuousCrossoversAndMutations[S],
           operatorStatistics,
           operatorExploration)
 
-      Kleisli { population: Vector[I] =>
-        for {
-          m1 <- selection apply population
-          m2 <- selection apply population
-          offspring <- applyOperator apply ((genome(m1), genome(m2)))
-        } yield offspring
+      (s: S, population: Vector[I], rng: scala.util.Random) => {
+        val m1 = selection(s, population, rng)
+        val m2 = selection(s, population, rng)
+        applyOperator(s, (genome(m1), genome(m2)), rng)
       }
     }
 
-    def applyDynamicOperators[M[_]: cats.Monad: Random, I, G](
-      selection: Selection[M, I],
+    def applyDynamicOperators[S, I, G](
+      selection: Selection[S, I],
       continuousValues: I => Vector[Double],
       discreteValues: I => Vector[Int],
       continuousOperatorStatistics: Map[Int, Double],
@@ -198,48 +191,38 @@ package object algorithm {
 
       def continuousOperator =
         selectOperator(
-          continuousCrossoversAndMutations[M],
+          continuousCrossoversAndMutations[S],
           continuousOperatorStatistics,
           operatorExploration)
 
       def discreteOperator =
         selectOperator(
-          discreteCrossoversAndMutations[M](discrete),
+          discreteCrossoversAndMutations[S](discrete),
           discreteOperatorStatistics,
           operatorExploration)
 
-      Kleisli { population: Vector[I] =>
-        for {
-          m1 <- selection apply population
-          m2 <- selection apply population
-          c1 = continuousValues(m1)
-          c2 = continuousValues(m2)
-          cOff <- continuousOperator apply (c1, c2)
-          d1 = discreteValues(m1)
-          d2 = discreteValues(m2)
-          dOff <- discreteOperator apply (d1, d2)
-        } yield {
-          val ((cOff1, cOff2), cop) = cOff
-          val ((dOff1, dOff2), dop) = dOff
+      (s: S, population: Vector[I], rng: scala.util.Random) => {
+        val m1 = selection(s, population, rng)
+        val m2 = selection(s, population, rng)
+        val c1 = continuousValues(m1)
+        val c2 = continuousValues(m2)
+        val cOff = continuousOperator(s, (c1, c2), rng)
+        val d1 = discreteValues(m1)
+        val d2 = discreteValues(m2)
+        val dOff = discreteOperator(s, (d1, d2), rng)
 
-          import mgo.tools.clamp
+        val ((cOff1, cOff2), cop) = cOff
+        val ((dOff1, dOff2), dop) = dOff
 
-          val ng1 = buildGenome(cOff1.map(clamp(_)), Some(cop), dOff1, Some(dop))
-          val ng2 = buildGenome(cOff2.map(clamp(_)), Some(cop), dOff2, Some(dop))
+        import mgo.tools.clamp
 
-          Vector(ng1, ng2)
-        }
+        val ng1 = buildGenome(cOff1.map(clamp(_)), Some(cop), dOff1, Some(dop))
+        val ng2 = buildGenome(cOff2.map(clamp(_)), Some(cop), dOff2, Some(dop))
+
+        Vector(ng1, ng2)
       }
     }
   }
-
-  object Operators {
-    implicit def pairToManual[M[_]](crossover: GACrossover[M], mutation: GAMutation[M]) = ManualOperators(crossover, mutation)
-  }
-
-  sealed trait Operators[M[_]]
-  case class AdaptiveOperators[M[_]](operatorExploration: Double = 0.1) extends Operators[M]
-  case class ManualOperators[M[_]](crossover: GACrossover[M], mutation: GAMutation[M]) extends Operators[M]
 
   def averageAggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
 
@@ -308,29 +291,27 @@ package object algorithm {
     def values(g: Genome, continuous: Vector[C]) =
       (scaleContinuousValues(continuousValues.get(g), continuous), discreteValues.get(g))
 
-    def initialGenomes[M[_]: cats.Monad: Random](lambda: Int, continuous: Vector[C], discrete: Vector[D]): M[Vector[Genome]] =
-      GenomeVectorDouble.randomGenomes[M, Genome]((c, d) => buildGenome(c, None, d, None))(lambda, continuous, discrete)
+    def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random): Vector[Genome] =
+      GenomeVectorDouble.randomGenomes[Genome]((c, d) => buildGenome(c, None, d, None))(lambda, continuous, discrete, rng)
 
   }
 
   object deterministic {
-    def initialPopulation[M[_]: cats.Monad, G, I](
-      initialGenomes: M[Vector[G]],
-      expression: G => I) =
-      for {
-        gs <- initialGenomes
-      } yield gs.map(expression)
 
-    def step[M[_]: cats.Monad: Random: Generation, I, G](
-      breeding: Breeding[M, I, G],
+    def initialPopulation[G, I](
+      initialGenomes: Vector[G],
+      expression: G => I) = initialGenomes.map(expression)
+
+    def step[S, I, G](
+      breeding: Breeding[S, I, G],
       expression: G => I,
-      elitism: Elitism[M, I]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { population =>
-      for {
-        newGenomes <- breeding(population)
-        newPopulation = newGenomes.map(expression)
-        elitePopulation <- elitism(population, newPopulation)
-        _ <- incrementGeneration
-      } yield elitePopulation
+      elitism: Elitism[S, I],
+      generation: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random) = {
+      val newGenomes = breeding(s, population, rng)
+      val newPopulation = newGenomes.map(expression)
+      val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
+      val s3 = generation.modify(_ + 1)(s2)
+      (s3, elitePopulation)
     }
 
     def expression[G, P, I](
@@ -345,27 +326,25 @@ package object algorithm {
   }
 
   object noisy {
-    def initialPopulation[M[_]: cats.Monad, G, I](
-      initialGenomes: M[Vector[G]],
-      expression: (util.Random, G) => I)(implicit random: Random[M]) =
-      for {
-        genomes <- initialGenomes
-        initialIndividuals <- genomes.traverse(g => random.use(rng => expression(rng, g)))
-      } yield initialIndividuals
-
-    def step[M[_]: cats.Monad: Generation, I, G](
-      breeding: Breeding[M, I, G],
+    def initialPopulation[G, I](
+      initialGenomes: Vector[G],
       expression: (util.Random, G) => I,
-      elitism: Elitism[M, I])(implicit randomM: Random[M]): Kleisli[M, Vector[I], Vector[I]] = Kleisli { population =>
+      rng: scala.util.Random) =
+      initialGenomes.map(g => expression(rng, g))
 
-      def evaluate(g: G) = randomM.use { rng => expression(rng, g) }
+    def step[S, I, G](
+      breeding: Breeding[S, I, G],
+      expression: (util.Random, G) => I,
+      elitism: Elitism[S, I],
+      generation: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random) = {
+      def evaluate(g: G) = expression(rng, g)
 
-      for {
-        newGenomes <- breeding(population)
-        newPopulation <- newGenomes.traverse { evaluate }
-        elitePopulation <- elitism(population, newPopulation)
-        _ <- incrementGeneration
-      } yield elitePopulation
+      val newGenomes = breeding(s, population, rng)
+      val newPopulation = newGenomes.map(evaluate)
+      val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
+      val s3 = generation.modify(_ + 1)(s2)
+
+      (s3, elitePopulation)
     }
 
     def expression[G, I, P](
@@ -378,4 +357,5 @@ package object algorithm {
 
   }
 
+  type HitMap = Map[Vector[Int], Int]
 }
