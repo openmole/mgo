@@ -107,7 +107,7 @@ object APMC {
   def exposedStep(p: Params)(implicit rng: util.Random): ExposedEval[State, Matrix, (State, Matrix, Matrix), Matrix, State] =
     ExposedEval(
       pre = { s =>
-        val (sigmaSquared, newThetas) = stepPreEval(p.n, p.nAlpha, s)
+        val (sigmaSquared, newThetas) = stepPreEval(p.n, p.nAlpha, p.priorDensity, s)
         ((s, sigmaSquared, newThetas), newThetas)
       },
       post = { (sstep, newXs) =>
@@ -115,7 +115,11 @@ object APMC {
         stepPostEval(p.n, p.nAlpha, p.priorDensity, p.observed, s, sigmaSquared, newThetas, newXs)
       })
 
-  def stepPreEval(n: Int, nAlpha: Int, s: State)(implicit rng: util.Random): (Matrix, Matrix) = {
+  def stepPreEval(
+    n: Int,
+    nAlpha: Int,
+    priorDensity: Array[Double] => Double,
+    s: State)(implicit rng: util.Random): (Matrix, Matrix) = {
     val thetasM = MatrixUtils.createRealMatrix(s.thetas)
 
     val dim = thetasM.getColumnDimension()
@@ -124,8 +128,10 @@ object APMC {
     val weightedDistributionTheta = new EnumeratedIntegerDistribution(apacheRandom(rng), Array.range(0, nAlpha), s.weights)
     val newThetas =
       Array.fill(n - nAlpha) {
-        val resampledTheta = thetasM.getRow(weightedDistributionTheta.sample)
-        new MultivariateNormalDistribution(apacheRandom(rng), resampledTheta, sigmaSquared.getData).sample
+        Iterator.continually {
+          val resampledTheta = thetasM.getRow(weightedDistributionTheta.sample)
+          new MultivariateNormalDistribution(apacheRandom(rng), resampledTheta, sigmaSquared.getData).sample
+        }.dropWhile { priorDensity(_) == 0 }.next
       }
 
     (sigmaSquared.getData, newThetas)

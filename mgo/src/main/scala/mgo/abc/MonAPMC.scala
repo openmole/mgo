@@ -142,7 +142,12 @@ object MonAPMC {
 
   type StepState = Either[Matrix, (APMC.State, Int, Matrix, Matrix)]
 
-  def preStep(n: Int, nAlpha: Int, priorSample: util.Random => Array[Double], state: MonState)(implicit rng: util.Random): (StepState, Matrix) = {
+  def preStep(
+    n: Int,
+    nAlpha: Int,
+    priorSample: util.Random => Array[Double],
+    priorDensity: Array[Double] => Double,
+    state: MonState)(implicit rng: util.Random): (StepState, Matrix) = {
     /* If s is empty or the number of particles it contains hasn't reach nAlpha yet, keep generating particles (n - nAlpha by n - nAlpha) from the prior using the function APMC.stepOne and setting the parameter n to (n - nAlpha)*/
 
     val reducedN = n - nAlpha
@@ -157,13 +162,19 @@ object MonAPMC {
           val thetas = APMC.initPreEval(reducedN, priorSample)
           (Left(thetas), thetas)
         } else {
-          val (sigmaSquared, thetas) = APMC.stepPreEval(n, nAlpha, s)
+          val (sigmaSquared, thetas) = APMC.stepPreEval(n, nAlpha, priorDensity, s)
           (Right((s, t0, sigmaSquared, thetas)), thetas)
         }
     }
   }
 
-  def postStep(n: Int, nAlpha: Int, priorDensity: Array[Double] => Double, observed: Array[Double], stepState: StepState, xs: Matrix)(implicit rng: util.Random) = {
+  def postStep(
+    n: Int,
+    nAlpha: Int,
+    priorDensity: Array[Double] => Double,
+    observed: Array[Double],
+    stepState: StepState,
+    xs: Matrix)(implicit rng: util.Random) = {
     val reducedN = n - nAlpha
     stepState match {
       case Left(thetas) => State(0, APMC.initPostEval(reducedN, nAlpha, observed, thetas, xs))
@@ -178,7 +189,7 @@ object MonAPMC {
 
   def exposedStep(p: Params)(implicit rng: util.Random): ExposedEval[MonState, Matrix, Either[Matrix, (APMC.State, Int, Matrix, Matrix)], Matrix, MonState] =
     ExposedEval(
-      pre = preStep(p.apmcP.n, p.apmcP.nAlpha, p.apmcP.priorSample, _),
+      pre = preStep(p.apmcP.n, p.apmcP.nAlpha, p.apmcP.priorSample, p.apmcP.priorDensity, _),
       post = postStep(p.apmcP.n, p.apmcP.nAlpha, p.apmcP.priorDensity, p.apmcP.observed, _, _))
 
   def steps(s: MonState) = s match {
