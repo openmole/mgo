@@ -81,6 +81,8 @@ releaseCommitMessage := s"Bump version to ${(version in ThisBuild).value}"
 
 sonatypeProfileName := "fr.iscpif"
 
+publishConfiguration := publishConfiguration.value.withOverwrite(true)
+
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 releaseProcess := Seq[ReleaseStep](
