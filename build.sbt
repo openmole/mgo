@@ -27,9 +27,9 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
   libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
 
-  libraryDependencies += "org.typelevel"  %% "squants"  % "1.4.0",
+  libraryDependencies += "org.typelevel"  %% "squants"  % "1.5.0",
 
-  libraryDependencies += "org.typelevel" %% "cats-core" % "1.6.1",
+  libraryDependencies += "org.typelevel" %% "cats-core" % "2.0.0",
   libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0",
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 )
