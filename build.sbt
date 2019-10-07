@@ -73,7 +73,7 @@ releaseTagComment := s"Releasing ${(version in ThisBuild).value}"
 
 releaseCommitMessage := s"Bump version to ${(version in ThisBuild).value}"
 
-sonatypeProfileName := "fr.iscpif"
+sonatypeProfileName := "org.openmole"
 
 publishConfiguration := publishConfiguration.value.withOverwrite(true)
 
