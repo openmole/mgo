@@ -17,7 +17,7 @@
 package mgo.evolution
 
 import scala.math._
-import scalaz._
+import monocle._
 import mgo.tools._
 
 object niche {
