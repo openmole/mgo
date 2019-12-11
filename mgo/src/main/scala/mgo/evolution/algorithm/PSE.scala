@@ -62,7 +62,8 @@ object PSE {
     lambda: Int,
     operatorExploration: Double,
     discrete: Vector[D],
-    pattern: Vector[Double] => Vector[Int]): Breeding[PSEState, Individual, Genome] =
+    pattern: Vector[Double] => Vector[Int],
+    filter: Option[Genome => Boolean]): Breeding[PSEState, Individual, Genome] =
     PSEOperations.adaptiveBreeding[PSEState, Individual, Genome](
       Individual.genome.get,
       continuousValues.get,
@@ -73,6 +74,7 @@ object PSE {
       vectorPhenotype.get _ andThen pattern,
       buildGenome,
       lambda,
+      filter,
       operatorExploration,
       EvolutionState.s[HitMap])
 
@@ -89,6 +91,8 @@ object PSE {
       buildIndividual,
       phenotype)
 
+  def filter(pse: PSE) = NSGA2.filter(pse.filter, pse.continuous)
+
   implicit def isAlgorithm: Algorithm[PSE, Individual, Genome, EvolutionState[HitMap]] = new Algorithm[PSE, Individual, Genome, EvolutionState[HitMap]] {
     def initialState(t: PSE, rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
@@ -100,7 +104,7 @@ object PSE {
     def step(t: PSE) =
       (s, pop, rng) =>
         deterministic.step[EvolutionState[HitMap], Individual, Genome](
-          PSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, t.pattern),
+          PSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, t.pattern, filter(t)),
           PSE.expression(t.phenotype, t.continuous),
           PSE.elitism(t.pattern, t.continuous),
           EvolutionState.generation)(s, pop, rng)
@@ -115,7 +119,8 @@ case class PSE(
   pattern: Vector[Double] => Vector[Int],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
-  operatorExploration: Double = 0.1)
+  operatorExploration: Double = 0.1,
+  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object PSEOperations {
 
@@ -129,6 +134,7 @@ object PSEOperations {
     pattern: I => Vector[Int],
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     lambda: Int,
+    filter: Option[G => Boolean],
     operatorExploration: Double,
     hitmap: monocle.Lens[S, HitMap]): Breeding[S, I, G] =
     (s, population, rng) => {
@@ -144,7 +150,7 @@ object PSEOperations {
         discrete,
         operatorExploration,
         buildGenome)
-      val offspring = breed[S, I, G](breeding, lambda)(s, population, rng)
+      val offspring = breed[S, I, G](breeding, lambda, filter)(s, population, rng)
       randomTake(offspring, lambda, rng)
     }
 

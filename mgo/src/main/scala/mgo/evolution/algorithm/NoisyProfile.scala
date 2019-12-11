@@ -77,7 +77,13 @@ object NoisyProfile {
   def gridObjectiveProfile[P: Manifest](aggregation: Vector[P] => Vector[Double], x: Int, intervals: Vector[Double]): Niche[Individual[P], Int] =
     mgo.evolution.niche.gridContinuousProfile[Individual[P]](aggregatedFitness(aggregation), x, intervals)
 
-  def adaptiveBreeding[P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D]) =
+  def adaptiveBreeding[P: Manifest](
+    lambda: Int,
+    operatorExploration: Double,
+    cloneProbability: Double,
+    aggregation: Vector[P] => Vector[Double],
+    discrete: Vector[D],
+    filter: Option[Genome => Boolean]) =
     NoisyNSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome, P](
       aggregatedFitness(aggregation),
       Individual.genome.get,
@@ -89,6 +95,7 @@ object NoisyProfile {
       buildGenome,
       logOfPopulationSize,
       lambda,
+      filter,
       operatorExploration,
       cloneProbability)
 
@@ -110,6 +117,8 @@ object NoisyProfile {
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
+  def filter[N, P](pse: NoisyProfile[N, P]) = NSGA2.filter(pse.filter, pse.continuous)
+
   implicit def isAlgorithm[N, P: Manifest]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] = new Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] {
     override def initialState(t: NoisyProfile[N, P], rng: scala.util.Random) = EvolutionState(s = Unit)
 
@@ -126,7 +135,8 @@ object NoisyProfile {
           t.operatorExploration,
           t.cloneProbability,
           t.aggregation,
-          t.discrete),
+          t.discrete,
+          filter(t)),
         NoisyProfile.expression(t.fitness, t.continuous),
         NoisyProfile.elitism[N, P](
           t.niche,
@@ -150,7 +160,8 @@ case class NoisyProfile[N, P](
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
-  operatorExploration: Double = 0.1)
+  operatorExploration: Double = 0.1,
+  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object NoisyProfileOperations {
 

@@ -25,7 +25,15 @@ object NoisyOSE {
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  def adaptiveBreeding[P: Manifest](lambda: Int, operatorExploration: Double, cloneProbability: Double, aggregation: Vector[P] => Vector[Double], discrete: Vector[D], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]) =
+  def adaptiveBreeding[P: Manifest](
+    lambda: Int,
+    operatorExploration: Double,
+    cloneProbability: Double,
+    aggregation: Vector[P] => Vector[Double],
+    discrete: Vector[D],
+    origin: (Vector[Double], Vector[Int]) => Vector[Int],
+    limit: Vector[Double],
+    filter: Option[Genome => Boolean]) =
     NoisyOSEOperations.adaptiveBreeding[OSEState[P], Individual[P], Genome, P](
       vectorPhenotype[P].get,
       aggregation,
@@ -38,6 +46,7 @@ object NoisyOSE {
       buildGenome,
       logOfPopulationSize,
       lambda,
+      filter,
       operatorExploration,
       cloneProbability,
       origin,
@@ -82,6 +91,8 @@ object NoisyOSE {
   def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result] =
     result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit)
 
+  def filter[P](pse: NoisyOSE[P]) = NSGA2.filter(pse.filter, pse.continuous)
+
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] = new Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] {
     def initialState(t: NoisyOSE[P], rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))
 
@@ -100,7 +111,8 @@ object NoisyOSE {
           t.aggregation,
           t.discrete,
           t.origin,
-          t.limit),
+          t.limit,
+          filter(t)),
         NoisyOSE.expression(t.fitness, t.continuous),
         NoisyOSE.elitism[P](
           t.mu,
@@ -126,7 +138,8 @@ case class NoisyOSE[P](
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
-  operatorExploration: Double = 0.1)
+  operatorExploration: Double = 0.1,
+  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object NoisyOSEOperations {
 
@@ -150,6 +163,7 @@ object NoisyOSEOperations {
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     tournamentRounds: Int => Int,
     lambda: Int,
+    filter: Option[G => Boolean],
     operatorExploration: Double,
     cloneProbability: Double,
     origin: (Vector[Double], Vector[Int]) => Vector[Int],
@@ -192,7 +206,7 @@ object NoisyOSEOperations {
           filterAlreadyReachedAndNeighboursOfPromising(breed)
         }
 
-      val offspring = breed(breeding, lambda)(s, population ++ archivedPopulation, rng)
+      val offspring = breed(breeding, lambda, filter)(s, population ++ archivedPopulation, rng)
       val sizedOffspringGenomes = randomTake[G](offspring, lambda, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
     }

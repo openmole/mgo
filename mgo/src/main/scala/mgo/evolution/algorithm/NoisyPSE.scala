@@ -51,7 +51,8 @@ object NoisyPSE {
     cloneProbability: Double,
     aggregation: Vector[P] => Vector[Double],
     discrete: Vector[D],
-    pattern: Vector[Double] => Vector[Int]): Breeding[PSEState, Individual[P], Genome] =
+    pattern: Vector[Double] => Vector[Int],
+    filter: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     NoisyPSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Individual.genome.get,
       continuousValues.get,
@@ -62,6 +63,7 @@ object NoisyPSE {
       vectorPhenotype[P].get _ andThen aggregation andThen pattern,
       buildGenome,
       lambda,
+      filter,
       operatorExploration,
       cloneProbability,
       EvolutionState.s[HitMap])
@@ -109,6 +111,8 @@ object NoisyPSE {
   def result[P: Manifest](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result(population, pse.aggregation, pse.pattern, pse.continuous)
 
+  def filter[P](pse: NoisyPSE[P]) = NSGA2.filter(pse.filter, pse.continuous)
+
   implicit def isAlgorithm[P: Manifest: CanBeNaN] = new Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] {
 
     def initialState(t: NoisyPSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
@@ -128,7 +132,8 @@ object NoisyPSE {
             t.cloneProbability,
             t.aggregation,
             t.discrete,
-            t.pattern),
+            t.pattern,
+            filter(t)),
           NoisyPSE.expression(t.phenotype, t.continuous),
           NoisyPSE.elitism[P](
             t.pattern,
@@ -149,7 +154,8 @@ case class NoisyPSE[P](
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
-  operatorExploration: Double = 0.1)
+  operatorExploration: Double = 0.1,
+  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object NoisyPSEOperations {
 
@@ -163,6 +169,7 @@ object NoisyPSEOperations {
     pattern: I => Vector[Int],
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     lambda: Int,
+    filter: Option[G => Boolean],
     cloneProbability: Double,
     operatorExploration: Double,
     hitmap: monocle.Lens[S, HitMap]): Breeding[S, I, G] =
@@ -177,6 +184,7 @@ object NoisyPSEOperations {
         pattern,
         buildGenome,
         lambda,
+        filter,
         operatorExploration,
         hitmap)(s, population, rng)
       clonesReplace[S, I, G](cloneProbability, population, genome, randomSelection)(s, gs, rng)
