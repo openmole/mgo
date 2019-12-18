@@ -30,7 +30,7 @@ object OSE {
     discrete: Vector[D],
     origin: (Vector[Double], Vector[Int]) => Vector[Int],
     fitness: P => Vector[Double],
-    filter: Option[Genome => Boolean]): Breeding[OSEState[P], Individual[P], Genome] =
+    reject: Option[Genome => Boolean]): Breeding[OSEState[P], Individual[P], Genome] =
     OSEOperation.adaptiveBreeding[OSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       Individual.genome.get,
@@ -43,7 +43,7 @@ object OSE {
       buildGenome,
       logOfPopulationSize,
       lambda,
-      filter,
+      reject,
       operatorExploration,
       archiveLens[P].get,
       reachMapLens.get)
@@ -71,7 +71,7 @@ object OSE {
   def result(ose: OSE, state: OSEState[Vector[Double]]): Vector[Result] =
     result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity)
 
-  def filter(ose: OSE) = NSGA2.filter(ose.filter, ose.continuous)
+  def reject(ose: OSE) = NSGA2.reject(ose.reject, ose.continuous)
 
   implicit def isAlgorithm: Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] = new Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] {
     override def initialState(t: OSE, rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))
@@ -83,7 +83,7 @@ object OSE {
 
     def step(t: OSE) =
       deterministic.step[OSEState[Vector[Double]], Individual[Vector[Double]], Genome](
-        OSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.discrete, t.origin, identity, filter(t)),
+        OSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.discrete, t.origin, identity, reject(t)),
         OSE.expression(t.fitness, t.continuous),
         OSE.elitism(t.mu, t.limit, t.origin, t.continuous, identity),
         EvolutionState.generation)
@@ -101,7 +101,7 @@ case class OSE(
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   operatorExploration: Double = 0.1,
-  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object OSEOperation {
 
@@ -129,7 +129,7 @@ object OSEOperation {
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     tournamentRounds: Int => Int,
     lambda: Int,
-    filter: Option[G => Boolean],
+    reject: Option[G => Boolean],
     operatorExploration: Double,
     archive: S => Archive[I],
     reachMap: S => ReachMap): Breeding[S, I, G] =
@@ -157,7 +157,7 @@ object OSEOperation {
           filterAlreadyReached[G](g => origin(continuousValues(g), discreteValues(g)), reached)(newGs)
         }
 
-      val offspring = breed[S, I, G](breeding, lambda, filter)(s, population ++ archivedPopulation, rng)
+      val offspring = breed[S, I, G](breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
       randomTake(offspring, lambda, rng)
     }
 

@@ -61,7 +61,7 @@ object NoisyNSGA2 {
     cloneProbability: Double,
     aggregation: Vector[P] => Vector[Double],
     discrete: Vector[D],
-    filter: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
+    reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
     NoisyNSGA2Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Individual.genome.get,
@@ -73,7 +73,7 @@ object NoisyNSGA2 {
       buildGenome,
       _ => 1,
       lambda,
-      filter,
+      reject,
       operatorExploration,
       cloneProbability)
 
@@ -90,7 +90,7 @@ object NoisyNSGA2 {
       mu)
   }
 
-  def filter[P](pse: NoisyNSGA2[P]) = NSGA2.filter(pse.filter, pse.continuous)
+  def reject[P](pse: NoisyNSGA2[P]) = NSGA2.reject(pse.reject, pse.continuous)
 
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] = new Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] {
     def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = Unit)
@@ -110,7 +110,7 @@ object NoisyNSGA2 {
             t.cloneProbability,
             t.aggregation,
             t.discrete,
-            filter(t)),
+            reject(t)),
           NoisyNSGA2.expression(t.fitness, t.continuous),
           NoisyNSGA2.elitism[NSGA2State, P](
             t.mu,
@@ -133,7 +133,7 @@ case class NoisyNSGA2[P](
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
-  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object NoisyNSGA2Operations {
 
@@ -151,7 +151,7 @@ object NoisyNSGA2Operations {
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     tournamentRounds: Int => Int,
     lambda: Int,
-    filter: Option[G => Boolean],
+    reject: Option[G => Boolean],
     operatorExploration: Double,
     cloneProbability: Double): Breeding[S, I, G] =
     (s, population, rng) => {
@@ -168,7 +168,7 @@ object NoisyNSGA2Operations {
         operatorExploration,
         buildGenome)
 
-      val offspring = breed[S, I, G](breeding, lambda, filter)(s, population, rng)
+      val offspring = breed[S, I, G](breeding, lambda, reject)(s, population, rng)
       val sizedOffspringGenomes = randomTake(offspring, lambda, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
     }

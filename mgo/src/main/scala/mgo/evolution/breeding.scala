@@ -312,13 +312,13 @@ object breeding {
 
   /* tool functions */
 
-  def breed[S, I, G](breeding: Breeding[S, I, G], lambda: Int, filter: Option[G => Boolean] = None): Breeding[S, I, G] =
+  def breed[S, I, G](breeding: Breeding[S, I, G], lambda: Int, reject: Option[G => Boolean] = None): Breeding[S, I, G] =
     (s, population, rng) => {
       def accumulate(acc: Vector[G] = Vector()): Vector[G] =
         if (acc.size >= lambda) acc
         else {
-          val filterValue = filter.getOrElse((_: G) => true)
-          val b = breeding(s, population, rng).filter(filterValue)
+          val rejectValue = reject.getOrElse((_: G) => false)
+          val b = breeding(s, population, rng).filter(s => !rejectValue(s))
           accumulate(b ++ acc)
         }
 

@@ -36,7 +36,7 @@ object NSGA2 {
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], filter: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
+  def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
     NSGA2Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
       Individual.genome.get,
@@ -48,7 +48,7 @@ object NSGA2 {
       buildGenome,
       _ => 1,
       lambda,
-      filter,
+      reject,
       operatorExploration)
 
   def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
@@ -62,11 +62,11 @@ object NSGA2 {
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
 
-  def filter(f: Option[(Vector[Double], Vector[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
-    f.map { filter => (g: Genome) =>
+  def reject(f: Option[(Vector[Double], Vector[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
+    f.map { reject => (g: Genome) =>
       val scaledContinuous = scaleContinuousValues(continuousValues.get(g), continuous)
       val discreteValue = discreteValues get g
-      filter(scaledContinuous, discreteValue)
+      reject(scaledContinuous, discreteValue)
     }
 
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double]) =
@@ -84,15 +84,14 @@ object NSGA2 {
       override def step(t: NSGA2) =
         (s, population, rng) =>
           deterministic.step[NSGA2State, Individual[Vector[Double]], Genome](
-            NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity, filter(t)),
+            NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
             NSGA2.expression(t.fitness, t.continuous),
             NSGA2.elitism[NSGA2State, Vector[Double]](t.mu, t.continuous, identity),
             EvolutionState.generation)(s, population, rng)
     }
 
   def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]): Vector[Result] = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _)
-
-  def filter(nsga2: NSGA2): Option[Genome => Boolean] = filter(nsga2.filter, nsga2.continuous)
+  def reject(nsga2: NSGA2): Option[Genome => Boolean] = reject(nsga2.reject, nsga2.continuous)
 
 }
 
@@ -103,7 +102,7 @@ case class NSGA2(
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   operatorExploration: Double = 0.1,
-  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object NSGA2Operations {
 
@@ -137,7 +136,7 @@ object NSGA2Operations {
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     tournamentRounds: Int => Int,
     lambda: Int,
-    filter: Option[G => Boolean],
+    reject: Option[G => Boolean],
     operatorExploration: Double): Breeding[S, I, G] =
     (s, population, rng) => {
       val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, fitness, rng)
@@ -153,7 +152,7 @@ object NSGA2Operations {
         operatorExploration,
         buildGenome)
 
-      val offspring = breed(breeding, lambda, filter)(s, population, rng)
+      val offspring = breed(breeding, lambda, reject)(s, population, rng)
       randomTake(offspring, lambda, rng)
     }
 

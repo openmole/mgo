@@ -83,7 +83,7 @@ object NoisyProfile {
     cloneProbability: Double,
     aggregation: Vector[P] => Vector[Double],
     discrete: Vector[D],
-    filter: Option[Genome => Boolean]) =
+    reject: Option[Genome => Boolean]) =
     NoisyNSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome, P](
       aggregatedFitness(aggregation),
       Individual.genome.get,
@@ -95,7 +95,7 @@ object NoisyProfile {
       buildGenome,
       logOfPopulationSize,
       lambda,
-      filter,
+      reject,
       operatorExploration,
       cloneProbability)
 
@@ -117,7 +117,7 @@ object NoisyProfile {
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  def filter[N, P](pse: NoisyProfile[N, P]) = NSGA2.filter(pse.filter, pse.continuous)
+  def reject[N, P](pse: NoisyProfile[N, P]) = NSGA2.reject(pse.reject, pse.continuous)
 
   implicit def isAlgorithm[N, P: Manifest]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] = new Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] {
     override def initialState(t: NoisyProfile[N, P], rng: scala.util.Random) = EvolutionState(s = Unit)
@@ -136,7 +136,7 @@ object NoisyProfile {
           t.cloneProbability,
           t.aggregation,
           t.discrete,
-          filter(t)),
+          reject(t)),
         NoisyProfile.expression(t.fitness, t.continuous),
         NoisyProfile.elitism[N, P](
           t.niche,
@@ -161,7 +161,7 @@ case class NoisyProfile[N, P](
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
-  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object NoisyProfileOperations {
 

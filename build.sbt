@@ -1,14 +1,14 @@
 
 name := "mgo"
 organization in ThisBuild := "org.openmole"
-scalaVersion in ThisBuild := "2.12.8"
-crossScalaVersions in ThisBuild := Seq("2.12.8")
+scalaVersion in ThisBuild := "2.12.10"
+crossScalaVersions in ThisBuild := Seq("2.12.10")
 
 val monocleVersion = "2.0.0"
 
 def settings = Seq(
   addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
-  addCompilerPlugin("org.scalameta" % "paradise" % "3.0.0-M11" cross CrossVersion.full),
+  addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full),
   scalacOptions += "-Xplugin-require:macroparadise",
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("staging"),

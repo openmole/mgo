@@ -64,7 +64,7 @@ object Profile {
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, rng)
 
-  def adaptiveBreeding[P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], filter: Option[Genome => Boolean]) =
+  def adaptiveBreeding[P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]) =
     NSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome](
       individualFitness(fitness),
       Individual.genome.get,
@@ -76,7 +76,7 @@ object Profile {
       buildGenome,
       logOfPopulationSize,
       lambda,
-      filter,
+      reject,
       operatorExploration)
 
   def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
@@ -99,14 +99,14 @@ object Profile {
 
     def step(t: Profile[N]) =
       deterministic.step[ProfileState, Individual[Vector[Double]], Genome](
-        Profile.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, identity, filter(t)),
+        Profile.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
         Profile.expression(t.fitness, t.continuous),
         Profile.elitism(t.niche, t.nicheSize, t.continuous, identity),
         EvolutionState.generation)
 
   }
 
-  def filter[N](profile: Profile[N]) = NSGA2.filter(profile.filter, profile.continuous)
+  def reject[N](profile: Profile[N]) = NSGA2.reject(profile.reject, profile.continuous)
 
   def result[N](profile: Profile[N], population: Vector[Individual[Vector[Double]]]): Vector[Result[N]] =
     result[N, Vector[Double]](population, profile.niche, profile.continuous, identity)
@@ -121,7 +121,7 @@ case class Profile[N](
   niche: Niche[CDGenome.DeterministicIndividual.Individual[Vector[Double]], N],
   nicheSize: Int = 20,
   operatorExploration: Double = 0.1,
-  filter: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object ProfileOperations {
 
