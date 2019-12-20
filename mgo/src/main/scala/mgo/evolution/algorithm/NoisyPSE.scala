@@ -42,8 +42,8 @@ object NoisyPSE {
 
   //  def state[M[_]: cats.Monad: StartTime: Random: Generation: HitMap] = PSE.state[M]
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
-    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[P: Manifest](
     lambda: Int,
@@ -119,7 +119,7 @@ object NoisyPSE {
 
     def initialPopulation(t: NoisyPSE[P], rng: scala.util.Random) =
       noisy.initialPopulation[Genome, Individual[P]](
-        NoisyPSE.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        NoisyPSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         NoisyPSE.expression(t.phenotype, t.continuous),
         rng)
 

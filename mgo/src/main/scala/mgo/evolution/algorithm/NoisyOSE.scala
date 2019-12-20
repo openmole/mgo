@@ -22,8 +22,8 @@ object NoisyOSE {
   def archiveLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.first
   def reachMapLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.second
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
-    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[P: Manifest](
     lambda: Int,
@@ -98,7 +98,7 @@ object NoisyOSE {
 
     def initialPopulation(t: NoisyOSE[P], rng: scala.util.Random) =
       noisy.initialPopulation[Genome, Individual[P]](
-        NoisyOSE.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        NoisyOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         NoisyOSE.expression[P](t.fitness, t.continuous),
         rng)
 

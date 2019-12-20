@@ -52,8 +52,8 @@ object NoisyNSGA2 {
       aggregation,
       i => Individual.phenotypeHistory[P].get(i).size.toDouble)(_)
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
-    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[S, P: Manifest](
     lambda: Int,
@@ -97,7 +97,7 @@ object NoisyNSGA2 {
 
     def initialPopulation(t: NoisyNSGA2[P], rng: scala.util.Random) =
       noisy.initialPopulation[Genome, Individual[P]](
-        NoisyNSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        NoisyNSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         NoisyNSGA2.expression[P](t.fitness, t.continuous),
         rng)
 

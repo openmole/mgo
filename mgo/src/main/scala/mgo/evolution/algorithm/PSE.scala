@@ -55,8 +55,8 @@ object PSE {
   def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray)
   def vectorPhenotype = Individual.phenotype composeLens arrayToVectorLens
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
-    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding(
     lambda: Int,
@@ -98,7 +98,7 @@ object PSE {
 
     override def initialPopulation(t: PSE, rng: scala.util.Random) =
       deterministic.initialPopulation[Genome, Individual](
-        PSE.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        PSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         PSE.expression(t.phenotype, t.continuous))
 
     def step(t: PSE) =

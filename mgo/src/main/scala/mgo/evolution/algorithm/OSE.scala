@@ -21,8 +21,8 @@ object OSE {
   def archiveLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.first
   def reachMapLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.second
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
-    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[P](
     lambda: Int,
@@ -78,7 +78,7 @@ object OSE {
 
     override def initialPopulation(t: OSE, rng: scala.util.Random) =
       deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
-        OSE.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        OSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         OSE.expression(t.fitness, t.continuous))
 
     def step(t: OSE) =

@@ -80,21 +80,26 @@ package object algorithm {
 
   object GenomeVectorDouble {
 
-    def randomUnscaledContinuousValues(n: Int, genomeLength: Int, rng: scala.util.Random) = {
-      def genome = Vector.fill(genomeLength)(() => rng.nextDouble()).map(_())
-      Vector.fill(n)(genome)
-    }
+    def randomGenomes[G](cons: (Vector[Double], Vector[Int]) => G)(mu: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[G => Boolean], rng: scala.util.Random): Vector[G] = {
+      def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = Vector.fill(genomeLength)(() => rng.nextDouble()).map(_())
+      def randomDiscreteValues(genome: Vector[D], rng: scala.util.Random): Vector[Int] = {
+        def part(d: D) = tools.randomInt(rng, d)
+        genome.map(part)
+      }
 
-    def randomDiscreteValues(n: Int, genome: Vector[D], rng: scala.util.Random): Vector[Vector[Int]] = {
-      def part(d: D) = tools.randomInt(rng, d)
-      def random = genome.map(part)
-      Vector.fill(n)(random)
-    }
+      def randomG(rng: scala.util.Random) = cons(randomUnscaledContinuousValues(continuous.size, rng), randomDiscreteValues(discrete, rng))
 
-    def randomGenomes[G](cons: (Vector[Double], Vector[Int]) => G)(mu: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random): Vector[G] = {
-      val discreteGenomes = randomDiscreteValues(mu, discrete, rng)
-      val continuousGenomes = randomUnscaledContinuousValues(mu, continuous.size, rng)
-      (continuousGenomes zip discreteGenomes).map(Function.tupled(cons))
+      val rejectValue = reject.getOrElse((_: G) => false)
+
+      def generate(acc: List[G], n: Int): Vector[G] =
+        if (n >= mu) acc.toVector
+        else {
+          val g = randomG(rng)
+          if (rejectValue(g)) generate(acc, n)
+          else generate(g :: acc, n + 1)
+        }
+
+      generate(List(), 0)
     }
 
     def filterNaN[I, T](values: Vector[I], value: I => T)(implicit cbn: CanBeNaN[T]) =
@@ -291,8 +296,8 @@ package object algorithm {
     def values(g: Genome, continuous: Vector[C]) =
       (scaleContinuousValues(continuousValues.get(g), continuous), discreteValues.get(g))
 
-    def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random): Vector[Genome] =
-      GenomeVectorDouble.randomGenomes[Genome]((c, d) => buildGenome(c, None, d, None))(lambda, continuous, discrete, rng)
+    def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
+      GenomeVectorDouble.randomGenomes[Genome]((c, d) => buildGenome(c, None, d, None))(lambda, continuous, discrete, reject, rng)
 
   }
 

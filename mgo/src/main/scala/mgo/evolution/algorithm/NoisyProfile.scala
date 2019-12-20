@@ -114,8 +114,8 @@ object NoisyProfile {
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
     NoisyIndividual.expression[P](fitness, continuous)
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
-    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def reject[N, P](pse: NoisyProfile[N, P]) = NSGA2.reject(pse.reject, pse.continuous)
 
@@ -124,7 +124,7 @@ object NoisyProfile {
 
     def initialPopulation(t: NoisyProfile[N, P], rng: scala.util.Random) =
       noisy.initialPopulation[Genome, Individual[P]](
-        NoisyProfile.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        NoisyProfile.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         NoisyProfile.expression[P](t.fitness, t.continuous),
         rng)
 

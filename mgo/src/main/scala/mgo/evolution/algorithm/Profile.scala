@@ -61,8 +61,8 @@ object Profile {
   //  def gridObjectiveProfile(x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
   //    mgo.evolution.niche.gridContinuousProfile[Individual](vectorPhenotype.get _, x, intervals)
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
-    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]) =
     NSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome](
@@ -94,7 +94,7 @@ object Profile {
 
     def initialPopulation(t: Profile[N], rng: scala.util.Random) =
       deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
-        Profile.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+        Profile.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         Profile.expression(t.fitness, t.continuous))
 
     def step(t: Profile[N]) =

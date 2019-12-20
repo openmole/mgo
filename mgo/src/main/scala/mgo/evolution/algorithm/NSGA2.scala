@@ -33,8 +33,8 @@ object NSGA2 {
 
   type NSGA2State = EvolutionState[Unit]
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], rng: scala.util.Random) =
-    CDGenome.initialGenomes(lambda, continuous, discrete, rng)
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+    CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
     NSGA2Operations.adaptiveBreeding[S, Individual[P], Genome](
@@ -79,7 +79,7 @@ object NSGA2 {
       override def initialState(t: NSGA2, rng: scala.util.Random) = EvolutionState(s = Unit)
       override def initialPopulation(t: NSGA2, rng: scala.util.Random) =
         deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
-          NSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, rng),
+          NSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
           NSGA2.expression(t.fitness, t.continuous))
       override def step(t: NSGA2) =
         (s, population, rng) =>
