@@ -7,16 +7,25 @@ crossScalaVersions in ThisBuild := Seq("2.12.10")
 val monocleVersion = "2.0.0"
 
 def settings = Seq(
-  addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
-  addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full),
-  scalacOptions += "-Xplugin-require:macroparadise",
+  //addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("staging"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
-  scalacOptions ++= Seq("-target:jvm-1.8"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   scalariformAutoformat := true
-) ++ scalariformSettings(true)
+) ++ scalariformSettings(true) ++ paradise
+
+def paradise =
+    Seq(
+      addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full),
+      scalacOptions ++= Seq("-target:jvm-1.8")
+    )
+    /* 2.13 */
+    /*Seq(
+      scalacOptions ++= Seq("-target:jvm-1.8", "-language:postfixOps", "-Ymacro-annotations")
+    )*/ 
+
+
 
 lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
   // macro paradise doesn't work with scaladoc
@@ -27,9 +36,9 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
   libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
 
-  libraryDependencies += "org.typelevel"  %% "squants"  % "1.5.0",
+  libraryDependencies += "org.typelevel"  %% "squants"  % "1.6.0",
 
-  libraryDependencies += "org.typelevel" %% "cats-core" % "2.0.0",
+  //libraryDependencies += "org.typelevel" %% "cats-core" % "2.1.0",
   libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0",
   testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 )
