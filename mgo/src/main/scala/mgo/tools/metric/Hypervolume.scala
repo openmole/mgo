@@ -60,10 +60,7 @@ object Hypervolume {
    */
   def nadir(points: Vector[Vector[Double]]) =
     points.reduce {
-      (i1, i2) =>
-        (i1 zip i2).map {
-          case (i1, i2) => max(i1, i2)
-        }
+      (i1, i2) => (i1 zip i2).map { case (i1, i2) => max(i1, i2) }
     }
 
   /**

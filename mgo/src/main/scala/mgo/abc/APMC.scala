@@ -160,10 +160,12 @@ object APMC {
     val (resSelected, resNewSelected, resNewEpsilon) =
       filterParticles(nAlpha, thetasM, rhosV, s.weights, s.ts, newThetasM, newRhos)
 
-    val (thetasSelected, rhosSelected, weightsSelected, tsSelected) =
+    val (thetasSelected: Array[Array[Double]], rhosSelected, weightsSelected, tsSelected) =
       resSelected match {
-        case None => (Array.empty, Array.empty, Array.empty, Vector.empty)
-        case Some((th, r, w, ts)) => (th.getData(), r.toArray(), w, ts)
+        case None =>
+          (Array[Array[Double]](), Array[Double](), Array[Double](), Vector[Int]())
+        case Some((th, r, w, ts)) =>
+          (th.getData().map(_.toArray[Double]).toArray[Array[Double]], r.toArray.toArray[Double], w, ts)
       }
 
     val (newThetasSelected, newRhosSelected) =
@@ -209,7 +211,7 @@ object APMC {
       if (select.isEmpty) None
       else {
         val thetasSelected = thetas.getSubMatrix(select, (0 until dim).toArray)
-        val weightsSelected = select.map { weights(_) }.toArray
+        val weightsSelected = select.map { weights(_) }
         val tsSelected = select.map { ts(_) }.toVector
         Some(
           thetasSelected,
