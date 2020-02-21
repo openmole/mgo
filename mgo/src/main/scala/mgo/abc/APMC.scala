@@ -130,7 +130,11 @@ object APMC {
       Array.fill(n - nAlpha) {
         Iterator.continually {
           val resampledTheta = thetasM.getRow(weightedDistributionTheta.sample)
-          new MultivariateNormalDistribution(apacheRandom(rng), resampledTheta, sigmaSquared.getData).sample
+          try {
+            new MultivariateNormalDistribution(apacheRandom(rng), resampledTheta, sigmaSquared.getData).sample
+          } catch {
+            case e: SingularMatrixException => throw new SingularCovarianceException
+          }
         }.dropWhile { priorDensity(_) == 0 }.next
       }
 
@@ -247,8 +251,7 @@ object APMC {
     val inverseSigmaSquared = try {
       new LUDecomposition(sigmaSquared).getSolver().getInverse()
     } catch {
-      case e: SingularMatrixException =>
-        throw new SingularCovarianceException(s, "The weighted covariance matrix of the particles thetas is singular. Possible cause: the model is deterministic.")
+      case e: SingularMatrixException => throw new SingularCovarianceException
     }
     val weightsSelected =
       (0 until thetasSelected.size).map { i =>
@@ -269,5 +272,6 @@ object APMC {
     weightsSelected
   }
 
-  case class SingularCovarianceException(s: State, msg: String) extends RuntimeException(msg)
+  case class SingularCovarianceException()
+    extends RuntimeException("The weighted covariance matrix of the particles thetas is singular. Possible cause: the model is deterministic for all of some parameter values. For example, if your model is based on the stochastic dynamics of a population of agents and one of the parameter controls the population size, your model is likely to become deterministic when this parameter is set to 0. Be careful to exclude those values from the research space (by setting the prior to 0 for those values).")
 }
