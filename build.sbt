@@ -23,8 +23,7 @@ def paradise =
     /* 2.13 */
     /*Seq(
       scalacOptions ++= Seq("-target:jvm-1.8", "-language:postfixOps", "-Ymacro-annotations")
-    )*/ 
-
+    )*/
 
 
 lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
