@@ -26,6 +26,7 @@ import cats.implicits._
 import cats.data._
 
 import monocle.macros._
+import scala.collection.compat._
 
 package object algorithm {
 
@@ -50,7 +51,8 @@ package object algorithm {
     is.map { operation }.
       collect { case Some(op) => op }.
       groupBy(identity).
-      mapValues(_.length.toDouble / is.size)
+      view.mapValues(_.length.toDouble / is.size).
+      toMap
 
   def selectOperator[S, G](
     operators: Vector[(S, G, scala.util.Random) => G],

@@ -1,30 +1,36 @@
 
 name := "mgo"
 organization in ThisBuild := "org.openmole"
-scalaVersion in ThisBuild := "2.12.10"
-crossScalaVersions in ThisBuild := Seq("2.12.10")
+scalaVersion in ThisBuild := "2.13.2"
+crossScalaVersions in ThisBuild := Seq("2.12.11", "2.13.2")
 
 val monocleVersion = "2.0.0"
 
-def settings = Seq(
+def priorTo2_13(scalaVersion: String): Boolean =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, minor)) if minor < 13 => true
+    case _                              => false
+  }
+
+lazy val settings: Seq[Setting[_]] = Seq(
   //addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("staging"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-  scalariformAutoformat := true
-) ++ scalariformSettings(true) ++ paradise
-
-def paradise =
-    Seq(
-      addCompilerPlugin("org.scalamacros" %% "paradise" % "2.1.1" cross CrossVersion.full),
-      scalacOptions ++= Seq("-target:jvm-1.8")
-    )
-    /* 2.13 */
-    /*Seq(
-      scalacOptions ++= Seq("-target:jvm-1.8", "-language:postfixOps", "-Ymacro-annotations")
-    )*/
-
+  scalacOptions ++= Seq("-target:jvm-1.8"),
+  scalariformAutoformat := true,
+  scalacOptions ++= (
+    if (priorTo2_13(scalaVersion.value)) Nil else Seq("-Ymacro-annotations", "-language:postfixOps")
+  ),
+  libraryDependencies ++=
+    (if (priorTo2_13(scalaVersion.value))
+      Seq(
+        compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
+      )
+    else Nil),
+  libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
+) ++ scalariformSettings(true)
 
 lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
   // macro paradise doesn't work with scaladoc

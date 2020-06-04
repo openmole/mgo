@@ -32,10 +32,10 @@ object KNearestNeighboursAverageDistance {
 
     values.map {
       v =>
-        Later({
-          val neighbours: Seq[Seq[Double]] = tree.knearest(k, v)
-          neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur, v) } / neighbours.size
-        })
+        Later {
+          val neighbours = tree.knearest(k, v)
+          neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur.toSeq, v) } / neighbours.size
+        }
     }
   }
 }

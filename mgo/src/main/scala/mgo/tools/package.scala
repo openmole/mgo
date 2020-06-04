@@ -109,7 +109,7 @@ package object tools {
         val key = f(i)
         map(key) = i :: map.getOrElse(key, Nil)
       }
-      map.mapValues(_.reverse)
+      map.mapValues(_.reverse).toMap
     }
   }
 
@@ -210,7 +210,7 @@ package object tools {
 
   def findInterval[A: Ordering](s: Vector[A], v: A) = {
     import scala.collection.Searching._
-    search(s).search(v) match {
+    s.search(v) match {
       case InsertionPoint(x) => x - 1
       case Found(x) => x
     }

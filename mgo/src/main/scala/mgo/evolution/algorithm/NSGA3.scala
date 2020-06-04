@@ -70,7 +70,7 @@ object NSGA3 {
 
   implicit def isAlgorithm: Algorithm[NSGA3, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
     new Algorithm[NSGA3, Individual[Vector[Double]], Genome, NSGA3State] {
-      override def initialState(t: NSGA3, rng: scala.util.Random) = EvolutionState(s = Unit)
+      override def initialState(t: NSGA3, rng: scala.util.Random) = EvolutionState(s = ())
       override def initialPopulation(t: NSGA3, rng: scala.util.Random) =
         deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
           NSGA3.initialGenomes(t.popSize, t.continuous, t.discrete, reject(t), rng),
@@ -361,7 +361,17 @@ object NSGA3Operations {
       currentFront.foreach(i => frontnums.put(i, currentFrontNum))
       currentFrontNum = currentFrontNum + 1
     }
-    frontnums.toMap.zip(fitnesses).zipWithIndex.groupBy { case (((_, d), f), j) => d }.toVector.sortBy { _._1 }.map { case (_, v) => (v.map { _._1._1._1 }.toVector, v.map { _._1._2 }.toVector, v.values.toVector) }
+    frontnums.
+      toMap.
+      zip(fitnesses).
+      zipWithIndex.
+      groupBy { case (((_, d), f), j) => d }.
+      toVector.
+      sortBy { _._1 }.
+      map {
+        case (_, v) =>
+          (v.map { _._1._1._1 }.toVector, v.map { _._1._2 }.toVector, v.unzip._2.toVector)
+      }
   }
 
   /**

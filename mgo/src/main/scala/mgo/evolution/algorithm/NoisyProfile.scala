@@ -60,10 +60,10 @@ object NoisyProfile {
     result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, onlyOldest)
 
   def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.continuousProfile[Individual[P]]((Individual.genome composeLens continuousValues).get _, x, nX)
+    mgo.evolution.niche.continuousProfile[Individual[P]]((Individual.genome[P] composeLens continuousValues).get _, x, nX)
 
   def discreteProfile[P](x: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.discreteProfile[Individual[P]]((Individual.genome composeLens discreteValues).get _, x)
+    mgo.evolution.niche.discreteProfile[Individual[P]]((Individual.genome[P] composeLens discreteValues).get _, x)
 
   def boundedContinuousProfile[P](continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
     mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, nX, min, max)
@@ -120,7 +120,7 @@ object NoisyProfile {
   def reject[N, P](pse: NoisyProfile[N, P]) = NSGA2.reject(pse.reject, pse.continuous)
 
   implicit def isAlgorithm[N, P: Manifest]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] = new Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] {
-    override def initialState(t: NoisyProfile[N, P], rng: scala.util.Random) = EvolutionState(s = Unit)
+    override def initialState(t: NoisyProfile[N, P], rng: scala.util.Random) = EvolutionState(s = ())
 
     def initialPopulation(t: NoisyProfile[N, P], rng: scala.util.Random) =
       noisy.initialPopulation[Genome, Individual[P]](

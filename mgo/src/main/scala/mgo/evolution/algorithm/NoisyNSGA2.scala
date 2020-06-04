@@ -93,7 +93,7 @@ object NoisyNSGA2 {
   def reject[P](pse: NoisyNSGA2[P]) = NSGA2.reject(pse.reject, pse.continuous)
 
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] = new Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] {
-    def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = Unit)
+    def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = ())
 
     def initialPopulation(t: NoisyNSGA2[P], rng: scala.util.Random) =
       noisy.initialPopulation[Genome, Individual[P]](

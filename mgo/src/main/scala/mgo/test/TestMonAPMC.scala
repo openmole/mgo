@@ -118,10 +118,10 @@ object GaussianMix2DMonAPMC extends App {
       .mapValues { xws =>
         val wsum = xws.map { case (_, w) => w }.sum
         wsum / (width._1 * width._2 * total).toDouble
-      }
+      }.toMap
 
-    val xBins = (lowerBound._1 to upperBound._1 by width._1).toVector
-    val yBins = (lowerBound._2 to upperBound._2 by width._2).toVector
+    val xBins = (BigDecimal(lowerBound._1) to upperBound._1 by width._1).toVector.map(_.toDouble)
+    val yBins = (BigDecimal(lowerBound._2) to upperBound._2 by width._2).toVector.map(_.toDouble)
 
     val z = yBins.map { by =>
       xBins.map { bx =>
