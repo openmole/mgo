@@ -100,7 +100,7 @@ releaseProcess := Seq[ReleaseStep](
   runTest,
   setReleaseVersion,
   tagRelease,
-  releaseStepCommand("publishSigned"),
+  releaseStepCommand("+publishSigned"),
   releaseStepCommand("sonatypeBundleRelease"),
   setNextVersion,
   commitNextVersion,
