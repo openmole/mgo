@@ -76,7 +76,7 @@ object NSGA2 {
 
   implicit def isAlgorithm: Algorithm[NSGA2, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
     new Algorithm[NSGA2, Individual[Vector[Double]], Genome, NSGA2State] {
-      override def initialState(t: NSGA2, rng: scala.util.Random) = EvolutionState(s = Unit)
+      override def initialState(t: NSGA2, rng: scala.util.Random) = EvolutionState(s = ())
       override def initialPopulation(t: NSGA2, rng: scala.util.Random) =
         deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
           NSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),

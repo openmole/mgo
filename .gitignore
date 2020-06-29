@@ -9,3 +9,6 @@ pom.xml
 *.sublime*
 *.DS_Store
 tags
+
+test
+

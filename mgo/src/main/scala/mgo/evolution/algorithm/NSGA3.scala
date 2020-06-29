@@ -11,7 +11,17 @@ import org.apache.commons.math3.util.ArithmeticUtils
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.higherKinds
+import scala.util.Random
 
+/**
+ * NSGA-III algorithm for many-objective problems
+ *
+ *  Deb, K., & Jain, H. (2013). An evolutionary many-objective optimization algorithm using reference-point-based nondominated sorting approach, part I: solving problems with box constraints. IEEE transactions on evolutionary computation, 18(4), 577-601.
+ *
+ * For U-NSGA-III, see
+ *  Seada, H., & Deb, K. (2015, March). U-NSGA-III: a unified evolutionary optimization procedure for single, multiple, and many objectives: proof-of-principle results. In International conference on evolutionary multi-criterion optimization (pp. 34-49). Springer, Cham.
+ *
+ */
 object NSGA3 {
 
   import CDGenome._
@@ -66,12 +76,12 @@ object NSGA3 {
 
   implicit def isAlgorithm: Algorithm[NSGA3, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
     new Algorithm[NSGA3, Individual[Vector[Double]], Genome, NSGA3State] {
-      override def initialState(t: NSGA3, rng: scala.util.Random) = EvolutionState(s = Unit)
-      override def initialPopulation(t: NSGA3, rng: scala.util.Random) =
+      override def initialState(t: NSGA3, rng: scala.util.Random): NSGA3State = EvolutionState(s = ())
+      override def initialPopulation(t: NSGA3, rng: scala.util.Random): Vector[Individual[Vector[Double]]] =
         deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
           NSGA3.initialGenomes(t.popSize, t.continuous, t.discrete, reject(t), rng),
           NSGA3.expression(t.fitness, t.continuous))
-      override def step(t: NSGA3) =
+      override def step(t: NSGA3): (NSGA3State, Vector[Individual[Vector[Double]]], Random) => (NSGA3State, Vector[Individual[Vector[Double]]]) =
         (s, population, rng) =>
           deterministic.step[NSGA3State, Individual[Vector[Double]], Genome](
             NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.discrete, identity, reject(t)),
@@ -306,11 +316,17 @@ object NSGA3Operations {
     val frontnums = Iterator.iterate[(Vector[I], Vector[(I, Int)], Int)]((population, Vector.empty, 0))(extractNextFront).
       takeWhile(_._1.nonEmpty).toSeq.last._2
 
-    frontnums.toMap.zip(fitnesses).zipWithIndex.groupBy {
-      case (((_, d), _), _) => d
-    }.toVector.sortBy { _._1 }.map {
-      case (_, v) => (v.map { _._1._1._1 }.toVector, v.map { _._1._2 }.toVector, v.values.toVector)
-    }
+    frontnums.
+      toMap.
+      zip(fitnesses).
+      zipWithIndex.
+      groupBy { case (((_, d), _), _) => d }.
+      toVector.
+      sortBy { _._1 }.
+      map {
+        case (_, v) =>
+          (v.map { _._1._1._1 }.toVector, v.map { _._1._2 }.toVector, v.unzip._2.toVector)
+      }
   }
 
   /**
@@ -327,8 +343,7 @@ object NSGA3Operations {
     population: Vector[I],
     fitness: I => Vector[Double],
     references: ReferencePoints,
-    mu: Int
-                              )(implicit rng: util.Random): Vector[I] = {
+    mu: Int)(implicit rng: util.Random): Vector[I] = {
     //println("elite with ref - pop size "+population.size)
     val allfronts = successiveFronts(population, fitness)
     //println("number of pareto fronts = "+allfronts.size)
@@ -348,12 +363,10 @@ object NSGA3Operations {
       val cumsizes = new ArrayBuffer[Int]; cumsizes.append(0)
       val cumpops = new ArrayBuffer[Vector[I]]; cumpops.append(Vector.empty) // better to cache sucessive pops
       fronts.foreach { i =>
-        if (res.size < targetSize) res.append(i: _*)
+        if (res.size < targetSize) res.appendAll(i)
         cumsizes.append(cumsizes.last + i.size)
         cumpops.append(cumpops.last ++ i)
       }
-
-      //println("cumulated front sizes : "+cumsizes)
 
       // return everything if good number
       if (res.size == targetSize) res.toVector
@@ -365,6 +378,7 @@ object NSGA3Operations {
         //val lastfront = cumpops.tail(lastfrontindex)
         // indices of individuals in the last front
         val lastfrontinds = frontindices(lastfrontindex)
+        println("last front indices = " + lastfrontinds)
 
         val provpop: Vector[I] = if (lastfrontindex > 0) cumpops.tail(lastfrontindex - 1) else Vector.empty
         //println("previous pop size = "+provpop.size)
@@ -379,7 +393,12 @@ object NSGA3Operations {
         // needs last front indices
         //val additionalPointsIndices = referenceNichingSelection[M](normfitnesses,normreferences,lastfrontinds,targetSize - provpop.size)//(rng=rng)
         //val additionalPoints = population.zipWithIndex.filter{case (_,i) => additionalPointsIndices.contains(i)}.map{case (ind,_) => ind}
-        val additionalPoints = referenceNichingSelection[S, I](filter[Vector[Double]](normfitnesses, lastfrontinds), filter[Vector[Double]](normreferences, lastfrontinds), filter[I](population, lastfrontinds), targetSize - provpop.size)
+        val additionalPoints = referenceNichingSelection[S, I](
+          filter[Vector[Double]](normfitnesses, lastfrontinds),
+          //filter[Vector[Double]](normreferences, lastfrontinds),
+          normreferences,
+          filter[I](population, lastfrontinds),
+          targetSize - provpop.size)
         //println("size of final elite population : "+provpop.size+" + "+additionalPoints.size)
 
         provpop ++ additionalPoints
@@ -404,7 +423,9 @@ object NSGA3Operations {
   def normalize(fitnesses: Vector[Vector[Double]], references: ReferencePoints): (Vector[Vector[Double]], Vector[Vector[Double]]) = {
     // ideal point, translation and extreme points
     val (translated, maxpoints) = translateAndMaxPoints(fitnesses)
+    println("max points = " + maxpoints)
     val intercepts = simplexIntercepts(maxpoints)
+    println("intercepts = " + intercepts)
     (normalizeMax(translated, intercepts), computeReferencePoints(references, intercepts))
   }
 
@@ -412,15 +433,17 @@ object NSGA3Operations {
    * Translate to have ideal point at \vec{0} ; compute max points
    *
    * @param fitnesses fitnesses
-   * @return (translated fitnesses , max points indices for each dimension)
+   * @return (translated fitnesses , indices of max point for each dimension)
    */
   def translateAndMaxPoints(fitnesses: Vector[Vector[Double]]): (Vector[Vector[Double]], Vector[Vector[Double]]) = {
+    val d = fitnesses(0).length
     val idealValues = fitnesses.transpose.map { _.min }
-    //println("mins = " + idealValues)
-    //println("maxs = " + fitnesses.transpose.map { _.max })
     val translated = fitnesses.map { _.zip(idealValues).map { case (f, mi) => f - mi } }
-    assert(translated.flatten.min >= 0.0, "negative translated data")
-    (translated, translated.transpose.map { v => translated(v.zipWithIndex.minBy { case (d, _) => d }._2) })
+    //assert(translated.flatten.min >= 0.0, "negative translated data")
+    // max points minimize the Achievement Scalarizing Function
+    val maxIndices: Vector[Int] = Vector.tabulate(d, d) { case (i, j) => if (i == j) 1.0 else 1e-6 }.map { ei: Vector[Double] => translated.map { xi => xi.zip(ei).map { case (xij, eij) => xij * eij }.max }.zipWithIndex.maxBy { case (d, _) => d }._2 }
+    //println(maxIndices)
+    (translated, maxIndices.map(fitnesses(_)))
   }
 
   /**
@@ -432,7 +455,6 @@ object NSGA3Operations {
     val firstPoint = maxPoints(0)
     val dim = firstPoint.size
 
-    // FIXME problem with translation here ?
     val translated: Vector[Vector[Double]] = maxPoints.map { _.zip(firstPoint).map { case (xij, x1j) => xij - x1j } }
     val baseChange: RealMatrix = MatrixUtils.createRealMatrix((Vector(firstPoint.map { xj => -xj }) ++ translated.tail).map { _.toArray }.toArray)
 
@@ -440,20 +462,22 @@ object NSGA3Operations {
     assert(new LUDecomposition(baseChange).getDeterminant != 0, "singular matrix : " + baseChange.toString + "\n max points are : " + maxPoints)
 
     def getDiag(m: RealMatrix): Vector[Double] = m.getData.zipWithIndex.map { case (row, i) => row(i) }.toVector
-    getDiag(MatrixUtils.inverse(baseChange).multiply(MatrixUtils.createRealDiagonalMatrix(Array.fill(dim)(1.0))).add(MatrixUtils.createRealMatrix(Array.fill(dim)(firstPoint.toArray)).transpose()))
+    getDiag(
+      MatrixUtils.inverse(baseChange). //multiply(MatrixUtils.createRealDiagonalMatrix(Array.fill(dim)(1.0))). // apply to basis vectors ~ multiply by identity
+        add(MatrixUtils.createRealMatrix(Array.fill(dim)(firstPoint.toArray)).transpose()))
   }
 
   /**
    * normalize to have max at 1
-   * @param points
-   * @param maxvals
+   * @param points points
+   * @param maxvals max values for each dimension
    * @return
    */
   def normalizeMax(points: Vector[Vector[Double]], maxvals: Vector[Double]): Vector[Vector[Double]] =
     points.transpose.zip(maxvals).map { case (p, m) => p.map { _ / m } }.transpose
 
   /**
-   * normalize ref points if needed
+   * normalize ref points if needed (when non normalized reference points provided by the user are used)
    * @param references references
    * @param intercepts intercepts
    * @return
@@ -467,7 +491,6 @@ object NSGA3Operations {
    * Aggregate normalized fitnesses on reference points ; select on this.
    * @param normalizedFitnesses normalized fitness values
    * @param normalizedReferences normalized reference points
-   * @param selectionIndices indices of the set in which to select additional points
    * @param pointsNumber number of points to select
    * @return indices of selected individuals
    *          (population not needed at this stage)
@@ -475,26 +498,27 @@ object NSGA3Operations {
   def referenceNichingSelection[S, I](
     normalizedFitnesses: Vector[Vector[Double]],
     normalizedReferences: Vector[Vector[Double]],
-    //selectionIndices: Vector[Int],
     population: Vector[I],
     pointsNumber: Int)(implicit rng: util.Random): Vector[I] = {
     //println("Ref points = "+normalizedReferences)
     println("Adding " + pointsNumber + " points among " + population.size)
-    println(normalizedFitnesses)
+    println("Normalized fitnesses length = " + normalizedFitnesses.length)
+    println("references length = " + normalizedReferences.length)
     // FIXME normalized fitnesses are wrong
 
-    val normFitnessMap = population.zip(normalizedFitnesses).toMap
+    //val normFitnessMap = population.zip(normalizedFitnesses).toMap
     val assocMap = associateReferencePoints(normalizedFitnesses, normalizedReferences, population) // associate points to references
     //println("association of ref points = "+assocMap)
-    val (finalAssocMap, selected) = pointsSelection(assocMap, Vector.empty, pointsNumber)(new util.Random)
+    val (finalAssocMap, selected) = pointsSelection(assocMap, Vector.empty, pointsNumber)
     println("distinct niched ref points = " + selected.map { _._2 }.distinct)
-    println("rel min x sel points = " + selected.map(s => normFitnessMap(s._1)(0)).min)
-    println("rel min y sel points = " + selected.map(s => normFitnessMap(s._1)(1)).min)
+    //println("rel min x sel points = " + selected.map(s => normFitnessMap(s._1)(0)).min)
+    //println("rel min y sel points = " + selected.map(s => normFitnessMap(s._1)(1)).min)
     selected.map { _._1 }
   }
 
   /**
    * Compute reference lines, distances, and associate points to references
+   *  - unoptimized, shouldnt recreate the matrices at each run
    * @param points points
    * @param references references
    * @param population population
@@ -505,31 +529,47 @@ object NSGA3Operations {
     references: Vector[Vector[Double]],
     population: Vector[I]): Map[I, (Int, Double)] = {
     val refnormsquared = references.map { _.map { x => x * x }.sum }
-    // FIXME unoptimized, shouldnt recreate the matrices at each run
+
+    // projection of x on dim is (\vec{u}\cdot \vec{x} \vec{u}) with \vec{u} = \vec{r}_dim / ||\vec{r}_dim||
     def proj(dim: Int, x: Vector[Double]): Vector[Double] = {
       val w = MatrixUtils.createColumnRealMatrix(references(dim).toArray)
       w.multiply(MatrixUtils.createRowRealMatrix(x.toArray)).multiply(w).getColumn(0).map { _ / refnormsquared(dim) }.toVector
     }
+
     points.zip(population).map {
-      case (p, ind) =>
+      case (point, individual) =>
+
+        // for each reference point, compute distance using projection
         val dists = references.indices.map {
           i =>
-            math.sqrt(p.zip(proj(i, p)).map { case (x, y) => (x - y) * (x - y) }.sum)
+            math.sqrt(point.zip(proj(i, point)).map { case (x, y) => (x - y) * (x - y) }.sum)
         }
         val mindist = dists.min
-        (ind, (dists.zipWithIndex.filter { case (d, _) => d == mindist }.map { case (_, j) => j }.head, mindist))
+        (individual, (dists.zipWithIndex.filter { case (d, _) => d == mindist }.map { case (_, j) => j }.head, mindist))
     }.toMap
   }
 
-  def pointsSelection[I](associationMap: Map[I, (Int, Double)], selected: Vector[(I, Int)], toselect: Int)(implicit rng: util.Random): (Map[I, (Int, Double)], Vector[(I, Int)]) = {
+  /**
+   * Select points given the association to closest reference point
+   * @param associationMap association map
+   * @param selected points already selected
+   * @param toselect number of points to select
+   * @param rng rng
+   * @tparam I individual
+   * @return (association map, selected individuals)
+   */
+  def pointsSelection[I](
+    associationMap: Map[I, (Int, Double)],
+    selected: Vector[(I, Int)],
+    toselect: Int)(implicit rng: util.Random): (Map[I, (Int, Double)], Vector[(I, Int)]) = {
     //println("Selecting "+toselect+" points from "+associationMap.toVector.size)
     toselect match {
       case n if n == 0 => (associationMap, selected)
       case _ => {
         //val refCount = selected.groupBy(_._2).map{g => (g._1,g._2.size)}
         //val refCount = associationMap.toVector.groupBy(_._2._1).map{g => (g._1,g._2.size)} // ref with no count can not be in the refcount
-        val selectedRefCount = selected.groupBy(_._2).map { g => (g._1, g._2.size) }
-        val refCount = associationMap.map { _._2._1 }.toVector.distinct.map { j => (j, selectedRefCount.getOrElse(j, 0)) }.toMap
+        val selectedRefCount = selected.groupBy(_._2).toSeq.map { g: (Int, Vector[(I, Int)]) => (g._1, g._2.size) }.toMap
+        val refCount = associationMap.toSeq.map { _._2._1 }.toVector.distinct.map { j => (j, selectedRefCount.getOrElse(j, 0)) }.toMap
         val (jmin, _) = refCount.toVector.minBy(_._2) // index of ref point with minimal number of associated points
         val candidatePoints = associationMap.filter { case (_, (j, _)) => j == jmin } // cannot be 0 the way it is constructed
         //val newpointIndex = if(refCount(jmin)==0) candidatePoints.minBy{_._2._2}._1 else  candidatePoints.minBy{_._2._2}._1

@@ -16,8 +16,6 @@
  */
 
 package mgo.tools
-
-import scala.collection._
 import mgo.tools.distance._
 
 /**
