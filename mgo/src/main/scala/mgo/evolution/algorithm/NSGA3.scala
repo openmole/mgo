@@ -1,19 +1,15 @@
 package mgo.evolution.algorithm
 
 import cats.implicits._
-
 import mgo.evolution._
 import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
-import mgo.evolution.dominance._
 import mgo.evolution.elitism._
 import mgo.tools.execution._
-
 import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix }
 import org.apache.commons.math3.util.ArithmeticUtils
-import shapeless._
 
-import scala.collection.mutable.{ ArrayBuffer, HashMap }
+import scala.collection.mutable.ArrayBuffer
 import scala.language.higherKinds
 
 object NSGA3 {
@@ -110,9 +106,9 @@ object NSGA3Operations {
   /**
    * Field of fractions
    *  -> used for tricking comparison of vectors and have exact discrete points
-   * @param n
-   * @param d
-   * @param reduced
+   * @param n numerator
+   * @param d denominator
+   * @param reduced reduced with gcd?
    */
   case class Fraction(n: Int, d: Int, reduced: Boolean) {
     def +(f: Fraction): Fraction = Fraction(n * f.d + d * f.n, d * f.d)
@@ -130,37 +126,35 @@ object NSGA3Operations {
     def apply(n: Int, d: Int): Fraction = {
       // sign always at numerator the way fractions are constructed ?
       val gcd = ArithmeticUtils.gcd(n, d)
-      Fraction((n / gcd).toInt, (d / gcd).toInt, true)
+      Fraction(n / gcd, d / gcd, reduced = true)
     }
   }
 
   /**
    * Fractional points
-   * @param point
+   * @param point coordinates
    */
   case class Point(point: Vector[Fraction]) {
     def +(p: Point): Point = Point(point.zip(p.point).map { case (f1, f2) => f1 + f2 })
     def -(p: Point): Point = Point(point.zip(p.point).map { case (f1, f2) => f1 - f2 })
     def toDoubleVector: Vector[Double] = point.map(_.toDouble)
-    def embedded(i: Int): Point = Point((0 to i - 1 by 1).map { i => point(i) }.toVector ++ Vector(Fraction.zero) ++ (i until point.size by 1).map { i => point(i) }.toVector)
+    def embedded(i: Int): Point = Point((0 until i by 1).map { i => point(i) }.toVector ++ Vector(Fraction.zero) ++ (i until point.size by 1).map { i => point(i) }.toVector)
     //def isPositive: Boolean = point.map{case Fraction(n,_,_) => n>0}.reduce(_&_)
     def isPositive: Boolean = point.map { _.isPositive }.reduce(_ && _)
     def isOnSimplex: Boolean = (point.reduce(_ + _) == Fraction.one) && isPositive // not the full simplex
   }
 
+  /**
+   * unit simplex points
+   *  q: include generators? (n-1 generator vectors of dim n)
+   * @param dimension dimension
+   * @param divisions divisions on each dimension
+   * @param points discrete point in the simplex
+   */
   case class DiscreteUnitSimplex(
     dimension: Int,
     divisions: Int,
-    /**
-     * discrete point in the simplex
-     */
-    points: Vector[Point] //,
-
-  /**
-   * n-1 generator vectors of dim n
-   */
-  //generators: Vector[Point]
-  ) {
+    points: Vector[Point]) {
     def embeddedPoints(i: Int): Vector[Point] = points.map(_.embedded(i))
   }
 
@@ -168,32 +162,29 @@ object NSGA3Operations {
 
     /**
      * basic case : two dimensional simplex
-     * @param divisions
+     * @param divisions divisions
      * @return
      */
     def twoDimSimplex(divisions: Int): DiscreteUnitSimplex = {
       val coords = (0 to divisions by 1).map { Fraction(_, divisions) }
       val points = coords.zip(coords.reverse).map { case (f1, f2) => Point(Vector(f1, f2)) }.toVector
-      //val generator = points(1) - points(0)
-      //DiscreteUnitSimplex(2,divisions,points,Vector(generator))
       DiscreteUnitSimplex(2, divisions, points)
     }
 
-    // def embeddedGenerators(simplex: DiscreteUnitSimplex,direction: Int): Vector[Point] = simplex.generators.map(_.embedded(direction))
-
     /**
      * recursive constructor
-     * two complementary hypersimplices are anough to generate the simplex in the next dimension
-     * (rough algorithm by filtering points - still a polynomial upper bound)
+     * two complementary hypersimplices are sufficient to generate the simplex in the next dimension
+     * (brutal algorithm by filtering points - still a polynomial upper bound)
      *
-     * @param dimension
-     * @param divisions
+     * @param dimension dimension
+     * @param divisions number of divisions
      * @return
      */
     def apply(dimension: Int, divisions: Int): DiscreteUnitSimplex = {
       dimension match {
+        case 1 => DiscreteUnitSimplex(1, divisions, (0 to divisions by 1).map { k => Point(Vector(Fraction(k, divisions))) }.toVector)
         case 2 => twoDimSimplex(divisions)
-        case _ => {
+        case _ =>
           val prevSimplex = DiscreteUnitSimplex(dimension - 1, divisions)
           val emb0 = prevSimplex.embeddedPoints(0)
           val emb1 = prevSimplex.embeddedPoints(1)
@@ -202,43 +193,40 @@ object NSGA3Operations {
             vi <- emb0.map(_ - origin)
             vj <- emb1.map(_ - origin)
           } yield origin + vi + vj).filter(_.isOnSimplex).distinct
-
           DiscreteUnitSimplex(dimension, divisions, points)
-        }
       }
     }
 
   }
 
   /**
-   * compute auto ref points on the simplex
+   * Compute automatic reference points on the simplex
    *   (called at initialization)
    * @param divisions number of segments on each simplex bord line
    * @param dimension dimension of the space
    * @return
    */
-  def simplexRefPoints(divisions: Int, dimension: Int): Vector[Vector[Double]] = {
-    //println("Computing simplex reference points with "+divisions+" divisions in dimension "+dimension)
-    //val start = System.currentTimeMillis()
-    val res = DiscreteUnitSimplex(dimension, divisions).points.map { _.toDoubleVector }
-    //println("n = "+dimension+" ; p = "+divisions+" ; t = "+(System.currentTimeMillis() - start))
-    res
-  }
+  def simplexRefPoints(divisions: Int, dimension: Int): Vector[Vector[Double]] =
+    DiscreteUnitSimplex(dimension, divisions).points.map { _.toDoubleVector }
 
   /**
-   * NSGA3 breeding : next provisory population is of size 2*mu
-   *  ; filtering is done in elitism using reference points
+   * NSGA3 breeding: next provisory population is of size 2*mu
+   * filtering is done in elitism using reference points
    *
-   * @param fitness
-   * @param genome
-   * @param genomeValues
-   * @param buildGenome
-   * @param crossover
-   * @param mutation
-   * @param lambda
-   * @tparam M
-   * @tparam I
-   * @tparam G
+   * @param fitness fitness
+   * @param genome genome
+   * @param continuousValues continuous genome values function
+   * @param continuousOperator continuousOperator
+   * @param discreteValues discrete values
+   * @param discreteOperator discreteOperator
+   * @param discrete discrete
+   * @param buildGenome buildGenome
+   * @param tournamentRounds tournamentRounds
+   * @param reject reject
+   * @param operatorExploration operatorExploration
+   * @tparam S state
+   * @tparam I individual
+   * @tparam G genome
    * @return
    */
   def adaptiveBreeding[S, I, G](
@@ -276,14 +264,15 @@ object NSGA3Operations {
    *  - remove the last front added
    *  - fill the remaining points with the reference points heuristic
    *
-   *  Note : through normalization, ref points must be recomputed each time, even with user-defined points
+   *  Note: through normalization, ref points must be recomputed each time, even with user-defined points
    *   (option : number of points, taken within the objective simplex (tricky to compute ?) ; or user-defined)
    *
-   * @param fitness
-   * @param values
-   * @param mu
-   * @tparam M
-   * @tparam I
+   * @param fitness fitness
+   * @param values values
+   * @param references reference points
+   * @param mu population size
+   * @tparam S state
+   * @tparam I individual
    * @return
    */
   def elitism[S, I](
@@ -291,93 +280,55 @@ object NSGA3Operations {
     values: I => (Vector[Double], Vector[Int]),
     references: ReferencePoints,
     mu: Int): Elitism[S, I] =
-    (s, population, candidates, rng) => (s, eliteWithReference[S, I](filterNaN(keepFirst(values)(population, candidates), fitness), fitness, references, mu)(rng))
-
-  /**
-   * Successive fronts by number of dominating points
-   *  (grouping by number of dominating points gives successive fronts)
-   *
-   * FIXME: number of dominating DOES NOT exactly correspond to number of front ?
-   *
-   * @param population
-   * @param fitness
-   * @tparam I
-   * @return fronts in order, with population and corresponding fitness values
-   */
-  def successiveFrontsApproxNumberofDominating[I](population: Vector[I], fitness: I => Vector[Double]): Vector[(Vector[I], Vector[Vector[Double]])] = {
-    // fitness evaluation is done here in number of dominating
-    val (fitnesses, dominating) = numberOfDominatingAndFitnesses(fitness, population)
-    population.zip(dominating).zip(fitnesses).groupBy { case ((_, d), f) => d.value }.toVector.sortBy { _._1 }.map { case (_, v) => (v.map { _._1._1 }, v.map { _._2 }) }
-  }
-
-  /**
-   * redefine dominating function as also needs fitness values
-   * @param fitness
-   * @param values
-   * @param dominance
-   * @tparam I
-   * @return
-   */
-  def numberOfDominatingAndFitnesses[I](
-    fitness: I => Vector[Double],
-    values: Vector[I],
-    dominance: Dominance = nonStrictDominance): (Vector[Vector[Double]], Vector[Lazy[Int]]) = {
-    val fitnesses = values.map(i => fitness(i))
-
-    def ranks =
-      fitnesses.zipWithIndex.map {
-        case (v1, index1) =>
-          def containsNaN = v1.exists(_.isNaN)
-          def otherIndividuals = fitnesses.zipWithIndex.filter { case (_, index2) => index1 != index2 }
-          def numberOfDominatingIndividual = otherIndividuals.count { case (v2, _) => dominance.isDominated(v1, v2) }
-          shapeless.Lazy(if (containsNaN) Int.MaxValue else numberOfDominatingIndividual)
-      }
-    (fitnesses, ranks)
-  }
+    (s, population, candidates, rng) =>
+      (s, eliteWithReference[S, I](filterNaN(keepFirst(values)(population, candidates), fitness), fitness, references, mu)(rng))
 
   /**
    * Exact successive fronts computation
-   * @param population
-   * @param fitness
-   * @tparam I
-   * @return Vector of fronts, coded by (individuals: Vector[I],
-   *         fitnesses in same order: Vector[Vector[Double]],
-   *         indices in initial population: Vector[Int])
+   *
+   * @param population population
+   * @param fitness fitness
+   * @tparam I individual
+   * @return Vector of fronts, coded by (individuals: Vector[I],fitnesses in same order: Vector(Vector(Double)),indices in initial population: Vector[Int])
    */
   def successiveFronts[I](population: Vector[I], fitness: I => Vector[Double]): Vector[(Vector[I], Vector[Vector[Double]], Vector[Int])] = {
     // evaluate all fitness and put in map so that function are not reevaluated at each front computation
     val fitnesses = population.map(i => fitness(i))
-
     val fitnessmap = population.zip(fitnesses).toMap
     def compfitness: I => Vector[Double] = i => fitnessmap(i)
-    //val frontnums = new mutable.HashMap[I,Lazy[Int]]
-    val frontnums = new HashMap[I, Int]
-    var currentPop = population; var currentFrontNum = 0
-    while (frontnums.keySet.size < population.size) {
-      //println(currentFrontNum+" - "+frontnums.keySet.size+"/"+population.size)
+
+    def extractNextFront(state: (Vector[I], Vector[(I, Int)], Int)): (Vector[I], Vector[(I, Int)], Int) = {
+      val (currentPop, frontnums, currentFrontNum) = state
       val currentFront = keepFirstFront(currentPop, compfitness)
-      //println(ranking.numberOfDominating(compfitness, currentPop))
-      currentPop = currentPop.filter(i => !currentFront.contains(i))
-      currentFront.foreach(i => frontnums.put(i, currentFrontNum))
-      currentFrontNum = currentFrontNum + 1
+
+      (currentPop.filter(i => !currentFront.contains(i)), frontnums ++ currentFront.map(i => (i, currentFrontNum)), currentFrontNum + 1)
     }
-    frontnums.toMap.zip(fitnesses).zipWithIndex.groupBy { case (((_, d), f), j) => d }.toVector.sortBy { _._1 }.map { case (_, v) => (v.map { _._1._1._1 }.toVector, v.map { _._1._2 }.toVector, v.values.toVector) }
+    val frontnums = Iterator.iterate[(Vector[I], Vector[(I, Int)], Int)]((population, Vector.empty, 0))(extractNextFront).
+      takeWhile(_._1.nonEmpty).toSeq.last._2
+
+    frontnums.toMap.zip(fitnesses).zipWithIndex.groupBy {
+      case (((_, d), _), _) => d
+    }.toVector.sortBy { _._1 }.map {
+      case (_, v) => (v.map { _._1._1._1 }.toVector, v.map { _._1._2 }.toVector, v.values.toVector)
+    }
   }
 
   /**
    * extract elite using ref point heuristic
-   * @param population
-   * @param fitness
-   * @param reference
-   * @tparam I
+   * @param population population
+   * @param fitness fitness
+   * @param references reference
+   * @param mu population size [size of elite is by default pop size / 2 (doubling population in breeding)]
+   * @tparam S state
+   * @tparam I individual
    * @return
    */
   def eliteWithReference[S, I](
     population: Vector[I],
     fitness: I => Vector[Double],
     references: ReferencePoints,
-    // size of elite is by default pop size / 2 (doubling population in breeding)
-    mu: Int)(implicit rng: util.Random): Vector[I] = {
+    mu: Int
+                              )(implicit rng: util.Random): Vector[I] = {
     //println("elite with ref - pop size "+population.size)
     val allfronts = successiveFronts(population, fitness)
     //println("number of pareto fronts = "+allfronts.size)
@@ -385,9 +336,8 @@ object NSGA3Operations {
     //println("front sizes = "+fronts.map{_.size})
     val fitnesses = allfronts.map { _._2 }
     val frontindices = allfronts.map { _._3 }
-    val allfitnesses = fitnesses.reduce { _ ++ _ } //{(v:(Vector[Vector[Double]],Vector[Vector[Double]])) => v._1++v._2} // dirty flatten
+    val allfitnesses = fitnesses.reduce { _ ++ _ }
 
-    //val targetSize = mu(population)
     val targetSize = mu
 
     // returns everything if not enough population (rq : this shouldnt happen)
@@ -423,7 +373,7 @@ object NSGA3Operations {
         // -> normalize here
         val (normfitnesses, normreferences) = normalize(allfitnesses, references)
 
-        def filter[I](v: Vector[I], indices: Vector[Int]): Vector[I] = v.zipWithIndex.filter { case (_, i) => indices.contains(i) }.map { _._1 }
+        def filter[T](v: Vector[T], indices: Vector[Int]): Vector[T] = v.zipWithIndex.filter { case (_, i) => indices.contains(i) }.map { _._1 }
 
         // niching in association to reference points ; selection according to it
         // needs last front indices
@@ -447,8 +397,8 @@ object NSGA3Operations {
    *   - construct simplex and compute intercepts a_j
    *   - for each dimension, normalize translated objective
    *
-   * @param fitnesses
-   * @param references
+   * @param fitnesses vector of fitnesses
+   * @param references reference points
    * @return (normalized fitnesses ; normalized reference points)
    */
   def normalize(fitnesses: Vector[Vector[Double]], references: ReferencePoints): (Vector[Vector[Double]], Vector[Vector[Double]]) = {
@@ -461,14 +411,13 @@ object NSGA3Operations {
   /**
    * Translate to have ideal point at \vec{0} ; compute max points
    *
-   * @param fitnesses
+   * @param fitnesses fitnesses
    * @return (translated fitnesses , max points indices for each dimension)
    */
   def translateAndMaxPoints(fitnesses: Vector[Vector[Double]]): (Vector[Vector[Double]], Vector[Vector[Double]]) = {
-    // TODO check if transpose has expected behavior
     val idealValues = fitnesses.transpose.map { _.min }
-    println("mins = " + idealValues)
-    println("maxs = " + fitnesses.transpose.map { _.max })
+    //println("mins = " + idealValues)
+    //println("maxs = " + fitnesses.transpose.map { _.max })
     val translated = fitnesses.map { _.zip(idealValues).map { case (f, mi) => f - mi } }
     assert(translated.flatten.min >= 0.0, "negative translated data")
     (translated, translated.transpose.map { v => translated(v.zipWithIndex.minBy { case (d, _) => d }._2) })
@@ -485,10 +434,10 @@ object NSGA3Operations {
 
     // FIXME problem with translation here ?
     val translated: Vector[Vector[Double]] = maxPoints.map { _.zip(firstPoint).map { case (xij, x1j) => xij - x1j } }
-    val baseChange: RealMatrix = MatrixUtils.createRealMatrix((Vector(firstPoint.map { case xj => -xj }) ++ translated.tail).map { _.toArray }.toArray)
+    val baseChange: RealMatrix = MatrixUtils.createRealMatrix((Vector(firstPoint.map { xj => -xj }) ++ translated.tail).map { _.toArray }.toArray)
 
     // check that the new basis is not singular
-    assert((new LUDecomposition(baseChange)).getDeterminant != 0, "singular matrix : " + baseChange.toString + "\n max points are : " + maxPoints)
+    assert(new LUDecomposition(baseChange).getDeterminant != 0, "singular matrix : " + baseChange.toString + "\n max points are : " + maxPoints)
 
     def getDiag(m: RealMatrix): Vector[Double] = m.getData.zipWithIndex.map { case (row, i) => row(i) }.toVector
     getDiag(MatrixUtils.inverse(baseChange).multiply(MatrixUtils.createRealDiagonalMatrix(Array.fill(dim)(1.0))).add(MatrixUtils.createRealMatrix(Array.fill(dim)(firstPoint.toArray)).transpose()))
@@ -505,8 +454,8 @@ object NSGA3Operations {
 
   /**
    * normalize ref points if needed
-   * @param references
-   * @param intercepts
+   * @param references references
+   * @param intercepts intercepts
    * @return
    */
   def computeReferencePoints(references: ReferencePoints, intercepts: Vector[Double]): Vector[Vector[Double]] = references match {
@@ -516,8 +465,8 @@ object NSGA3Operations {
 
   /**
    * Aggregate normalized fitnesses on reference points ; select on this.
-   * @param normalizedFitnesses
-   * @param normalizedReferences
+   * @param normalizedFitnesses normalized fitness values
+   * @param normalizedReferences normalized reference points
    * @param selectionIndices indices of the set in which to select additional points
    * @param pointsNumber number of points to select
    * @return indices of selected individuals
@@ -546,12 +495,15 @@ object NSGA3Operations {
 
   /**
    * Compute reference lines, distances, and associate points to references
-   * @param points
-   * @param references
-   * @param selectionIndices filter final point on these indices
+   * @param points points
+   * @param references references
+   * @param population population
    * @return map point i => ref point j,distance
    */
-  def associateReferencePoints[I](points: Vector[Vector[Double]], references: Vector[Vector[Double]], population: Vector[I]): Map[I, (Int, Double)] = {
+  def associateReferencePoints[I](
+    points: Vector[Vector[Double]],
+    references: Vector[Vector[Double]],
+    population: Vector[I]): Map[I, (Int, Double)] = {
     val refnormsquared = references.map { _.map { x => x * x }.sum }
     // FIXME unoptimized, shouldnt recreate the matrices at each run
     def proj(dim: Int, x: Vector[Double]): Vector[Double] = {
@@ -560,7 +512,7 @@ object NSGA3Operations {
     }
     points.zip(population).map {
       case (p, ind) =>
-        val dists = (0 until references.length).map {
+        val dists = references.indices.map {
           i =>
             math.sqrt(p.zip(proj(i, p)).map { case (x, y) => (x - y) * (x - y) }.sum)
         }
