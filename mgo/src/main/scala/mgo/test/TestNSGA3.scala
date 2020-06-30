@@ -6,6 +6,7 @@ import mgo.evolution._
 import mgo.evolution.algorithm.CDGenome.DeterministicIndividual.Individual
 import mgo.evolution.algorithm.CDGenome.Genome
 import mgo.evolution.algorithm.NSGA3Operations
+import mgo.tools.benchmark.ManyObjective
 
 /**
  * For test manyobjective: coco-biobj http://numbbo.github.io/coco-doc/bbob-biobj/functions/ (check mgo-benchmark)
@@ -24,11 +25,19 @@ object ReferencePoints extends App {
 
 }
 
-object RastriginNSGA3 extends App {
+object FunctionNSGA3 extends App {
 
   import algorithm._
 
-  def fitness(cont: Vector[Double], discr: Vector[Int]): Vector[Double] = Vector(rastrigin.compute(cont), rastrigin.compute(cont.map { _ + 0.5 }))
+  //def fitness(cont: Vector[Double], discr: Vector[Int]): Vector[Double] = Vector(rastrigin.compute(cont), rastrigin.compute(cont.map { _ + 0.5 }))
+  // ! dimension must be correct with reference points
+  def fitness(cont: Vector[Double], discr: Vector[Int]): Vector[Double] = ManyObjective.maf1(12)(cont)
+
+  //val ref = NSGA3Operations.ReferencePoints(40, 2)
+  val ref = NSGA3Operations.ReferencePoints(40, 3)
+
+  //val genome = rastrigin.continuous(4)
+  val genome = Vector.fill(13)(C(0.0, 1.0))
 
   def export(gen: Long, pop: Vector[Individual[Vector[Double]]]): Unit = {
     val w = new BufferedWriter(new FileWriter(new File("test/pop" + gen + ".csv")))
@@ -36,16 +45,14 @@ object RastriginNSGA3 extends App {
     w.close()
   }
 
-  val ref = NSGA3Operations.ReferencePoints(40, 2)
-
   val nsga3 = NSGA3(
-    popSize = 200,
+    popSize = 400,
     referencePoints = ref,
     fitness = fitness,
-    continuous = rastrigin.continuous(4))
+    continuous = genome)
 
   def evolution: RunAlgorithm[NSGA3, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
-    nsga3.until(afterGeneration(100)).
+    nsga3.until(afterGeneration(1000)).
       trace { (s, individuals) =>
         println("\n====================\ngen: " + s.generation)
         export(s.generation, individuals)
@@ -56,7 +63,7 @@ object RastriginNSGA3 extends App {
   val res = NSGA3.result(nsga3, finalPopulation)
   println(res.mkString("\n"))
   val fitnesses = res.map(_.fitness.toArray).toArray
-  val w = new BufferedWriter(new FileWriter(new File("test/rastriginNSGA3.csv")))
+  val w = new BufferedWriter(new FileWriter(new File("test/functionNSGA3.csv")))
   w.write(fitnesses.map(_.mkString(";")).mkString("\n"))
   w.close()
   val wr = new BufferedWriter(new FileWriter(new File("test/reference.csv")))
