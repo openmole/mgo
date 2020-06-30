@@ -344,11 +344,11 @@ object NSGA3Operations {
     fitness: I => Vector[Double],
     references: ReferencePoints,
     mu: Int)(implicit rng: util.Random): Vector[I] = {
-    println("elite with ref - pop size " + population.size)
+    //println("elite with ref - pop size " + population.size)
     val allfronts = successiveFronts(population, fitness)
-    println("number of pareto fronts = " + allfronts.size)
+    //println("number of pareto fronts = " + allfronts.size)
     val fronts = allfronts.map { _._1 }
-    println("front sizes = " + fronts.map { _.size })
+    //println("front sizes = " + fronts.map { _.size })
     val fitnesses = allfronts.map { _._2 }
     val frontindices = allfronts.map { _._3 }
     val allfitnesses = fitnesses.reduce { _ ++ _ }
@@ -370,7 +370,7 @@ object NSGA3Operations {
 
       // return everything if good number
       if (res.size == targetSize) {
-        println("cumulated front size is target size")
+        //println("cumulated front size is target size")
         res.toVector
       } else {
         // tricky part
@@ -402,8 +402,8 @@ object NSGA3Operations {
           filter[I](population, lastfrontinds),
           targetSize - provpop.size)
 
-        println("additional points : " + additionalPoints.size)
-        println("size of final elite population : " + provpop.size + " + " + additionalPoints.size)
+        //println("additional points : " + additionalPoints.size)
+        //println("size of final elite population : " + provpop.size + " + " + additionalPoints.size)
 
         provpop ++ additionalPoints
       }
@@ -528,14 +528,14 @@ object NSGA3Operations {
     population: Vector[I],
     pointsNumber: Int)(implicit rng: util.Random): Vector[I] = {
 
-    println("Adding " + pointsNumber + " points among " + population.size)
-    println("Normalized fitnesses length = " + normalizedFitnesses.length)
+    //println("Adding " + pointsNumber + " points among " + population.size)
+    //println("Normalized fitnesses length = " + normalizedFitnesses.length)
 
     //val normFitnessMap = population.zip(normalizedFitnesses).toMap
     val assocMap = associateReferencePoints(normalizedFitnesses, normalizedReferences, population) // associate points to references
     //println("association of ref points = "+assocMap)
     val (finalAssocMap, selected) = pointsSelection(assocMap, Vector.empty, pointsNumber)
-    println("distinct niched ref points = " + selected.map { _._2 }.distinct)
+    //println("distinct niched ref points = " + selected.map { _._2 }.distinct)
     //println("rel min x sel points = " + selected.map(s => normFitnessMap(s._1)(0)).min)
     //println("rel min y sel points = " + selected.map(s => normFitnessMap(s._1)(1)).min)
     selected.map { _._1 }
