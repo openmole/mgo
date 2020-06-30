@@ -76,6 +76,10 @@ pomExtra in ThisBuild := (
       <id>guillaumecherel</id>
       <name>Guillaume Chérel</name>
     </developer>
+    <developer>
+      <id>justeraimbault</id>
+      <name>Juste Raimbault</name>
+    </developer>
   </developers>
 )
 
