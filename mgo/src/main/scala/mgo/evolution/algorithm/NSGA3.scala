@@ -441,9 +441,16 @@ object NSGA3Operations {
     val translated = fitnesses.map { _.zip(idealValues).map { case (f, mi) => f - mi } }
     //assert(translated.flatten.min >= 0.0, "negative translated data")
     // max points minimize the Achievement Scalarizing Function
-    val maxIndices: Vector[Int] = Vector.tabulate(d, d) { case (i, j) => if (i == j) 1.0 else 1e-6 }.map { ei: Vector[Double] => translated.map { xi => xi.zip(ei).map { case (xij, eij) => xij * eij }.max }.zipWithIndex.maxBy { case (d, _) => d }._2 }
+    def maxIndices(values: Vector[Vector[Double]], filter: Array[Int]): Vector[Int] = Vector.tabulate(d, d) { case (i, j) => if (i == j) 1.0 else 1e-6 }.map { ei: Vector[Double] => values.zipWithIndex.filter(v => !filter.contains(v._2)).map(_._1).map { xi => xi.zip(ei).map { case (xij, eij) => xij * eij }.max }.zipWithIndex.maxBy { case (dd, _) => dd }._2 }
+    val filt = new ArrayBuffer[Int]
+    var maxinds = maxIndices(translated, filt.toArray)
+    //while (maxinds.toSet.size < maxinds.length) {
+    //  maxinds = maxIndices(translated, filt.toArray)
+    //  filt.append(maxinds(0))
+    //  println(filt)
+    //}
     //println(maxIndices)
-    (translated, maxIndices.map(fitnesses(_)))
+    (translated, maxinds.map(fitnesses(_)))
   }
 
   /**
@@ -452,19 +459,37 @@ object NSGA3Operations {
    * @return
    */
   def simplexIntercepts(maxPoints: Vector[Vector[Double]]): Vector[Double] = {
-    val firstPoint = maxPoints(0)
-    val dim = firstPoint.size
+    val lastPoint = maxPoints(maxPoints.length - 1)
+    val dim = lastPoint.size
 
-    val translated: Vector[Vector[Double]] = maxPoints.map { _.zip(firstPoint).map { case (xij, x1j) => xij - x1j } }
-    val baseChange: RealMatrix = MatrixUtils.createRealMatrix((Vector(firstPoint.map { xj => -xj }) ++ translated.tail).map { _.toArray }.toArray)
+    val translated: Vector[Vector[Double]] = maxPoints.map { _.zip(lastPoint).map { case (xij, x1j) => xij - x1j } }
+
+    // compute cross-product
+    val coefs = (0 until dim).map { i =>
+      val matarray = translated.dropRight(1).map(_.toArray).toArray ++ Array(Array.tabulate(dim)(j => if (j == i) 1.0.toDouble else 0.0.toDouble))
+      println(matarray.map(_.toVector).toVector)
+      new LUDecomposition(
+        MatrixUtils.createRealMatrix(matarray)).getDeterminant
+    }
+    println(coefs)
+    println(coefs(0) / coefs(1))
+    // hyperplan eq is then coefs \cdot (x - x0) = 0 -> intercepts at xj=0 for j != i
+    val intercepts = (0 until dim).map { i =>
+      lastPoint(i) + coefs.zip(lastPoint).zipWithIndex.filter(c => c._2 != i).map { case ((c, x), _) => c * x / coefs(i) }.sum
+    }.toVector
+
+    //val baseChange: RealMatrix = MatrixUtils.createRealMatrix((Vector(firstPoint.map { xj => -xj }) ++ translated.tail).map { _.toArray }.toArray)
 
     // check that the new basis is not singular
-    assert(new LUDecomposition(baseChange).getDeterminant != 0, "singular matrix : " + baseChange.toString + "\n max points are : " + maxPoints)
+    //assert(new LUDecomposition(baseChange).getDeterminant != 0, "singular matrix : " + baseChange.toString + "\n max points are : " + maxPoints)
 
+    /*
     def getDiag(m: RealMatrix): Vector[Double] = m.getData.zipWithIndex.map { case (row, i) => row(i) }.toVector
     getDiag(
       MatrixUtils.inverse(baseChange). //multiply(MatrixUtils.createRealDiagonalMatrix(Array.fill(dim)(1.0))). // apply to basis vectors ~ multiply by identity
         add(MatrixUtils.createRealMatrix(Array.fill(dim)(firstPoint.toArray)).transpose()))
+        */
+    intercepts
   }
 
   /**
