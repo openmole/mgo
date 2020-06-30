@@ -161,6 +161,41 @@ object ManyObjective {
   }
 
 
+  /**
+    * MaF7 - DTLZ7
+    *
+    * @param d number of parameters
+    * @param k fixes the number of objectives such that m = d - k + 1
+    * @param x variable
+    * @return
+    */
+  def maf7(d: Int, k: Int = 20)(x: Vector[Double]): Vector[Double] = {
+    val m = d - k + 1
+    assert(m>0,"MAF7 must have objectives:  m = d - k + 1")
+    assert(m<=d,"MAF7 must have less objectives than parameters")
+    val fi = x.dropRight(k)
+    val g = 1 + 9/k*x.drop(m - 1).sum
+    val h = m - fi.map{f => f/(1+g)*(1 + math.sin(3.0*math.Pi*f))}.sum
+    fi++Vector(h*(1+g))
+  }
+
+
+  /**
+    * MaF8 - multi-point distance minimization problem
+    *  number of parameters is always 2, number of objectives changes
+    *
+    * @param m number of objectives
+    * @param x variable \in [-10000,10000] - always two dimensional
+    * @return
+    */
+  def maf8(m: Int)(x: Vector[Double]): Vector[Double] = {
+    // construct points at distance 1 and angle 2pi/m
+    val points = (0 until m).map(i => (math.cos(2*math.Pi*i/m),math.sin(2*math.Pi*i/m)))
+    points.map{case (xi,yi) =>
+      math.sqrt(math.pow(xi - x(0),2.0) + math.pow(yi - x(1),2.0))
+    }.toVector
+  }
+
   
 
 
