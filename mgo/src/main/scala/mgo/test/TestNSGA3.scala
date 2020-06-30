@@ -39,15 +39,15 @@ object RastriginNSGA3 extends App {
   val ref = NSGA3Operations.ReferencePoints(40, 2)
 
   val nsga3 = NSGA3(
-    popSize = 100,
+    popSize = 200,
     referencePoints = ref,
     fitness = fitness,
     continuous = rastrigin.continuous(4))
 
   def evolution: RunAlgorithm[NSGA3, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
-    nsga3.until(afterGeneration(500)).
+    nsga3.until(afterGeneration(100)).
       trace { (s, individuals) =>
-        println(s.generation)
+        println("\n====================\ngen: " + s.generation)
         export(s.generation, individuals)
       }
 
