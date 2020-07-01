@@ -24,11 +24,11 @@ object ManyObjective {
     assert(m <= d, "MAF1 must have less objectives than parameters")
     val g = dtlz1g(d, k, x)
     val prods = (1 until m).map { i =>
-      (1 to m - i).map(j => x(j)).product
+      (1 to m - i).map(j => x(j - 1)).product
     }
-    val f1 = (1 - prods(0)) * g
-    val fm = x(0) * g
-    Vector(f1) ++ prods.tail.zip(x.tail.reverse.tail.map(xi => 1 - xi)).map { case (p, y) => (1 - p * y) * g }.toVector ++ Vector(fm)
+    val f1 = (1 - prods(0)) * (1 + g)
+    val fm = x(0) * (1 + g)
+    Vector(f1) ++ prods.tail.zip(x.dropRight(k).tail.reverse.map(xi => 1 - xi)).map { case (p, y) => (1 - p * y) * (1 + g) }.toVector ++ Vector(fm)
   }
 
   /**

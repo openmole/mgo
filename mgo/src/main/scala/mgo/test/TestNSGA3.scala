@@ -4,7 +4,7 @@ import java.io.{ BufferedWriter, File, FileWriter }
 
 import mgo.evolution._
 import mgo.evolution.algorithm.CDGenome.DeterministicIndividual.Individual
-import mgo.evolution.algorithm.CDGenome.Genome
+import mgo.evolution.algorithm.CDGenome.{ Genome, NoisyIndividual }
 import mgo.evolution.algorithm.NSGA3Operations
 import mgo.tools.benchmark.ManyObjective
 
@@ -25,6 +25,17 @@ object ReferencePoints extends App {
 
 }
 
+object ManyObjectiveFunctions extends App {
+
+  val xt = Vector.fill(10)(0.5)
+  def f(x: Double, y: Double): Vector[Double] = ManyObjective.maf1(12)(Vector(x, y) ++ xt)
+
+  println(f(0, 0))
+  println(f(1, 1))
+  println(f(1, 0))
+
+}
+
 object FunctionNSGA3 extends App {
 
   import algorithm._
@@ -34,7 +45,7 @@ object FunctionNSGA3 extends App {
   def fitness(cont: Vector[Double], discr: Vector[Int]): Vector[Double] = ManyObjective.maf1(12)(cont)
 
   //val ref = NSGA3Operations.ReferencePoints(40, 2)
-  val ref = NSGA3Operations.ReferencePoints(40, 3)
+  val ref = NSGA3Operations.ReferencePoints(50, 3)
 
   //val genome = rastrigin.continuous(4)
   val genome = Vector.fill(13)(C(0.0, 1.0))
@@ -46,7 +57,7 @@ object FunctionNSGA3 extends App {
   }
 
   val nsga3 = NSGA3(
-    popSize = 400,
+    popSize = 1000,
     referencePoints = ref,
     fitness = fitness,
     continuous = genome)
@@ -70,3 +81,30 @@ object FunctionNSGA3 extends App {
   wr.write(ref.references.map(_.mkString(";")).mkString("\n"))
   wr.close()
 }
+
+object TestNoisyNSGA3 extends App {
+
+  import algorithm._
+
+  def fitness(rng: util.Random, cont: Vector[Double], discr: Vector[Int]): Vector[Double] = ManyObjective.maf1(12)(cont).map(_ + 0.1 * rng.nextGaussian())
+  // ! for noisy, ref points must be dim + 1
+  val ref = NSGA3Operations.ReferencePoints(50, 4)
+  val genome = Vector.fill(13)(C(0.0, 1.0))
+
+  val nsga3 = NoisyNSGA3[Vector[Double]](
+    popSize = 100,
+    referencePoints = ref,
+    fitness = fitness,
+    aggregation = pop => pop.map(x => x.sum / x.length),
+    continuous = genome)
+
+  def evolution: RunAlgorithm[NoisyNSGA3[Vector[Double]], NoisyIndividual.Individual[Vector[Double]], Genome, NoisyNSGA3.NSGA3State] =
+    nsga3.until(afterGeneration(1000)).
+      trace { (s, individuals) =>
+        println("\n====================\ngen: " + s.generation)
+      }
+
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
+
+}
+

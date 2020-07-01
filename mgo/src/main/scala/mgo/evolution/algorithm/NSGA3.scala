@@ -1,3 +1,19 @@
+/*
+ * Copyright (C) 01/07/2020 Juste Raimbault
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package mgo.evolution.algorithm
 
 import cats.implicits._
@@ -42,7 +58,6 @@ object NSGA3 {
       discreteOperator.get,
       discrete,
       buildGenome,
-      _ => 1,
       reject,
       operatorExploration)
 
@@ -59,7 +74,7 @@ object NSGA3 {
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
 
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double]): Vector[Result] =
-    population.map { i =>
+    keepFirstFront(population, individualFitness(fitness)).map { i =>
       Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i))
     }
 
@@ -248,7 +263,6 @@ object NSGA3Operations {
     discreteOperator: G => Option[Int],
     discrete: Vector[D],
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
-    tournamentRounds: Int => Int,
     reject: Option[G => Boolean],
     operatorExploration: Double): Breeding[S, I, G] = (s, population, rng) => {
 
