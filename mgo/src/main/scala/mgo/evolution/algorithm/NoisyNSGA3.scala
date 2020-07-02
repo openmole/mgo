@@ -40,7 +40,8 @@ object NoisyNSGA3 {
     cloneProbability: Double,
     discrete: Vector[D],
     aggregation: Vector[P] => Vector[Double],
-    reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
+    reject: Option[Genome => Boolean],
+    lambda: Int = -1): Breeding[S, Individual[P], Genome] =
     NoisyNSGA3Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Individual.genome.get,
