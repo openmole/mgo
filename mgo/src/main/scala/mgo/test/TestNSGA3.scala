@@ -27,12 +27,26 @@ object ReferencePoints extends App {
 
 object ManyObjectiveFunctions extends App {
 
+  /*
   val xt = Vector.fill(10)(0.5)
   def f(x: Double, y: Double): Vector[Double] = ManyObjective.maf1(12)(Vector(x, y) ++ xt)
 
   println(f(0, 0))
   println(f(1, 1))
   println(f(1, 0))
+*/
+  val rng = util.Random
+  val pop1 = Vector(Vector(rng.nextDouble, rng.nextDouble))
+  def fitness(x: Vector[Double]): Vector[Double] = x
+  //println(NSGA3Operations.successiveFronts(pop1, fitness))
+  //println(NSGA3Operations.successiveFronts(pop1 ++ pop1, fitness))
+  //println(NSGA3Operations.successiveFronts(pop1 ++ pop1 ++ pop1, fitness))
+
+  def pop(n: Int) = Vector.fill(n, 2)(rng.nextDouble)
+  //println(pop(5))
+  (0 until 10).foreach { i =>
+    println(i + ": " + NSGA3Operations.successiveFronts(pop(i), fitness))
+  }
 
 }
 

@@ -48,7 +48,7 @@ object NSGA3 {
   def initialGenomes(populationSize: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
     CDGenome.initialGenomes(populationSize, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[S, P](operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
+  def adaptiveBreeding[S, P](operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean], lambda: Int = -1): Breeding[S, Individual[P], Genome] =
     NSGA3Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
       Individual.genome.get,
@@ -59,7 +59,8 @@ object NSGA3 {
       discrete,
       buildGenome,
       reject,
-      operatorExploration)
+      operatorExploration,
+      lambda)
 
   def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
     DeterministicIndividual.expression(express, components)
@@ -249,6 +250,7 @@ object NSGA3Operations {
    * @param tournamentRounds tournamentRounds
    * @param reject reject
    * @param operatorExploration operatorExploration
+   * @param lambda breeded population size - in NSGA3, set at 2*population size - by default when lambda = -1
    * @tparam S state
    * @tparam I individual
    * @tparam G genome
@@ -264,7 +266,8 @@ object NSGA3Operations {
     discrete: Vector[D],
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     reject: Option[G => Boolean],
-    operatorExploration: Double): Breeding[S, I, G] = (s, population, rng) => {
+    operatorExploration: Double,
+    lambda: Int = -1): Breeding[S, I, G] = (s, population, rng) => {
 
     val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
     val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
@@ -279,7 +282,9 @@ object NSGA3Operations {
       operatorExploration,
       buildGenome)
 
-    breed(breedTwo, 2 * population.size, reject)(s, population, rng)
+    val breededsize = if (lambda == -1) 2 * population.size else lambda
+
+    breed(breedTwo, breededsize, reject)(s, population, rng)
   }
 
   /**
@@ -316,6 +321,8 @@ object NSGA3Operations {
    * @return Vector of fronts, coded by (individuals: Vector[I],fitnesses in same order: Vector(Vector(Double)),indices in initial population: Vector[Int])
    */
   def successiveFronts[I](population: Vector[I], fitness: I => Vector[Double]): Vector[(Vector[I], Vector[Vector[Double]], Vector[Int])] = {
+    if (population.isEmpty) return Vector.empty[(Vector[I], Vector[Vector[Double]], Vector[Int])]
+
     // evaluate all fitness and put in map so that function are not reevaluated at each front computation
     val fitnesses = population.map(i => fitness(i))
     val fitnessmap = population.zip(fitnesses).toMap
@@ -358,8 +365,12 @@ object NSGA3Operations {
     fitness: I => Vector[Double],
     references: ReferencePoints,
     mu: Int)(implicit rng: util.Random): Vector[I] = {
+    if (population.size <= 1) return population
     // all successive Pareto fronts
     val allfronts: Vector[(Vector[I], Vector[Vector[Double]], Vector[Int])] = successiveFronts(population, fitness)
+    //println(allfronts.size)
+    if (allfronts.size == 0) return population
+
     val fronts = allfronts.map { _._1 }
     val fitnesses: Vector[Vector[Vector[Double]]] = allfronts.map { _._2 }
     val frontindices = allfronts.map { _._3 }
