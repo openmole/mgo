@@ -104,7 +104,7 @@ object TestNoisyNSGA3 extends App {
     continuous = genome)
 
   def evolution: RunAlgorithm[NoisyNSGA3[Vector[Double]], NoisyIndividual.Individual[Vector[Double]], Genome, NoisyNSGA3.NSGA3State] =
-    nsga3.until(afterGeneration(1000)).
+    nsga3.until(afterGeneration(10)).
       trace { (s, individuals) =>
         println("\n====================\ngen: " + s.generation)
       }

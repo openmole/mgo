@@ -358,15 +358,10 @@ object NSGA3Operations {
     fitness: I => Vector[Double],
     references: ReferencePoints,
     mu: Int)(implicit rng: util.Random): Vector[I] = {
-    //println("elite with ref - pop size " + population.size)
+    // all successive Pareto fronts
     val allfronts: Vector[(Vector[I], Vector[Vector[Double]], Vector[Int])] = successiveFronts(population, fitness)
-
-    //println("number of pareto fronts = " + allfronts.size)
     val fronts = allfronts.map { _._1 }
-    //println("front sizes = " + fronts.map { _.size })
     val fitnesses: Vector[Vector[Vector[Double]]] = allfronts.map { _._2 }
-
-    //println(fitnesses.map(_.map(_.size)))
     val frontindices = allfronts.map { _._3 }
     val allfitnesses: Vector[Vector[Double]] = fitnesses.reduce { _ ++ _ }
 
@@ -392,40 +387,27 @@ object NSGA3Operations {
 
       // return everything if good number
       if (res.size == targetSize) {
-        //println("cumulated front size is target size")
         res.toVector
       } else {
-        // tricky part
         // needs last front to be added and remove it ; ! remove the first element of cumsizes
         val lastfrontindex = cumsizes.tail.zipWithIndex.find { case (d, _) => d > targetSize }.get._2
-        //println("last front index = "+lastfrontindex+" / frontindices size = "+frontindices.size)
-        //val lastfront = cumpops.tail(lastfrontindex)
+
         // indices of individuals in the last front
         val lastfrontinds = frontindices(lastfrontindex)
-        //println("last front indices = " + lastfrontinds)
 
         val provpop: Vector[I] = if (lastfrontindex > 0) cumpops.tail(lastfrontindex - 1) else Vector.empty
-        //println("previous pop size = "+provpop.size)
 
-        // next candidate points to be drawn in lastfront, given ref points
-        // -> normalize here
+        // next candidate points to be drawn in lastfront, given ref points -> normalize here
         val (normfitnesses, normreferences) = normalize(allfitnesses, references)
 
         def filter[T](v: Vector[T], indices: Vector[Int]): Vector[T] = v.zipWithIndex.filter { case (_, i) => indices.contains(i) }.map { _._1 }
 
-        // niching in association to reference points ; selection according to it
-        // needs last front indices
-        //val additionalPointsIndices = referenceNichingSelection[M](normfitnesses,normreferences,lastfrontinds,targetSize - provpop.size)//(rng=rng)
-        //val additionalPoints = population.zipWithIndex.filter{case (_,i) => additionalPointsIndices.contains(i)}.map{case (ind,_) => ind}
+        // niching in association to reference points ; selection according to it - requires last front indices
         val additionalPoints = referenceNichingSelection[S, I](
           filter[Vector[Double]](normfitnesses, lastfrontinds),
-          //filter[Vector[Double]](normreferences, lastfrontinds),
           normreferences,
           filter[I](population, lastfrontinds),
           targetSize - provpop.size)
-
-        //println("additional points : " + additionalPoints.size)
-        //println("size of final elite population : " + provpop.size + " + " + additionalPoints.size)
 
         provpop ++ additionalPoints
       }
@@ -504,7 +486,6 @@ object NSGA3Operations {
     // and quickly disappears for the embedding dimension in NoisyEA after first gen
     // note that this will not work if all dimensions are flat
     val dimflatness = maxPoints.transpose.map(_.max).zip(maxPoints.transpose.map(_.min)).map { case (ma, mi) => ma - mi }
-    //println(dimflatness)
     val modifinds: Vector[Option[(Int, Int)]] = dimflatness.zipWithIndex.map {
       case (delta, d) => if (delta != 0.0) None else {
         val norms = maxPoints.map(_.zipWithIndex.map { case (x, dd) => if (dd == d) 0.0 else x * x }.sum)

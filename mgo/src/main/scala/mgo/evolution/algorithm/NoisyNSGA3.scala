@@ -1,12 +1,10 @@
 package mgo.evolution.algorithm
 
-import cats.implicits._
+//import cats.implicits._
 import mgo.evolution._
 import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
-import mgo.evolution.ranking._
-import mgo.tools._
 import mgo.tools.execution._
 
 object NoisyNSGA3 {
@@ -129,7 +127,6 @@ object NoisyNSGA3Operations {
     operatorExploration: Double,
     cloneProbability: Double): Breeding[S, I, G] = (s, population, rng) => {
     // same as deterministic, but eventually adding clones
-    //println("obj sizes before breeding: " + population.map(fitness(_).length))
     val breededGenomes = NSGA3Operations.adaptiveBreeding(fitness, genome, continuousValues, continuousOperator, discreteValues, discreteOperator, discrete, buildGenome, reject, operatorExploration)(s, population, rng)
     clonesReplace(cloneProbability, population, genome, randomSelection[S, I])(s, breededGenomes, rng)
   }
@@ -141,12 +138,8 @@ object NoisyNSGA3Operations {
     mu: Int,
     references: NSGA3Operations.ReferencePoints): Elitism[S, I] =
     (s, population, candidates, rng) => {
-      //println("obj sizes before merge hist - pop: " + population.map(fitness(_).length))
-      //println("obj sizes before merge hist - candidates: " + candidates.map(fitness(_).length))
       val mergedHistories = mergeHistories(population, candidates)
-      //println("obj sizes after merge hist: " + mergedHistories.map(fitness(_).length))
       val filtered: Vector[I] = filterNaN(mergedHistories, fitness)
-      //println("obj sizes before elite ref: " + filtered.map(fitness(_).length))
       (s, NSGA3Operations.eliteWithReference[S, I](filtered, fitness, references, mu)(rng))
     }
 
