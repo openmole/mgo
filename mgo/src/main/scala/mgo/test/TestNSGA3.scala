@@ -86,7 +86,11 @@ object TestNoisyNSGA3 extends App {
 
   import algorithm._
 
-  def fitness(rng: util.Random, cont: Vector[Double], discr: Vector[Int]): Vector[Double] = ManyObjective.maf1(12)(cont).map(_ + 0.1 * rng.nextGaussian())
+  def fitness(rng: util.Random, cont: Vector[Double], discr: Vector[Int]): Vector[Double] = {
+    val res = ManyObjective.maf1(12)(cont).map(_ + 0.1 * rng.nextGaussian())
+    //println(res.size)
+    res
+  }
   // ! for noisy, ref points must be dim + 1
   val ref = NSGA3Operations.ReferencePoints(50, 4)
   val genome = Vector.fill(13)(C(0.0, 1.0))
@@ -95,7 +99,8 @@ object TestNoisyNSGA3 extends App {
     popSize = 100,
     referencePoints = ref,
     fitness = fitness,
-    aggregation = pop => pop.map(x => x.sum / x.length),
+    // ! take average across repetitions and not within each ! => add assert that dim ref = dim extended obj?
+    aggregation = pop => pop.transpose.map(x => x.sum / x.length),
     continuous = genome)
 
   def evolution: RunAlgorithm[NoisyNSGA3[Vector[Double]], NoisyIndividual.Individual[Vector[Double]], Genome, NoisyNSGA3.NSGA3State] =

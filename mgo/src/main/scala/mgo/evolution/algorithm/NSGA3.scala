@@ -359,13 +359,21 @@ object NSGA3Operations {
     references: ReferencePoints,
     mu: Int)(implicit rng: util.Random): Vector[I] = {
     //println("elite with ref - pop size " + population.size)
-    val allfronts = successiveFronts(population, fitness)
+    val allfronts: Vector[(Vector[I], Vector[Vector[Double]], Vector[Int])] = successiveFronts(population, fitness)
+
     //println("number of pareto fronts = " + allfronts.size)
     val fronts = allfronts.map { _._1 }
     //println("front sizes = " + fronts.map { _.size })
-    val fitnesses = allfronts.map { _._2 }
+    val fitnesses: Vector[Vector[Vector[Double]]] = allfronts.map { _._2 }
+
+    //println(fitnesses.map(_.map(_.size)))
     val frontindices = allfronts.map { _._3 }
-    val allfitnesses = fitnesses.reduce { _ ++ _ }
+    val allfitnesses: Vector[Vector[Double]] = fitnesses.reduce { _ ++ _ }
+
+    // check dimensions here (useful in NoisyNSGA3 if a foolish aggregation function has been provided)
+    assert(
+      allfitnesses.map(_.size).sum / allfitnesses.length == references.references.map(_.size).sum / references.references.length,
+      "Incompatible dimension between objectives and reference points")
 
     val targetSize = mu
 
@@ -457,6 +465,7 @@ object NSGA3Operations {
    */
   def translateAndMaxPoints(fitnesses: Vector[Vector[Double]]): (Vector[Vector[Double]], Vector[Vector[Double]]) = {
     val d = fitnesses(0).length
+    //println(fitnesses.map(_.size))
     val idealValues = fitnesses.transpose.map { _.min }
     val translated = fitnesses.map { _.zip(idealValues).map { case (f, mi) => f - mi } }
     //assert(translated.flatten.min >= 0.0, "negative translated data")
@@ -490,10 +499,34 @@ object NSGA3Operations {
    * @return
    */
   def simplexIntercepts(maxPoints: Vector[Vector[Double]]): Vector[Double] = {
-    val lastPoint = maxPoints(maxPoints.length - 1)
+    // ensure that no dimension is flat - otherwise the intercept is infinite
+    // arbitrarily x2 point with min norm other dimension, /2 with max (then strictly not max point - but flat objective should not be used
+    // and quickly disappears for the embedding dimension in NoisyEA after first gen
+    // note that this will not work if all dimensions are flat
+    val dimflatness = maxPoints.transpose.map(_.max).zip(maxPoints.transpose.map(_.min)).map { case (ma, mi) => ma - mi }
+    //println(dimflatness)
+    val modifinds: Vector[Option[(Int, Int)]] = dimflatness.zipWithIndex.map {
+      case (delta, d) => if (delta != 0.0) None else {
+        val norms = maxPoints.map(_.zipWithIndex.map { case (x, dd) => if (dd == d) 0.0 else x * x }.sum)
+        val (mi, ma) = (norms.min, norms.max)
+        Some((norms.indexOf(mi), norms.indexOf(ma)))
+      }
+    }
+
+    val correctedPoints = maxPoints.zipWithIndex.map {
+      case (p, i) =>
+        p.zip(modifinds).map {
+          case (x, None) => x
+          case (x, Some((imin, _))) if imin == i => 2 * x
+          case (x, Some((_, imax))) if imax == i => x / 2
+          case (x, _) => x
+        }
+    }
+
+    val lastPoint = correctedPoints(correctedPoints.length - 1)
     val dim = lastPoint.size
 
-    val translated: Vector[Vector[Double]] = maxPoints.map { _.zip(lastPoint).map { case (xij, x1j) => xij - x1j } }
+    val translated: Vector[Vector[Double]] = correctedPoints.map { _.zip(lastPoint).map { case (xij, x1j) => xij - x1j } }
 
     // compute cross-product
     val coefs = (0 until dim).map { i =>
@@ -503,9 +536,11 @@ object NSGA3Operations {
     }
 
     // hyperplan equation is then coefs \cdot (x - x0) = 0 -> intercepts at xj=0 for j != i
-    (0 until dim).map { i =>
+    val intercepts = (0 until dim).map { i =>
       lastPoint(i) + coefs.zip(lastPoint).zipWithIndex.filter(c => c._2 != i).map { case ((c, x), _) => c * x / coefs(i) }.sum
     }.toVector
+    assert(!intercepts.exists(_.isNaN), "Simplex intercepts have NaN")
+    intercepts
   }
 
   /**
@@ -567,7 +602,11 @@ object NSGA3Operations {
     points: Vector[Vector[Double]],
     references: Vector[Vector[Double]],
     population: Vector[I]): Map[I, (Int, Double)] = {
+
+    assert(references.map(_.filter(_.isNaN).isEmpty).reduce(_ && _), "Ref points have NaN")
+
     val refnormsquared = references.map { _.map { x => x * x }.sum }
+    //println(refnormsquared)
 
     // projection of x on dim is (\vec{u}\cdot \vec{x} \vec{u}) with \vec{u} = \vec{r}_dim / ||\vec{r}_dim||
     def proj(dim: Int, x: Vector[Double]): Vector[Double] = {
@@ -581,9 +620,12 @@ object NSGA3Operations {
         // for each reference point, compute distance using projection
         val dists = references.indices.map {
           i =>
-            math.sqrt(point.zip(proj(i, point)).map { case (x, y) => (x - y) * (x - y) }.sum)
+            val projected = proj(i, point)
+            //println(projected)
+            math.sqrt(point.zip(projected).map { case (x, y) => (x - y) * (x - y) }.sum)
         }
         val mindist = dists.min
+        //println(dists)
         (individual, (dists.zipWithIndex.filter { case (d, _) => d == mindist }.map { case (_, j) => j }.head, mindist))
     }.toMap
   }

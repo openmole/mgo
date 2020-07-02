@@ -112,8 +112,9 @@ case class NoisyNSGA3[P](
 
 object NoisyNSGA3Operations {
 
-  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double], accuracy: I => Double)(i: I): Vector[Double] =
+  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double], accuracy: I => Double)(i: I): Vector[Double] = {
     aggregation(fitness(i)) ++ Vector(1.0 / accuracy(i))
+  }
 
   def adaptiveBreeding[S, I, G, P](
     fitness: I => Vector[Double],
@@ -128,6 +129,7 @@ object NoisyNSGA3Operations {
     operatorExploration: Double,
     cloneProbability: Double): Breeding[S, I, G] = (s, population, rng) => {
     // same as deterministic, but eventually adding clones
+    //println("obj sizes before breeding: " + population.map(fitness(_).length))
     val breededGenomes = NSGA3Operations.adaptiveBreeding(fitness, genome, continuousValues, continuousOperator, discreteValues, discreteOperator, discrete, buildGenome, reject, operatorExploration)(s, population, rng)
     clonesReplace(cloneProbability, population, genome, randomSelection[S, I])(s, breededGenomes, rng)
   }
@@ -139,8 +141,13 @@ object NoisyNSGA3Operations {
     mu: Int,
     references: NSGA3Operations.ReferencePoints): Elitism[S, I] =
     (s, population, candidates, rng) => {
-      val merged = filterNaN(mergeHistories(population, candidates), fitness)
-      (s, NSGA3Operations.eliteWithReference[S, I](merged, fitness, references, mu)(rng))
+      //println("obj sizes before merge hist - pop: " + population.map(fitness(_).length))
+      //println("obj sizes before merge hist - candidates: " + candidates.map(fitness(_).length))
+      val mergedHistories = mergeHistories(population, candidates)
+      //println("obj sizes after merge hist: " + mergedHistories.map(fitness(_).length))
+      val filtered: Vector[I] = filterNaN(mergedHistories, fitness)
+      //println("obj sizes before elite ref: " + filtered.map(fitness(_).length))
+      (s, NSGA3Operations.eliteWithReference[S, I](filtered, fitness, references, mu)(rng))
     }
 
 }
