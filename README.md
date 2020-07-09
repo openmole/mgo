@@ -25,25 +25,22 @@ Define a problem, for instance the multi-modal multi-objective ZDT4 benchmark:
 
   object zdt4 {
 
-    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(0.0, 5.0))
-
-    def compute(genome: Vector[Double]): Vector[Double] = {
+    def continuous(size: Int) = Vector.fill(size)(C(0.0, 5.0))
+    
+    def compute(genome: Vector[Double], d: Vector[Int]): Vector[Double] = {
       val genomeSize = genome.size
 
-      def g(x: Seq[Double]) =
-        1 + 10 * (genomeSize - 1) +
-          x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
+      def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
 
       def f(x: Seq[Double]) = {
         val gx = g(x)
         gx * (1 - sqrt(genome(0) / gx))
       }
 
-      val scaled = scale(genome)
-      Vector(scaled(0), f(scaled.tail))
+      Vector(genome(0), f(genome.tail))
     }
 
-  }
+ }
 
 ```
 
