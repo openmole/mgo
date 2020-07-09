@@ -218,7 +218,5 @@ Algorithms implemented in MGO are also avialiable in the workflow plateform for 
 SBT dependency
 ----------------
 ```scala
-  resolvers += Resolver.sonatypeRepo("public")
-  resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
   libraryDependencies += "fr.iscpif" %% "mgo" % "2.45"  
 ```
