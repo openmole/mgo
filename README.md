@@ -51,12 +51,18 @@ Define the optimisation algorithm, for instance NSGAII:
 
 ```scala
 
+  import mgo.evolution._
+  import mgo.evolution.algorithm._
+  
+  // For zdt4
+  import mgo.test._
+
   val nsga2 =
     NSGA2(
       mu = 100,
       lambda = 100,
       fitness = zdt4.compute,
-      genomeSize = 10)
+      continuous = zdt4.continuous(10))
 
 ```
 
@@ -64,14 +70,15 @@ Run the optimisation:
 
 ```scala
 
-  val (finalState, finalPopulation) =
-    run(nsga2).
+  def evolution =
+    nsga2.
       until(afterGeneration(1000)).
-      trace((state, population) => println(state.generation)).
-      eval(new util.Random(42))
+      trace((s, is) => println(s.generation))
 
-  println(result(finalPopulation, zdt4.scale).mkString("\n"))
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
+  println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
+  
 ```
 
 Noisy fitness functions
