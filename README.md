@@ -6,9 +6,10 @@ MGO is a purely functionnal scala library based for evolutionary / genetic algor
 * exposes a modular and extensible architecture,
 * implements state of the art algorithms,
 * handles noisy (stochastic) fitness functions,
-* implements auto-adaptatative algortihms.
+* implements auto-adaptatative algortihms,
+* implements algorithms with distributed computing in mind for integration with [OpenMOLE](http://openmole.org).
 
-MGO implements NGSAII, CP (Calibration Profile), PSE (Pattern Search Experiment).
+MGO implements NGSAII, NSGA3, CP (Calibration Profile), PSE (Pattern Search Experiment), OSE (Antecedant research), Niched Evolution, ABC (Bayesian Calibration).
 
 Licence
 -------
