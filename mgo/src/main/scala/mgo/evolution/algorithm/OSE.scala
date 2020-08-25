@@ -63,13 +63,16 @@ object OSE {
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
 
-  def result[P](state: OSEState[P], continuous: Vector[C], fitness: P => Vector[Double]) =
-    archiveLens.get(state).toVector.map { i =>
+  def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
+    val indivduals = archiveLens.get(state).toVector ++ { if (keepAll) population else Seq() }
+
+    indivduals.map { i =>
       Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, DeterministicIndividual.individualFitness(fitness)(i))
     }
+  }
 
-  def result(ose: OSE, state: OSEState[Vector[Double]]): Vector[Result] =
-    result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity)
+  def result(ose: OSE, state: OSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result] =
+    result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity, population = population, keepAll = false)
 
   def reject(ose: OSE) = NSGA2.reject(ose.reject, ose.continuous)
 

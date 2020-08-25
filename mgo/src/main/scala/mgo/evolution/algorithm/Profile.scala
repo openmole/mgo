@@ -34,14 +34,17 @@ object Profile {
 
   case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N)
 
-  def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double]) =
-    nicheElitism[Individual[P], N](population, keepFirstFront(_, individualFitness(fitness)), niche).map { i =>
+  def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
+    val individuals = if (keepAll) population else nicheElitism[Individual[P], N](population, keepFirstFront(_, individualFitness(fitness)), niche)
+
+    individuals.map { i =>
       Result(
         scaleContinuousValues(continuousValues.get(i.genome), continuous),
         Individual.genome composeLens discreteValues get i,
         individualFitness(fitness)(i),
         niche(i))
     }
+  }
 
   def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =
     mgo.evolution.niche.continuousProfile[Individual[P]]((Individual.genome[P] composeLens continuousValues).get _, x, nX)
@@ -109,7 +112,7 @@ object Profile {
   def reject[N](profile: Profile[N]) = NSGA2.reject(profile.reject, profile.continuous)
 
   def result[N](profile: Profile[N], population: Vector[Individual[Vector[Double]]]): Vector[Result[N]] =
-    result[N, Vector[Double]](population, profile.niche, profile.continuous, identity)
+    result[N, Vector[Double]](population, profile.niche, profile.continuous, identity, keepAll = false)
 
 }
 
