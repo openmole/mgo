@@ -95,7 +95,7 @@ object NoisyPSE {
       (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),
       Individual.phenotypeHistory[P].get(i).size)
 
-  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], aggregation: Vector[Double], pattern: Vector[Int], replications: Int)
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], aggregation: Vector[Double], pattern: Vector[Int], replications: Int, individual: Individual[P])
 
   def result[P: Manifest](
     population: Vector[Individual[P]],
@@ -105,7 +105,7 @@ object NoisyPSE {
     population.map {
       i =>
         val (c, d, f, p, r) = aggregate[P](i, aggregation, pattern, continuous)
-        Result[P](c, d, f, p, r)
+        Result[P](c, d, f, p, r, i)
     }
 
   def result[P: Manifest](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =

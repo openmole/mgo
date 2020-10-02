@@ -32,7 +32,7 @@ object Profile {
 
   type ProfileState = EvolutionState[Unit]
 
-  case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N)
+  case class Result[N, P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, individual: Individual[P])
 
   def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
     val individuals = if (keepAll) population else nicheElitism[Individual[P], N](population, keepFirstFront(_, individualFitness(fitness)), niche)
@@ -42,7 +42,8 @@ object Profile {
         scaleContinuousValues(continuousValues.get(i.genome), continuous),
         Individual.genome composeLens discreteValues get i,
         individualFitness(fitness)(i),
-        niche(i))
+        niche(i),
+        i)
     }
   }
 
@@ -111,7 +112,7 @@ object Profile {
 
   def reject[N](profile: Profile[N]) = NSGA2.reject(profile.reject, profile.continuous)
 
-  def result[N](profile: Profile[N], population: Vector[Individual[Vector[Double]]]): Vector[Result[N]] =
+  def result[N](profile: Profile[N], population: Vector[Individual[Vector[Double]]]): Vector[Result[N, Vector[Double]]] =
     result[N, Vector[Double]](population, profile.niche, profile.continuous, identity, keepAll = false)
 
 }

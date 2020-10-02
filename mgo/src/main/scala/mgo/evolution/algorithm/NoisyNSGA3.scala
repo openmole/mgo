@@ -14,19 +14,19 @@ object NoisyNSGA3 {
 
   type NSGA3State = EvolutionState[Unit]
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean): Vector[NoisyNSGA3.Result] = {
+  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean) = {
     val individuals = if (keepAll) population else keepFirstFront(population, fitness(aggregation))
 
     individuals.map {
       i =>
         val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
-        Result(c, d, f, r)
+        Result(c, d, f, r, i)
     }
   }
 
-  def result[P: Manifest](nsga3: NoisyNSGA3[P], population: Vector[Individual[P]]): Vector[Result] =
+  def result[P: Manifest](nsga3: NoisyNSGA3[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result[P](population, nsga3.aggregation, nsga3.continuous, keepAll = false)
 
   def fitness[P: Manifest](aggregation: Vector[P] => Vector[Double]): Individual[P] => Vector[Double] =

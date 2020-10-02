@@ -60,7 +60,7 @@ object NSGA2 {
       i => values(Individual.genome[P].get(i), components),
       mu)
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
 
   def reject(f: Option[(Vector[Double], Vector[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
@@ -71,10 +71,7 @@ object NSGA2 {
 
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
-
-    individuals.map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i))
-    }
+    individuals.map { i => Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i), i) }
   }
 
   implicit def isAlgorithm: Algorithm[NSGA2, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
@@ -93,7 +90,7 @@ object NSGA2 {
             EvolutionState.generation)(s, population, rng)
     }
 
-  def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]): Vector[Result] = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _, keepAll = false)
+  def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]) = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _, keepAll = false)
   def reject(nsga2: NSGA2): Option[Genome => Boolean] = reject(nsga2.reject, nsga2.continuous)
 
 }

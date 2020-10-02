@@ -28,13 +28,14 @@ import monocle.macros.Lenses
 
 import scala.language.higherKinds
 
+// TODO generify individual phenotype
 object PSE {
 
   import CDGenome._
 
   type PSEState = EvolutionState[HitMap]
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: Vector[Double])
+  case class Result(continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: Vector[Double], individual: Individual)
 
   def result(population: Vector[Individual], continuous: Vector[C], pattern: Vector[Double] => Vector[Int]) =
     population.map { i =>
@@ -42,7 +43,8 @@ object PSE {
         scaleContinuousValues(continuousValues.get(i.genome), continuous),
         Individual.genome composeLens discreteValues get i,
         pattern(i.phenotype.toVector),
-        i.phenotype.toVector)
+        i.phenotype.toVector,
+        i)
     }
 
   def result(pse: PSE, population: Vector[Individual]): Vector[Result] =

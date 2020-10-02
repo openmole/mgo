@@ -73,22 +73,22 @@ object NoisyOSE {
       reachMapLens)
   }
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
   def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double], keepAll: Boolean) = {
     def goodIndividuals =
       population.flatMap { i =>
         val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
-        if (keepAll || OSEOperation.patternIsReached(f, limit)) Some(Result(c, d, f, r)) else None
+        if (keepAll || OSEOperation.patternIsReached(f, limit)) Some(Result(c, d, f, r, i)) else None
       }
 
     state.s._1.toVector.map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
-      Result(c, d, f, r)
+      Result(c, d, f, r, i)
     } ++ goodIndividuals
   }
 
-  def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result] =
+  def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit, keepAll = false)
 
   def reject[P](pse: NoisyOSE[P]) = NSGA2.reject(pse.reject, pse.continuous)

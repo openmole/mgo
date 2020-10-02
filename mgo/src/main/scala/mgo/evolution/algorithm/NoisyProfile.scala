@@ -36,7 +36,7 @@ object NoisyProfile {
   def aggregatedFitness[N, P: Manifest](aggregation: Vector[P] => Vector[Double]) =
     NoisyNSGA2Operations.aggregated[Individual[P], P](vectorPhenotype[P].get, aggregation, Individual.phenotypeHistory[P].get(_).size)(_)
 
-  case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, replications: Int)
+  case class Result[N, P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, replications: Int, individual: Individual[P])
 
   def result[N, P: Manifest](
     population: Vector[Individual[P]],
@@ -57,11 +57,11 @@ object NoisyProfile {
 
     individuals.map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
-      Result(c, d, f, niche(i), r)
+      Result(c, d, f, niche(i), r, i)
     }
   }
 
-  def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = true): Vector[Result[N]] =
+  def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = true): Vector[Result[N, P]] =
     result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, onlyOldest, keepAll = false)
 
   def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =

@@ -72,16 +72,16 @@ object NSGA3 {
       references,
       mu)
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
 
-  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result] = {
+  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
     individuals.map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i))
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i), i)
     }
   }
 
-  def result(nsga3: NSGA3, population: Vector[Individual[Vector[Double]]]): Vector[Result] = result[Vector[Double]](population, nsga3.continuous, identity[Vector[Double]] _, keepAll = false)
+  def result(nsga3: NSGA3, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga3.continuous, identity[Vector[Double]] _, keepAll = false)
 
   def reject(f: Option[(Vector[Double], Vector[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
