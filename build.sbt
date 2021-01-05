@@ -1,10 +1,10 @@
 
 name := "mgo"
 organization in ThisBuild := "org.openmole"
-scalaVersion in ThisBuild := "2.13.3"
-crossScalaVersions in ThisBuild := Seq("2.12.12", "2.13.3")
+scalaVersion in ThisBuild := "2.13.4"
+crossScalaVersions in ThisBuild := Seq("2.12.12", "2.13.4")
 
-val monocleVersion = "2.0.0"
+val monocleVersion = "2.0.3"
 
 def priorTo2_13(scalaVersion: String): Boolean =
   CrossVersion.partialVersion(scalaVersion) match {
