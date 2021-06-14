@@ -89,7 +89,8 @@ object OSE {
         OSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.discrete, t.origin, identity, reject(t)),
         OSE.expression(t.fitness, t.continuous),
         OSE.elitism(t.mu, t.limit, t.origin, t.continuous, identity),
-        EvolutionState.generation)
+        EvolutionState.generation,
+        EvolutionState.evaluated)
 
   }
 

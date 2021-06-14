@@ -87,7 +87,8 @@ object NSGA2 {
             NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
             NSGA2.expression(t.fitness, t.continuous),
             NSGA2.elitism[NSGA2State, Vector[Double]](t.mu, t.continuous, identity),
-            EvolutionState.generation)(s, population, rng)
+            EvolutionState.generation,
+            EvolutionState.evaluated)(s, population, rng)
     }
 
   def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]) = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _, keepAll = false)

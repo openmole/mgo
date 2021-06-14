@@ -121,7 +121,8 @@ object NoisyOSE {
           t.continuous,
           t.origin,
           t.limit),
-        EvolutionState.generation)
+        EvolutionState.generation,
+        EvolutionState.evaluated)
 
   }
 

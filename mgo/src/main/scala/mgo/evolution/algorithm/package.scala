@@ -35,6 +35,7 @@ package object algorithm {
 
   @Lenses case class EvolutionState[S](
     generation: Long = 0L,
+    evaluated: Long = 0L,
     startTime: Long = java.lang.System.currentTimeMillis(),
     s: S)
 
@@ -313,12 +314,14 @@ package object algorithm {
       breeding: Breeding[S, I, G],
       expression: G => I,
       elitism: Elitism[S, I],
-      generation: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random) = {
+      generation: monocle.Lens[S, Long],
+      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random) = {
       val newGenomes = breeding(s, population, rng)
       val newPopulation = newGenomes.map(expression)
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
       val s3 = generation.modify(_ + 1)(s2)
-      (s3, elitePopulation)
+      val s4 = evaluated.modify(_ + newGenomes.size)(s3)
+      (s4, elitePopulation)
     }
 
     def expression[G, P, I](
@@ -343,15 +346,17 @@ package object algorithm {
       breeding: Breeding[S, I, G],
       expression: (util.Random, G) => I,
       elitism: Elitism[S, I],
-      generation: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random) = {
+      generation: monocle.Lens[S, Long],
+      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random) = {
       def evaluate(g: G) = expression(rng, g)
 
       val newGenomes = breeding(s, population, rng)
       val newPopulation = newGenomes.map(evaluate)
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
       val s3 = generation.modify(_ + 1)(s2)
+      val s4 = evaluated.modify(_ + newGenomes.size)(s3)
 
-      (s3, elitePopulation)
+      (s4, elitePopulation)
     }
 
     def expression[G, I, P](

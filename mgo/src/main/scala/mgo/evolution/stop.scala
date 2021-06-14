@@ -26,6 +26,9 @@ object stop {
 
   type StopCondition[S, I] = (S, Vector[I]) => Boolean
 
+  def afterEvaluated[S, I](e: Long, evaluated: monocle.Lens[S, Long]): StopCondition[S, I] =
+    (s, is) => evaluated.get(s) >= e
+
   def afterGeneration[S, I](g: Long, generation: monocle.Lens[S, Long]): StopCondition[S, I] =
     (s, is) => generation.get(s) >= g
 

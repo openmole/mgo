@@ -109,7 +109,8 @@ object PSE {
           PSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, t.pattern, reject(t)),
           PSE.expression(t.phenotype, t.continuous),
           PSE.elitism(t.pattern, t.continuous),
-          EvolutionState.generation)(s, pop, rng)
+          EvolutionState.generation,
+          EvolutionState.evaluated)(s, pop, rng)
 
   }
 

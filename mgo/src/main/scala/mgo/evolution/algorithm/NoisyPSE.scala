@@ -140,7 +140,8 @@ object NoisyPSE {
             t.aggregation,
             t.historySize,
             t.continuous),
-          EvolutionState.generation)(s, pop, rng)
+          EvolutionState.generation,
+          EvolutionState.evaluated)(s, pop, rng)
 
   }
 }

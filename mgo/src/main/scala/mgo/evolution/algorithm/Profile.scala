@@ -106,7 +106,8 @@ object Profile {
         Profile.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
         Profile.expression(t.fitness, t.continuous),
         Profile.elitism(t.niche, t.nicheSize, t.continuous, identity),
-        EvolutionState.generation)
+        EvolutionState.generation,
+        EvolutionState.evaluated)
 
   }
 

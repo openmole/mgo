@@ -105,7 +105,8 @@ object NSGA3 {
             NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.discrete, identity, reject(t)),
             NSGA3.expression(t.fitness, t.continuous),
             NSGA3.elitism[NSGA3State, Vector[Double]](t.popSize, t.referencePoints, t.continuous, identity),
-            EvolutionState.generation)(s, population, rng)
+            EvolutionState.generation,
+            EvolutionState.evaluated)(s, population, rng)
     }
 
 }

@@ -94,7 +94,8 @@ object NoisyNSGA3 {
               t.historySize,
               t.aggregation,
               t.continuous),
-            EvolutionState.generation)(s, population, rng)
+            EvolutionState.generation,
+            EvolutionState.evaluated)(s, population, rng)
 
     }
 

@@ -149,7 +149,8 @@ object NoisyProfile {
           t.historySize,
           t.aggregation,
           t.continuous),
-        EvolutionState.generation)
+        EvolutionState.generation,
+        EvolutionState.evaluated)
 
   }
 
