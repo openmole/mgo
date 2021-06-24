@@ -25,6 +25,9 @@ import mgo.tools.execution._
 import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix }
 import org.apache.commons.math3.util.ArithmeticUtils
 
+import monocle._
+import monocle.syntax.all._
+
 import scala.collection.mutable.ArrayBuffer
 import scala.language.higherKinds
 import scala.util.Random
@@ -51,7 +54,7 @@ object NSGA3 {
   def adaptiveBreeding[S, P](operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean], lambda: Int = -1): Breeding[S, Individual[P], Genome] =
     NSGA3Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -68,7 +71,7 @@ object NSGA3 {
   def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA3Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => values(Individual.genome[P].get(i), components),
+      i => values(i.focus(_.genome).get, components),
       references,
       mu)
 
@@ -77,7 +80,7 @@ object NSGA3 {
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
     individuals.map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i), i)
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, individualFitness(fitness)(i), i)
     }
   }
 
@@ -105,8 +108,8 @@ object NSGA3 {
             NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.discrete, identity, reject(t)),
             NSGA3.expression(t.fitness, t.continuous),
             NSGA3.elitism[NSGA3State, Vector[Double]](t.popSize, t.referencePoints, t.continuous, identity),
-            EvolutionState.generation,
-            EvolutionState.evaluated)(s, population, rng)
+            Focus[EvolutionState[Unit]](_.generation),
+            Focus[EvolutionState[Unit]](_.evaluated))(s, population, rng)
     }
 
 }

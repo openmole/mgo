@@ -8,7 +8,10 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.ranking._
 import mgo.tools.execution._
+
 import monocle.function
+import monocle._
+import monocle.syntax.all._
 
 import scala.reflect.ClassTag
 
@@ -19,8 +22,8 @@ object NoisyOSE {
   type StateType[P] = (Archive[Individual[P]], OSEOperation.ReachMap)
   type OSEState[P] = EvolutionState[StateType[P]]
 
-  def archiveLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.first
-  def reachMapLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.second
+  def archiveLens[P] = Focus[EvolutionState[StateType[P]]](_.s._1)
+  def reachMapLens[P] = Focus[EvolutionState[StateType[P]]](_.s._2)
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -37,7 +40,7 @@ object NoisyOSE {
     NoisyOSEOperations.adaptiveBreeding[OSEState[P], Individual[P], Genome, P](
       vectorPhenotype[P].get,
       aggregation,
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -58,7 +61,7 @@ object NoisyOSE {
     NoisyIndividual.expression[P](fitness, continuous)
 
   def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] = {
-    def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
+    def individualValues(i: Individual[P]) = values(i.genome, components)
 
     NoisyOSEOperations.elitism[OSEState[P], Individual[P], P](
       vectorPhenotype[P].get,
@@ -67,7 +70,7 @@ object NoisyOSE {
       origin,
       limit,
       historySize,
-      mergeHistories(individualValues, vectorPhenotype[P], Individual.historyAge[P], historySize),
+      mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu,
       archiveLens,
       reachMapLens)
@@ -121,8 +124,8 @@ object NoisyOSE {
           t.continuous,
           t.origin,
           t.limit),
-        EvolutionState.generation,
-        EvolutionState.evaluated)
+        Focus[OSEState[P]](_.generation),
+        Focus[OSEState[P]](_.evaluated))
 
   }
 

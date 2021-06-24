@@ -24,7 +24,9 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.tools.CanBeNaN
 import mgo.tools.execution._
-import monocle.macros._
+
+import monocle._
+import monocle.syntax.all._
 
 object NoisyPSE {
 
@@ -32,13 +34,13 @@ object NoisyPSE {
 
   type PSEState = EvolutionState[HitMap]
 
-  @Lenses case class Individual[P](
+  case class Individual[P](
     genome: Genome,
     historyAge: Long,
     phenotypeHistory: Array[P])
 
   def buildIndividual[P: Manifest](genome: Genome, phenotype: P) = Individual(genome, 1, Array(phenotype))
-  def vectorPhenotype[P: Manifest] = Individual.phenotypeHistory[P] composeLens arrayToVectorLens
+  def vectorPhenotype[P: Manifest] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso
 
   //  def state[M[_]: cats.Monad: StartTime: Random: Generation: HitMap] = PSE.state[M]
 
@@ -54,7 +56,7 @@ object NoisyPSE {
     pattern: Vector[Double] => Vector[Int],
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     NoisyPSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -66,7 +68,7 @@ object NoisyPSE {
       reject,
       operatorExploration,
       cloneProbability,
-      EvolutionState.s[HitMap])
+      Focus[EvolutionState[HitMap]](_.s))
 
   def elitism[P: CanBeNaN: Manifest](
     pattern: Vector[Double] => Vector[Int],
@@ -74,13 +76,13 @@ object NoisyPSE {
     historySize: Int,
     continuous: Vector[C]) =
     NoisyPSEOperations.elitism[PSEState, Individual[P], P](
-      i => values(Individual.genome.get(i), continuous),
+      i => values(i.genome, continuous),
       vectorPhenotype[P],
       aggregation,
       pattern,
-      Individual.historyAge,
+      Focus[Individual[P]](_.historyAge),
       historySize,
-      EvolutionState.s[HitMap])
+      Focus[EvolutionState[HitMap]](_.s))
 
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
     noisy.expression[Genome, Individual[P], P](
@@ -90,10 +92,10 @@ object NoisyPSE {
   def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]) =
     (
       scaleContinuousValues(continuousValues.get(i.genome), continuous),
-      Individual.genome[P] composeLens discreteValues get i,
+      i.focus(_.genome) andThen discreteValues get,
       aggregation(vectorPhenotype[P].get(i)),
       (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),
-      Individual.phenotypeHistory[P].get(i).size)
+      i.phenotypeHistory.size)
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], aggregation: Vector[Double], pattern: Vector[Int], replications: Int, individual: Individual[P])
 
@@ -140,8 +142,8 @@ object NoisyPSE {
             t.aggregation,
             t.historySize,
             t.continuous),
-          EvolutionState.generation,
-          EvolutionState.evaluated)(s, pop, rng)
+          Focus[PSEState](_.generation),
+          Focus[PSEState](_.evaluated))(s, pop, rng)
 
   }
 }

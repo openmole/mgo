@@ -8,6 +8,9 @@ import mgo.evolution.elitism._
 import mgo.evolution.ranking._
 import mgo.tools.execution._
 
+import monocle._
+import monocle.syntax.all._
+
 import scala.reflect.ClassTag
 
 object OSE {
@@ -18,8 +21,8 @@ object OSE {
   type StateType[P] = (Archive[Individual[P]], OSEOperation.ReachMap)
   type OSEState[P] = EvolutionState[StateType[P]]
 
-  def archiveLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.first
-  def reachMapLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.second
+  def archiveLens[P] = Focus[OSEState[P]](_.s._1)
+  def reachMapLens[P] = Focus[OSEState[P]](_.s._2)
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -33,7 +36,7 @@ object OSE {
     reject: Option[Genome => Boolean]): Breeding[OSEState[P], Individual[P], Genome] =
     OSEOperation.adaptiveBreeding[OSEState[P], Individual[P], Genome](
       individualFitness(fitness),
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -55,7 +58,7 @@ object OSE {
     OSEOperation.elitism[OSEState[P], Individual[P]](
       individualFitness(fitness),
       limit,
-      i => values(Individual.genome.get(i), components),
+      i => values(i.genome, components),
       origin,
       mu,
       archiveLens[P],
@@ -67,7 +70,7 @@ object OSE {
     val indivduals = archiveLens.get(state).toVector ++ { if (keepAll) population else Seq() }
 
     indivduals.map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, DeterministicIndividual.individualFitness(fitness)(i), i)
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, DeterministicIndividual.individualFitness(fitness)(i), i)
     }
   }
 
@@ -89,8 +92,8 @@ object OSE {
         OSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.discrete, t.origin, identity, reject(t)),
         OSE.expression(t.fitness, t.continuous),
         OSE.elitism(t.mu, t.limit, t.origin, t.continuous, identity),
-        EvolutionState.generation,
-        EvolutionState.evaluated)
+        Focus[OSEState[Vector[Double]]](_.generation),
+        Focus[OSEState[Vector[Double]]](_.evaluated))
 
   }
 

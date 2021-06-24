@@ -25,15 +25,15 @@ import cats._
 import cats.implicits._
 import cats.data._
 
-import monocle.macros._
-import scala.collection.compat._
+import monocle._
+import monocle.syntax.all._
 
 package object algorithm {
 
   type HitMapState = Map[Vector[Int], Int]
   type Archive[I] = Array[I]
 
-  @Lenses case class EvolutionState[S](
+  case class EvolutionState[S](
     generation: Long = 0L,
     evaluated: Long = 0L,
     startTime: Long = java.lang.System.currentTimeMillis(),
@@ -239,12 +239,10 @@ package object algorithm {
 
   object CDGenome {
 
-    import monocle.macros._
-
     object DeterministicIndividual {
-      @Lenses case class Individual[P](genome: Genome, phenotype: P)
+      case class Individual[P](genome: Genome, phenotype: P)
       //def vectorPhenotype = Individual.phenotype[Array[Double]] composeLens arrayToVectorLens
-      def individualFitness[P](fitness: P => Vector[Double]) = DeterministicIndividual.Individual.phenotype[P].get _ andThen fitness
+      def individualFitness[P](fitness: P => Vector[Double]) = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
       def buildIndividual[P](g: Genome, p: P) = Individual(g, p)
 
       def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
@@ -260,13 +258,13 @@ package object algorithm {
       def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C]) =
         (
           scaleContinuousValues(continuousValues.get(i.genome), continuous),
-          Individual.genome composeLens discreteValues get i,
+          i.focus(_.genome) andThen discreteValues get,
           aggregation(vectorPhenotype[P].get(i)),
-          Individual.phenotypeHistory.get(i).size)
+          i.focus(_.phenotypeHistory).get.size)
 
-      @Lenses case class Individual[P](genome: Genome, historyAge: Long, phenotypeHistory: Array[P])
+      case class Individual[P](genome: Genome, historyAge: Long, phenotypeHistory: Array[P])
       def buildIndividual[P: Manifest](g: Genome, f: P) = Individual[P](g, 1, Array(f))
-      def vectorPhenotype[P: Manifest] = Individual.phenotypeHistory[P] composeLens arrayToVectorLens[P]
+      def vectorPhenotype[P: Manifest] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso[P]
 
       def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
         noisy.expression[Genome, Individual[P], P](
@@ -274,7 +272,7 @@ package object algorithm {
           buildIndividual[P])(fitness)
     }
 
-    @Lenses case class Genome(
+    case class Genome(
       continuousValues: Array[Double],
       continuousOperator: Int,
       discreteValues: Array[Int],
@@ -291,10 +289,10 @@ package object algorithm {
         discrete.toArray,
         discreteOperator.getOrElse(-1))
 
-    def continuousValues = Genome.continuousValues composeLens arrayToVectorLens
-    def continuousOperator = Genome.continuousOperator composeLens intToUnsignedIntOption
-    def discreteValues = Genome.discreteValues composeLens arrayToVectorLens
-    def discreteOperator = Genome.discreteOperator composeLens intToUnsignedIntOption
+    def continuousValues = Focus[Genome](_.continuousValues) andThen arrayToVectorIso[Double]
+    def continuousOperator = Focus[Genome](_.continuousOperator) andThen intToUnsignedIntOption
+    def discreteValues = Focus[Genome](_.discreteValues) andThen arrayToVectorIso[Int]
+    def discreteOperator = Focus[Genome](_.discreteOperator) andThen intToUnsignedIntOption
 
     def values(g: Genome, continuous: Vector[C]) =
       (scaleContinuousValues(continuousValues.get(g), continuous), discreteValues.get(g))

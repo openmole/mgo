@@ -24,6 +24,9 @@ import mgo.evolution.elitism._
 import mgo.evolution.niche._
 import mgo.tools.execution._
 
+import monocle._
+import monocle.syntax.all._
+
 import scala.language.higherKinds
 
 object NoisyProfile {
@@ -34,7 +37,7 @@ object NoisyProfile {
   type ProfileState = EvolutionState[Unit]
 
   def aggregatedFitness[N, P: Manifest](aggregation: Vector[P] => Vector[Double]) =
-    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorPhenotype[P].get, aggregation, Individual.phenotypeHistory[P].get(_).size)(_)
+    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorPhenotype[P].get, aggregation, i => i.phenotypeHistory.size)(_)
 
   case class Result[N, P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, replications: Int, individual: Individual[P])
 
@@ -65,10 +68,10 @@ object NoisyProfile {
     result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, onlyOldest, keepAll = false)
 
   def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.continuousProfile[Individual[P]]((Individual.genome[P] composeLens continuousValues).get _, x, nX)
+    mgo.evolution.niche.continuousProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen continuousValues).get _, x, nX)
 
   def discreteProfile[P](x: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.discreteProfile[Individual[P]]((Individual.genome[P] composeLens discreteValues).get _, x)
+    mgo.evolution.niche.discreteProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen discreteValues).get _, x)
 
   def boundedContinuousProfile[P](continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
     mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, nX, min, max)
@@ -91,7 +94,7 @@ object NoisyProfile {
     reject: Option[Genome => Boolean]) =
     NoisyNSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome, P](
       aggregatedFitness(aggregation),
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -106,11 +109,11 @@ object NoisyProfile {
 
   def elitism[N, P: Manifest](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]) = {
 
-    def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
+    def individualValues(i: Individual[P]) = values(i.genome, components)
 
     NoisyProfileOperations.elitism[ProfileState, Individual[P], N, P](
       aggregatedFitness(aggregation),
-      mergeHistories(individualValues, vectorPhenotype, Individual.historyAge, historySize),
+      mergeHistories(individualValues, vectorPhenotype, Focus[Individual[P]](_.historyAge), historySize),
       individualValues,
       niche,
       muByNiche)
@@ -149,8 +152,8 @@ object NoisyProfile {
           t.historySize,
           t.aggregation,
           t.continuous),
-        EvolutionState.generation,
-        EvolutionState.evaluated)
+        Focus[ProfileState](_.generation),
+        Focus[ProfileState](_.evaluated))
 
   }
 
