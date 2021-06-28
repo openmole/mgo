@@ -16,17 +16,21 @@
  */
 
 package mgo.tools
-import mgo.tools.distance._
 
 /**
  * KD-Tree algorithm from https://en.wikipedia.org/wiki/Kd-tree 5-5-2014
  *
  */
 
-trait KDTree extends EuclideanDistance {
+trait KDTree {
   def node: Seq[Double]
   def left: KDTree
   def right: KDTree
+
+  def distance(p1: Seq[Double], p2: Seq[Double]): Double =
+    math.sqrt((p1 zip p2).map {
+      case (x, y) => math.pow(x - y, 2)
+    }.sum)
 
   def nearest(query: Seq[Double], depth: Int = 0): Seq[Double] = {
     val axis = depth % node.size

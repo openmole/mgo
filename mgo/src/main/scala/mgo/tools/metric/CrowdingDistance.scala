@@ -35,7 +35,7 @@ object CrowdingDistance {
    */
   def apply(data: Vector[Vector[Double]], random: scala.util.Random): Vector[Double] = {
     def res =
-      data.transpose.map { d: Vector[Double] =>
+      data.transpose.map { (d: Vector[Double]) =>
         val grouped: Map[Double, Seq[Int]] =
           d.zipWithIndex.groupBy { case (d, _) => d }.mapValues { _.map { case (_, i) => i } }.toMap
 

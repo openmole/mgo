@@ -31,7 +31,7 @@ object SumMonoidParallel extends App {
 
   val empty = 0
   val append = { (a: Int, b: Int) => a + b }
-  val split = { a: Int => (a, 0) }
+  val split = { (a: Int) => (a, 0) }
   val step = (_: Int) + 1
   val stop = (_: Int) >= maxSum
 

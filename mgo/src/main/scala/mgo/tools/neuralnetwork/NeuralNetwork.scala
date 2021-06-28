@@ -53,7 +53,7 @@ trait Feedforward[S, W] {
     queryRec(updateState(state, inputNeurons zip inputValues), inputNeurons)
 
   @tailrec private def queryRec(state: Vector[S], currentNeurons: Vector[Int]): Vector[S] = {
-    val nextNeurons = currentNeurons.toSet.flatMap { n: Int => outNeighbours(n) }.toVector
+    val nextNeurons = currentNeurons.toSet.flatMap { n => outNeighbours(n) }.toVector
 
     //println(currentNeurons, nextNeurons)
     //if (currentNeurons == nextNeurons) throw new RuntimeException(state.indices.map { outNeighbours(_) }.toString)
@@ -169,7 +169,7 @@ trait Recurrent[S, W] {
 
   /** returns the nextstate resulting from activating the neurons leading out of those in currentNeurons, as those neurons */
   def propagateOnce(state: IndexedSeq[S], currentNeurons: IndexedSeq[Int]): (Vector[S], Vector[Int]) = {
-    val nextNeurons = currentNeurons.toSet.flatMap { n: Int => outNeighbours(n) }.toVector
+    val nextNeurons = currentNeurons.toSet.flatMap { n => outNeighbours(n) }.toVector
     val nextValues = nextNeurons.map { n =>
       val iaw = inputsAndWeights(n, state)
       if (iaw.isEmpty) state(n)

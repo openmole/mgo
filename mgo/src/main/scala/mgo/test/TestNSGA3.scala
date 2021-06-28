@@ -64,7 +64,7 @@ object FunctionNSGA3 extends App {
   //val genome = rastrigin.continuous(4)
   val genome = Vector.fill(13)(C(0.0, 1.0))
 
-  def export(gen: Long, pop: Vector[Individual[Vector[Double]]]): Unit = {
+  def write(gen: Long, pop: Vector[Individual[Vector[Double]]]): Unit = {
     val w = new BufferedWriter(new FileWriter(new File("test/pop" + gen + ".csv")))
     w.write(pop.map(i => fitness(i.genome.continuousValues.toVector, Vector.empty)).map(_.mkString(";")).mkString("\n"))
     w.close()
@@ -80,7 +80,7 @@ object FunctionNSGA3 extends App {
     nsga3.until(afterGeneration(1000)).
       trace { (s, individuals) =>
         println("\n====================\ngen: " + s.generation)
-        export(s.generation, individuals)
+        write(s.generation, individuals)
       }
 
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))

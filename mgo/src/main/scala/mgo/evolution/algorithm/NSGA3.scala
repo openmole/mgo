@@ -472,14 +472,13 @@ object NSGA3Operations {
     // max points minimize the Achievement Scalarizing Function
     val weights: Vector[Vector[Double]] = Vector.tabulate(d, d) { case (i, j) => if (i == j) 1.0.toDouble else 1e-6.toDouble }
     def maxPoints(values: Vector[Vector[Double]]): Vector[Vector[Double]] = {
-      val maxinds = weights.map {
-        ei: Vector[Double] =>
-          values.map {
-            xi =>
-              xi.zip(ei).map {
-                case (xij, eij) => xij * eij
-              }.max
-          }.zipWithIndex.maxBy { case (dd, _) => dd }._2
+      val maxinds = weights.map { ei =>
+        values.map {
+          xi =>
+            xi.zip(ei).map {
+              case (xij, eij) => xij * eij
+            }.max
+        }.zipWithIndex.maxBy { case (dd, _) => dd }._2
       }
       if (maxinds.toSet.size < maxinds.size) {
         //println("spurious double max! - removing one point")
@@ -644,7 +643,7 @@ object NSGA3Operations {
     toselect match {
       case n if n == 0 => (associationMap, selected)
       case _ =>
-        val selectedRefCount = selected.groupBy(_._2).toSeq.map { g: (Int, Vector[(I, Int)]) => (g._1, g._2.size) }.toMap
+        val selectedRefCount = selected.groupBy(_._2).toSeq.map { g => (g._1, g._2.size) }.toMap
         val refCount = associationMap.toSeq.map { _._2._1 }.toVector.distinct.map { j => (j, selectedRefCount.getOrElse(j, 0)) }.toMap
         val (jmin, _) = refCount.toVector.minBy(_._2) // index of ref point with minimal number of associated points
         val candidatePoints = associationMap.filter { case (_, (j, _)) => j == jmin } // cannot be 0 the way it is constructed

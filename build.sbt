@@ -20,7 +20,7 @@ lazy val settings: Seq[Setting[_]] = Seq(
   javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
   scalacOptions ++= Seq("-target:jvm-1.8"),
   scalariformAutoformat := true,
-  scalacOptions ++= Seq("-Ymacro-annotations", "-language:postfixOps")
+  scalacOptions ++= Seq("-language:postfixOps")
 //  scalacOptions ++= (
 //    if (priorTo2_13(scalaVersion.value)) Nil else Seq("-Ymacro-annotations", "-language:postfixOps")
 //  ),
@@ -43,7 +43,9 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
 //  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
 //  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
 
-  libraryDependencies ++= (if(scala2(scalaVersion.value)) Seq("org.typelevel"  %% "squants"  % "1.6.0") else Seq()),
+  libraryDependencies += "org.typelevel"  %% "squants"  % "1.6.0" cross(CrossVersion.for3Use2_13),
+
+//  libraryDependencies ++= (if(scala2(scalaVersion.value)) Seq("org.typelevel"  %% "squants"  % "1.6.0") else Seq()),
 
   //libraryDependencies += "org.typelevel" %% "cats-core" % "2.1.0",
   libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.1" cross(CrossVersion.for3Use2_13),

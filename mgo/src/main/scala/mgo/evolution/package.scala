@@ -66,7 +66,7 @@ package object evolution {
 
   }
 
-  implicit def toAlgorithm[T, I, G, S](t: T)(implicit algo: Algorithm[T, I, G, S]) = RunAlgorithm(t, algo)
+  implicit def toAlgorithm[T, I, G, S](t: T)(implicit algo: Algorithm[T, I, G, S]): RunAlgorithm[T, I, G, S] = RunAlgorithm(t, algo)
 
   /** ** Stop conditions ****/
 
