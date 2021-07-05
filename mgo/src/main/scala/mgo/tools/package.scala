@@ -19,7 +19,7 @@ package mgo
 
 import cats.kernel._
 import cats.Later
-import shapeless.Lazy
+
 import org.apache.commons.math3.random.RandomGenerator
 
 import scala.collection.mutable

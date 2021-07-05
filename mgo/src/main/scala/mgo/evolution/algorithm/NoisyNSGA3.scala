@@ -7,6 +7,9 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.tools.execution._
 
+import monocle._
+import monocle.syntax.all._
+
 object NoisyNSGA3 {
 
   import CDGenome._
@@ -14,23 +17,26 @@ object NoisyNSGA3 {
 
   type NSGA3State = EvolutionState[Unit]
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C]): Vector[NoisyNSGA3.Result] =
-    keepFirstFront(population, fitness(aggregation)).map {
+  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean) = {
+    val individuals = if (keepAll) population else keepFirstFront(population, fitness(aggregation))
+
+    individuals.map {
       i =>
         val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
-        Result(c, d, f, r)
+        Result(c, d, f, r, i)
     }
+  }
 
-  def result[P: Manifest](nsga3: NoisyNSGA3[P], population: Vector[Individual[P]]): Vector[Result] =
-    result[P](population, nsga3.aggregation, nsga3.continuous)
+  def result[P: Manifest](nsga3: NoisyNSGA3[P], population: Vector[Individual[P]]): Vector[Result[P]] =
+    result[P](population, nsga3.aggregation, nsga3.continuous, keepAll = false)
 
   def fitness[P: Manifest](aggregation: Vector[P] => Vector[Double]): Individual[P] => Vector[Double] =
     NoisyNSGA3Operations.aggregated[Individual[P], P](
       vectorPhenotype[P].get,
       aggregation,
-      i => Individual.phenotypeHistory[P].get(i).length.toDouble)(_)
+      i => i.focus(_.phenotypeHistory).get.length.toDouble)(_)
 
   def initialGenomes(populationSize: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(populationSize, continuous, discrete, reject, rng)
@@ -44,7 +50,7 @@ object NoisyNSGA3 {
     lambda: Int = -1): Breeding[S, Individual[P], Genome] =
     NoisyNSGA3Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -59,12 +65,12 @@ object NoisyNSGA3 {
     NoisyIndividual.expression[P](phenotype, continuous)
 
   def elitism[S, P: Manifest](mu: Int, references: NSGA3Operations.ReferencePoints, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] = {
-    def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
+    def individualValues(i: Individual[P]) = values(i.focus(_.genome).get, components)
 
     NoisyNSGA3Operations.elitism[S, Individual[P]](
       fitness[P](aggregation),
       individualValues,
-      mergeHistories(individualValues, vectorPhenotype[P], Individual.historyAge[P], historySize),
+      mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu,
       references)
   }
@@ -91,7 +97,8 @@ object NoisyNSGA3 {
               t.historySize,
               t.aggregation,
               t.continuous),
-            EvolutionState.generation)(s, population, rng)
+            Focus[NSGA3State](_.generation),
+            Focus[NSGA3State](_.evaluated))(s, population, rng)
 
     }
 

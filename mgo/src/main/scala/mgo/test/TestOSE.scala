@@ -29,7 +29,7 @@ object RastriginOSE extends App {
       trace { (s, is) => println(s.generation + " " + s.s._1.size) }.
       eval(new util.Random(42))
 
-  File("/tmp/ose.csv") write OSE.result(ose, finalState).map(_.continuous.mkString(",")).mkString("\n")
+  File("/tmp/ose.csv") write OSE.result(ose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
 }
 
 object NoisyRastriginOSE extends App {

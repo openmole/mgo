@@ -24,36 +24,40 @@ import mgo.evolution.elitism._
 import mgo.evolution.ranking._
 import mgo.tools._
 import mgo.tools.execution._
-import monocle.macros.Lenses
+
+import monocle._
+import monocle.syntax.all._
 
 import scala.language.higherKinds
 
+// TODO generify individual phenotype
 object PSE {
 
   import CDGenome._
 
   type PSEState = EvolutionState[HitMap]
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: Vector[Double])
+  case class Result(continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: Vector[Double], individual: Individual)
 
   def result(population: Vector[Individual], continuous: Vector[C], pattern: Vector[Double] => Vector[Int]) =
     population.map { i =>
       Result(
         scaleContinuousValues(continuousValues.get(i.genome), continuous),
-        Individual.genome composeLens discreteValues get i,
+        i.focus(_.genome) andThen discreteValues get,
         pattern(i.phenotype.toVector),
-        i.phenotype.toVector)
+        i.phenotype.toVector,
+        i)
     }
 
   def result(pse: PSE, population: Vector[Individual]): Vector[Result] =
     result(population, pse.continuous, pse.pattern)
 
-  @Lenses case class Individual(
+  case class Individual(
     genome: Genome,
     phenotype: Array[Double])
 
   def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray)
-  def vectorPhenotype = Individual.phenotype composeLens arrayToVectorLens
+  def vectorPhenotype = Focus[Individual](_.phenotype) andThen arrayToVectorIso[Double]
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -65,7 +69,7 @@ object PSE {
     pattern: Vector[Double] => Vector[Int],
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual, Genome] =
     PSEOperations.adaptiveBreeding[PSEState, Individual, Genome](
-      Individual.genome.get,
+      Focus[Individual](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -76,14 +80,14 @@ object PSE {
       lambda,
       reject,
       operatorExploration,
-      EvolutionState.s[HitMap])
+      Focus[PSEState](_.s))
 
   def elitism(pattern: Vector[Double] => Vector[Int], continuous: Vector[C]) =
     PSEOperations.elitism[PSEState, Individual, Vector[Double]](
-      i => values(Individual.genome.get(i), continuous),
+      i => values(i.genome, continuous),
       vectorPhenotype.get,
       pattern,
-      EvolutionState.s[HitMap])
+      Focus[PSEState](_.s))
 
   def expression(phenotype: (Vector[Double], Vector[Int]) => Vector[Double], continuous: Vector[C]): Genome => Individual =
     deterministic.expression[Genome, Vector[Double], Individual](
@@ -107,7 +111,8 @@ object PSE {
           PSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, t.pattern, reject(t)),
           PSE.expression(t.phenotype, t.continuous),
           PSE.elitism(t.pattern, t.continuous),
-          EvolutionState.generation)(s, pop, rng)
+          Focus[PSEState](_.generation),
+          Focus[PSEState](_.evaluated))(s, pop, rng)
 
   }
 

@@ -6,9 +6,10 @@ MGO is a purely functionnal scala library based for evolutionary / genetic algor
 * exposes a modular and extensible architecture,
 * implements state of the art algorithms,
 * handles noisy (stochastic) fitness functions,
-* implements auto-adaptatative algortihms.
+* implements auto-adaptatative algortihms,
+* implements algorithms with distributed computing in mind for integration with [OpenMOLE](http://openmole.org).
 
-MGO implements NGSAII, CP (Calibration Profile), PSE (Pattern Search Experiment).
+MGO implements NGSAII, NSGA3, CP (Calibration Profile), PSE (Pattern Search Experiment), OSE (Antecedant research), Niched Evolution, ABC (Bayesian Calibration).
 
 Licence
 -------
@@ -24,25 +25,22 @@ Define a problem, for instance the multi-modal multi-objective ZDT4 benchmark:
 
   object zdt4 {
 
-    def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(0.0, 5.0))
-
-    def compute(genome: Vector[Double]): Vector[Double] = {
+    def continuous(size: Int) = Vector.fill(size)(C(0.0, 5.0))
+    
+    def compute(genome: Vector[Double], d: Vector[Int]): Vector[Double] = {
       val genomeSize = genome.size
 
-      def g(x: Seq[Double]) =
-        1 + 10 * (genomeSize - 1) +
-          x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
+      def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
 
       def f(x: Seq[Double]) = {
         val gx = g(x)
         gx * (1 - sqrt(genome(0) / gx))
       }
 
-      val scaled = scale(genome)
-      Vector(scaled(0), f(scaled.tail))
+      Vector(genome(0), f(genome.tail))
     }
 
-  }
+ }
 
 ```
 
@@ -50,12 +48,18 @@ Define the optimisation algorithm, for instance NSGAII:
 
 ```scala
 
+  import mgo.evolution._
+  import mgo.evolution.algorithm._
+  
+  // For zdt4
+  import mgo.test._
+
   val nsga2 =
     NSGA2(
       mu = 100,
       lambda = 100,
       fitness = zdt4.compute,
-      genomeSize = 10)
+      continuous = zdt4.continuous(10))
 
 ```
 
@@ -63,14 +67,15 @@ Run the optimisation:
 
 ```scala
 
-  val (finalState, finalPopulation) =
-    run(nsga2).
+  def evolution =
+    nsga2.
       until(afterGeneration(1000)).
-      trace((state, population) => println(state.generation)).
-      eval(new util.Random(42))
+      trace((s, is) => println(s.generation))
 
-  println(result(finalPopulation, zdt4.scale).mkString("\n"))
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
+  println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
+  
 ```
 
 Noisy fitness functions
@@ -217,7 +222,5 @@ Algorithms implemented in MGO are also avialiable in the workflow plateform for 
 SBT dependency
 ----------------
 ```scala
-  resolvers += Resolver.sonatypeRepo("public")
-  resolvers += Resolver.bintrayRepo("projectseptemberinc", "maven")
-  libraryDependencies += "fr.iscpif" %% "mgo" % "2.3"  
+  libraryDependencies += "fr.iscpif" %% "mgo" % "2.45"  
 ```

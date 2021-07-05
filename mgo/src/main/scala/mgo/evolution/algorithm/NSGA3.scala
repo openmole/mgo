@@ -25,6 +25,9 @@ import mgo.tools.execution._
 import org.apache.commons.math3.linear.{LUDecomposition, MatrixUtils, RealMatrix}
 import org.apache.commons.math3.util.{ArithmeticUtils, CombinatoricsUtils}
 
+import monocle._
+import monocle.syntax.all._
+
 import scala.collection.mutable.ArrayBuffer
 import scala.language.higherKinds
 import scala.util.Random
@@ -51,7 +54,7 @@ object NSGA3 {
   def adaptiveBreeding[S, P](operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean], lambda: Int = -1): Breeding[S, Individual[P], Genome] =
     NSGA3Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -68,18 +71,20 @@ object NSGA3 {
   def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA3Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => values(Individual.genome[P].get(i), components),
+      i => values(i.focus(_.genome).get, components),
       references,
       mu)
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
 
-  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double]): Vector[Result] =
-    keepFirstFront(population, individualFitness(fitness)).map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i))
+  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
+    val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
+    individuals.map { i =>
+      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, individualFitness(fitness)(i), i)
     }
+  }
 
-  def result(nsga3: NSGA3, population: Vector[Individual[Vector[Double]]]): Vector[Result] = result[Vector[Double]](population, nsga3.continuous, identity[Vector[Double]] _)
+  def result(nsga3: NSGA3, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga3.continuous, identity[Vector[Double]] _, keepAll = false)
 
   def reject(f: Option[(Vector[Double], Vector[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
@@ -103,7 +108,8 @@ object NSGA3 {
             NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.discrete, identity, reject(t)),
             NSGA3.expression(t.fitness, t.continuous),
             NSGA3.elitism[NSGA3State, Vector[Double]](t.popSize, t.referencePoints, t.continuous, identity),
-            EvolutionState.generation)(s, population, rng)
+            Focus[EvolutionState[Unit]](_.generation),
+            Focus[EvolutionState[Unit]](_.evaluated))(s, population, rng)
     }
 
 }
@@ -469,14 +475,13 @@ object NSGA3Operations {
     // max points minimize the Achievement Scalarizing Function
     val weights: Vector[Vector[Double]] = Vector.tabulate(d, d) { case (i, j) => if (i == j) 1.0.toDouble else 1e-6.toDouble }
     def maxPoints(values: Vector[Vector[Double]]): Vector[Vector[Double]] = {
-      val maxinds = weights.map {
-        ei: Vector[Double] =>
-          values.map {
-            xi =>
-              xi.zip(ei).map {
-                case (xij, eij) => xij * eij
-              }.max
-          }.zipWithIndex.maxBy { case (dd, _) => dd }._2
+      val maxinds = weights.map { ei =>
+        values.map {
+          xi =>
+            xi.zip(ei).map {
+              case (xij, eij) => xij * eij
+            }.max
+        }.zipWithIndex.maxBy { case (dd, _) => dd }._2
       }
       if (maxinds.toSet.size < maxinds.size) {
         //println("spurious double max! - removing one point")
@@ -641,7 +646,7 @@ object NSGA3Operations {
     toselect match {
       case n if n == 0 => (associationMap, selected)
       case _ =>
-        val selectedRefCount = selected.groupBy(_._2).toSeq.map { g: (Int, Vector[(I, Int)]) => (g._1, g._2.size) }.toMap
+        val selectedRefCount = selected.groupBy(_._2).toSeq.map { g => (g._1, g._2.size) }.toMap
         val refCount = associationMap.toSeq.map { _._2._1 }.toVector.distinct.map { j => (j, selectedRefCount.getOrElse(j, 0)) }.toMap
         val (jmin, _) = refCount.toVector.minBy(_._2) // index of ref point with minimal number of associated points
         val candidatePoints = associationMap.filter { case (_, (j, _)) => j == jmin } // cannot be 0 the way it is constructed

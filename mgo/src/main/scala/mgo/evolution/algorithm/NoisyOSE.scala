@@ -8,7 +8,10 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.ranking._
 import mgo.tools.execution._
+
 import monocle.function
+import monocle._
+import monocle.syntax.all._
 
 import scala.reflect.ClassTag
 
@@ -19,8 +22,8 @@ object NoisyOSE {
   type StateType[P] = (Archive[Individual[P]], OSEOperation.ReachMap)
   type OSEState[P] = EvolutionState[StateType[P]]
 
-  def archiveLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.first
-  def reachMapLens[P] = EvolutionState.s[StateType[P]] composeLens function.fields.second
+  def archiveLens[P] = Focus[EvolutionState[StateType[P]]](_.s._1)
+  def reachMapLens[P] = Focus[EvolutionState[StateType[P]]](_.s._2)
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -37,7 +40,7 @@ object NoisyOSE {
     NoisyOSEOperations.adaptiveBreeding[OSEState[P], Individual[P], Genome, P](
       vectorPhenotype[P].get,
       aggregation,
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -58,7 +61,7 @@ object NoisyOSE {
     NoisyIndividual.expression[P](fitness, continuous)
 
   def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] = {
-    def individualValues(i: Individual[P]) = values(Individual.genome.get(i), components)
+    def individualValues(i: Individual[P]) = values(i.genome, components)
 
     NoisyOSEOperations.elitism[OSEState[P], Individual[P], P](
       vectorPhenotype[P].get,
@@ -67,29 +70,29 @@ object NoisyOSE {
       origin,
       limit,
       historySize,
-      mergeHistories(individualValues, vectorPhenotype[P], Individual.historyAge[P], historySize),
+      mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu,
       archiveLens,
       reachMapLens)
   }
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int)
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double]) = {
+  def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double], keepAll: Boolean) = {
     def goodIndividuals =
       population.flatMap { i =>
         val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
-        if (OSEOperation.patternIsReached(f, limit)) Some(Result(c, d, f, r)) else None
+        if (keepAll || OSEOperation.patternIsReached(f, limit)) Some(Result(c, d, f, r, i)) else None
       }
 
     state.s._1.toVector.map { i =>
       val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
-      Result(c, d, f, r)
+      Result(c, d, f, r, i)
     } ++ goodIndividuals
   }
 
-  def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result] =
-    result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit)
+  def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
+    result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit, keepAll = false)
 
   def reject[P](pse: NoisyOSE[P]) = NSGA2.reject(pse.reject, pse.continuous)
 
@@ -121,7 +124,8 @@ object NoisyOSE {
           t.continuous,
           t.origin,
           t.limit),
-        EvolutionState.generation)
+        Focus[OSEState[P]](_.generation),
+        Focus[OSEState[P]](_.evaluated))
 
   }
 

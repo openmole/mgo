@@ -23,6 +23,9 @@ import mgo.evolution.elitism._
 import mgo.evolution.niche._
 import mgo.tools.execution._
 
+import monocle._
+import monocle.syntax.all._
+
 import scala.language.higherKinds
 
 object Profile {
@@ -32,22 +35,26 @@ object Profile {
 
   type ProfileState = EvolutionState[Unit]
 
-  case class Result[N](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N)
+  case class Result[N, P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, individual: Individual[P])
 
-  def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double]) =
-    nicheElitism[Individual[P], N](population, keepFirstFront(_, individualFitness(fitness)), niche).map { i =>
+  def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
+    val individuals = if (keepAll) population else nicheElitism[Individual[P], N](population, keepFirstFront(_, individualFitness(fitness)), niche)
+
+    individuals.map { i =>
       Result(
         scaleContinuousValues(continuousValues.get(i.genome), continuous),
-        Individual.genome composeLens discreteValues get i,
+        i.focus(_.genome) andThen discreteValues get,
         individualFitness(fitness)(i),
-        niche(i))
+        niche(i),
+        i)
     }
+  }
 
   def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.continuousProfile[Individual[P]]((Individual.genome[P] composeLens continuousValues).get _, x, nX)
+    mgo.evolution.niche.continuousProfile[Individual[P]](_.focus(_.genome) andThen continuousValues get, x, nX)
 
   def discreteProfile[P](x: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.discreteProfile[Individual[P]]((Individual.genome[P] composeLens discreteValues).get _, x)
+    mgo.evolution.niche.discreteProfile[Individual[P]](_.focus(_.genome) andThen discreteValues get, x)
 
   def boundedContinuousProfile[P](continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
     mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousValues(continuousValues.get(i.genome), continuous), x, nX, min, max)
@@ -67,7 +74,7 @@ object Profile {
   def adaptiveBreeding[P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]) =
     NSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome](
       individualFitness(fitness),
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -85,7 +92,7 @@ object Profile {
   def elitism[N, P](niche: Niche[Individual[P], N], mu: Int, components: Vector[C], fitness: P => Vector[Double]) =
     ProfileOperations.elitism[ProfileState, Individual[P], N](
       individualFitness(fitness),
-      i => values(Individual.genome.get(i), components),
+      i => values(i.genome, components),
       niche,
       mu)
 
@@ -102,14 +109,15 @@ object Profile {
         Profile.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
         Profile.expression(t.fitness, t.continuous),
         Profile.elitism(t.niche, t.nicheSize, t.continuous, identity),
-        EvolutionState.generation)
+        Focus[ProfileState](_.generation),
+        Focus[ProfileState](_.evaluated))
 
   }
 
   def reject[N](profile: Profile[N]) = NSGA2.reject(profile.reject, profile.continuous)
 
-  def result[N](profile: Profile[N], population: Vector[Individual[Vector[Double]]]): Vector[Result[N]] =
-    result[N, Vector[Double]](population, profile.niche, profile.continuous, identity)
+  def result[N](profile: Profile[N], population: Vector[Individual[Vector[Double]]]): Vector[Result[N, Vector[Double]]] =
+    result[N, Vector[Double]](population, profile.niche, profile.continuous, identity, keepAll = false)
 
 }
 

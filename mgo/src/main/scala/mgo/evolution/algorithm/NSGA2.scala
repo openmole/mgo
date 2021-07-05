@@ -23,6 +23,8 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.ranking._
 import mgo.tools.execution._
+import monocle.Focus
+import monocle.syntax.all._
 
 import scala.language.higherKinds
 
@@ -39,7 +41,7 @@ object NSGA2 {
   def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
     NSGA2Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
-      Individual.genome.get,
+      Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
       discreteValues.get,
@@ -57,10 +59,10 @@ object NSGA2 {
   def elitism[S, P](mu: Int, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA2Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => values(Individual.genome[P].get(i), components),
+      i => values(i.focus(_.genome).get, components),
       mu)
 
-  case class Result(continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double])
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
 
   def reject(f: Option[(Vector[Double], Vector[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
@@ -69,10 +71,10 @@ object NSGA2 {
       reject(scaledContinuous, discreteValue)
     }
 
-  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double]) =
-    keepFirstFront(population, individualFitness(fitness)).map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), Individual.genome composeLens discreteValues get i, individualFitness(fitness)(i))
-    }
+  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
+    val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
+    individuals.map { i => Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, individualFitness(fitness)(i), i) }
+  }
 
   implicit def isAlgorithm: Algorithm[NSGA2, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
     new Algorithm[NSGA2, Individual[Vector[Double]], Genome, NSGA2State] {
@@ -87,10 +89,11 @@ object NSGA2 {
             NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
             NSGA2.expression(t.fitness, t.continuous),
             NSGA2.elitism[NSGA2State, Vector[Double]](t.mu, t.continuous, identity),
-            EvolutionState.generation)(s, population, rng)
+            Focus[EvolutionState[Unit]](_.generation),
+            Focus[EvolutionState[Unit]](_.evaluated))(s, population, rng)
     }
 
-  def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]): Vector[Result] = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _)
+  def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]) = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _, keepAll = false)
   def reject(nsga2: NSGA2): Option[Genome => Boolean] = reject(nsga2.reject, nsga2.continuous)
 
 }

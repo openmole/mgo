@@ -23,6 +23,9 @@ import mgo.evolution.stop._
 import mgo.tools.execution._
 import org.apache.commons.math3.random._
 
+import monocle._
+import monocle.syntax.all._
+
 import scala.language.higherKinds
 
 package object evolution {
@@ -63,14 +66,14 @@ package object evolution {
 
   }
 
-  implicit def toAlgorithm[T, I, G, S](t: T)(implicit algo: Algorithm[T, I, G, S]) = RunAlgorithm(t, algo)
+  implicit def toAlgorithm[T, I, G, S](t: T)(implicit algo: Algorithm[T, I, G, S]): RunAlgorithm[T, I, G, S] = RunAlgorithm(t, algo)
 
   /** ** Stop conditions ****/
 
   def anyReaches[M[_]: cats.Monad, I](goalReached: I => Boolean)(population: Vector[I]): Vector[I] => M[Boolean] =
     (population: Vector[I]) => population.exists(goalReached).pure[M]
 
-  def afterGeneration[I, S](g: Long) = stop.afterGeneration[EvolutionState[S], I](g, EvolutionState.generation)
+  def afterGeneration[I, S](g: Long) = stop.afterGeneration[EvolutionState[S], I](g, Focus[EvolutionState[S]](_.generation))
 
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
 
@@ -85,9 +88,9 @@ package object evolution {
     //def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
   }
 
-  def arrayToVectorLens[A: Manifest] = monocle.Lens[Array[A], Vector[A]](_.toVector)(v => _ => v.toArray)
-  def array2ToVectorLens[A: Manifest] = monocle.Lens[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => _ => v.map(_.toArray).toArray)
-  def intToUnsignedIntOption = monocle.Lens[Int, Option[Int]](i => if (i < 0) None else Some(i))(v => _ => v.getOrElse(-1))
+  def arrayToVectorIso[A: Manifest] = monocle.Iso[Array[A], Vector[A]](_.toVector)(v => v.toArray)
+  def array2ToVectorLens[A: Manifest] = monocle.Iso[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => v.map(_.toArray).toArray)
+  def intToUnsignedIntOption = monocle.Iso[Int, Option[Int]](i => if (i < 0) None else Some(i))(v => v.getOrElse(-1))
 
   case class C(low: Double, high: Double)
   case class D(low: Int, high: Int)
