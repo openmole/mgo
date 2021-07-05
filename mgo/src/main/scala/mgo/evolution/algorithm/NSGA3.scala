@@ -22,8 +22,8 @@ import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.tools.execution._
-import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix }
-import org.apache.commons.math3.util.ArithmeticUtils
+import org.apache.commons.math3.linear.{LUDecomposition, MatrixUtils, RealMatrix}
+import org.apache.commons.math3.util.{ArithmeticUtils, CombinatoricsUtils}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.language.higherKinds
@@ -118,6 +118,9 @@ case class NSGA3(
   reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
 object NSGA3Operations {
+
+
+  def numberOfReferencePoints(divisions: Int, dimension: Int): Int = CombinatoricsUtils.binomialCoefficient(dimension + divisions - 1, divisions).toInt
 
   /**
    * reference points may either automatically computed given a fixed number, or provided by the user
