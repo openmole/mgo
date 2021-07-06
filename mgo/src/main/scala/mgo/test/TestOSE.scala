@@ -62,3 +62,51 @@ object NoisyRastriginOSE extends App {
 
   File("/tmp/ose.csv") write NoisyOSE.result(ose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
 }
+
+/**
+ * Benchmark function used in
+ *  Sambridge, M. (2001). Finding acceptable models in nonlinear inverse problems using a neighbourhood algorithm. Inverse Problems, 17(3), 387.
+ *  in the paper: f0 = c*d*((e+g)*h + l) ; g not defined -> use f0 = c*d*(e*h + l)
+ */
+object Sambridge2001OSE extends App {
+  import algorithm._
+  import niche._
+  import OSE._
+
+  def dimensions = 5
+  def continuous(size: Int) = Vector.fill(size)(C(-2.0, 2.0))
+
+  def f(x: Vector[Double]): Double = {
+    val (x1, x2, x3, x4, x5) = (x(0), x(1), x(2), x(3), x(4))
+    val a = 5 / 2 * math.pow(x1 + 1 / 5, 2.0) + 5 / 4 * x2 * x2
+    val b = 5 * math.pow(x1 - 3 / 5, 2.0) + math.pow(x2 + 3 / 20, 2.0)
+    val c = 1 / 100 * (x1 * x1 + math.pow(x2 - 11 / 10, 2.0))
+    val d = math.pow(x1 - 1.0, 2.0) + 10 * math.pow(x2 - 1.0, 2.0)
+    val e = 5 * (50 * math.pow(x2 - x1 * x1, 2.0) + math.pow(1 - x1, 2.0))
+    val h = math.pow(x1 + 7 / 10, 2.0)
+    val l = 5 * math.pow(x2 - 0.5, 2.0)
+    val f0 = c * d * (e * h + l)
+    a * b * math.log(1 + f0) + x3 * x3 + x4 * x4 + x5 * x5
+  }
+
+  val ose = OSE(
+    mu = 100,
+    lambda = 100,
+    fitness = (x, _) => Vector(f(x)),
+    limit = Vector(0.1),
+    origin =
+      (c, _) =>
+        boundedGrid(
+          lowBound = Vector.fill(dimensions)(-2.0),
+          highBound = Vector.fill(dimensions)(2.0),
+          definition = Vector.fill(dimensions)(100))(c),
+    continuous = continuous(dimensions))
+
+  val (finalState, finalPopulation) =
+    ose.
+      until(afterGeneration(5000)).
+      trace { (s, is) => println(s.generation + " " + s.s._1.length) }.
+      eval(new util.Random(42))
+
+  File("./test/ose.csv") write OSE.result(ose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
+}
