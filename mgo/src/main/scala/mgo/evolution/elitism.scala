@@ -34,7 +34,7 @@ object elitism {
   //  def incrementGeneration[M[_]: Generation] = Generation[M].increment
 
   def addHits[I](cell: I => Vector[Int], population: Vector[I], hitmap: HitMap) = {
-    def hits(map: HitMap, c: Vector[Int]) = hitmap.updated(c, map.getOrElse(c, 0) + 1)
+    def hits(map: HitMap, c: Vector[Int]) = map.updated(c, map.getOrElse(c, 0) + 1)
     population.foldLeft(hitmap)((m, i) => hits(m, cell(i)))
   }
 
