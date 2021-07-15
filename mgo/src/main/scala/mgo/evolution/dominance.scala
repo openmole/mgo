@@ -27,7 +27,7 @@ object dominance {
   /**
    * A point dominates another if the other is not better on any objective
    */
-  lazy val nonStrictDominance = new Dominance {
+  lazy val nonStrictDominance: Dominance = new Dominance {
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
       p1 != p2 && !(p1 zip p2).exists { case (g1, g2) => g1 < g2 }
   }
@@ -35,7 +35,7 @@ object dominance {
   /**
    * A point dominates another if all its objective are better
    */
-  lazy val strictDominance = new Dominance {
+  lazy val strictDominance: Dominance = new Dominance {
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
       (p1 zip p2).forall { case (g1, g2) => g2 < g1 }
   }
@@ -46,14 +46,14 @@ object dominance {
    * J.M. Luque,   "Pareto-adaptive epsilon-dominance",
    *  presented at Evolutionary Computation, 2007, pp.493-517.
    */
-  def nonStrictEpsilonDominance(epsilons: Seq[Double]) = new Dominance {
+  def nonStrictEpsilonDominance(epsilons: Seq[Double]): Dominance = new Dominance {
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
       !(p1 zip p2 zip epsilons).exists {
         case (((g1, g2), e)) => g2 > e + g1
       }
   }
 
-  def strictEpsilonDominance(epsilons: Seq[Double]) = new Dominance {
+  def strictEpsilonDominance(epsilons: Seq[Double]): Dominance = new Dominance {
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
       (p1 zip p2 zip epsilons).forall {
         case (((g1, g2), e)) => g1 > g2 + e

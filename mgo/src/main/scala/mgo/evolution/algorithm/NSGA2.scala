@@ -35,7 +35,7 @@ object NSGA2 {
 
   type NSGA2State = EvolutionState[Unit]
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
@@ -71,7 +71,7 @@ object NSGA2 {
       reject(scaledContinuous, discreteValue)
     }
 
-  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
+  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
     individuals.map { i => Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, individualFitness(fitness)(i), i) }
   }
@@ -93,7 +93,7 @@ object NSGA2 {
             Focus[EvolutionState[Unit]](_.evaluated))(s, population, rng)
     }
 
-  def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]) = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _, keepAll = false)
+  def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _, keepAll = false)
   def reject(nsga2: NSGA2): Option[Genome => Boolean] = reject(nsga2.reject, nsga2.continuous)
 
 }

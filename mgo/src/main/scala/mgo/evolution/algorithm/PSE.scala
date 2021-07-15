@@ -39,7 +39,7 @@ object PSE {
 
   case class Result(continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: Vector[Double], individual: Individual)
 
-  def result(population: Vector[Individual], continuous: Vector[C], pattern: Vector[Double] => Vector[Int]) =
+  def result(population: Vector[Individual], continuous: Vector[C], pattern: Vector[Double] => Vector[Int]): Vector[Result] =
     population.map { i =>
       Result(
         scaleContinuousValues(continuousValues.get(i.genome), continuous),
@@ -56,10 +56,10 @@ object PSE {
     genome: Genome,
     phenotype: Array[Double])
 
-  def buildIndividual(g: Genome, f: Vector[Double]) = Individual(g, f.toArray)
-  def vectorPhenotype = Focus[Individual](_.phenotype) andThen arrayToVectorIso[Double]
+  def buildIndividual(g: Genome, f: Vector[Double]): Individual = Individual(g, f.toArray)
+  def vectorPhenotype: PLens[Individual, Individual, Vector[Double], Vector[Double]] = Focus[Individual](_.phenotype) andThen arrayToVectorIso[Double]
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding(
@@ -82,7 +82,7 @@ object PSE {
       operatorExploration,
       Focus[PSEState](_.s))
 
-  def elitism(pattern: Vector[Double] => Vector[Int], continuous: Vector[C]) =
+  def elitism(pattern: Vector[Double] => Vector[Int], continuous: Vector[C]): Elitism[PSEState, Individual] =
     PSEOperations.elitism[PSEState, Individual, Vector[Double]](
       i => values(i.genome, continuous),
       vectorPhenotype.get,
@@ -95,7 +95,7 @@ object PSE {
       buildIndividual,
       phenotype)
 
-  def reject(pse: PSE) = NSGA2.reject(pse.reject, pse.continuous)
+  def reject(pse: PSE): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
 
   implicit def isAlgorithm: Algorithm[PSE, Individual, Genome, EvolutionState[HitMap]] = new Algorithm[PSE, Individual, Genome, EvolutionState[HitMap]] {
     def initialState(t: PSE, rng: util.Random) = EvolutionState[HitMap](s = Map.empty)

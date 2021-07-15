@@ -25,7 +25,7 @@ object elitism {
   //    Elitism(
   //      individuals => Vector.fill(n)(randomM.randomElement(individuals)).sequence)
 
-  def maximiseO[I, F](f: I => F, mu: Int)(implicit FO: Order[F]) = (individuals: Vector[I]) =>
+  def maximiseO[I, F](f: I => F, mu: Int)(implicit FO: Order[F]): Vector[I] => Vector[I] = (individuals: Vector[I]) =>
     individuals.sorted(Order.reverse(FO.contramap[I](f)).toOrdering).take(mu)
 
   //  def randomO[M[_]: cats.Applicative, I](n: Int)(implicit randomM: Random[M]) =
@@ -33,25 +33,25 @@ object elitism {
 
   //  def incrementGeneration[M[_]: Generation] = Generation[M].increment
 
-  def addHits[I](cell: I => Vector[Int], population: Vector[I], hitmap: HitMap) = {
+  def addHits[I](cell: I => Vector[Int], population: Vector[I], hitmap: HitMap): HitMap = {
     def hits(map: HitMap, c: Vector[Int]) = map.updated(c, map.getOrElse(c, 0) + 1)
     population.foldLeft(hitmap)((m, i) => hits(m, cell(i)))
   }
 
   /** Returns the mu individuals with the highest ranks. */
-  def keepHighestRanked[I, K](population: Vector[I], ranks: Vector[K], mu: Int, rng: scala.util.Random)(implicit KO: Order[K]) =
+  def keepHighestRanked[I, K](population: Vector[I], ranks: Vector[K], mu: Int, rng: scala.util.Random)(implicit KO: Order[K]): Vector[I] =
     if (population.size < mu) population
     else {
       val sortedBestToWorst = (population zip ranks).sortBy { _._2 }(Order.reverse(KO).toOrdering).map { _._1 }
       sortedBestToWorst.take(mu)
     }
 
-  def nicheElitism[I, N](population: Vector[I], keep: Vector[I] => Vector[I], niche: I => N) = {
+  def nicheElitism[I, N](population: Vector[I], keep: Vector[I] => Vector[I], niche: I => N): Vector[I] = {
     val niches = population.groupBy(niche).toVector
     niches.flatMap { case (_, individuals) => keep(individuals) }
   }
 
-  def keepFirstFront[I](population: Vector[I], fitness: I => Vector[Double]) =
+  def keepFirstFront[I](population: Vector[I], fitness: I => Vector[Double]): Vector[I] =
     if (population.isEmpty) population
     else {
       val dominating = ranking.numberOfDominating(fitness, population)
@@ -59,7 +59,7 @@ object elitism {
       (population zip dominating).filter { case (_, d) => d.value == minDominating }.map(_._1)
     }
 
-  def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random) = {
+  def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random): Vector[I] = {
     val first = keepFirstFront(population, fitness)
     val crowding = crowdingDistance[I](first, fitness, random)
     keepHighestRanked(first, crowding, mu, random)
@@ -84,13 +84,13 @@ object elitism {
   //  def keepFirst[M[_]: cats.Monad, I]: UncloneStrategy[M, I] =
   //    (clones: Vector[I]) => clones.head.pure[M]
 
-  def keepNiches[I, N](niche: I => N, keep: Vector[I] => Vector[I]) =
+  def keepNiches[I, N](niche: I => N, keep: Vector[I] => Vector[I]): Vector[I] => Vector[I] =
     (individuals: Vector[I]) => {
       val indivsByNiche = individuals.groupByOrdered(niche)
       indivsByNiche.values.toVector.map(_.toVector).flatMap(keep.apply)
     }
 
-  def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]) = {
+  def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]): Vector[I] = {
     val filteredClone = {
       val existingGenomes = population.map(genome).toSet
       newIndividuals.filter(i => !existingGenomes.contains(genome(i)))
@@ -99,7 +99,7 @@ object elitism {
     population ++ filteredClone
   }
 
-  def mergeHistories[G, I, P](genome: I => G, history: monocle.Lens[I, Vector[P]], historyAge: monocle.Lens[I, Long], historySize: Int) =
+  def mergeHistories[G, I, P](genome: I => G, history: monocle.Lens[I, Vector[P]], historyAge: monocle.Lens[I, Long], historySize: Int): (Vector[I], Vector[I]) => Vector[I] =
     (population: Vector[I], newIndividuals: Vector[I]) => {
       val mergedClones = {
         val indexedNI = newIndividuals.groupByOrdered(genome)

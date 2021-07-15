@@ -22,10 +22,10 @@ object NoisyOSE {
   type StateType[P] = (Archive[Individual[P]], OSEOperation.ReachMap)
   type OSEState[P] = EvolutionState[StateType[P]]
 
-  def archiveLens[P] = Focus[EvolutionState[StateType[P]]](_.s._1)
-  def reachMapLens[P] = Focus[EvolutionState[StateType[P]]](_.s._2)
+  def archiveLens[P]: Lens[EvolutionState[StateType[P]], Archive[Individual[P]]] = Focus[EvolutionState[StateType[P]]](_.s._1)
+  def reachMapLens[P]: Lens[EvolutionState[StateType[P]], ReachMap] = Focus[EvolutionState[StateType[P]]](_.s._2)
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[P: Manifest](
@@ -36,7 +36,7 @@ object NoisyOSE {
     discrete: Vector[D],
     origin: (Vector[Double], Vector[Int]) => Vector[Int],
     limit: Vector[Double],
-    reject: Option[Genome => Boolean]) =
+    reject: Option[Genome => Boolean]): Breeding[OSEState[P], Individual[P], Genome] =
     NoisyOSEOperations.adaptiveBreeding[OSEState[P], Individual[P], Genome, P](
       vectorPhenotype[P].get,
       aggregation,
@@ -78,7 +78,7 @@ object NoisyOSE {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double], keepAll: Boolean) = {
+  def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
     def goodIndividuals =
       population.flatMap { i =>
         val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
@@ -94,7 +94,7 @@ object NoisyOSE {
   def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit, keepAll = false)
 
-  def reject[P](pse: NoisyOSE[P]) = NSGA2.reject(pse.reject, pse.continuous)
+  def reject[P](pse: NoisyOSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
 
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] = new Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] {
     def initialState(t: NoisyOSE[P], rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))

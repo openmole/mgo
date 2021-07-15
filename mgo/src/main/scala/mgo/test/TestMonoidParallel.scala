@@ -21,19 +21,20 @@ import mgo.tools.execution.MonoidParallel
 import org.apache.commons.math3.random.Well1024a
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContextExecutor
 
 object SumMonoidParallel extends App {
 
-  implicit val rng = new Well1024a()
-  implicit val ec = ExecutionContext.global
+  implicit val rng: Well1024a = new Well1024a()
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   val maxSum = 10
 
   val empty = 0
-  val append = { (a: Int, b: Int) => a + b }
-  val split = { (a: Int) => (a, 0) }
-  val step = (_: Int) + 1
-  val stop = (_: Int) >= maxSum
+  val append: (Int, Int) => Int = { (a: Int, b: Int) => a + b }
+  val split: Int => (Int, Int) = { (a: Int) => (a, 0) }
+  val step: Int => Int = (_: Int) + 1
+  val stop: Int => Boolean = (_: Int) >= maxSum
 
   {
     val parallel = 1

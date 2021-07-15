@@ -48,7 +48,7 @@ object NSGA3 {
 
   type NSGA3State = EvolutionState[Unit]
 
-  def initialGenomes(populationSize: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+  def initialGenomes(populationSize: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(populationSize, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[S, P](operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean], lambda: Int = -1): Breeding[S, Individual[P], Genome] =
@@ -154,8 +154,8 @@ object NSGA3Operations {
     def isPositive: Boolean = (n >= 0 && d >= 0) || (n <= 0 && d <= 0)
   }
   object Fraction {
-    val zero = Fraction(0, 1)
-    val one = Fraction(1, 1)
+    val zero: Fraction = Fraction(0, 1)
+    val one: Fraction = Fraction(1, 1)
     def apply(x: Int): Fraction = Fraction(x, 1)
     def apply(n: Int, d: Int): Fraction = {
       // sign always at numerator the way fractions are constructed ?

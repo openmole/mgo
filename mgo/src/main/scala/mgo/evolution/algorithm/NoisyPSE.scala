@@ -39,12 +39,12 @@ object NoisyPSE {
     historyAge: Long,
     phenotypeHistory: Array[P])
 
-  def buildIndividual[P: Manifest](genome: Genome, phenotype: P) = Individual(genome, 1, Array(phenotype))
-  def vectorPhenotype[P: Manifest] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso
+  def buildIndividual[P: Manifest](genome: Genome, phenotype: P): Individual[P] = Individual(genome, 1, Array(phenotype))
+  def vectorPhenotype[P: Manifest]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso
 
   //  def state[M[_]: cats.Monad: StartTime: Random: Generation: HitMap] = PSE.state[M]
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[P: Manifest](
@@ -74,7 +74,7 @@ object NoisyPSE {
     pattern: Vector[Double] => Vector[Int],
     aggregation: Vector[P] => Vector[Double],
     historySize: Int,
-    continuous: Vector[C]) =
+    continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
     NoisyPSEOperations.elitism[PSEState, Individual[P], P](
       i => values(i.genome, continuous),
       vectorPhenotype[P],
@@ -89,7 +89,7 @@ object NoisyPSE {
       values(_, continuous),
       buildIndividual[P])(fitness)
 
-  def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]) =
+  def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]): (Vector[Double], Vector[Int], Vector[Double], Vector[Int], Int) =
     (
       scaleContinuousValues(continuousValues.get(i.genome), continuous),
       i.focus(_.genome) andThen discreteValues get,
@@ -103,7 +103,7 @@ object NoisyPSE {
     population: Vector[Individual[P]],
     aggregation: Vector[P] => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
-    continuous: Vector[C]) =
+    continuous: Vector[C]): Vector[Result[P]] =
     population.map {
       i =>
         val (c, d, f, p, r) = aggregate[P](i, aggregation, pattern, continuous)
@@ -113,9 +113,9 @@ object NoisyPSE {
   def result[P: Manifest](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result(population, pse.aggregation, pse.pattern, pse.continuous)
 
-  def reject[P](pse: NoisyPSE[P]) = NSGA2.reject(pse.reject, pse.continuous)
+  def reject[P](pse: NoisyPSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
 
-  implicit def isAlgorithm[P: Manifest: CanBeNaN] = new Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] {
+  implicit def isAlgorithm[P: Manifest: CanBeNaN]: Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] = new Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] {
 
     def initialState(t: NoisyPSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 

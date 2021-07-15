@@ -41,7 +41,7 @@ trait NeuralNetwork[N, S, W] {
     mutableState.toVector
   }
 
-  def outNeighbours(neuron: Int) = network.outneighbours(neuron)
+  def outNeighbours(neuron: Int): Vector[Int] = network.outneighbours(neuron)
 
   def outputState(state: IndexedSeq[S]): Vector[S] = outputNeurons map { state(_) }
 

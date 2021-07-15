@@ -18,8 +18,8 @@ object ReferencePoints extends App {
   val dimension = 3
 
   println("Computing simplex reference points with " + divisions + " divisions in dimension " + dimension)
-  val start = System.currentTimeMillis()
-  val points = NSGA3Operations.simplexRefPoints(divisions, dimension)
+  val start: Long = System.currentTimeMillis()
+  val points: Vector[Vector[Double]] = NSGA3Operations.simplexRefPoints(divisions, dimension)
   println("n = " + dimension + " ; p = " + divisions + " ; t = " + (System.currentTimeMillis() - start))
   println(points)
 
@@ -36,16 +36,16 @@ object ManyObjectiveFunctions extends App {
   println(f(1, 0))
 */
   val rng = util.Random
-  val pop1 = Vector(Vector(rng.nextDouble, rng.nextDouble))
+  val pop1: Vector[Vector[Double]] = Vector(Vector(rng.nextDouble, rng.nextDouble))
   def fitness(x: Vector[Double]): Vector[Double] = x
   //println(NSGA3Operations.successiveFronts(pop1, fitness))
   //println(NSGA3Operations.successiveFronts(pop1 ++ pop1, fitness))
   //println(NSGA3Operations.successiveFronts(pop1 ++ pop1 ++ pop1, fitness))
 
-  def pop(n: Int) = Vector.fill(n, 2)(rng.nextDouble)
+  def pop(n: Int): Vector[Vector[Double]] = Vector.fill(n, 2)(rng.nextDouble)
   //println(pop(5))
   (0 until 10).foreach { i =>
-    println(i + ": " + NSGA3Operations.successiveFronts(pop(i), fitness))
+    println("" + i + ": " + NSGA3Operations.successiveFronts(pop(i), fitness))
   }
 
 }
@@ -59,10 +59,10 @@ object FunctionNSGA3 extends App {
   def fitness(cont: Vector[Double], discr: Vector[Int]): Vector[Double] = ManyObjective.maf1(12)(cont)
 
   //val ref = NSGA3Operations.ReferencePoints(40, 2)
-  val ref = NSGA3Operations.ReferencePoints(50, 3)
+  val ref: NSGA3Operations.ReferencePoints = NSGA3Operations.ReferencePoints(50, 3)
 
   //val genome = rastrigin.continuous(4)
-  val genome = Vector.fill(13)(C(0.0, 1.0))
+  val genome: Vector[C] = Vector.fill(13)(C(0.0, 1.0))
 
   def write(gen: Long, pop: Vector[Individual[Vector[Double]]]): Unit = {
     val w = new BufferedWriter(new FileWriter(new File("test/pop" + gen + ".csv")))
@@ -70,7 +70,7 @@ object FunctionNSGA3 extends App {
     w.close()
   }
 
-  val nsga3 = NSGA3(
+  val nsga3: NSGA3 = NSGA3(
     popSize = 1000,
     referencePoints = ref,
     fitness = fitness,
@@ -85,9 +85,9 @@ object FunctionNSGA3 extends App {
 
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
-  val res = NSGA3.result(nsga3, finalPopulation)
+  val res: Vector[NSGA3.Result[Vector[Double]]] = NSGA3.result(nsga3, finalPopulation)
   println(res.mkString("\n"))
-  val fitnesses = res.map(_.fitness.toArray).toArray
+  val fitnesses: Array[Array[Double]] = res.map(_.fitness.toArray).toArray
   val w = new BufferedWriter(new FileWriter(new File("test/functionNSGA3.csv")))
   w.write(fitnesses.map(_.mkString(";")).mkString("\n"))
   w.close()
@@ -106,10 +106,10 @@ object TestNoisyNSGA3 extends App {
     res
   }
   // ! for noisy, ref points must be dim + 1
-  val ref = NSGA3Operations.ReferencePoints(50, 4)
-  val genome = Vector.fill(13)(C(0.0, 1.0))
+  val ref: NSGA3Operations.ReferencePoints = NSGA3Operations.ReferencePoints(50, 4)
+  val genome: Vector[C] = Vector.fill(13)(C(0.0, 1.0))
 
-  val nsga3 = NoisyNSGA3[Vector[Double]](
+  val nsga3: NoisyNSGA3[Vector[Double]] = NoisyNSGA3[Vector[Double]](
     popSize = 100,
     referencePoints = ref,
     fitness = fitness,

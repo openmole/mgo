@@ -23,13 +23,13 @@ object SphereNSGAII extends App {
 
   import algorithm._
 
-  val nsga2 = NSGA2(
+  val nsga2: NSGA2 = NSGA2(
     mu = 100,
     lambda = 100,
     fitness = (v: Vector[Double], _) => Vector(sphere.compute(v)),
     continuous = sphere.genome(6))
 
-  def evolution =
+  def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -44,14 +44,14 @@ object DiscreteNSGAII extends App {
 
   import algorithm._
 
-  val nsga2 = NSGA2(
+  val nsga2: NSGA2 = NSGA2(
     mu = 100,
     lambda = 100,
     fitness = discreteSphere.compute,
     continuous = discreteSphere.continuous(6),
     discrete = discreteSphere.discrete(3))
 
-  def evolution =
+  def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -66,7 +66,7 @@ object NoisySphereNSGAII extends App {
 
   import algorithm._
 
-  val nsga2 =
+  val nsga2: NoisyNSGA2[Vector[Double]] =
     NoisyNSGA2(
       mu = 100,
       lambda = 100,
@@ -75,7 +75,7 @@ object NoisySphereNSGAII extends App {
       continuous = noisyDiscreteSphere.continuous(2),
       discrete = noisyDiscreteSphere.discrete(2))
 
-  def evolution =
+  def evolution: RunAlgorithm[NoisyNSGA2[Vector[Double]], CDGenome.NoisyIndividual.Individual[Vector[Double]], CDGenome.Genome, NoisyNSGA2.NSGA2State] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -90,14 +90,14 @@ object ZDT4NSGAII extends App {
 
   import algorithm._
 
-  val nsga2 =
+  val nsga2: NSGA2 =
     NSGA2(
       mu = 100,
       lambda = 100,
       fitness = zdt4.compute,
       continuous = zdt4.continuous(10))
 
-  def evolution =
+  def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -112,13 +112,13 @@ object RastriginNSGAII extends App {
 
   import algorithm._
 
-  val nsga2 = NSGA2(
+  val nsga2: NSGA2 = NSGA2(
     mu = 100,
     lambda = 100,
     fitness = (x, _) => Vector(rastrigin.compute(x)),
     continuous = rastrigin.continuous(2))
 
-  def evolution =
+  def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =
     nsga2.
       until(afterGeneration(1000)).
       trace { (s, is) => println(s.generation) }

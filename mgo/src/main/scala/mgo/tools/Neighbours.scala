@@ -19,7 +19,7 @@ package mgo.tools
 
 trait Neighbours {
 
-  def neighbours[A](distance: (A, A) => Double)(a: A, all: Seq[A], nb: Int) = {
+  def neighbours[A](distance: (A, A) => Double)(a: A, all: Seq[A], nb: Int): Seq[A] = {
     val distances = all.map(distance(a, _))
     (all zip distances).sortBy(_._2).take(nb).map(_._1)
   }

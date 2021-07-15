@@ -22,7 +22,7 @@ object diversity {
       State.state { ClosedCrowdingDistance(values.map(e => mg(e))) }
   }*/
 
-  def crowdingDistance[I](population: Vector[I], fitness: I => Vector[Double], random: scala.util.Random) = CrowdingDistance(population.map(e => fitness(e)), random)
+  def crowdingDistance[I](population: Vector[I], fitness: I => Vector[Double], random: scala.util.Random): Vector[Double] = CrowdingDistance(population.map(e => fitness(e)), random)
 
   def hypervolumeContribution[M[_]: cats.Monad, I](referencePoint: Vector[Double], fitness: I => Vector[Double]): Diversity[M, I] =
     Diversity((values: Vector[I]) => Hypervolume.contributions(values.map(e => fitness(e)), referencePoint).pure[M])

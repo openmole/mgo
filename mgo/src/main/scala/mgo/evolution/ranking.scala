@@ -63,7 +63,7 @@ object ranking {
   //    Ranking((values: Vector[I]) =>
   //      HierarchicalRanking.upRank(values.map(v => fitness(v))).pure[M])
 
-  def numberOfDominating[I](fitness: I => Vector[Double], values: Vector[I], dominance: Dominance = nonStrictDominance) = {
+  def numberOfDominating[I](fitness: I => Vector[Double], values: Vector[I], dominance: Dominance = nonStrictDominance): Vector[Later[Int]] = {
     val fitnesses = values.map(i => fitness(i))
     def ranks =
       fitnesses.zipWithIndex.map {
@@ -119,7 +119,7 @@ object ranking {
   //    }.pure[M])
 
   //TODO: Lazy ne sert à rien ici. On pourrait redefinir le type Ranking en Ranking[M,I,K] avec K est de typeclass Order,
-  def hitCountRanking[S, I](s: S, population: Vector[I], cell: I => Vector[Int], hitmap: monocle.Lens[S, HitMap]) = {
+  def hitCountRanking[S, I](s: S, population: Vector[I], cell: I => Vector[Int], hitmap: monocle.Lens[S, HitMap]): Vector[Int] = {
     def hitCount(cell: Vector[Int]): Int = hitmap.get(s).getOrElse(cell, 0)
     population.map { i => hitCount(cell(i)) }
   }
@@ -129,7 +129,7 @@ object ranking {
   //  def reversedRanking[M[_]: cats.Monad, I](ranking: Ranking[M, I]): Ranking[M, I] =
   //    Ranking((population: Vector[I]) => ranking(population).map { ranks => ranks.map { rank => rank.map(x => -x) } })
 
-  def paretoRanking[I](population: Vector[I], fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance) =
+  def paretoRanking[I](population: Vector[I], fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Vector[Eval[Int]] =
     numberOfDominating(fitness, population, dominance).map(_.map(x => -x))
 
   //TODO: the following functions don't produce rankings and don't belong here.
@@ -140,12 +140,12 @@ object ranking {
         d <- diversity(population)
       } yield r zip d)
 
-  def paretoRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => Vector[Double], random: scala.util.Random) =
+  def paretoRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => Vector[Double], random: scala.util.Random): Vector[(Eval[Int], Double)] =
     paretoRanking(population, fitness) zip crowdingDistance(population, fitness, random)
 
-  def worstParetoRanking = (Later(Int.MinValue), Double.NegativeInfinity)
+  def worstParetoRanking: (Later[Int], Double) = (Later(Int.MinValue), Double.NegativeInfinity)
 
-  def rank[M[_]: cats.Monad, I, K](ranking: Kleisli[M, Vector[I], Vector[K]]) = Kleisli[M, Vector[I], Vector[(I, K)]] { is =>
+  def rank[M[_]: cats.Monad, I, K](ranking: Kleisli[M, Vector[I], Vector[K]]): Kleisli[M, Vector[I], Vector[(I, K)]] = Kleisli[M, Vector[I], Vector[(I, K)]] { is =>
     for {
       rs <- ranking.run(is)
     } yield is zip rs

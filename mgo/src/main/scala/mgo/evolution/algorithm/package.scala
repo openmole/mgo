@@ -27,6 +27,7 @@ import cats.data._
 
 import monocle._
 import monocle.syntax.all._
+import scala.util.Random
 
 package object algorithm {
 
@@ -46,9 +47,9 @@ package object algorithm {
   //      g <- implicitly[Generation[M]].get
   //    } yield EvolutionState[T](g, s, rng, t)
 
-  def randomTake[G](gs: Vector[G], lambda: Int, random: scala.util.Random) = random.shuffle(gs).take(lambda)
+  def randomTake[G](gs: Vector[G], lambda: Int, random: scala.util.Random): Vector[G] = random.shuffle(gs).take(lambda)
 
-  def operatorProportions[I](operation: I => Option[Int], is: Vector[I]) =
+  def operatorProportions[I](operation: I => Option[Int], is: Vector[I]): Map[Int, Double] =
     is.map { operation }.
       collect { case Some(op) => op }.
       groupBy(identity).
@@ -58,7 +59,7 @@ package object algorithm {
   def selectOperator[S, G](
     operators: Vector[(S, G, scala.util.Random) => G],
     opStats: Map[Int, Double],
-    exploration: Double) = {
+    exploration: Double): (S, G, Random) => (G, Int) = {
 
     def allOps =
       operators.zipWithIndex.map {
@@ -71,7 +72,7 @@ package object algorithm {
     }
   }
 
-  def drawOperator[O](opsAndWeights: Vector[(O, Double)], exploration: Double, rng: scala.util.Random) = {
+  def drawOperator[O](opsAndWeights: Vector[(O, Double)], exploration: Double, rng: scala.util.Random): (O, Int) = {
     val explore = rng.nextDouble
 
     val i =
@@ -105,7 +106,7 @@ package object algorithm {
       generate(List(), 0)
     }
 
-    def filterNaN[I, T](values: Vector[I], value: I => T)(implicit cbn: CanBeNaN[T]) =
+    def filterNaN[I, T](values: Vector[I], value: I => T)(implicit cbn: CanBeNaN[T]): Vector[I] =
       values.filter { i => !cbn.isNaN(value(i)) }
 
     def continuousCrossovers[S]: Vector[GACrossover[S]] =
@@ -138,13 +139,13 @@ package object algorithm {
 
     type CrossoverAndMutation[S, G] = (S, G, scala.util.Random) => G
 
-    def continuousCrossoversAndMutations[S] =
+    def continuousCrossoversAndMutations[S]: Vector[CrossoverAndMutation[S, (Vector[Double], Vector[Double])]] =
       for {
         c <- continuousCrossovers[S]
         m <- continuousMutations[S]
       } yield crossoverAndMutation[S, Vector[Double]](c, m)
 
-    def discreteCrossoversAndMutations[S](discrete: Vector[D]) =
+    def discreteCrossoversAndMutations[S](discrete: Vector[D]): Vector[CrossoverAndMutation[S, (Vector[Int], Vector[Int])]] =
       for {
         c <- discreteCrossovers[S]
         m <- discreteMutations[S](discrete)
@@ -162,7 +163,7 @@ package object algorithm {
       crossover: Crossover[S, (G, G), (G, G)],
       mutation: Mutation[S, G, G],
       selection: Selection[S, I],
-      genome: I => G)(s: S, population: Vector[I], rng: scala.util.Random) = {
+      genome: I => G)(s: S, population: Vector[I], rng: scala.util.Random): (G, G) = {
       val m1 = selection(s, population, rng)
       val m2 = selection(s, population, rng)
       crossoverAndMutation[S, G](crossover, mutation) apply (s, (genome(m1), genome(m2)), rng)
@@ -172,7 +173,7 @@ package object algorithm {
       selection: Selection[S, I],
       genome: I => Vector[Double],
       operatorStatistics: Map[Int, Double],
-      operatorExploration: Double) = {
+      operatorExploration: Double): (S, Vector[I], Random) => ((Vector[Double], Vector[Double]), Int) = {
 
       def applyOperator =
         selectOperator(
@@ -195,7 +196,7 @@ package object algorithm {
       discreteOperatorStatistics: Map[Int, Double],
       discrete: Vector[D],
       operatorExploration: Double,
-      buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G) = {
+      buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G): (S, Vector[I], Random) => Vector[G] = {
 
       def continuousOperator =
         selectOperator(
@@ -232,9 +233,9 @@ package object algorithm {
     }
   }
 
-  def averageAggregation(history: Vector[Vector[Double]]) = history.transpose.map { o => o.sum / o.size }
+  def averageAggregation(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map { o => o.sum / o.size }
 
-  def scaleContinuousValues(values: Vector[Double], genomeComponents: Vector[C]) =
+  def scaleContinuousValues(values: Vector[Double], genomeComponents: Vector[C]): Vector[Double] =
     (values zip genomeComponents).map { case (v, c) => v.scale(c) }
 
   object CDGenome {
@@ -242,8 +243,8 @@ package object algorithm {
     object DeterministicIndividual {
       case class Individual[P](genome: Genome, phenotype: P)
       //def vectorPhenotype = Individual.phenotype[Array[Double]] composeLens arrayToVectorLens
-      def individualFitness[P](fitness: P => Vector[Double]) = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
-      def buildIndividual[P](g: Genome, p: P) = Individual(g, p)
+      def individualFitness[P](fitness: P => Vector[Double]): Individual[P] => Vector[Double] = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
+      def buildIndividual[P](g: Genome, p: P): Individual[P] = Individual(g, p)
 
       def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
         deterministic.expression[Genome, P, Individual[P]](
@@ -255,7 +256,7 @@ package object algorithm {
 
     object NoisyIndividual {
 
-      def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C]) =
+      def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C]): (Vector[Double], Vector[Int], Vector[Double], Int) =
         (
           scaleContinuousValues(continuousValues.get(i.genome), continuous),
           i.focus(_.genome) andThen discreteValues get,
@@ -263,8 +264,8 @@ package object algorithm {
           i.focus(_.phenotypeHistory).get.size)
 
       case class Individual[P](genome: Genome, historyAge: Long, phenotypeHistory: Array[P])
-      def buildIndividual[P: Manifest](g: Genome, f: P) = Individual[P](g, 1, Array(f))
-      def vectorPhenotype[P: Manifest] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso[P]
+      def buildIndividual[P: Manifest](g: Genome, f: P): Individual[P] = Individual[P](g, 1, Array(f))
+      def vectorPhenotype[P: Manifest]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso[P]
 
       def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
         noisy.expression[Genome, Individual[P], P](
@@ -282,19 +283,19 @@ package object algorithm {
       continuous: Vector[Double],
       continuousOperator: Option[Int],
       discrete: Vector[Int],
-      discreteOperator: Option[Int]) =
+      discreteOperator: Option[Int]): Genome =
       Genome(
         continuous.toArray,
         continuousOperator.getOrElse(-1),
         discrete.toArray,
         discreteOperator.getOrElse(-1))
 
-    def continuousValues = Focus[Genome](_.continuousValues) andThen arrayToVectorIso[Double]
-    def continuousOperator = Focus[Genome](_.continuousOperator) andThen intToUnsignedIntOption
-    def discreteValues = Focus[Genome](_.discreteValues) andThen arrayToVectorIso[Int]
-    def discreteOperator = Focus[Genome](_.discreteOperator) andThen intToUnsignedIntOption
+    def continuousValues: PLens[Genome, Genome, Vector[Double], Vector[Double]] = Focus[Genome](_.continuousValues) andThen arrayToVectorIso[Double]
+    def continuousOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.continuousOperator) andThen intToUnsignedIntOption
+    def discreteValues: PLens[Genome, Genome, Vector[Int], Vector[Int]] = Focus[Genome](_.discreteValues) andThen arrayToVectorIso[Int]
+    def discreteOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.discreteOperator) andThen intToUnsignedIntOption
 
-    def values(g: Genome, continuous: Vector[C]) =
+    def values(g: Genome, continuous: Vector[C]): (Vector[Double], Vector[Int]) =
       (scaleContinuousValues(continuousValues.get(g), continuous), discreteValues.get(g))
 
     def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
@@ -306,14 +307,14 @@ package object algorithm {
 
     def initialPopulation[G, I](
       initialGenomes: Vector[G],
-      expression: G => I) = initialGenomes.map(expression)
+      expression: G => I): Vector[I] = initialGenomes.map(expression)
 
     def step[S, I, G](
       breeding: Breeding[S, I, G],
       expression: G => I,
       elitism: Elitism[S, I],
       generation: monocle.Lens[S, Long],
-      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random) = {
+      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random): (S, Vector[I]) = {
       val newGenomes = breeding(s, population, rng)
       val newPopulation = newGenomes.map(expression)
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
@@ -337,7 +338,7 @@ package object algorithm {
     def initialPopulation[G, I](
       initialGenomes: Vector[G],
       expression: (util.Random, G) => I,
-      rng: scala.util.Random) =
+      rng: scala.util.Random): Vector[I] =
       initialGenomes.map(g => expression(rng, g))
 
     def step[S, I, G](
@@ -345,7 +346,7 @@ package object algorithm {
       expression: (util.Random, G) => I,
       elitism: Elitism[S, I],
       generation: monocle.Lens[S, Long],
-      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random) = {
+      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random): (S, Vector[I]) = {
       def evaluate(g: G) = expression(rng, g)
 
       val newGenomes = breeding(s, population, rng)

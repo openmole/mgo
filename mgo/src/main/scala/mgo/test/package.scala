@@ -22,51 +22,51 @@ import scala.util.Random
 
 package object test {
 
-  def twoVarInter(x1: Double, x2: Double) = x1 + x2 + x1 * x2
+  def twoVarInter(x1: Double, x2: Double): Double = x1 + x2 + x1 * x2
 
-  def average(s: Seq[Double]) = s.sum / s.size
+  def average(s: Seq[Double]): Double = s.sum / s.size
 
   object sphere {
     def compute(i: Vector[Double]): Double = i.map(x => x * x).sum
-    def genome(size: Int) = Vector.fill(size)(C(-2, 2))
+    def genome(size: Int): Vector[C] = Vector.fill(size)(C(-2, 2))
   }
 
   object discreteSphere {
-    def compute(x: Vector[Double], i: Vector[Int]) = Vector(x.map(x => x * x).sum + i.map(math.abs).sum)
-    def continuous(size: Int) = Vector.fill(size)(C(-2, 2))
-    def discrete(size: Int) = Vector.fill(size)(D(-2, 2))
+    def compute(x: Vector[Double], i: Vector[Int]): Vector[Double] = Vector(x.map(x => x * x).sum + i.map(math.abs).sum)
+    def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-2, 2))
+    def discrete(size: Int): Vector[D] = Vector.fill(size)(D(-2, 2))
   }
 
   object noisyDiscreteSphere {
-    def compute(rng: Random, v: Vector[Double], i: Vector[Int]) = {
+    def compute(rng: Random, v: Vector[Double], i: Vector[Int]): Vector[Double] = {
       val res = v.map(x => x * x).sum + i.map(math.abs).sum
       val noise = rng.nextGaussian() * 0.5 * res
       Vector(res + noise)
     }
-    def continuous(size: Int) = Vector.fill(size)(C(-2, 2))
-    def discrete(size: Int) = Vector.fill(size)(D(-2, 2))
+    def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-2, 2))
+    def discrete(size: Int): Vector[D] = Vector.fill(size)(D(-2, 2))
   }
 
   object rastrigin {
-    def continuous(size: Int) = Vector.fill(size)(C(-5.12, 5.12))
+    def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-5.12, 5.12))
     def compute(i: Vector[Double]): Double = {
       10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
     }
   }
 
-  def himmelblau(x: Double, y: Double) = {
+  def himmelblau(x: Double, y: Double): Double = {
     def z(x: Double, y: Double) =
       pow(pow(x, 2) + y - 11, 2) + pow(x + pow(y, 2) - 7, 2)
 
     z(x.scale(-4.5, 4.5), y.scale(-4.5, 4.5))
   }
 
-  def griewangk(g: Vector[Double]) = {
+  def griewangk(g: Vector[Double]): Double = {
     val values = g.map(_.scale(-600, 600))
     1.0 + values.map(x => math.pow(x, 2.0) / 4000).sum - values.zipWithIndex.map { case (x, i) => x / math.sqrt(i + 1.0) }.map(math.cos).reduce(_ * _)
   }
 
-  def rosenbrock(x: Double, y: Double) = {
+  def rosenbrock(x: Double, y: Double): Double = {
     val sx = x.scale(-2048.0, 2048.0)
     val sy = y.scale(-2048.0, 2048.0)
     pow(1 - sx, 2) + 100 * pow(sy - pow(sx, 2), 2)
@@ -76,14 +76,14 @@ package object test {
     (0 to (x.size - 1)).map(i => x(i) * omega(i)).sum
 
   // Simple MG Function created by Schaffer for 1985 VEGA paper
-  def schaffer(x: Double) = {
+  def schaffer(x: Double): Seq[Double] = {
     val sx = x.scale(-100000.0, 100000.0)
     Seq(pow(sx, 2), pow(x - 2, 2))
   }
 
   object zdt4 {
 
-    def continuous(size: Int) = Vector.fill(size)(C(0.0, 5.0))
+    def continuous(size: Int): Vector[C] = Vector.fill(size)(C(0.0, 5.0))
     def discrete = Vector.empty
 
     def compute(genome: Vector[Double], d: Vector[Int]): Vector[Double] = {
@@ -102,7 +102,7 @@ package object test {
   }
 
   object dropWave {
-    def dropWave(x1: Double, x2: Double) = {
+    def dropWave(x1: Double, x2: Double): Double = {
       val dist = pow(x1, 2) + pow(x2, 2)
       val top = 1 + cos(12 * sqrt(dist))
       val bottom = 0.5 * dist + 2
@@ -111,7 +111,7 @@ package object test {
 
     def scale(s: Vector[Double]): Vector[Double] = s.map(_.scale(-5.12, 5.12))
 
-    def compute(genome: Vector[Double]) = {
+    def compute(genome: Vector[Double]): Double = {
       val s = scale(genome)
       dropWave(s(0), s(1))
     }

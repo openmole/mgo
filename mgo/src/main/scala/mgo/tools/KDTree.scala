@@ -99,8 +99,8 @@ trait KDTree {
 
 object EmptyTree extends KDTree {
   def node = Vector.empty
-  def left = this
-  def right = this
+  def left: EmptyTree.type = this
+  def right: EmptyTree.type = this
 
   override def nearest(query: Seq[Double], depth: Int = 0): Seq[Double] = Vector[Double]()
   override def knearest(k: Int, query: Seq[Double], depth: Int = 0): Seq[Seq[Double]] = Vector[Vector[Double]]()
@@ -113,7 +113,7 @@ object KDTree {
    * @param pointList A size N sequence of size K sequences, representing N points in K dimensions
    * @return
    */
-  def apply(pointList: Seq[Seq[Double]]) = {
+  def apply(pointList: Seq[Seq[Double]]): KDTree = {
     if (pointList.size == 0) EmptyTree
     else if (pointList(0).size == 0) EmptyTree
     else {

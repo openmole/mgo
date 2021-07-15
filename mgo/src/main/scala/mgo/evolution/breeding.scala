@@ -37,8 +37,8 @@ object breeding {
       individuals(challengersIndices.maxBy(i => ranks(i))(implicitly[Order[K]].toOrdering))
     }
 
-  def log2(x: Int) = (math.log(x) / math.log(2)).toInt
-  lazy val log2_256 = log2(256)
+  def log2(x: Int): Int = (math.log(x) / math.log(2)).toInt
+  lazy val log2_256: Int = log2(256)
 
   /* 1 round from 0 to 256 and then 1 more round for each population doubling */
   def logOfPopulationSize(size: Int): Int =

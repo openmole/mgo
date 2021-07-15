@@ -19,7 +19,7 @@ object NoisyNSGA3 {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean) = {
+  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean): Vector[Result[P]] = {
     val individuals = if (keepAll) population else keepFirstFront(population, fitness(aggregation))
 
     individuals.map {

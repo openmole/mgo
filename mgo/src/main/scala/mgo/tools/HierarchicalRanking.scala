@@ -19,9 +19,9 @@ package mgo.tools
 
 object HierarchicalRanking {
 
-  def downRank[T](values: Vector[T])(implicit ordering: Ordering[T]) = upRank(values)(ordering.reverse)
+  def downRank[T](values: Vector[T])(implicit ordering: Ordering[T]): Vector[Int] = upRank(values)(ordering.reverse)
 
-  def upRank[T](values: Vector[T])(implicit ordering: Ordering[T]) =
+  def upRank[T](values: Vector[T])(implicit ordering: Ordering[T]): Vector[Int] =
     values.
       zipWithIndex.
       sortBy { case (v, _) => v }.

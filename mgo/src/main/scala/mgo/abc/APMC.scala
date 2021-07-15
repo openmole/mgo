@@ -174,7 +174,7 @@ object APMC {
 
     val (newThetasSelected, newRhosSelected) =
       resNewSelected match {
-        case None => (Array.empty[Array[Double]], Array.empty)
+        case None => (Array.empty[Array[Double]], Array.empty[Double])
         case Some((th, r)) => (th.getData(), r.toArray())
       }
 
