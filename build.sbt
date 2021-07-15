@@ -38,8 +38,8 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   //Compile / sources in (Compile, doc) := Nil,
   libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1",
 
-  libraryDependencies += "dev.optics"  %%  "monocle-core"    % monocleVersion,
-  libraryDependencies += "dev.optics" %% "monocle-macro" % "3.0.0-RC2",
+  libraryDependencies += "dev.optics"  %%  "monocle-core" % monocleVersion,
+  libraryDependencies += "dev.optics" %% "monocle-macro" % monocleVersion,
 //  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
 //  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
 
