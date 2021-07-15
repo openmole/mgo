@@ -4,7 +4,7 @@ ThisBuild / organization := "org.openmole"
 ThisBuild / scalaVersion := "2.13.6"
 ThisBuild / crossScalaVersions := Seq("2.13.6")
 
-val monocleVersion = "3.0.0-RC2"
+val monocleVersion = "3.0.0"
 
 def scala2(scalaVersion: String): Boolean =
   CrossVersion.partialVersion(scalaVersion) match {
