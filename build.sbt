@@ -1,10 +1,10 @@
 
 name := "mgo"
 ThisBuild / organization := "org.openmole"
-ThisBuild / scalaVersion := "2.13.6"
-ThisBuild / crossScalaVersions := Seq("2.13.6")
+ThisBuild / scalaVersion := "3.1.0"
+ThisBuild / crossScalaVersions := Seq("2.13.7", "3.1.0")
 
-val monocleVersion = "3.0.0"
+val monocleVersion = "3.1.0"
 
 def scala2(scalaVersion: String): Boolean =
   CrossVersion.partialVersion(scalaVersion) match {
@@ -17,8 +17,8 @@ lazy val settings: Seq[Setting[_]] = Seq(
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("staging"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-  scalacOptions ++= Seq("-target:jvm-1.8"),
+  javacOptions ++= Seq("-source", "11", "-target", "11"),
+  scalacOptions ++= Seq("-target:11", "-language:higherKinds"),
   scalariformAutoformat := true,
   scalacOptions ++= Seq("-language:postfixOps")
 //  scalacOptions ++= (
