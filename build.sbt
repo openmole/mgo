@@ -43,7 +43,7 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
 //  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
 //  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
 
-  libraryDependencies += "org.typelevel"  %% "squants"  % "1.8.3" cross(CrossVersion.for2_13Use3),
+  libraryDependencies += "org.typelevel"  %% "squants"  % "1.8.3", //cross(CrossVersion.for2_13Use3),
 
 //  libraryDependencies ++= (if(scala2(scalaVersion.value)) Seq("org.typelevel"  %% "squants"  % "1.6.0") else Seq()),
 
