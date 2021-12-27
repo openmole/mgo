@@ -2,7 +2,7 @@
 name := "mgo"
 ThisBuild / organization := "org.openmole"
 ThisBuild / scalaVersion := "3.1.0"
-ThisBuild / crossScalaVersions := Seq("2.13.7", "3.1.0")
+ThisBuild / crossScalaVersions := Seq("3.1.0")
 
 val monocleVersion = "3.1.0"
 
@@ -17,8 +17,8 @@ lazy val settings: Seq[Setting[_]] = Seq(
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("staging"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
-  javacOptions ++= Seq("-source", "11", "-target", "11"),
-  scalacOptions ++= Seq("-target:11", "-language:higherKinds", "-Ytasty-reader"),
+  javacOptions ++= Seq("-source", "11"),
+  scalacOptions ++= Seq("-target:11", "-language:higherKinds"),
   scalariformAutoformat := true,
   scalacOptions ++= Seq("-language:postfixOps")
 //  scalacOptions ++= (
@@ -31,7 +31,7 @@ lazy val settings: Seq[Setting[_]] = Seq(
 //      )
 //    else Nil)
   //libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
-) ++ scalariformSettings(true)
+)
 
 lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
   // macro paradise doesn't work with scaladoc
@@ -49,7 +49,13 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
 
   //libraryDependencies += "org.typelevel" %% "cats-core" % "2.1.0",
   libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.1" cross(CrossVersion.for3Use2_13),
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
+  libraryDependencies ++= Seq(
+    "org.scalanlp" %% "breeze" % "2.0"
+    //"org.scalanlp" %% "breeze-natives" % breezeVersion
+  ),
+  excludeDependencies += ExclusionRule(organization = "org.typelevel", name = "cats-kernel_2.13"),
+  libraryDependencies += "com.edwardraff" % "JSAT" % "0.0.9",
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 )
 
 
