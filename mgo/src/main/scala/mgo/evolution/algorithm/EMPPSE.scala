@@ -94,11 +94,19 @@ object EMPPSE {
 
   def breeding[P](
     continuous: Vector[C],
-    lambda: Int): Breeding[EvolutionState[EMPPSEState], Individual[P], Genome] =
-    PPSE2Operations.breeding(continuous, identity[Genome] _, lambda, Focus[EvolutionState[EMPPSEState]](_.s) andThen Focus[EMPPSEState](_.gmm) get)
+    lambda: Int,
+    reject: Option[Vector[Double] => Boolean]): Breeding[EvolutionState[EMPPSEState], Individual[P], Genome] =
+    PPSE2Operations.breeding(
+      continuous,
+      identity[Genome] _,
+      lambda,
+      reject,
+      Focus[EvolutionState[EMPPSEState]](_.s) andThen Focus[EMPPSEState](_.gmm) get)
 
   def elitism[P: CanBeNaN](
     pattern: P => Vector[Int],
+    continuous: Vector[C],
+    reject: Option[Vector[Double] => Boolean],
     iterations: Int,
     tolerance: Double,
     dilation: Double,
@@ -107,6 +115,8 @@ object EMPPSE {
     PPSE2Operations.elitism[EvolutionState[EMPPSEState], Individual[P], P](
       values = _.genome,
       phenotype = _.phenotype,
+      continuous = continuous,
+      reject = reject,
       pattern = pattern,
       densityMap = Focus[EvolutionState[EMPPSEState]](_.s) andThen Focus[EMPPSEState](_.probabilityMap),
       hitmap = Focus[EvolutionState[EMPPSEState]](_.s) andThen Focus[EMPPSEState](_.hitmap),
@@ -133,9 +143,9 @@ object EMPPSE {
     def step(t: EMPPSE) =
       (s, pop, rng) =>
         deterministic.step[EvolutionState[EMPPSEState], Individual[Vector[Double]], Genome](
-          EMPPSE.breeding(t.continuous, t.lambda),
+          EMPPSE.breeding(t.continuous, t.lambda, t.reject),
           EMPPSE.expression[Vector[Double]](t.phenotype, t.continuous),
-          EMPPSE.elitism(t.pattern, t.iterations, t.tolerance, t.dilation, t.warmupSampler, t.fitOnRarest),
+          EMPPSE.elitism(t.pattern, t.continuous, t.reject, t.iterations, t.tolerance, t.dilation, t.warmupSampler, t.fitOnRarest),
           Focus[EvolutionState[EMPPSEState]](_.generation),
           Focus[EvolutionState[EMPPSEState]](_.evaluated))(s, pop, rng)
 
@@ -144,15 +154,20 @@ object EMPPSE {
   def acceptPoint(x: Vector[Double]) =
     x.forall(_ <= 1.0) && x.forall(_ >= 0.0)
 
-  def toSampler(gmm: GMM, rng: Random) = {
+  def toSampler(gmm: GMM, reject: Option[Vector[Double] => Boolean], continuous: Vector[C], rng: Random) = {
     val distribution = WDFEMGMM.toDistribution(gmm, rng)
 
     def sample() = {
       val x = distribution.sample()
       (x.toVector, Lazy(distribution.density(x)))
     }
-    new RejectionSampler(sample _, EMPPSE.acceptPoint)
+
+    def acceptFunction(x: Vector[Double]) =
+      EMPPSE.acceptPoint(x) && !reject.map { r => r(scaleContinuousValues(x, continuous)) }.getOrElse(false)
+
+    new RejectionSampler(sample _, acceptFunction)
   }
+
 }
 
 case class EMPPSE(
@@ -160,6 +175,7 @@ case class EMPPSE(
   phenotype: Vector[Double] => Vector[Double],
   pattern: Vector[Double] => Vector[Int],
   continuous: Vector[C],
+  reject: Option[Vector[Double] => Boolean] = None,
   iterations: Int = 1000,
   tolerance: Double = 0.0001,
   warmupSampler: Int = 10000,
@@ -174,7 +190,7 @@ object PPSE2Operations {
     continuous: Vector[C],
     buildGenome: ((Array[Double], Double)) => G,
     lambda: Int,
-    //reject: Option[G => Boolean],
+    reject: Option[Vector[Double] => Boolean],
     gmm: S => Option[(GMM, RejectionSampler.State)]): Breeding[S, I, G] =
     (s, population, rng) => {
 
@@ -183,9 +199,7 @@ object PPSE2Operations {
       gmm(s) match {
         case None => (0 to lambda).map(_ => buildGenome(randomUnscaledContinuousValues(continuous.size, rng), 1.0)).toVector
         case Some((gmmValue, rejectionSamplerState)) =>
-
-          val sampler = EMPPSE.toSampler(gmmValue, rng)
-
+          val sampler = EMPPSE.toSampler(gmmValue, reject, continuous, rng)
           val (_, sampled) = sampler.sampleVector(lambda, rejectionSamplerState)
           val breed = sampled.map(s => buildGenome(s._1.toArray, s._2))
           breed
@@ -196,6 +210,8 @@ object PPSE2Operations {
     values: I => (Array[Double], Double),
     phenotype: I => P,
     pattern: P => Vector[Int],
+    continuous: Vector[C],
+    reject: Option[Vector[Double] => Boolean],
     densityMap: monocle.Lens[S, DensityMap],
     hitmap: monocle.Lens[S, HitMap],
     gmm: monocle.Lens[S, Option[(GMM, RejectionSampler.State)]],
@@ -255,8 +271,7 @@ object PPSE2Operations {
         random = random).toOption flatMap {
           case (newGMM, _) =>
             val dilatedGMM = EMGMM.dilate(newGMM, dilation)
-            val samplerState = EMPPSE.toSampler(dilatedGMM, rng).warmup(warmupSampler)
-
+            val samplerState = EMPPSE.toSampler(dilatedGMM, reject, continuous, rng).warmup(warmupSampler)
             if (RejectionSampler.noSuccess(samplerState)) None
             else Some((dilatedGMM, samplerState))
         }
