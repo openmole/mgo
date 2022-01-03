@@ -96,7 +96,7 @@ object EMPPSE {
     continuous: Vector[C],
     lambda: Int,
     reject: Option[Vector[Double] => Boolean]): Breeding[EvolutionState[EMPPSEState], Individual[P], Genome] =
-    PPSE2Operations.breeding(
+    EMPPSEOperation.breeding(
       continuous,
       identity[Genome] _,
       lambda,
@@ -112,7 +112,7 @@ object EMPPSE {
     dilation: Double,
     warmupSampler: Int,
     fitOnRarest: Int) =
-    PPSE2Operations.elitism[EvolutionState[EMPPSEState], Individual[P], P](
+    EMPPSEOperation.elitism[EvolutionState[EMPPSEState], Individual[P], P](
       values = _.genome,
       phenotype = _.phenotype,
       continuous = continuous,
@@ -182,7 +182,7 @@ case class EMPPSE(
   dilation: Double = 1.0,
   fitOnRarest: Int = 100)
 
-object PPSE2Operations {
+object EMPPSEOperation {
 
   import EMPPSE.DensityMap
 
