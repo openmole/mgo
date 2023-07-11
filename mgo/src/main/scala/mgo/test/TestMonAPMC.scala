@@ -23,17 +23,19 @@ import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils }
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics
 
 import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContextExecutor
+import scala.util.Random
 
 object IdentityMonAPMC extends App {
-  implicit val ec = ExecutionContext.global
-  implicit val rng = new util.Random(42)
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
+  implicit val rng: Random = new util.Random(42)
 
   // A deterministic model.
   def toyModel(theta: Vector[Double], rng: util.Random): Vector[Double] =
     theta.map { _ + rng.nextDouble / Double.PositiveInfinity }
 
   // Test MonAPMC and its Exposed interface
-  val p = MonAPMC.Params(
+  val p: MonAPMC.Params = MonAPMC.Params(
     apmcP = APMC.Params(
       n = 20,
       nAlpha = 10,
@@ -65,8 +67,8 @@ object IdentityMonAPMC extends App {
 
 object GaussianMix2DMonAPMC extends App {
 
-  implicit val rng = new util.Random(42)
-  implicit val ec = ExecutionContext.global
+  implicit val rng: Random = new util.Random(42)
+  implicit val ec: ExecutionContextExecutor = ExecutionContext.global
 
   // Gaussian Mixture 1D toy model
   def toyModel(theta: Vector[Double], rng: util.Random): Vector[Double] = {
@@ -87,7 +89,7 @@ object GaussianMix2DMonAPMC extends App {
     dist.sample.toVector
   }
 
-  val p = MonAPMC.Params(
+  val p: MonAPMC.Params = MonAPMC.Params(
     apmcP = APMC.Params(
       n = 5000,
       nAlpha = 500,

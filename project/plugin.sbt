@@ -6,6 +6,6 @@ addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.8")
 
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.0")
 
-//addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.4.4")
+//addSbtPlugin("ch.epfl.scala" % "sbt-scala3-migrate" % "0.4.5")
 
 

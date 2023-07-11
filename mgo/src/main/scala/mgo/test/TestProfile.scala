@@ -24,14 +24,14 @@ object SphereProfile extends App {
   import algorithm._
 
   //Profile the first dimension of the genome
-  val algo = Profile(
+  val algo: Profile[Int] = Profile(
     lambda = 100,
     fitness = discreteSphere.compute,
     niche = Profile.continuousProfile(x = 0, nX = 10),
     continuous = discreteSphere.continuous(2),
     discrete = discreteSphere.discrete(2))
 
-  def evolution =
+  def evolution: RunAlgorithm[Profile[Int], CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, Profile.ProfileState] =
     algo.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -49,9 +49,9 @@ object NoisySphereProfile extends App {
 
   import algorithm._
 
-  def aggregation(history: Vector[Vector[Double]]) = history.transpose.map(h => h.sum / h.size)
+  def aggregation(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(h => h.sum / h.size)
 
-  val algo = NoisyProfile(
+  val algo: NoisyProfile[Int, Vector[Double]] = NoisyProfile(
     muByNiche = 20,
     lambda = 100,
     fitness = noisyDiscreteSphere.compute,
@@ -60,7 +60,7 @@ object NoisySphereProfile extends App {
     continuous = noisyDiscreteSphere.continuous(2),
     discrete = noisyDiscreteSphere.discrete(2))
 
-  def evolution =
+  def evolution: RunAlgorithm[NoisyProfile[Int, Vector[Double]], CDGenome.NoisyIndividual.Individual[Vector[Double]], CDGenome.Genome, NoisyProfile.ProfileState] =
     algo.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))

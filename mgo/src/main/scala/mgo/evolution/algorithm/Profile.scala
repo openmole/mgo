@@ -37,7 +37,7 @@ object Profile {
 
   case class Result[N, P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, individual: Individual[P])
 
-  def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
+  def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[N, P]] = {
     val individuals = if (keepAll) population else nicheElitism[Individual[P], N](population, keepFirstFront(_, individualFitness(fitness)), niche)
 
     individuals.map { i =>
@@ -68,10 +68,10 @@ object Profile {
   //  def gridObjectiveProfile(x: Int, intervals: Vector[Double]): Niche[Individual, Int] =
   //    mgo.evolution.niche.gridContinuousProfile[Individual](vectorPhenotype.get _, x, intervals)
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]) =
+  def adaptiveBreeding[P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[ProfileState, Individual[P], Genome] =
     NSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
@@ -89,7 +89,7 @@ object Profile {
   def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
     DeterministicIndividual.expression(express, components)
 
-  def elitism[N, P](niche: Niche[Individual[P], N], mu: Int, components: Vector[C], fitness: P => Vector[Double]) =
+  def elitism[N, P](niche: Niche[Individual[P], N], mu: Int, components: Vector[C], fitness: P => Vector[Double]): Elitism[ProfileState, Individual[P]] =
     ProfileOperations.elitism[ProfileState, Individual[P], N](
       individualFitness(fitness),
       i => values(i.genome, components),
@@ -114,7 +114,7 @@ object Profile {
 
   }
 
-  def reject[N](profile: Profile[N]) = NSGA2.reject(profile.reject, profile.continuous)
+  def reject[N](profile: Profile[N]): Option[Genome => Boolean] = NSGA2.reject(profile.reject, profile.continuous)
 
   def result[N](profile: Profile[N], population: Vector[Individual[Vector[Double]]]): Vector[Result[N, Vector[Double]]] =
     result[N, Vector[Double]](population, profile.niche, profile.continuous, identity, keepAll = false)

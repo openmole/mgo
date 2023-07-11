@@ -21,7 +21,7 @@ import Function._
 
 object NeighborMatrix {
 
-  def empty[S] =
+  def empty[S]: NeighborMatrix[S] =
     new NeighborMatrix[S] {
       def maxX = 0
       def maxY = 0
@@ -50,17 +50,17 @@ trait NeighborMatrix[T] {
   def maxX: Int
   def maxY: Int
 
-  def knn(x: Int, y: Int, n: Int) =
+  def knn(x: Int, y: Int, n: Int): List[(Int, Int)] =
     growUntilEnough(x, y, n).sortBy { case (x1, y1) => distance(x, y, x1, y1) }.take(n)
 
-  def distance(x1: Int, y1: Int, x2: Int, y2: Int) = scala.math.hypot(x2 - x1, y2 - y1)
+  def distance(x1: Int, y1: Int, x2: Int, y2: Int): Double = scala.math.hypot(x2 - x1, y2 - y1)
 
-  def isIn(x: Int, y: Int) = {
+  def isIn(x: Int, y: Int): Boolean = {
     def isIn(c: Int, maxC: Int) = c >= 0 && c <= maxC
     isIn(x, maxX) && isIn(y, maxY)
   }
 
-  lazy val maxRange = scala.math.max(maxX, maxY)
+  lazy val maxRange: Int = scala.math.max(maxX, maxY)
 
   //TODO reuse previously found neighbours
   def growUntilEnough(x: Int, y: Int, n: Int, range: Int = 1): List[(Int, Int)] = {
@@ -69,14 +69,14 @@ trait NeighborMatrix[T] {
     else growUntilEnough(x, y, n, range + 1)
   }
 
-  def extrema(x: Int, y: Int, range: Int) =
+  def extrema(x: Int, y: Int, range: Int): List[(Int, Int)] =
     for {
       dx <- List(x - range - 1, x + range + 1)
       dy <- List(y - range - 1, y + range + 1)
       if isIn(dx, dy)
     } yield (dx, dy)
 
-  def square(x: Int, y: Int, range: Int) =
+  def square(x: Int, y: Int, range: Int): IndexedSeq[(Int, Int)] =
     for {
       dx <- (x - range) to (x + range)
       dy <- (y - range) to (y + range)

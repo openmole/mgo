@@ -1,5 +1,7 @@
+package mgo.tools
+
 /*
- * Copyright (C) 24/03/13 Romain Reuillon
+ * Copyright (C) 2021 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -11,24 +13,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Affero General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package mgo.tools
-
-object HierarchicalRanking {
-
-  def downRank[T](values: Vector[T])(implicit ordering: Ordering[T]): Vector[Int] = upRank(values)(ordering.reverse)
-
-  def upRank[T](values: Vector[T])(implicit ordering: Ordering[T]): Vector[Int] =
-    values.
-      zipWithIndex.
-      sortBy { case (v, _) => v }.
-      map { case (_, originalOrder) => originalOrder }.
-      zipWithIndex.
-      sortBy { case (originalOrder, _) => originalOrder }.
-      map(_._2)
-
+class Lazy[T](t: => T) {
+  lazy val value: T = t
 }
-

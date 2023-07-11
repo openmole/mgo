@@ -1,10 +1,10 @@
 
 name := "mgo"
 ThisBuild / organization := "org.openmole"
-ThisBuild / scalaVersion := "2.13.6"
-ThisBuild / crossScalaVersions := Seq("2.13.6")
+ThisBuild / scalaVersion := "3.1.0"
+ThisBuild / crossScalaVersions := Seq("3.1.0")
 
-val monocleVersion = "3.0.0-RC2"
+val monocleVersion = "3.1.0"
 
 def scala2(scalaVersion: String): Boolean =
   CrossVersion.partialVersion(scalaVersion) match {
@@ -17,8 +17,8 @@ lazy val settings: Seq[Setting[_]] = Seq(
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("staging"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
-  javacOptions ++= Seq("-source", "1.8", "-target", "1.8"),
-  scalacOptions ++= Seq("-target:jvm-1.8"),
+  javacOptions ++= Seq("-source", "11"),
+  scalacOptions ++= Seq("-target:11", "-language:higherKinds"),
   scalariformAutoformat := true,
   scalacOptions ++= Seq("-language:postfixOps")
 //  scalacOptions ++= (
@@ -31,25 +31,31 @@ lazy val settings: Seq[Setting[_]] = Seq(
 //      )
 //    else Nil)
   //libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
-) ++ scalariformSettings(true)
+)
 
 lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
   // macro paradise doesn't work with scaladoc
   //Compile / sources in (Compile, doc) := Nil,
   libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1",
 
-  libraryDependencies += "dev.optics"  %%  "monocle-core"    % monocleVersion,
-  libraryDependencies += "dev.optics" %% "monocle-macro" % "3.0.0-RC2",
+  libraryDependencies += "dev.optics"  %%  "monocle-core" % monocleVersion,
+  libraryDependencies += "dev.optics" %% "monocle-macro" % monocleVersion,
 //  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
 //  libraryDependencies += "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
 
-  libraryDependencies += "org.typelevel"  %% "squants"  % "1.6.0" cross(CrossVersion.for3Use2_13),
+  libraryDependencies += "org.typelevel"  %% "squants"  % "1.8.3", //cross(CrossVersion.for2_13Use3),
 
 //  libraryDependencies ++= (if(scala2(scalaVersion.value)) Seq("org.typelevel"  %% "squants"  % "1.6.0") else Seq()),
 
   //libraryDependencies += "org.typelevel" %% "cats-core" % "2.1.0",
   libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.1" cross(CrossVersion.for3Use2_13),
-  testOptions in Test += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
+  libraryDependencies ++= Seq(
+    "org.scalanlp" %% "breeze" % "2.0"
+    //"org.scalanlp" %% "breeze-natives" % breezeVersion
+  ),
+  excludeDependencies += ExclusionRule(organization = "org.typelevel", name = "cats-kernel_2.13"),
+  libraryDependencies += "com.edwardraff" % "JSAT" % "0.0.9",
+  Test / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 )
 
 

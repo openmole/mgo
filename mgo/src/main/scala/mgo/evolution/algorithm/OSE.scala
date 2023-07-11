@@ -21,10 +21,10 @@ object OSE {
   type StateType[P] = (Archive[Individual[P]], OSEOperation.ReachMap)
   type OSEState[P] = EvolutionState[StateType[P]]
 
-  def archiveLens[P] = Focus[OSEState[P]](_.s._1)
-  def reachMapLens[P] = Focus[OSEState[P]](_.s._2)
+  def archiveLens[P]: Lens[OSEState[P], Archive[Individual[P]]] = Focus[OSEState[P]](_.s._1)
+  def reachMapLens[P]: Lens[OSEState[P], OSEOperation.ReachMap] = Focus[OSEState[P]](_.s._2)
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[P](
@@ -54,7 +54,7 @@ object OSE {
   def expression[P](fitness: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
     DeterministicIndividual.expression(fitness, components)
 
-  def elitism[P](mu: Int, limit: Vector[Double], origin: (Vector[Double], Vector[Int]) => Vector[Int], components: Vector[C], fitness: P => Vector[Double]) =
+  def elitism[P](mu: Int, limit: Vector[Double], origin: (Vector[Double], Vector[Int]) => Vector[Int], components: Vector[C], fitness: P => Vector[Double]): Elitism[OSEState[P], Individual[P]] =
     OSEOperation.elitism[OSEState[P], Individual[P]](
       individualFitness(fitness),
       limit,
@@ -66,7 +66,7 @@ object OSE {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
 
-  def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean) = {
+  def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
     val indivduals = archiveLens.get(state).toVector ++ { if (keepAll) population else Seq() }
 
     indivduals.map { i =>
@@ -77,7 +77,7 @@ object OSE {
   def result(ose: OSE, state: OSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
     result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity, population = population, keepAll = false)
 
-  def reject(ose: OSE) = NSGA2.reject(ose.reject, ose.continuous)
+  def reject(ose: OSE): Option[Genome => Boolean] = NSGA2.reject(ose.reject, ose.continuous)
 
   implicit def isAlgorithm: Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] = new Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] {
     override def initialState(t: OSE, rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))
@@ -114,7 +114,7 @@ object OSEOperation {
 
   type ReachMap = Array[Vector[Int]]
 
-  def filterAlreadyReached[G](origin: G => Vector[Int], reachMap: Set[Vector[Int]])(genomes: Vector[G]) = {
+  def filterAlreadyReached[G](origin: G => Vector[Int], reachMap: Set[Vector[Int]])(genomes: Vector[G]): Vector[G] = {
     def keepNonReaching(g: G): Option[G] =
       reachMap.contains(origin(g)) match {
         case true => None
@@ -168,7 +168,7 @@ object OSEOperation {
       randomTake(offspring, lambda, rng)
     }
 
-  def patternIsReached(fitness: Vector[Double], limit: Vector[Double]) =
+  def patternIsReached(fitness: Vector[Double], limit: Vector[Double]): Boolean =
     (fitness zip limit) forall { case (f, l) => f <= l }
 
   def elitism[S, I: ClassTag](

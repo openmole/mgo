@@ -23,6 +23,7 @@ import mgo.tools._
 
 import scala.collection.mutable.{ ArrayBuffer, IndexedSeq => MIndexedSeq }
 import scala.math._
+import scala.collection.mutable
 
 // A translation/adaptation based on the python source code by Simon Wessing :
 // http://ls11-www.cs.uni-dortmund.de/_media/rudolph/hypervolume/hv_python.zip
@@ -58,7 +59,7 @@ object Hypervolume {
    * @param points a set of points
    * @return the nadir point
    */
-  def nadir(points: Vector[Vector[Double]]) =
+  def nadir(points: Vector[Vector[Double]]): Vector[Double] =
     points.reduce {
       (i1, i2) => (i1 zip i2).map { case (i1, i2) => max(i1, i2) }
     }
@@ -231,11 +232,11 @@ object Hypervolume {
     var prev: MIndexedSeq[Option[Node]] = MIndexedSeq.fill(numberLists) { None }
     var ignore = 0
 
-    var area = MIndexedSeq.fill(numberLists) {
+    var area: mutable.IndexedSeq[Double] = MIndexedSeq.fill(numberLists) {
       0.0
     }
 
-    var volume = MIndexedSeq.fill(numberLists) {
+    var volume: mutable.IndexedSeq[Double] = MIndexedSeq.fill(numberLists) {
       0.0
     }
 
@@ -275,7 +276,7 @@ object Hypervolume {
     }
 
     /* Appends a node to the end of the list at the given index. */
-    def append(node: Node, index: Int) = {
+    def append(node: Node, index: Int): Unit = {
       val lastButOne = sentinel.prev(index)
       node.next(index) = Some(sentinel)
       node.prev(index) = lastButOne //set the last element as the new one
@@ -287,7 +288,7 @@ object Hypervolume {
     }
 
     /* Extends the list at the given index with the nodes. */
-    def extend(nodes: Seq[Node], index: Int) = {
+    def extend(nodes: Seq[Node], index: Int): Unit = {
 
       for (node <- nodes) {
         val lastButOne = sentinel.prev(index)
@@ -302,7 +303,7 @@ object Hypervolume {
     }
 
     /* Removes and returns 'node' from all lists in [0, 'index'[. */
-    def remove(node: Node, index: Int, bounds: MIndexedSeq[Double]) = {
+    def remove(node: Node, index: Int, bounds: MIndexedSeq[Double]): Unit = {
       for (i <- Range(0, index)) {
         val predecessor = node.prev(i)
         val successor = node.next(i)
@@ -329,7 +330,7 @@ object Hypervolume {
      * before it was removed.This method assumes that the next and previous
      * nodes of the node that is reinserted are in the list.
      */
-    def reinsert(node: Node, index: Int, bounds: MIndexedSeq[Double]) = {
+    def reinsert(node: Node, index: Int, bounds: MIndexedSeq[Double]): Unit = {
       for (i <- Range(0, index)) {
 
         node.prev(i) match {

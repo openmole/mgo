@@ -10,7 +10,7 @@ object RastriginOSE extends App {
 
   def dimensions = 3
 
-  val ose = OSE(
+  val ose: OSE = OSE(
     mu = 100,
     lambda = 100,
     fitness = (x, _) => Vector(rastrigin.compute(x)),
@@ -26,7 +26,7 @@ object RastriginOSE extends App {
   val (finalState, finalPopulation) =
     ose.
       until(afterGeneration(5000)).
-      trace { (s, is) => println(s.generation + " " + s.s._1.length) }.
+      trace { (s, is) => println("" + s.generation + " " + s.s._1.size) }.
       eval(new util.Random(42))
 
   File("./test/ose.csv") write OSE.result(ose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
@@ -40,7 +40,7 @@ object NoisyRastriginOSE extends App {
 
   def dimensions = 3
 
-  val ose = NoisyOSE(
+  val ose: NoisyOSE[Vector[Double]] = NoisyOSE(
     mu = 100,
     lambda = 100,
     fitness = (rng, x, _) => Vector(rastrigin.compute(x) + rng.nextGaussian() * 0.25),
@@ -57,7 +57,7 @@ object NoisyRastriginOSE extends App {
   val (finalState, finalPopulation) =
     ose.
       until(afterGeneration(50000)).
-      trace { (s, is) => println(s.generation + " " + s.s._1.size) }.
+      trace { (s, is) => println("" + s.generation + " " + s.s._1.size) }.
       eval(new util.Random(42))
 
   File("/tmp/ose.csv") write NoisyOSE.result(ose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
@@ -78,8 +78,8 @@ object Sambridge2001OSE extends App {
   import niche._
   import OSE._
 
-  def dimensions = 2
-  def continuous(size: Int) = Vector.fill(size)(C(-2.0, 2.0))
+  def dimensions = 5
+  def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-2.0, 2.0))
 
   def f(x: Vector[Double]): Double = {
     val (x1, x2, x3, x4, x5) = (x(0), x(1), x(2), x(3), x(4))
@@ -94,12 +94,10 @@ object Sambridge2001OSE extends App {
     a * b * math.log(1 + f0loc) + x3 * x3 + x4 * x4 + x5 * x5
   }
 
-  def f0(x: Vector[Double]): Double = f(Vector(x(0), x(1), 0.0, 0.0, 0.0))
-
-  val ose = OSE(
+  val ose: OSE = OSE(
     mu = 100,
     lambda = 100,
-    fitness = (x, _) => Vector(f0(x)),
+    fitness = (x, _) => Vector(f(x)),
     limit = Vector(0.01),
     origin =
       (c, _) =>
@@ -111,8 +109,8 @@ object Sambridge2001OSE extends App {
 
   val (finalState, finalPopulation) =
     ose.
-      until(afterGeneration(2000)).
-      trace { (s, is) => println(s.generation + " " + s.s._1.length) }.
+      until(afterGeneration(5000)).
+      trace { (s, is) => println("" + s.generation + " " + s.s._1.length) }.
       eval(new util.Random(42))
 
   File("./test/ose.csv") write OSE.result(ose, finalState, finalPopulation).map(i => (i.continuous ++ Vector(f0(i.continuous))).mkString(",")).mkString("\n")

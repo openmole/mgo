@@ -174,7 +174,7 @@ object MonAPMC {
     priorDensity: Array[Double] => Double,
     observed: Array[Double],
     stepState: StepState,
-    xs: Matrix)(implicit rng: util.Random) = {
+    xs: Matrix)(implicit rng: util.Random): MonState = {
     val reducedN = n - nAlpha
     stepState match {
       case Left(thetas) => State(0, APMC.initPostEval(reducedN, nAlpha, observed, thetas, xs))
@@ -192,7 +192,7 @@ object MonAPMC {
       pre = preStep(p.apmcP.n, p.apmcP.nAlpha, p.apmcP.priorSample, p.apmcP.priorDensity, _),
       post = postStep(p.apmcP.n, p.apmcP.nAlpha, p.apmcP.priorDensity, p.apmcP.observed, _, _))
 
-  def steps(s: MonState) = s match {
+  def steps(s: MonState): Int = s match {
     case Empty() => 0
     case s: State => s.s.t
   }

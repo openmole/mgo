@@ -39,7 +39,7 @@ object NoisyNSGA2 {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean) = {
+  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean): Vector[Result[P]] = {
     val individuals = if (keepAll) population else keepFirstFront(population, fitness(aggregation))
 
     individuals.map {
@@ -52,13 +52,13 @@ object NoisyNSGA2 {
   def result[P: Manifest](nsga2: NoisyNSGA2[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result[P](population, nsga2.aggregation, nsga2.continuous, keepAll = false)
 
-  def fitness[P: Manifest](aggregation: Vector[P] => Vector[Double]) =
+  def fitness[P: Manifest](aggregation: Vector[P] => Vector[Double]): Individual[P] => Vector[Double] =
     NoisyNSGA2Operations.aggregated[Individual[P], P](
       vectorPhenotype[P].get,
       aggregation,
       i => i.focus(_.phenotypeHistory).get.size.toDouble)(_)
 
-  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random) =
+  def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
   def adaptiveBreeding[S, P: Manifest](
@@ -96,7 +96,7 @@ object NoisyNSGA2 {
       mu)
   }
 
-  def reject[P](pse: NoisyNSGA2[P]) = NSGA2.reject(pse.reject, pse.continuous)
+  def reject[P](pse: NoisyNSGA2[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
 
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] = new Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] {
     def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = ())

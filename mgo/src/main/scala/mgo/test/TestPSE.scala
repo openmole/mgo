@@ -25,7 +25,7 @@ object ZDT4PSE extends App {
   import algorithm._
   import algorithm.PSE._
 
-  val pse = PSE(
+  val pse: PSE = PSE(
     lambda = 10,
     phenotype = zdt4.compute,
     pattern =
@@ -35,7 +35,7 @@ object ZDT4PSE extends App {
         definition = Vector(10, 10)),
     continuous = zdt4.continuous(10))
 
-  def evolution =
+  def evolution: RunAlgorithm[PSE, Individual, CDGenome.Genome, EvolutionState[HitMap]] =
     pse.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -50,7 +50,7 @@ object ZDT4NoisyPSE extends App {
   import algorithm._
   import algorithm.NoisyPSE._
 
-  val pse = NoisyPSE(
+  val pse: NoisyPSE[Vector[Double]] = NoisyPSE(
     lambda = 10,
     phenotype = (_, c, d) => zdt4.compute(c, d),
     pattern =
@@ -61,7 +61,7 @@ object ZDT4NoisyPSE extends App {
     continuous = zdt4.continuous(10),
     aggregation = averageAggregation(_))
 
-  def evolution =
+  def evolution: RunAlgorithm[NoisyPSE[Vector[Double]], Individual[Vector[Double]], CDGenome.Genome, PSEState] =
     pse.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
