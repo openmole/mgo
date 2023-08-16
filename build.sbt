@@ -1,8 +1,8 @@
 
 name := "mgo"
 ThisBuild / organization := "org.openmole"
-ThisBuild / scalaVersion := "3.1.0"
-ThisBuild / crossScalaVersions := Seq("3.1.0")
+ThisBuild / scalaVersion := "3.3.0"
+ThisBuild / crossScalaVersions := Seq("3.3.0")
 
 val monocleVersion = "3.1.0"
 
@@ -17,8 +17,8 @@ lazy val settings: Seq[Setting[_]] = Seq(
   resolvers += Resolver.sonatypeRepo("public"),
   resolvers += Resolver.sonatypeRepo("staging"),
   resolvers += Resolver.sonatypeRepo("snapshots"),
-  javacOptions ++= Seq("-source", "11"),
-  scalacOptions ++= Seq("-target:11", "-language:higherKinds"),
+  javacOptions ++= Seq("-source", "11", "-target", "11"),
+  scalacOptions ++= Seq("-Xtarget:11", "-language:higherKinds"),
   scalariformAutoformat := true,
   scalacOptions ++= Seq("-language:postfixOps")
 //  scalacOptions ++= (
@@ -50,7 +50,7 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   //libraryDependencies += "org.typelevel" %% "cats-core" % "2.1.0",
   libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.1" cross(CrossVersion.for3Use2_13),
   libraryDependencies ++= Seq(
-    "org.scalanlp" %% "breeze" % "2.0"
+    "org.scalanlp" %% "breeze" % "2.1.0"
     //"org.scalanlp" %% "breeze-natives" % breezeVersion
   ),
   excludeDependencies += ExclusionRule(organization = "org.typelevel", name = "cats-kernel_2.13"),
