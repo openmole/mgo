@@ -26,7 +26,7 @@ import org.apache.commons.math3.linear.RealMatrix
 import org.apache.commons.math3.linear.RealVector
 import org.apache.commons.math3.random.RandomGenerator
 import org.apache.commons.math3.stat.correlation.Covariance
-import scala.math._
+import java.lang.Math._
 import scala.util.Random
 import scala.collection.Searching.search
 

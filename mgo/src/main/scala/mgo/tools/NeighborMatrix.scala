@@ -53,14 +53,14 @@ trait NeighborMatrix[T] {
   def knn(x: Int, y: Int, n: Int): List[(Int, Int)] =
     growUntilEnough(x, y, n).sortBy { case (x1, y1) => distance(x, y, x1, y1) }.take(n)
 
-  def distance(x1: Int, y1: Int, x2: Int, y2: Int): Double = scala.math.hypot(x2 - x1, y2 - y1)
+  def distance(x1: Int, y1: Int, x2: Int, y2: Int): Double = java.lang.Math.hypot(x2 - x1, y2 - y1)
 
   def isIn(x: Int, y: Int): Boolean = {
     def isIn(c: Int, maxC: Int) = c >= 0 && c <= maxC
     isIn(x, maxX) && isIn(y, maxY)
   }
 
-  lazy val maxRange: Int = scala.math.max(maxX, maxY)
+  lazy val maxRange: Int = java.lang.Math.max(maxX, maxY)
 
   //TODO reuse previously found neighbours
   def growUntilEnough(x: Int, y: Int, n: Int, range: Int = 1): List[(Int, Int)] = {

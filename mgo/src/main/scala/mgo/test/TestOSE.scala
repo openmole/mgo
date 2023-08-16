@@ -113,5 +113,5 @@ object Sambridge2001OSE extends App {
       trace { (s, is) => println("" + s.generation + " " + s.s._1.length) }.
       eval(new util.Random(42))
 
-  File("./test/ose.csv") write OSE.result(ose, finalState, finalPopulation).map(i => (i.continuous ++ Vector(f0(i.continuous))).mkString(",")).mkString("\n")
+  File("./test/ose.csv") write OSE.result(ose, finalState, finalPopulation).map(i => (i.continuous ++ Vector(f(i.continuous))).mkString(",")).mkString("\n")
 }

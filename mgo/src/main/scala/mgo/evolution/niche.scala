@@ -16,7 +16,7 @@
  */
 package mgo.evolution
 
-import scala.math._
+import java.lang.Math._
 import monocle._
 import mgo.tools._
 

@@ -22,7 +22,7 @@ import mgo.evolution.dominance._
 import mgo.tools._
 
 import scala.collection.mutable.{ ArrayBuffer, IndexedSeq => MIndexedSeq }
-import scala.math._
+import java.lang.Math._
 import scala.collection.mutable
 
 // A translation/adaptation based on the python source code by Simon Wessing :

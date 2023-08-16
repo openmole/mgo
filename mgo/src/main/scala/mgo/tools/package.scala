@@ -23,7 +23,7 @@ import cats.Later
 import org.apache.commons.math3.random.RandomGenerator
 
 import scala.collection.mutable
-import scala.math.{ abs, max, min, pow, sqrt }
+import java.lang.Math.{ abs, max, min, pow, sqrt }
 
 package object tools {
 
@@ -46,7 +46,7 @@ package object tools {
 
   implicit class IterableDecorator[A](t: Iterable[A]) {
     def merge(t2: Iterable[A])(op: (A, A) => A): IndexedSeq[A] = {
-      val size = scala.math.max(t.size, t2.size)
+      val size = max(t.size, t2.size)
 
       val i1 = t.iterator
       val i2 = t2.iterator
