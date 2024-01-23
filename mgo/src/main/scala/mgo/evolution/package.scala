@@ -59,7 +59,9 @@ package object evolution {
 
     def trace(f: (S, Vector[I]) => Unit): RunAlgorithm[T, I, G, S] = copy(traceOperation = Some(f))
 
-    def eval(rng: scala.util.Random, parallel: Algorithm.ParallelContext = Algorithm.Sequential): (S, Vector[I]) = evolution(rng, parallel)
+    def eval(rng: scala.util.Random, parallel: Boolean = false): (S, Vector[I]) =
+      val context = if parallel then Algorithm.parallel else Algorithm.Sequential
+      evolution(rng, context)
     // def eval(rng: Random)(implicit monadM: cats.Monad[M]) = algo.run(evolution, algo.initialState(t, rng))
 
 
