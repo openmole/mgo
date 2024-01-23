@@ -87,18 +87,17 @@ object NoisyNSGA3 {
           NoisyNSGA3.expression[P](t.fitness, t.continuous),
           rng)
 
-      override def step(t: NoisyNSGA3[P]): (NSGA3State, Vector[Individual[P]], scala.util.Random) => (NSGA3State, Vector[Individual[P]]) =
-        (s, population, rng) =>
-          noisy.step[NSGA3State, Individual[P], Genome](
-            NoisyNSGA3.adaptiveBreeding[NSGA3State, P](t.operatorExploration, t.cloneProbability, t.discrete, t.aggregation, reject(t)),
-            NoisyNSGA3.expression(t.fitness, t.continuous),
-            NoisyNSGA3.elitism[NSGA3State, P](
-              t.popSize, t.referencePoints,
-              t.historySize,
-              t.aggregation,
-              t.continuous),
-            Focus[NSGA3State](_.generation),
-            Focus[NSGA3State](_.evaluated))(s, population, rng)
+      override def step(t: NoisyNSGA3[P]) =
+        noisy.step[NSGA3State, Individual[P], Genome](
+          NoisyNSGA3.adaptiveBreeding[NSGA3State, P](t.operatorExploration, t.cloneProbability, t.discrete, t.aggregation, reject(t)),
+          NoisyNSGA3.expression(t.fitness, t.continuous),
+          NoisyNSGA3.elitism[NSGA3State, P](
+            t.popSize, t.referencePoints,
+            t.historySize,
+            t.aggregation,
+            t.continuous),
+          Focus[NSGA3State](_.generation),
+          Focus[NSGA3State](_.evaluated))
 
     }
 

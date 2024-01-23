@@ -77,21 +77,19 @@ object NSGA2 {
   }
 
   implicit def isAlgorithm: Algorithm[NSGA2, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
-    new Algorithm[NSGA2, Individual[Vector[Double]], Genome, NSGA2State] {
+    new Algorithm[NSGA2, Individual[Vector[Double]], Genome, NSGA2State]:
       override def initialState(t: NSGA2, rng: scala.util.Random) = EvolutionState(s = ())
       override def initialPopulation(t: NSGA2, rng: scala.util.Random) =
         deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
           NSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
           NSGA2.expression(t.fitness, t.continuous))
       override def step(t: NSGA2) =
-        (s, population, rng) =>
-          deterministic.step[NSGA2State, Individual[Vector[Double]], Genome](
-            NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
-            NSGA2.expression(t.fitness, t.continuous),
-            NSGA2.elitism[NSGA2State, Vector[Double]](t.mu, t.continuous, identity),
-            Focus[EvolutionState[Unit]](_.generation),
-            Focus[EvolutionState[Unit]](_.evaluated))(s, population, rng)
-    }
+        deterministic.step[NSGA2State, Individual[Vector[Double]], Genome](
+          NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
+          NSGA2.expression(t.fitness, t.continuous),
+          NSGA2.elitism[NSGA2State, Vector[Double]](t.mu, t.continuous, identity),
+          Focus[EvolutionState[Unit]](_.generation),
+          Focus[EvolutionState[Unit]](_.evaluated))
 
   def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga2.continuous, identity[Vector[Double]] _, keepAll = false)
   def reject(nsga2: NSGA2): Option[Genome => Boolean] = reject(nsga2.reject, nsga2.continuous)

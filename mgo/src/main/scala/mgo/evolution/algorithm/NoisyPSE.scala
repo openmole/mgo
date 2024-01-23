@@ -126,24 +126,23 @@ object NoisyPSE {
         rng)
 
     def step(t: NoisyPSE[P]) =
-      (s, pop, rng) =>
-        noisy.step[PSEState, Individual[P], Genome](
-          NoisyPSE.adaptiveBreeding[P](
-            t.lambda,
-            t.operatorExploration,
-            t.cloneProbability,
-            t.aggregation,
-            t.discrete,
-            t.pattern,
-            reject(t)),
-          NoisyPSE.expression(t.phenotype, t.continuous),
-          NoisyPSE.elitism[P](
-            t.pattern,
-            t.aggregation,
-            t.historySize,
-            t.continuous),
-          Focus[PSEState](_.generation),
-          Focus[PSEState](_.evaluated))(s, pop, rng)
+      noisy.step[PSEState, Individual[P], Genome](
+        NoisyPSE.adaptiveBreeding[P](
+          t.lambda,
+          t.operatorExploration,
+          t.cloneProbability,
+          t.aggregation,
+          t.discrete,
+          t.pattern,
+          reject(t)),
+        NoisyPSE.expression(t.phenotype, t.continuous),
+        NoisyPSE.elitism[P](
+          t.pattern,
+          t.aggregation,
+          t.historySize,
+          t.continuous),
+        Focus[PSEState](_.generation),
+        Focus[PSEState](_.evaluated))
 
   }
 }

@@ -38,33 +38,30 @@ package object evolution {
     t: T,
     algo: Algorithm[T, I, G, S],
     stopCondition: Option[StopCondition[S, I]] = None,
-    traceOperation: Option[Trace[S, I]] = None) {
+    traceOperation: Option[Trace[S, I]] = None):
 
-    def evolution(rng: scala.util.Random): (S, Vector[I]) = {
+    def evolution(rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
       val initialPop = algo.initialPopulation(t, rng)
       val initialState = algo.initialState(t, rng)
       val step = algo.step(t)
 
-      def evolv(s: S, pop: Vector[I]): (S, Vector[I]) = {
+      def evolve(s: S, pop: Vector[I]): (S, Vector[I]) =
         traceOperation.foreach(_(s, pop))
-        if (stopCondition.getOrElse(never)(s, pop)) (s, pop)
-        else {
-          val (s2, p2) = step(s, pop, rng)
-          evolv(s2, p2)
-        }
-      }
+        if (stopCondition.getOrElse(never)(s, pop))
+        then (s, pop)
+        else
+          val (s2, p2) = step(s, pop, rng, parallel)
+          evolve(s2, p2)
 
-      evolv(initialState, initialPop)
-    }
+      evolve(initialState, initialPop)
 
     def until(stopCondition: StopCondition[S, I]): RunAlgorithm[T, I, G, S] = copy(stopCondition = Some(stopCondition))
 
     def trace(f: (S, Vector[I]) => Unit): RunAlgorithm[T, I, G, S] = copy(traceOperation = Some(f))
 
-    def eval(rng: scala.util.Random): (S, Vector[I]) = evolution(rng)
+    def eval(rng: scala.util.Random, parallel: Algorithm.ParallelContext = Algorithm.Sequential): (S, Vector[I]) = evolution(rng, parallel)
     // def eval(rng: Random)(implicit monadM: cats.Monad[M]) = algo.run(evolution, algo.initialState(t, rng))
-
-  }
+  
 
   implicit def toAlgorithm[T, I, G, S](t: T)(implicit algo: Algorithm[T, I, G, S]): RunAlgorithm[T, I, G, S] = RunAlgorithm(t, algo)
 

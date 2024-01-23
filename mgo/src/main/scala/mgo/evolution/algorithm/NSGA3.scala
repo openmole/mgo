@@ -102,14 +102,13 @@ object NSGA3 {
         deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
           NSGA3.initialGenomes(t.popSize, t.continuous, t.discrete, reject(t), rng),
           NSGA3.expression(t.fitness, t.continuous))
-      override def step(t: NSGA3): (NSGA3State, Vector[Individual[Vector[Double]]], Random) => (NSGA3State, Vector[Individual[Vector[Double]]]) =
-        (s, population, rng) =>
-          deterministic.step[NSGA3State, Individual[Vector[Double]], Genome](
-            NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.discrete, identity, reject(t)),
-            NSGA3.expression(t.fitness, t.continuous),
-            NSGA3.elitism[NSGA3State, Vector[Double]](t.popSize, t.referencePoints, t.continuous, identity),
-            Focus[EvolutionState[Unit]](_.generation),
-            Focus[EvolutionState[Unit]](_.evaluated))(s, population, rng)
+      override def step(t: NSGA3) =
+        deterministic.step[NSGA3State, Individual[Vector[Double]], Genome](
+          NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.discrete, identity, reject(t)),
+          NSGA3.expression(t.fitness, t.continuous),
+          NSGA3.elitism[NSGA3State, Vector[Double]](t.popSize, t.referencePoints, t.continuous, identity),
+          Focus[EvolutionState[Unit]](_.generation),
+          Focus[EvolutionState[Unit]](_.evaluated))
     }
 
 }

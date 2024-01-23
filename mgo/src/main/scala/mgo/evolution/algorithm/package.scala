@@ -16,17 +16,17 @@
  */
 package mgo.evolution
 
-import breeding._
-import elitism._
+import breeding.*
+import elitism.*
 import mgo.tools
-import mgo.tools._
+import mgo.tools.*
+import cats.*
+import cats.implicits.*
+import cats.data.*
+import mgo.tools.execution.Algorithm
+import monocle.*
+import monocle.syntax.all.*
 
-import cats._
-import cats.implicits._
-import cats.data._
-
-import monocle._
-import monocle.syntax.all._
 import scala.util.Random
 
 package object algorithm {
@@ -314,14 +314,26 @@ package object algorithm {
       expression: G => I,
       elitism: Elitism[S, I],
       generation: monocle.Lens[S, Long],
-      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random): (S, Vector[I]) = {
+      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
       val newGenomes = breeding(s, population, rng)
-      val newPopulation = newGenomes.map(expression)
+
+      val newPopulation =
+        parallel match
+          case Algorithm.Sequential => newGenomes.map(expression)
+          case context: Algorithm.Parallel =>
+            import scala.concurrent
+            import scala.concurrent.*
+            import duration.*
+
+            given concurrent.ExecutionContext = context.executionContext
+            val futures = newGenomes.map(g => Future(expression(g)))
+            Await.result(Future.sequence(futures), Duration.Inf)
+
+
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
       val s3 = generation.modify(_ + 1)(s2)
       val s4 = evaluated.modify(_ + newGenomes.size)(s3)
       (s4, elitePopulation)
-    }
 
     def expression[G, P, I](
       values: G => (Vector[Double], Vector[Int]),
@@ -334,7 +346,7 @@ package object algorithm {
 
   }
 
-  object noisy {
+  object noisy:
     def initialPopulation[G, I](
       initialGenomes: Vector[G],
       expression: (util.Random, G) => I,
@@ -346,27 +358,42 @@ package object algorithm {
       expression: (util.Random, G) => I,
       elitism: Elitism[S, I],
       generation: monocle.Lens[S, Long],
-      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random): (S, Vector[I]) = {
-      def evaluate(g: G) = expression(rng, g)
+      evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
 
       val newGenomes = breeding(s, population, rng)
-      val newPopulation = newGenomes.map(evaluate)
+
+      val newPopulation =
+        parallel match
+          case Algorithm.Sequential =>
+            def evaluate(g: G) = expression(rng, g)
+            newGenomes.map(evaluate)
+          case context: Algorithm.Parallel =>
+            import scala.concurrent
+            import scala.concurrent.*
+            import duration.*
+
+            given concurrent.ExecutionContext = context.executionContext
+            val futures =
+              (newGenomes zip Iterator.continually(rng.nextLong).map(context.seeder)).map: (g, rng) =>
+                Future(expression(rng, g))
+
+            Await.result(Future.sequence(futures), Duration.Inf)
+
+
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
       val s3 = generation.modify(_ + 1)(s2)
       val s4 = evaluated.modify(_ + newGenomes.size)(s3)
 
       (s4, elitePopulation)
-    }
 
     def expression[G, I, P](
       values: G => (Vector[Double], Vector[Int]),
-      build: (G, P) => I)(phenotype: (util.Random, Vector[Double], Vector[Int]) => P): (util.Random, G) => I = {
+      build: (G, P) => I)(phenotype: (util.Random, Vector[Double], Vector[Int]) => P): (util.Random, G) => I =
       case (rg, g) =>
         val (cs, ds) = values(g)
         build(g, phenotype(rg, cs, ds))
-    }
 
-  }
+
 
   type HitMap = Map[Vector[Int], Int]
 }

@@ -18,29 +18,20 @@ package mgo.tools.execution
 
 import scala.language.higherKinds
 import scala.util.Random
-import cats.data._
+import cats.data.*
+import org.apache.commons.math3.random.RandomAdaptor
 
-/**
- * Example:
- * Let type C[A] = (SomeState,A)
- *
- * // Initialisation
- * val (initialState, initialGs) = unwrap(initialGenomes)
- * val initialPop = initialGs.map(express)
- *
- * // First step:
- * val (s11, genomes1) = run((initialState,initialPop), breeding)
- * val indivs1 = genomes1.map(express)
- * val (s12, selected1) = run((s11,indivs1), elitism)
- *
- * // Second step:
- * val (s21, genomes2) = run((s12, selected1), breeding)
- * val indivs2 = genomes2.map(express)
- * val (s22, selected2) = run((s21, indivs2), elitism)
- */
-trait Algorithm[T, I, G, S] {
+import scala.concurrent.ExecutionContext
+
+object Algorithm:
+  lazy val parallel = Parallel(ExecutionContext.global, s => util.Random(s))
+
+  sealed trait ParallelContext
+  case class Parallel(executionContext: ExecutionContext, seeder: Long => Random) extends ParallelContext
+  object Sequential extends ParallelContext
+
+trait Algorithm[T, I, G, S]:
   def initialState(t: T, rng: Random): S
   def initialPopulation(t: T, rng: Random): Vector[I]
-  def step(t: T): (S, Vector[I], Random) => (S, Vector[I])
-}
+  def step(t: T): (S, Vector[I], Random, Algorithm.ParallelContext) => (S, Vector[I])
 

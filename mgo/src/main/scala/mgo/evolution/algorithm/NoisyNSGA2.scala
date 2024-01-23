@@ -108,23 +108,22 @@ object NoisyNSGA2 {
         rng)
 
     def step(t: NoisyNSGA2[P]) =
-      (s, population, rng) =>
-        noisy.step[NSGA2State, Individual[P], Genome](
-          NoisyNSGA2.adaptiveBreeding[NSGA2State, P](
-            t.lambda,
-            t.operatorExploration,
-            t.cloneProbability,
-            t.aggregation,
-            t.discrete,
-            reject(t)),
-          NoisyNSGA2.expression(t.fitness, t.continuous),
-          NoisyNSGA2.elitism[NSGA2State, P](
-            t.mu,
-            t.historySize,
-            t.aggregation,
-            t.continuous),
-          Focus[NSGA2State](_.generation),
-          Focus[NSGA2State](_.evaluated))(s, population, rng)
+      noisy.step[NSGA2State, Individual[P], Genome](
+        NoisyNSGA2.adaptiveBreeding[NSGA2State, P](
+          t.lambda,
+          t.operatorExploration,
+          t.cloneProbability,
+          t.aggregation,
+          t.discrete,
+          reject(t)),
+        NoisyNSGA2.expression(t.fitness, t.continuous),
+        NoisyNSGA2.elitism[NSGA2State, P](
+          t.mu,
+          t.historySize,
+          t.aggregation,
+          t.continuous),
+        Focus[NSGA2State](_.generation),
+        Focus[NSGA2State](_.evaluated))
 
   }
 

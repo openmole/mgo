@@ -106,13 +106,12 @@ object PSE {
         PSE.expression(t.phenotype, t.continuous))
 
     def step(t: PSE) =
-      (s, pop, rng) =>
-        deterministic.step[EvolutionState[HitMap], Individual, Genome](
-          PSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, t.pattern, reject(t)),
-          PSE.expression(t.phenotype, t.continuous),
-          PSE.elitism(t.pattern, t.continuous),
-          Focus[PSEState](_.generation),
-          Focus[PSEState](_.evaluated))(s, pop, rng)
+      deterministic.step[EvolutionState[HitMap], Individual, Genome](
+        PSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.discrete, t.pattern, reject(t)),
+        PSE.expression(t.phenotype, t.continuous),
+        PSE.elitism(t.pattern, t.continuous),
+        Focus[PSEState](_.generation),
+        Focus[PSEState](_.evaluated))
 
   }
 
