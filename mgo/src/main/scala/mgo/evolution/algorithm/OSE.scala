@@ -82,10 +82,11 @@ object OSE {
   implicit def isAlgorithm: Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] = new Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] {
     override def initialState(t: OSE, rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))
 
-    override def initialPopulation(t: OSE, rng: scala.util.Random) =
+    override def initialPopulation(t: OSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
         OSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        OSE.expression(t.fitness, t.continuous))
+        OSE.expression(t.fitness, t.continuous),
+        parallel)
 
     def step(t: OSE) =
       deterministic.step[OSEState[Vector[Double]], Individual[Vector[Double]], Genome](

@@ -303,11 +303,25 @@ package object algorithm {
 
   }
 
-  object deterministic {
+  object deterministic:
+
+    private def evaluation[G, I](genomes: Vector[G], expression: G => I, parallel: Algorithm.ParallelContext) =
+      parallel match
+        case Algorithm.Sequential => genomes.map(expression)
+        case context: Algorithm.Parallel =>
+          import scala.concurrent
+          import scala.concurrent.*
+          import duration.*
+
+          given concurrent.ExecutionContext = context.executionContext
+          val futures = genomes.map(g => Future(expression(g)))
+          Await.result(Future.sequence(futures), Duration.Inf)
 
     def initialPopulation[G, I](
       initialGenomes: Vector[G],
-      expression: G => I): Vector[I] = initialGenomes.map(expression)
+      expression: G => I,
+      parallel: Algorithm.ParallelContext): Vector[I] =
+      evaluation(initialGenomes, expression, parallel)
 
     def step[S, I, G](
       breeding: Breeding[S, I, G],
@@ -316,20 +330,7 @@ package object algorithm {
       generation: monocle.Lens[S, Long],
       evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
       val newGenomes = breeding(s, population, rng)
-
-      val newPopulation =
-        parallel match
-          case Algorithm.Sequential => newGenomes.map(expression)
-          case context: Algorithm.Parallel =>
-            import scala.concurrent
-            import scala.concurrent.*
-            import duration.*
-
-            given concurrent.ExecutionContext = context.executionContext
-            val futures = newGenomes.map(g => Future(expression(g)))
-            Await.result(Future.sequence(futures), Duration.Inf)
-
-
+      val newPopulation = evaluation(newGenomes, expression, parallel)
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
       val s3 = generation.modify(_ + 1)(s2)
       val s4 = evaluated.modify(_ + newGenomes.size)(s3)
@@ -338,20 +339,37 @@ package object algorithm {
     def expression[G, P, I](
       values: G => (Vector[Double], Vector[Int]),
       build: (G, P) => I,
-      fitness: (Vector[Double], Vector[Int]) => P): G => I = {
+      fitness: (Vector[Double], Vector[Int]) => P): G => I =
       (g: G) =>
         val (cs, ds) = values(g)
         build(g, fitness(cs, ds))
-    }
 
-  }
 
   object noisy:
+    private def evaluation[G, I](expression: (util.Random, G) => I, genomes: Vector[G], rng: Random, parallel: Algorithm.ParallelContext) =
+      parallel match
+        case Algorithm.Sequential =>
+          def evaluate(g: G) = expression(rng, g)
+          genomes.map(evaluate)
+        case context: Algorithm.Parallel =>
+          import scala.concurrent
+          import scala.concurrent.*
+          import duration.*
+
+          given concurrent.ExecutionContext = context.executionContext
+
+          val futures =
+            (genomes zip Iterator.continually(rng.nextLong).map(context.seeder)).map: (g, rng) =>
+              Future(expression(rng, g))
+
+          Await.result(Future.sequence(futures), Duration.Inf)
+
     def initialPopulation[G, I](
       initialGenomes: Vector[G],
       expression: (util.Random, G) => I,
-      rng: scala.util.Random): Vector[I] =
-      initialGenomes.map(g => expression(rng, g))
+      rng: scala.util.Random,
+      parallel: Algorithm.ParallelContext): Vector[I] =
+      evaluation(expression, initialGenomes, rng, parallel)
 
     def step[S, I, G](
       breeding: Breeding[S, I, G],
@@ -361,24 +379,7 @@ package object algorithm {
       evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
 
       val newGenomes = breeding(s, population, rng)
-
-      val newPopulation =
-        parallel match
-          case Algorithm.Sequential =>
-            def evaluate(g: G) = expression(rng, g)
-            newGenomes.map(evaluate)
-          case context: Algorithm.Parallel =>
-            import scala.concurrent
-            import scala.concurrent.*
-            import duration.*
-
-            given concurrent.ExecutionContext = context.executionContext
-            val futures =
-              (newGenomes zip Iterator.continually(rng.nextLong).map(context.seeder)).map: (g, rng) =>
-                Future(expression(rng, g))
-
-            Await.result(Future.sequence(futures), Duration.Inf)
-
+      val newPopulation = evaluation(expression, newGenomes, rng, parallel)
 
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
       val s3 = generation.modify(_ + 1)(s2)

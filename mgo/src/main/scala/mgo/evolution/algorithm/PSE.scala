@@ -100,10 +100,11 @@ object PSE {
   implicit def isAlgorithm: Algorithm[PSE, Individual, Genome, EvolutionState[HitMap]] = new Algorithm[PSE, Individual, Genome, EvolutionState[HitMap]] {
     def initialState(t: PSE, rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
-    override def initialPopulation(t: PSE, rng: scala.util.Random) =
+    override def initialPopulation(t: PSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual](
         PSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        PSE.expression(t.phenotype, t.continuous))
+        PSE.expression(t.phenotype, t.continuous),
+        parallel)
 
     def step(t: PSE) =
       deterministic.step[EvolutionState[HitMap], Individual, Genome](

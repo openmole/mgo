@@ -41,7 +41,7 @@ package object evolution {
     traceOperation: Option[Trace[S, I]] = None):
 
     def evolution(rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
-      val initialPop = algo.initialPopulation(t, rng)
+      val initialPop = algo.initialPopulation(t, rng, parallel)
       val initialState = algo.initialState(t, rng)
       val step = algo.step(t)
 
@@ -61,7 +61,7 @@ package object evolution {
 
     def eval(rng: scala.util.Random, parallel: Algorithm.ParallelContext = Algorithm.Sequential): (S, Vector[I]) = evolution(rng, parallel)
     // def eval(rng: Random)(implicit monadM: cats.Monad[M]) = algo.run(evolution, algo.initialState(t, rng))
-  
+
 
   implicit def toAlgorithm[T, I, G, S](t: T)(implicit algo: Algorithm[T, I, G, S]): RunAlgorithm[T, I, G, S] = RunAlgorithm(t, algo)
 

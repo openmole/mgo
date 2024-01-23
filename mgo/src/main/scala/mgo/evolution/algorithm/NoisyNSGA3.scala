@@ -81,11 +81,12 @@ object NoisyNSGA3 {
     new Algorithm[NoisyNSGA3[P], Individual[P], Genome, NSGA3State] {
       override def initialState(t: NoisyNSGA3[P], rng: scala.util.Random) = EvolutionState(s = ())
 
-      override def initialPopulation(t: NoisyNSGA3[P], rng: scala.util.Random): Vector[Individual[P]] =
+      override def initialPopulation(t: NoisyNSGA3[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext): Vector[Individual[P]] =
         noisy.initialPopulation[Genome, Individual[P]](
           NoisyNSGA3.initialGenomes(t.popSize, t.continuous, t.discrete, reject(t), rng),
           NoisyNSGA3.expression[P](t.fitness, t.continuous),
-          rng)
+          rng,
+          parallel)
 
       override def step(t: NoisyNSGA3[P]) =
         noisy.step[NSGA3State, Individual[P], Genome](

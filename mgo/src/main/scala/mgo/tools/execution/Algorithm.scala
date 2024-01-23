@@ -32,6 +32,6 @@ object Algorithm:
 
 trait Algorithm[T, I, G, S]:
   def initialState(t: T, rng: Random): S
-  def initialPopulation(t: T, rng: Random): Vector[I]
+  def initialPopulation(t: T, rng: Random, parallel: Algorithm.ParallelContext): Vector[I]
   def step(t: T): (S, Vector[I], Random, Algorithm.ParallelContext) => (S, Vector[I])
 

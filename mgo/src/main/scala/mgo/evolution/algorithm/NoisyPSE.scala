@@ -119,11 +119,12 @@ object NoisyPSE {
 
     def initialState(t: NoisyPSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
-    def initialPopulation(t: NoisyPSE[P], rng: scala.util.Random) =
+    def initialPopulation(t: NoisyPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyPSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         NoisyPSE.expression(t.phenotype, t.continuous),
-        rng)
+        rng,
+        parallel)
 
     def step(t: NoisyPSE[P]) =
       noisy.step[PSEState, Individual[P], Genome](

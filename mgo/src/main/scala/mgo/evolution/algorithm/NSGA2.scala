@@ -79,10 +79,11 @@ object NSGA2 {
   implicit def isAlgorithm: Algorithm[NSGA2, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
     new Algorithm[NSGA2, Individual[Vector[Double]], Genome, NSGA2State]:
       override def initialState(t: NSGA2, rng: scala.util.Random) = EvolutionState(s = ())
-      override def initialPopulation(t: NSGA2, rng: scala.util.Random) =
+      override def initialPopulation(t: NSGA2, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
         deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
           NSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-          NSGA2.expression(t.fitness, t.continuous))
+          NSGA2.expression(t.fitness, t.continuous),
+          parallel)
       override def step(t: NSGA2) =
         deterministic.step[NSGA2State, Individual[Vector[Double]], Genome](
           NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),

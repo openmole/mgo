@@ -101,11 +101,12 @@ object NoisyNSGA2 {
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] = new Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] {
     def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = ())
 
-    def initialPopulation(t: NoisyNSGA2[P], rng: scala.util.Random) =
+    def initialPopulation(t: NoisyNSGA2[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyNSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         NoisyNSGA2.expression[P](t.fitness, t.continuous),
-        rng)
+        rng,
+        parallel)
 
     def step(t: NoisyNSGA2[P]) =
       noisy.step[NSGA2State, Individual[P], Genome](

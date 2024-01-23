@@ -99,11 +99,12 @@ object NoisyOSE {
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] = new Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] {
     def initialState(t: NoisyOSE[P], rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))
 
-    def initialPopulation(t: NoisyOSE[P], rng: scala.util.Random) =
+    def initialPopulation(t: NoisyOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         NoisyOSE.expression[P](t.fitness, t.continuous),
-        rng)
+        rng,
+        parallel)
 
     def step(t: NoisyOSE[P]) =
       noisy.step[OSEState[P], Individual[P], Genome](

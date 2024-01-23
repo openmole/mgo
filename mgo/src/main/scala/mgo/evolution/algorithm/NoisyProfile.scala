@@ -130,11 +130,12 @@ object NoisyProfile {
   implicit def isAlgorithm[N, P: Manifest]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] = new Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] {
     override def initialState(t: NoisyProfile[N, P], rng: scala.util.Random) = EvolutionState(s = ())
 
-    def initialPopulation(t: NoisyProfile[N, P], rng: scala.util.Random) =
+    def initialPopulation(t: NoisyProfile[N, P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyProfile.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         NoisyProfile.expression[P](t.fitness, t.continuous),
-        rng)
+        rng,
+        parallel)
 
     def step(t: NoisyProfile[N, P]) =
       noisy.step[ProfileState, Individual[P], Genome](

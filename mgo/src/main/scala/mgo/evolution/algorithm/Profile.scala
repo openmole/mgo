@@ -99,10 +99,11 @@ object Profile {
   implicit def isAlgorithm[N]: Algorithm[Profile[N], Individual[Vector[Double]], Genome, ProfileState] = new Algorithm[Profile[N], Individual[Vector[Double]], Genome, ProfileState] {
     override def initialState(t: Profile[N], rng: scala.util.Random) = EvolutionState(s = ())
 
-    def initialPopulation(t: Profile[N], rng: scala.util.Random) =
+    def initialPopulation(t: Profile[N], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
         Profile.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        Profile.expression(t.fitness, t.continuous))
+        Profile.expression(t.fitness, t.continuous),
+        parallel)
 
     def step(t: Profile[N]) =
       deterministic.step[ProfileState, Individual[Vector[Double]], Genome](
