@@ -6,7 +6,7 @@ import mgo.evolution.algorithm.HitMap
 import mgo.evolution.diversity.crowdingDistance
 import mgo.tools._
 
-object elitism {
+object elitism:
 
   type Elitism[S, I] = (S, Vector[I], Vector[I], scala.util.Random) => (S, Vector[I])
 
@@ -59,11 +59,10 @@ object elitism {
       (population zip dominating).filter { case (_, d) => d.value == minDominating }.map(_._1)
     }
 
-  def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random): Vector[I] = {
+  def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random): Vector[I] =
     val first = keepFirstFront(population, fitness)
     val crowding = crowdingDistance[I](first, fitness, random)
     keepHighestRanked(first, crowding, mu, random)
-  }
 
   //type UncloneStrategy[M[_], I] = Vector[I] => M[I]
 
@@ -84,41 +83,40 @@ object elitism {
   //  def keepFirst[M[_]: cats.Monad, I]: UncloneStrategy[M, I] =
   //    (clones: Vector[I]) => clones.head.pure[M]
 
+  def keepRandomElementInNiches[I, N](niche: I => N, random: scala.util.Random): Vector[I] => Vector[I] = individuals =>
+    val indivsByNiche = individuals.groupByOrdered(niche)
+    indivsByNiche.values.toVector.map(_.toVector).flatMap: individuals =>
+      if individuals.isEmpty
+      then individuals
+      else Vector(individuals(random.nextInt(individuals.size)))
+
   def keepNiches[I, N](niche: I => N, keep: Vector[I] => Vector[I]): Vector[I] => Vector[I] =
-    (individuals: Vector[I]) => {
+    (individuals: Vector[I]) =>
       val indivsByNiche = individuals.groupByOrdered(niche)
       indivsByNiche.values.toVector.map(_.toVector).flatMap(keep.apply)
-    }
-
-  def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]): Vector[I] = {
-    val filteredClone = {
+  
+  def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]): Vector[I] =
+    val filteredClone =
       val existingGenomes = population.map(genome).toSet
       newIndividuals.filter(i => !existingGenomes.contains(genome(i)))
-    }
 
     population ++ filteredClone
-  }
 
   def mergeHistories[G, I, P](genome: I => G, history: monocle.Lens[I, Vector[P]], historyAge: monocle.Lens[I, Long], historySize: Int): (Vector[I], Vector[I]) => Vector[I] =
-    (population: Vector[I], newIndividuals: Vector[I]) => {
-      val mergedClones = {
+    (population: Vector[I], newIndividuals: Vector[I]) =>
+      val mergedClones =
         val indexedNI = newIndividuals.groupByOrdered(genome)
-        for {
+        for
           i <- population
           clones = indexedNI.getOrElse(genome(i), List())
-        } yield {
+        yield
           val additionalHistory = clones.flatMap(history.get)
           history.modify(h => (h ++ additionalHistory).takeRight(historySize)) andThen
             historyAge.modify(_ + additionalHistory.size) apply (i)
-        }
-      }
 
-      val filteredClone = {
+      val filteredClone =
         val filter = population.map(genome).toSet
         newIndividuals.filter(i => !filter.contains(genome(i)))
-      }
 
       mergedClones ++ filteredClone
-    }
 
-}
