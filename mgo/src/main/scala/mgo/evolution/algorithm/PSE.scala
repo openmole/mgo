@@ -164,12 +164,13 @@ object PSEOperations {
     phenotype: I => P,
     pattern: P => Vector[Int],
     hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =
-    (s, population, candidates, rng) => {
+    (s, population, candidates, rng) =>
+      val memoizedPattern = mgo.tools.memoize(phenotype andThen pattern)
       val noNan = filterNaN(candidates, phenotype)
       def keepFirst(i: Vector[I]) = Vector(i.head)
-      val hm2 = addHits(phenotype andThen pattern, noNan, hitmap.get(s))
-      val elite = keepNiches(phenotype andThen pattern, keepFirst)(population ++ noNan)
+      val hm2 = addHits(memoizedPattern, noNan, hitmap.get(s))
+      val elite = keepNiches(memoizedPattern, keepFirst)(population ++ noNan)
       (hitmap.set(hm2)(s), elite)
-    }
+
 
 }

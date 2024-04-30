@@ -139,10 +139,11 @@ object ProfileOperations {
     values: I => (Vector[Double], Vector[Int]),
     niche: Niche[I, N],
     muByNiche: Int): Elitism[S, I] =
-    (s, population, candidates, rng) => {
-      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), fitness)
-      def nsga2Elitism(p: Vector[I]) = NSGA2Operations.elitism[S, I](fitness, values, muByNiche).apply(s, p, Vector.empty, rng)._2
+    (s, population, candidates, rng) =>
+      val memoizedFitness = mgo.tools.memoize(fitness)
+      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
+      def nsga2Elitism(p: Vector[I]) = NSGA2Operations.elitism[S, I](memoizedFitness, values, muByNiche).apply(s, p, Vector.empty, rng)._2
       val newPopulation = nicheElitism(cloneRemoved, nsga2Elitism, niche)
       (s, newPopulation)
-    }
+
 }

@@ -180,17 +180,18 @@ object OSEOperation {
     mu: Int,
     archive: monocle.Lens[S, Archive[I]],
     reachMap: monocle.Lens[S, ReachMap]): Elitism[S, I] =
-    (s, population, candidates, rng) => {
+    (s, population, candidates, rng) =>
 
-      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), fitness)
+      val memoizedFitness = mgo.tools.memoize(fitness)
+      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
 
       def o(i: I) = Function.tupled(origin)(values(i))
 
       val reached = reachMap.get(s).toSet
 
-      def newlyReaching = {
+      def newlyReaching =
         def keepNewlyReaching(i: I): Option[I] =
-          if (patternIsReached(fitness(i), limit))
+          if (patternIsReached(memoizedFitness(i), limit))
             reached.contains(o(i)) match {
               case true => None
               case false => Some(i)
@@ -198,12 +199,11 @@ object OSEOperation {
           else None
 
         cloneRemoved.flatMap(i => keepNewlyReaching(i).toVector)
-      }
 
       val reaching = newlyReaching
       val s2 = reachMap.modify(_ ++ reaching.map(o)).compose(archive.modify(_ ++ reaching))(s)
       val filteredPopulation = filterAlreadyReached[I](i => Function.tupled(origin)(values(i)), reachMap.get(s2).toSet)(cloneRemoved)
-      NSGA2Operations.elitism[S, I](fitness, values, mu)(s2, filteredPopulation, Vector.empty, rng)
-    }
+      NSGA2Operations.elitism[S, I](memoizedFitness, values, mu)(s2, filteredPopulation, Vector.empty, rng)
+
 
 }

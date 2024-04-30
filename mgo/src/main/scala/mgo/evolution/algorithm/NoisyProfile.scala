@@ -173,7 +173,7 @@ case class NoisyProfile[N, P](
   operatorExploration: Double = 0.1,
   reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
-object NoisyProfileOperations {
+object NoisyProfileOperations:
 
   def elitism[S, I, N, P](
     fitness: I => Vector[Double],
@@ -181,14 +181,12 @@ object NoisyProfileOperations {
     values: I => (Vector[Double], Vector[Int]),
     niche: Niche[I, N],
     muByNiche: Int): Elitism[S, I] =
-    (s, population, candidates, rng) => {
-
-      def inNicheElitism(random: scala.util.Random)(p: Vector[I]) = keepOnFirstFront(p, fitness, muByNiche, random)
+    (s, population, candidates, rng) =>
+      val memoizedFitness = mgo.tools.memoize(fitness)
+      def inNicheElitism(random: scala.util.Random)(p: Vector[I]) = keepOnFirstFront(p, memoizedFitness, muByNiche, random)
 
       val merged = mergeHistories(population, candidates)
-      val filtered = filterNaN(merged, fitness)
+      val filtered = filterNaN(merged, memoizedFitness)
 
       (s, nicheElitism[I, N](filtered, inNicheElitism(rng), niche))
-    }
 
-}

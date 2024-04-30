@@ -94,7 +94,7 @@ object elitism:
     (individuals: Vector[I]) =>
       val indivsByNiche = individuals.groupByOrdered(niche)
       indivsByNiche.values.toVector.map(_.toVector).flatMap(keep.apply)
-  
+
   def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]): Vector[I] =
     val filteredClone =
       val existingGenomes = population.map(genome).toSet

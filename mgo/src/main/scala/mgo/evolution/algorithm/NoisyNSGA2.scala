@@ -185,10 +185,11 @@ object NoisyNSGA2Operations {
     values: I => (Vector[Double], Vector[Int]),
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     mu: Int): Elitism[S, I] =
-    (s, population, candidates, rng) => {
-      val merged = filterNaN(mergeHistories(population, candidates), fitness)
-      val ranks = paretoRankingMinAndCrowdingDiversity[I](merged, fitness, rng)
+    (s, population, candidates, rng) =>
+      val memoizedFitness = mgo.tools.memoize(fitness)
+      val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
+      val ranks = paretoRankingMinAndCrowdingDiversity[I](merged, memoizedFitness, rng)
       (s, keepHighestRanked(merged, ranks, mu, rng))
-    }
+
 
 }

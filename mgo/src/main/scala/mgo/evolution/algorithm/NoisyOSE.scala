@@ -227,27 +227,27 @@ object NoisyOSEOperations {
     mu: Int,
     archive: monocle.Lens[S, Archive[I]],
     reachMap: monocle.Lens[S, ReachMap]): Elitism[S, I] =
-    (s, population, candidates, rng) => {
-      val merged = filterNaN(mergeHistories(population, candidates), aggregated(history, aggregation))
+    (s, population, candidates, rng) =>
+      val memoizedFitness = mgo.tools.memoize(aggregated(history, aggregation))
+      val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
       val reached = reachMap.get(s).toSet
 
       def individualOrigin(i: I) = Function.tupled(origin)(values(i))
-      def newlyReaching = {
+      def newlyReaching =
         def keepNewlyReaching(i: I): Option[I] =
-          if (OSEOperation.patternIsReached(aggregated(history, aggregation)(i), limit))
-            (reached.contains(individualOrigin(i))) match {
+          if (OSEOperation.patternIsReached(memoizedFitness(i), limit))
+            (reached.contains(individualOrigin(i))) match
               case true => None
               case false if history(i).size >= historySize => Some(i)
               case _ => None
-            }
+
           else None
 
         merged.flatMap(i => keepNewlyReaching(i).toVector)
-      }
 
       val reaching = newlyReaching
       val s2 = reachMap.modify(_ ++ reaching.map(individualOrigin)).compose(archive.modify(_ ++ reaching))(s)
       val filteredPopulation = OSEOperation.filterAlreadyReached[I](i => Function.tupled(origin)(values(i)), reachMap.get(s2).toSet)(merged)
-      NoisyNSGA2Operations.elitism[S, I, P](aggregated(history, aggregation), values, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
-    }
+      NoisyNSGA2Operations.elitism[S, I, P](memoizedFitness, values, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
+
 }

@@ -201,15 +201,16 @@ object NoisyPSEOperations {
     historyAge: monocle.Lens[I, Long],
     historySize: Int,
     hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =
-    (s, population, candidates, rng) => {
+    (s, population, candidates, rng) =>
+      val memoizedPattern = mgo.tools.memoize(history.get _ andThen aggregation andThen pattern)
       val candidateValues = candidates.map(values).toSet
       val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get _ andThen aggregation)
 
       def newHits = merged.flatMap { i => if (candidateValues.contains(values(i))) Some(i) else None }
 
-      val hm2 = addHits[I](history.get _ andThen aggregation andThen pattern, newHits, hitmap.get(s))
-      val elite = keepNiches[I, Vector[Int]](history.get _ andThen aggregation andThen pattern, maximiseO(i => history.get(i).size, 1)) apply merged
+      val hm2 = addHits[I](memoizedPattern, newHits, hitmap.get(s))
+      val elite = keepNiches[I, Vector[Int]](memoizedPattern, maximiseO(i => history.get(i).size, 1)) apply merged
       (hitmap.set(hm2)(s), elite)
-    }
+
 
 }
