@@ -17,13 +17,12 @@
 
 package mgo.tools
 
-import cats.kernel._
+import cats.kernel.*
 import cats.Later
-
 import org.apache.commons.math3.random.RandomGenerator
 
 import scala.collection.mutable
-import java.lang.Math.{ abs, max, min, pow, sqrt }
+import java.lang.Math.{abs, max, min, pow, sqrt}
 
 
 //  implicit def lazyOrdering[T](implicit ord: scala.Ordering[T]): scala.Ordering[Lazy[T]] = scala.Ordering.by(_.value)
@@ -218,7 +217,7 @@ def findInterval[A: Ordering](s: Vector[A], v: A): Int = {
 def randomInt(random: util.Random, discrete: mgo.evolution.D): Int =
   ((random.nextDouble() * (discrete.high - discrete.low + 1)) + discrete.low).floor.toInt
 
-def apacheRandom(random: util.Random): RandomGenerator = new org.apache.commons.math3.random.RandomGenerator {
+def apacheRandom(random: util.Random): RandomGenerator = new org.apache.commons.math3.random.RandomGenerator:
   override def setSeed(seed: Int): Unit = ???
   override def setSeed(seed: Array[Int]): Unit = ???
   override def setSeed(seed: Long): Unit = ???
@@ -231,11 +230,16 @@ def apacheRandom(random: util.Random): RandomGenerator = new org.apache.commons.
   override def nextFloat(): Float = random.nextFloat()
   override def nextDouble(): Double = random.nextDouble()
   override def nextGaussian(): Double = random.nextGaussian()
-}
 
 
-def memoize[A, B](f: A => B): A => B =
-  val memo = scala.collection.mutable.Map[A, B]()
+def memoize[A, B](f: A => B, onId: Boolean = true): A => B =
+  val memo =
+    if !onId
+    then scala.collection.mutable.Map[A, B]()
+    else
+      import scala.jdk.CollectionConverters.*
+      java.util.IdentityHashMap[A, B]().asScala
+
   memo.synchronized:
     (a: A) => memo.getOrElseUpdate(a, f(a))
 
