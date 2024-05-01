@@ -239,8 +239,8 @@ def memoize[A, B](f: A => B, onId: Boolean = true): A => B =
     else
       import scala.jdk.CollectionConverters.*
       java.util.IdentityHashMap[A, B]().asScala
-
-  memo.synchronized:
-    (a: A) => memo.getOrElseUpdate(a, f(a))
+  (a: A) =>
+    memo.synchronized:
+      memo.getOrElseUpdate(a, f(a))
 
 
