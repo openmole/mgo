@@ -1,10 +1,10 @@
 
 name := "mgo"
 ThisBuild / organization := "org.openmole"
-ThisBuild / scalaVersion := "3.3.1"
-ThisBuild / crossScalaVersions := Seq("3.3.1")
+ThisBuild / scalaVersion := "3.3.3"
+ThisBuild / crossScalaVersions := Seq("3.3.3")
 
-val monocleVersion = "3.1.0"
+val monocleVersion = "3.2.0"
 
 def scala2(scalaVersion: String): Boolean =
   CrossVersion.partialVersion(scalaVersion) match {
@@ -48,7 +48,7 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
 //  libraryDependencies ++= (if(scala2(scalaVersion.value)) Seq("org.typelevel"  %% "squants"  % "1.6.0") else Seq()),
 
   //libraryDependencies += "org.typelevel" %% "cats-core" % "2.1.0",
-  libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.1" cross(CrossVersion.for3Use2_13),
+  libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.2",
   libraryDependencies ++= Seq(
     "org.scalanlp" %% "breeze" % "2.1.0"
     //"org.scalanlp" %% "breeze-natives" % breezeVersion
