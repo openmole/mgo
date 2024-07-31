@@ -51,7 +51,7 @@ object OSE {
       archiveLens[P].get,
       reachMapLens.get)
 
-  def expression[P](fitness: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
+  def expression[P](fitness: (Vector[Double], Vector[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
     DeterministicIndividual.expression(fitness, components)
 
   def elitism[P](mu: Int, limit: Vector[Double], origin: (Vector[Double], Vector[Int]) => Vector[Int], components: Vector[C], fitness: P => Vector[Double]): Elitism[OSEState[P], Individual[P]] =

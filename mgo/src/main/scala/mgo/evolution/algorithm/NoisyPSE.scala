@@ -34,15 +34,11 @@ object NoisyPSE {
 
   type PSEState = EvolutionState[HitMap]
 
-  case class Individual[P](
-    genome: Genome,
-    historyAge: Long,
-    phenotypeHistory: Array[P])
 
-  def buildIndividual[P: Manifest](genome: Genome, phenotype: P): Individual[P] = Individual(genome, 1, Array(phenotype))
+  type Individual[P] = CDGenome.NoisyIndividual.Individual[P]
+
+  def buildIndividual[P: Manifest](genome: Genome, phenotype: P, generation: Long, initial: Boolean) = CDGenome.NoisyIndividual.buildIndividual[P](genome, phenotype, generation, initial)
   def vectorPhenotype[P: Manifest]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso
-
-  //  def state[M[_]: cats.Monad: StartTime: Random: Generation: HitMap] = PSE.state[M]
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -84,7 +80,7 @@ object NoisyPSE {
       historySize,
       Focus[EvolutionState[HitMap]](_.s))
 
-  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
+  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
     noisy.expression[Genome, Individual[P], P](
       values(_, continuous),
       buildIndividual[P])(fitness)

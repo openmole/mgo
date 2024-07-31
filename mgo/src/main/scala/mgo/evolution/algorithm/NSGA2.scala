@@ -53,7 +53,7 @@ object NSGA2 {
       reject,
       operatorExploration)
 
-  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
+  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]) =
     DeterministicIndividual.expression(express, components)
 
   def elitism[S, P](mu: Int, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =

@@ -57,7 +57,7 @@ object NoisyOSE {
       archiveLens.get,
       reachMapLens.get)
 
-  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
+  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
     NoisyIndividual.expression[P](fitness, continuous)
 
   def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] = {

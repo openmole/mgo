@@ -86,7 +86,7 @@ object Profile {
       reject,
       operatorExploration)
 
-  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
+  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]) =
     DeterministicIndividual.expression(express, components)
 
   def elitism[N, P](niche: Niche[Individual[P], N], mu: Int, components: Vector[C], fitness: P => Vector[Double]): Elitism[ProfileState, Individual[P]] =

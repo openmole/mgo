@@ -240,38 +240,38 @@ package object algorithm {
 
   object CDGenome {
 
-    object DeterministicIndividual {
-      case class Individual[P](genome: Genome, phenotype: P)
-      //def vectorPhenotype = Individual.phenotype[Array[Double]] composeLens arrayToVectorLens
-      def individualFitness[P](fitness: P => Vector[Double]): Individual[P] => Vector[Double] = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
-      def buildIndividual[P](g: Genome, p: P): Individual[P] = Individual(g, p)
+    object DeterministicIndividual:
+      case class Individual[P](genome: Genome, phenotype: P, generation: Long, initial: Boolean)
 
-      def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
+      def individualFitness[P](fitness: P => Vector[Double]): Individual[P] => Vector[Double] = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
+      def buildIndividual[P](g: Genome, p: P, generation: Long, initial: Boolean): Individual[P] = Individual(g, p, generation, initial)
+
+      def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
         deterministic.expression[Genome, P, Individual[P]](
           values(_, components),
           buildIndividual[P],
           express)
 
-    }
-
-    object NoisyIndividual {
+    object NoisyIndividual:
 
       def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C]): (Vector[Double], Vector[Int], Vector[Double], Int) =
         (
           scaleContinuousValues(continuousValues.get(i.genome), continuous),
           i.focus(_.genome) andThen discreteValues get,
           aggregation(vectorPhenotype[P].get(i)),
-          i.focus(_.phenotypeHistory).get.size)
+          i.focus(_.phenotypeHistory).get.size
+        )
 
-      case class Individual[P](genome: Genome, historyAge: Long, phenotypeHistory: Array[P])
-      def buildIndividual[P: Manifest](g: Genome, f: P): Individual[P] = Individual[P](g, 1, Array(f))
+      case class Individual[P](genome: Genome, phenotypeHistory: Array[P], historyAge: Long, generation: Long, initial: Boolean)
+
+      def buildIndividual[P: Manifest](g: Genome, f: P, generation: Long, initial: Boolean): Individual[P] = Individual[P](g, Array(f), 1, generation, initial)
       def vectorPhenotype[P: Manifest]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso[P]
 
-      def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
+      def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome, Long, Boolean) => Individual[P] =
         noisy.expression[Genome, Individual[P], P](
           values(_, continuous),
           buildIndividual[P])(fitness)
-    }
+
 
     case class Genome(
       continuousValues: Array[Double],
@@ -305,7 +305,7 @@ package object algorithm {
 
   object deterministic:
 
-    private def evaluation[G, I](genomes: Vector[G], expression: G => I, parallel: Algorithm.ParallelContext) =
+    private def evaluation[S, G, I](genomes: Vector[G], expression: G => I, parallel: Algorithm.ParallelContext) =
       parallel match
         case Algorithm.Sequential => genomes.map(expression)
         case context: Algorithm.Parallel =>
@@ -319,18 +319,18 @@ package object algorithm {
 
     def initialPopulation[G, I](
       initialGenomes: Vector[G],
-      expression: G => I,
+      expression: (G, Long, Boolean) => I,
       parallel: Algorithm.ParallelContext): Vector[I] =
-      evaluation(initialGenomes, expression, parallel)
+      evaluation(initialGenomes, expression(_, 0, true), parallel)
 
     def step[S, I, G](
       breeding: Breeding[S, I, G],
-      expression: G => I,
+      expression: (G, Long, Boolean) => I,
       elitism: Elitism[S, I],
       generation: monocle.Lens[S, Long],
       evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
       val newGenomes = breeding(s, population, rng)
-      val newPopulation = evaluation(newGenomes, expression, parallel)
+      val newPopulation = evaluation(newGenomes, expression(_, generation.get(s), false), parallel)
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
       val s3 = generation.modify(_ + 1)(s2)
       val s4 = evaluated.modify(_ + newGenomes.size)(s3)
@@ -338,11 +338,11 @@ package object algorithm {
 
     def expression[G, P, I](
       values: G => (Vector[Double], Vector[Int]),
-      build: (G, P) => I,
-      fitness: (Vector[Double], Vector[Int]) => P): G => I =
-      (g: G) =>
+      build: (G, P, Long, Boolean) => I,
+      fitness: (Vector[Double], Vector[Int]) => P) =
+      (g: G, generation: Long, initial: Boolean) =>
         val (cs, ds) = values(g)
-        build(g, fitness(cs, ds))
+        build(g, fitness(cs, ds), generation, initial)
 
 
   object noisy:
@@ -366,20 +366,20 @@ package object algorithm {
 
     def initialPopulation[G, I](
       initialGenomes: Vector[G],
-      expression: (util.Random, G) => I,
+      expression: (util.Random, G, Long, Boolean) => I,
       rng: scala.util.Random,
       parallel: Algorithm.ParallelContext): Vector[I] =
-      evaluation(expression, initialGenomes, rng, parallel)
+      evaluation(expression(_, _, 0, true), initialGenomes, rng, parallel)
 
     def step[S, I, G](
       breeding: Breeding[S, I, G],
-      expression: (util.Random, G) => I,
+      expression: (util.Random, G, Long, Boolean) => I,
       elitism: Elitism[S, I],
       generation: monocle.Lens[S, Long],
       evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
 
       val newGenomes = breeding(s, population, rng)
-      val newPopulation = evaluation(expression, newGenomes, rng, parallel)
+      val newPopulation = evaluation(expression(_, _, generation.get(s), false), newGenomes, rng, parallel)
 
       val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
       val s3 = generation.modify(_ + 1)(s2)
@@ -389,10 +389,10 @@ package object algorithm {
 
     def expression[G, I, P](
       values: G => (Vector[Double], Vector[Int]),
-      build: (G, P) => I)(phenotype: (util.Random, Vector[Double], Vector[Int]) => P): (util.Random, G) => I =
-      case (rg, g) =>
+      build: (G, P, Long, Boolean) => I)(phenotype: (util.Random, Vector[Double], Vector[Int]) => P) =
+      (rg: util.Random, g: G, generation: Long, initial: Boolean) =>
         val (cs, ds) = values(g)
-        build(g, phenotype(rg, cs, ds))
+        build(g, phenotype(rg, cs, ds), generation, initial)
 
 
 

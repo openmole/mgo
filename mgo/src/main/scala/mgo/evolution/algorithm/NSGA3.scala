@@ -65,7 +65,7 @@ object NSGA3 {
       operatorExploration,
       lambda)
 
-  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): Genome => Individual[P] =
+  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]) =
     DeterministicIndividual.expression(express, components)
 
   def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =

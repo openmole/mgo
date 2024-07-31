@@ -61,7 +61,7 @@ object NoisyNSGA3 {
       operatorExploration,
       cloneProbability)
 
-  def expression[P: Manifest](phenotype: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome) => Individual[P] =
+  def expression[P: Manifest](phenotype: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
     NoisyIndividual.expression[P](phenotype, continuous)
 
   def elitism[S, P: Manifest](mu: Int, references: NSGA3Operations.ReferencePoints, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] = {
