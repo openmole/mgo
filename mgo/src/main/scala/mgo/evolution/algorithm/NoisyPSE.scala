@@ -28,6 +28,8 @@ import mgo.tools.execution._
 import monocle._
 import monocle.syntax.all._
 
+import scala.util.Random
+
 object NoisyPSE {
 
   import CDGenome._
@@ -48,8 +50,10 @@ object NoisyPSE {
     operatorExploration: Double,
     cloneProbability: Double,
     aggregation: Vector[P] => Vector[Double],
+    continuous: Vector[C],
     discrete: Vector[D],
     pattern: Vector[Double] => Vector[Int],
+    maxRareSample: Int,
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     NoisyPSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Focus[Individual[P]](_.genome).get,
@@ -64,7 +68,9 @@ object NoisyPSE {
       reject,
       operatorExploration,
       cloneProbability,
-      Focus[EvolutionState[HitMap]](_.s))
+      Focus[EvolutionState[HitMap]](_.s),
+      maxRareSample,
+      (s, rng) => NoisyPSE.initialGenomes(s, continuous, discrete, reject, rng))
 
   def elitism[P: CanBeNaN: Manifest](
     pattern: Vector[Double] => Vector[Int],
@@ -129,8 +135,10 @@ object NoisyPSE {
           t.operatorExploration,
           t.cloneProbability,
           t.aggregation,
+          t.continuous,
           t.discrete,
           t.pattern,
+          t.maxRareSample,
           reject(t)),
         NoisyPSE.expression(t.phenotype, t.continuous),
         NoisyPSE.elitism[P](
@@ -151,12 +159,13 @@ case class NoisyPSE[P](
   aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
+  maxRareSample: Int = 10,
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
   reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
-object NoisyPSEOperations {
+object NoisyPSEOperations:
 
   def adaptiveBreeding[S, I, G](
     genome: I => G,
@@ -171,23 +180,27 @@ object NoisyPSEOperations {
     reject: Option[G => Boolean],
     cloneProbability: Double,
     operatorExploration: Double,
-    hitmap: monocle.Lens[S, HitMap]): Breeding[S, I, G] =
-    (s, population, rng) => {
-      val gs = PSEOperations.adaptiveBreeding[S, I, G](
-        genome,
-        continuousValues,
-        continuousOperator,
-        discreteValues,
-        discreteOperator,
-        discrete,
-        pattern,
-        buildGenome,
-        lambda,
-        reject,
-        operatorExploration,
-        hitmap)(s, population, rng)
+    hitmap: monocle.Lens[S, HitMap],
+    maxRareSample: Int,
+    randomGenomes: (Int, Random) => Vector[G]): Breeding[S, I, G] =
+    (s, population, rng) =>
+      val gs =
+        PSEOperations.adaptiveBreeding[S, I, G](
+          genome,
+          continuousValues,
+          continuousOperator,
+          discreteValues,
+          discreteOperator,
+          discrete,
+          pattern,
+          buildGenome,
+          lambda,
+          reject,
+          operatorExploration,
+          hitmap,
+          maxRareSample,
+          randomGenomes)(s, population, rng)
       clonesReplace[S, I, G](cloneProbability, population, genome, randomSelection)(s, gs, rng)
-    }
 
   def elitism[S, I, P: CanBeNaN](
     values: I => (Vector[Double], Vector[Int]),
@@ -202,11 +215,12 @@ object NoisyPSEOperations {
       val candidateValues = candidates.map(values).toSet
       val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get _ andThen aggregation)
 
-      def newHits = merged.flatMap { i => if (candidateValues.contains(values(i))) Some(i) else None }
+      def newHits =
+        merged.flatMap: i =>
+          if candidateValues.contains(values(i)) then Some(i) else None
 
       val hm2 = addHits[I](memoizedPattern, newHits, hitmap.get(s))
       val elite = keepNiches[I, Vector[Int]](memoizedPattern, maximiseO(i => history.get(i).size, 1)) apply merged
       (hitmap.set(hm2)(s), elite)
 
 
-}

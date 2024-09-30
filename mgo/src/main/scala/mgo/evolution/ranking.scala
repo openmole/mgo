@@ -119,10 +119,9 @@ object ranking {
   //    }.pure[M])
 
   //TODO: Lazy ne sert à rien ici. On pourrait redefinir le type Ranking en Ranking[M,I,K] avec K est de typeclass Order,
-  def hitCountRanking[S, I](s: S, population: Vector[I], cell: I => Vector[Int], hitmap: monocle.Lens[S, HitMap]): Vector[Int] = {
+  def hitCountRanking[S, I](s: S, population: Vector[I], cell: I => Vector[Int], hitmap: monocle.Lens[S, HitMap]): Vector[Int] = 
     def hitCount(cell: Vector[Int]): Int = hitmap.get(s).getOrElse(cell, 0)
     population.map { i => hitCount(cell(i)) }
-  }
 
 /**** Generic functions on rankings ****/
 

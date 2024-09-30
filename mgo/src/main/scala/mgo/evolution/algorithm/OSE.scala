@@ -115,7 +115,8 @@ object OSEOperation {
 
   type ReachMap = Array[Vector[Int]]
 
-  def filterAlreadyReached[G](origin: G => Vector[Int], reachMap: Set[Vector[Int]])(genomes: Vector[G]): Vector[G] = {
+
+  def filterAlreadyReached[G](origin: G => Vector[Int], reachMap: Set[Vector[Int]])(genomes: Vector[G]): Vector[G] =
     def keepNonReaching(g: G): Option[G] =
       reachMap.contains(origin(g)) match {
         case true => None
@@ -123,7 +124,6 @@ object OSEOperation {
       }
 
     genomes.flatMap(g => keepNonReaching(g))
-  }
 
   def adaptiveBreeding[S, I, G](
     fitness: I => Vector[Double],
@@ -186,16 +186,15 @@ object OSEOperation {
       val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
 
       def o(i: I) = Function.tupled(origin)(values(i))
-
       val reached = reachMap.get(s).toSet
 
       def newlyReaching =
         def keepNewlyReaching(i: I): Option[I] =
-          if (patternIsReached(memoizedFitness(i), limit))
-            reached.contains(o(i)) match {
+          if patternIsReached(memoizedFitness(i), limit)
+          then
+            reached.contains(o(i)) match
               case true => None
               case false => Some(i)
-            }
           else None
 
         cloneRemoved.flatMap(i => keepNewlyReaching(i).toVector)
