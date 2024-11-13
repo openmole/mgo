@@ -44,7 +44,7 @@ object NoisyRastriginOSE extends App {
     mu = 100,
     lambda = 100,
     fitness = (rng, x, _) => Vector(rastrigin.compute(x) + rng.nextGaussian() * 0.25),
-    aggregation = averageAggregation(_),
+    aggregation = Aggregation.average,
     limit = Vector(10.0),
     origin =
       (c, _) =>

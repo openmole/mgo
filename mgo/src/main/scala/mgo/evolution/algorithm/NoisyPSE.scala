@@ -106,11 +106,10 @@ object NoisyPSE {
     aggregation: Vector[P] => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
     continuous: Vector[C]): Vector[Result[P]] =
-    population.map {
+    population.map:
       i =>
         val (c, d, f, p, r) = aggregate[P](i, aggregation, pattern, continuous)
         Result[P](c, d, f, p, r, i)
-    }
 
   def result[P: Manifest](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result(population, pse.aggregation, pse.pattern, pse.continuous)

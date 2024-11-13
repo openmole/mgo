@@ -140,40 +140,38 @@ package object algorithm {
     type CrossoverAndMutation[S, G] = (S, G, scala.util.Random) => G
 
     def continuousCrossoversAndMutations[S]: Vector[CrossoverAndMutation[S, (Vector[Double], Vector[Double])]] =
-      for {
+      for
         c <- continuousCrossovers[S]
         m <- continuousMutations[S]
-      } yield crossoverAndMutation[S, Vector[Double]](c, m)
+      yield crossoverAndMutation[S, Vector[Double]](c, m)
 
     def discreteCrossoversAndMutations[S](discrete: Vector[D]): Vector[CrossoverAndMutation[S, (Vector[Int], Vector[Int])]] =
-      for {
+      for
         c <- discreteCrossovers[S]
         m <- discreteMutations[S](discrete)
-      } yield crossoverAndMutation[S, Vector[Int]](c, m)
+      yield crossoverAndMutation[S, Vector[Int]](c, m)
 
     def crossoverAndMutation[S, G](crossover: Crossover[S, (G, G), (G, G)], mutation: Mutation[S, G, G]): CrossoverAndMutation[S, (G, G)] =
-      (s, mates, rng) => {
+      (s, mates, rng) =>
         val crossed = crossover(s, mates, rng)
         val m1 = mutation(s, crossed._1, rng)
         val m2 = mutation(s, crossed._2, rng)
         (m1, m2)
-      }
 
     def applyOperators[S, I, G](
       crossover: Crossover[S, (G, G), (G, G)],
       mutation: Mutation[S, G, G],
       selection: Selection[S, I],
-      genome: I => G)(s: S, population: Vector[I], rng: scala.util.Random): (G, G) = {
+      genome: I => G)(s: S, population: Vector[I], rng: scala.util.Random): (G, G) =
       val m1 = selection(s, population, rng)
       val m2 = selection(s, population, rng)
       crossoverAndMutation[S, G](crossover, mutation) apply (s, (genome(m1), genome(m2)), rng)
-    }
 
     def applyContinuousDynamicOperators[S, I](
       selection: Selection[S, I],
       genome: I => Vector[Double],
       operatorStatistics: Map[Int, Double],
-      operatorExploration: Double): (S, Vector[I], Random) => ((Vector[Double], Vector[Double]), Int) = {
+      operatorExploration: Double): (S, Vector[I], Random) => ((Vector[Double], Vector[Double]), Int) =
 
       def applyOperator =
         selectOperator(
@@ -181,12 +179,11 @@ package object algorithm {
           operatorStatistics,
           operatorExploration)
 
-      (s: S, population: Vector[I], rng: scala.util.Random) => {
+      (s: S, population: Vector[I], rng: scala.util.Random) =>
         val m1 = selection(s, population, rng)
         val m2 = selection(s, population, rng)
         applyOperator(s, (genome(m1), genome(m2)), rng)
-      }
-    }
+
 
     def applyDynamicOperators[S, I, G](
       selection: Selection[S, I],
@@ -196,7 +193,7 @@ package object algorithm {
       discreteOperatorStatistics: Map[Int, Double],
       discrete: Vector[D],
       operatorExploration: Double,
-      buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G): (S, Vector[I], Random) => Vector[G] = {
+      buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G): (S, Vector[I], Random) => Vector[G] =
 
       def continuousOperator =
         selectOperator(
@@ -210,7 +207,7 @@ package object algorithm {
           discreteOperatorStatistics,
           operatorExploration)
 
-      (s: S, population: Vector[I], rng: scala.util.Random) => {
+      (s: S, population: Vector[I], rng: scala.util.Random) =>
         val m1 = selection(s, population, rng)
         val m2 = selection(s, population, rng)
         val c1 = continuousValues(m1)
@@ -229,11 +226,11 @@ package object algorithm {
         val ng2 = buildGenome(cOff2.map(clamp(_)), Some(cop), dOff2, Some(dop))
 
         Vector(ng1, ng2)
-      }
-    }
   }
 
-  def averageAggregation(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map { o => o.sum / o.size }
+  object Aggregation:
+    def average(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(o => o.sum / o.size)
+    def median(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(tools.median)
 
   def scaleContinuousValues(values: Vector[Double], genomeComponents: Vector[C]): Vector[Double] =
     (values zip genomeComponents).map { case (v, c) => v.scale(c) }

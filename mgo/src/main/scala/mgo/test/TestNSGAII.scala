@@ -71,7 +71,7 @@ object NoisySphereNSGAII extends App {
       mu = 100,
       lambda = 100,
       fitness = noisyDiscreteSphere.compute,
-      aggregation = averageAggregation(_),
+      aggregation = Aggregation.average,
       continuous = noisyDiscreteSphere.continuous(2),
       discrete = noisyDiscreteSphere.discrete(2))
 

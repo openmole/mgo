@@ -244,3 +244,13 @@ def memoize[A, B](f: A => B, onId: Boolean = true): A => B =
       memo.getOrElseUpdate(a, f(a))
 
 
+def median(sequence: Vector[Double]) =
+  val sorted = sequence.toArray.filterNot(_.isNaN).sorted
+  val size = sorted.length
+  if size == sequence.size
+  then
+    if size % 2 == 0
+    then (sorted(size / 2) + sorted((size / 2) - 1)) / 2
+    else sorted(size / 2)
+  else Double.NaN
+

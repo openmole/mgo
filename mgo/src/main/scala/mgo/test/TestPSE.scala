@@ -59,7 +59,7 @@ object ZDT4NoisyPSE extends App {
         highBound = Vector(1.0, 200.0),
         definition = Vector(10, 10)),
     continuous = zdt4.continuous(10),
-    aggregation = averageAggregation(_))
+    aggregation = Aggregation.average)
 
   def evolution: RunAlgorithm[NoisyPSE[Vector[Double]], Individual[Vector[Double]], CDGenome.Genome, PSEState] =
     pse.
