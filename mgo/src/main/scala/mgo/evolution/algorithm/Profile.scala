@@ -92,7 +92,7 @@ object Profile {
   def elitism[N, P](niche: Niche[Individual[P], N], mu: Int, components: Vector[C], fitness: P => Vector[Double]): Elitism[ProfileState, Individual[P]] =
     ProfileOperations.elitism[ProfileState, Individual[P], N](
       individualFitness(fitness),
-      i => values(i.genome, components),
+      i => scaledValues(components)(i.genome),
       niche,
       mu)
 

@@ -71,7 +71,7 @@ object NSGA3 {
   def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA3Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => values(i.focus(_.genome).get, components),
+      i => scaledValues(components)(i.genome),
       references,
       mu)
 

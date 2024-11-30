@@ -9,13 +9,12 @@ import mgo.tools.metric._
 /**
  * Layer of the cake that compute a diversity metric for a set of values
  */
-object diversity {
+object diversity:
 
   /** Compute the diversity metric of the values */
   type Diversity[M[_], I] = Kleisli[M, Vector[I], Vector[Later[Double]]]
-  object Diversity {
+  object Diversity:
     def apply[M[_]: cats.Monad, I](f: Vector[I] => M[Vector[Later[Double]]]): Diversity[M, I] = Kleisli[M, Vector[I], Vector[Later[Double]]](f)
-  }
 
   /* def closedCrowdingDistance(implicit mg: Fitness[Seq[Double]]) = new Diversity {
     override def apply(values: Pop) =
@@ -30,4 +29,4 @@ object diversity {
   def KNearestNeighbours[M[_], I](k: Int, fitness: I => Vector[Double])(implicit MM: cats.Monad[M]): Diversity[M, I] =
     Diversity((values: Vector[I]) => KNearestNeighboursAverageDistance(values.map(e => fitness(e)), k).pure[M])
 
-}
+

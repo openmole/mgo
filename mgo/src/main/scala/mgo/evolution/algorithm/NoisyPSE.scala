@@ -78,7 +78,7 @@ object NoisyPSE {
     historySize: Int,
     continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
     NoisyPSEOperations.elitism[PSEState, Individual[P], P](
-      i => values(i.genome, continuous),
+      i => scaledValues(continuous)(i.genome),
       vectorPhenotype[P],
       aggregation,
       pattern,
@@ -88,7 +88,7 @@ object NoisyPSE {
 
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
     noisy.expression[Genome, Individual[P], P](
-      values(_, continuous),
+      scaledValues(continuous),
       buildIndividual[P])(fitness)
 
   def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]): (Vector[Double], Vector[Int], Vector[Double], Vector[Int], Int) =

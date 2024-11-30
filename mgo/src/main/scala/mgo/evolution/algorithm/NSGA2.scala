@@ -59,7 +59,7 @@ object NSGA2 {
   def elitism[S, P](mu: Int, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA2Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => values(i.focus(_.genome).get, components),
+      i => scaledValues(components)(i.genome),
       mu)
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
@@ -71,10 +71,9 @@ object NSGA2 {
       reject(scaledContinuous, discreteValue)
     }
 
-  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
+  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
     individuals.map { i => Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, individualFitness(fitness)(i), i) }
-  }
 
   implicit def isAlgorithm: Algorithm[NSGA2, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
     new Algorithm[NSGA2, Individual[Vector[Double]], Genome, NSGA2State]:

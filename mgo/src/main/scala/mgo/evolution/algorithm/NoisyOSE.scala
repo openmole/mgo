@@ -60,8 +60,8 @@ object NoisyOSE {
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
     NoisyIndividual.expression[P](fitness, continuous)
 
-  def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] = {
-    def individualValues(i: Individual[P]) = values(i.genome, components)
+  def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] =
+    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
 
     NoisyOSEOperations.elitism[OSEState[P], Individual[P], P](
       vectorPhenotype[P].get,
@@ -74,7 +74,6 @@ object NoisyOSE {
       mu,
       archiveLens,
       reachMapLens)
-  }
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
@@ -97,7 +96,7 @@ object NoisyOSE {
   def reject[P](pse: NoisyOSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
 
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] = new Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] {
-    def initialState(t: NoisyOSE[P], rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))
+    def initialState(t: NoisyOSE[P], rng: scala.util.Random) = EvolutionState(s = (Archive.empty, Array.empty))
 
     def initialPopulation(t: NoisyOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
@@ -175,7 +174,7 @@ object NoisyOSEOperations {
     limit: Vector[Double],
     archive: S => Archive[I],
     reachMap: S => OSEOperation.ReachMap): Breeding[S, I, G] =
-    (s, population, rng) => {
+    (s, population, rng) =>
 
       def genomeOrigin(g: G) = origin(continuousValues(g), discreteValues(g))
 
@@ -214,7 +213,6 @@ object NoisyOSEOperations {
       val offspring = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
       val sizedOffspringGenomes = randomTake[G](offspring, lambda, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
-    }
 
   def elitism[S, I: ClassTag, P](
     history: I => Vector[P],
@@ -248,6 +246,6 @@ object NoisyOSEOperations {
       val reaching = newlyReaching
       val s2 = reachMap.modify(_ ++ reaching.map(individualOrigin)).compose(archive.modify(_ ++ reaching))(s)
       val filteredPopulation = OSEOperation.filterAlreadyReached[I](i => Function.tupled(origin)(values(i)), reachMap.get(s2).toSet)(merged)
-      NoisyNSGA2Operations.elitism[S, I, P](memoizedFitness, values, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
+      NoisyNSGA2Operations.elitism[S, I, P](memoizedFitness, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
 
 }

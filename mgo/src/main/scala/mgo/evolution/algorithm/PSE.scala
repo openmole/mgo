@@ -85,7 +85,7 @@ object PSE:
 
   def elitism[P: CanBeNaN](pattern: P => Vector[Int], continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
     PSEOperations.elitism[PSEState, Individual[P], P](
-      i => values(i.genome, continuous),
+      i => scaledValues(continuous)(i.genome),
       Focus[Individual[P]](_.phenotype).get,
       pattern,
       Focus[PSEState](_.s)
@@ -93,7 +93,7 @@ object PSE:
 
   def expression[P](phenotype: (Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
     deterministic.expression[Genome, P, Individual[P]](
-      values(_, continuous),
+      scaledValues(continuous),
       buildIndividual,
       phenotype)
 

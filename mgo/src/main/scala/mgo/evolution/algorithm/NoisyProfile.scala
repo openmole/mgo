@@ -109,7 +109,7 @@ object NoisyProfile {
 
   def elitism[N, P: Manifest](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[ProfileState, Individual[P]] = {
 
-    def individualValues(i: Individual[P]) = values(i.genome, components)
+    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
 
     NoisyProfileOperations.elitism[ProfileState, Individual[P], N, P](
       aggregatedFitness(aggregation),

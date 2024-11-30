@@ -65,7 +65,7 @@ object NoisyNSGA3 {
     NoisyIndividual.expression[P](phenotype, continuous)
 
   def elitism[S, P: Manifest](mu: Int, references: NSGA3Operations.ReferencePoints, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] = {
-    def individualValues(i: Individual[P]) = values(i.focus(_.genome).get, components)
+    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
 
     NoisyNSGA3Operations.elitism[S, Individual[P]](
       fitness[P](aggregation),

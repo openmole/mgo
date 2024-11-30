@@ -313,16 +313,15 @@ object breeding {
   /* tool functions */
 
   def breed[S, I, G](breeding: Breeding[S, I, G], lambda: Int, reject: Option[G => Boolean] = None): Breeding[S, I, G] =
-    (s, population, rng) => {
+    (s, population, rng) =>
       def accumulate(acc: Vector[G] = Vector()): Vector[G] =
-        if (acc.size >= lambda) acc
-        else {
+        if acc.size >= lambda
+        then acc
+        else
           val rejectValue = reject.getOrElse((_: G) => false)
           val b = breeding(s, population, rng).filter(s => !rejectValue(s))
           accumulate(b ++ acc)
-        }
 
       accumulate()
-    }
 
 }

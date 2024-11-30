@@ -13,7 +13,7 @@ import monocle.syntax.all._
 
 import scala.reflect.ClassTag
 
-object OSE {
+object OSE:
   import CDGenome._
   import DeterministicIndividual._
   import monocle._
@@ -58,7 +58,7 @@ object OSE {
     OSEOperation.elitism[OSEState[P], Individual[P]](
       individualFitness(fitness),
       limit,
-      i => values(i.genome, components),
+      i => scaledValues(components)(i.genome),
       origin,
       mu,
       archiveLens[P],
@@ -69,9 +69,9 @@ object OSE {
   def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
     val indivduals = archiveLens.get(state).toVector ++ { if (keepAll) population else Seq() }
 
-    indivduals.map { i =>
+    indivduals.map: i =>
       Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, DeterministicIndividual.individualFitness(fitness)(i), i)
-    }
+
   }
 
   def result(ose: OSE, state: OSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
@@ -79,8 +79,8 @@ object OSE {
 
   def reject(ose: OSE): Option[Genome => Boolean] = NSGA2.reject(ose.reject, ose.continuous)
 
-  implicit def isAlgorithm: Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] = new Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] {
-    override def initialState(t: OSE, rng: scala.util.Random) = EvolutionState(s = (Array.empty, Array.empty))
+  implicit def isAlgorithm: Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] = new Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]]:
+    override def initialState(t: OSE, rng: scala.util.Random) = EvolutionState(s = (Archive.empty, Array.empty))
 
     override def initialPopulation(t: OSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
@@ -95,10 +95,8 @@ object OSE {
         OSE.elitism(t.mu, t.limit, t.origin, t.continuous, identity),
         Focus[OSEState[Vector[Double]]](_.generation),
         Focus[OSEState[Vector[Double]]](_.evaluated))
+  
 
-  }
-
-}
 
 case class OSE(
   mu: Int,
@@ -111,17 +109,15 @@ case class OSE(
   operatorExploration: Double = 0.1,
   reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
 
-object OSEOperation {
+object OSEOperation:
 
   type ReachMap = Array[Vector[Int]]
 
-
   def filterAlreadyReached[G](origin: G => Vector[Int], reachMap: Set[Vector[Int]])(genomes: Vector[G]): Vector[G] =
     def keepNonReaching(g: G): Option[G] =
-      reachMap.contains(origin(g)) match {
+      reachMap.contains(origin(g)) match
         case true => None
         case false => Some(g)
-      }
 
     genomes.flatMap(g => keepNonReaching(g))
 
@@ -141,7 +137,7 @@ object OSEOperation {
     operatorExploration: Double,
     archive: S => Archive[I],
     reachMap: S => ReachMap): Breeding[S, I, G] =
-    (s, population, rng) => {
+    (s, population, rng) =>
       val archivedPopulation = archive(s)
       val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, fitness, rng)
       val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
@@ -151,7 +147,7 @@ object OSEOperation {
       val reached = reachMap(s).toSet
 
       val breeding: Breeding[S, I, G] =
-        (s, pop, rng) => {
+        (s, pop, rng) =>
           val newGs =
             applyDynamicOperators[S, I, G](
               tournament(allRanks, tournamentRounds),
@@ -163,14 +159,12 @@ object OSEOperation {
               operatorExploration,
               buildGenome)(s, pop, rng)
           filterAlreadyReached[G](g => origin(continuousValues(g), discreteValues(g)), reached)(newGs)
-        }
 
       val offspring = breed[S, I, G](breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
       randomTake(offspring, lambda, rng)
-    }
 
   def patternIsReached(fitness: Vector[Double], limit: Vector[Double]): Boolean =
-    (fitness zip limit) forall { case (f, l) => f <= l }
+    (fitness zip limit) forall ((f, l) => f <= l)
 
   def elitism[S, I: ClassTag](
     fitness: I => Vector[Double],
@@ -204,5 +198,3 @@ object OSEOperation {
       val filteredPopulation = filterAlreadyReached[I](i => Function.tupled(origin)(values(i)), reachMap.get(s2).toSet)(cloneRemoved)
       NSGA2Operations.elitism[S, I](memoizedFitness, values, mu)(s2, filteredPopulation, Vector.empty, rng)
 
-
-}

@@ -39,7 +39,7 @@ object NoisyNSGA2 {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean): Vector[Result[P]] = {
+  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean): Vector[Result[P]] =
     val individuals = if (keepAll) population else keepFirstFront(population, fitness(aggregation))
 
     individuals.map {
@@ -47,7 +47,6 @@ object NoisyNSGA2 {
         val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
         Result(c, d, f, r, i)
     }
-  }
 
   def result[P: Manifest](nsga2: NoisyNSGA2[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result[P](population, nsga2.aggregation, nsga2.continuous, keepAll = false)
@@ -87,11 +86,10 @@ object NoisyNSGA2 {
     NoisyIndividual.expression[P](phenotype, continuous)
 
   def elitism[S, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] = {
-    def individualValues(i: Individual[P]) = values(i.focus(_.genome).get, components)
+    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
 
     NoisyNSGA2Operations.elitism[S, Individual[P], P](
       fitness[P](aggregation),
-      individualValues,
       mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu)
   }
@@ -182,7 +180,6 @@ object NoisyNSGA2Operations {
 
   def elitism[S, I, P](
     fitness: I => Vector[Double],
-    values: I => (Vector[Double], Vector[Int]),
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
