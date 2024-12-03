@@ -37,10 +37,11 @@ object NoisyHDOSE:
   import CDGenome.*
   import NoisyIndividual.*
 
-  type StateType[P] = Archive[Individual[P]]
+  case class StateType[P](archive: Archive[Individual[P]], distance: Double)
   type HDOSEState[P] = EvolutionState[StateType[P]]
 
-  def archiveLens[P]: Lens[EvolutionState[StateType[P]], Archive[Individual[P]]] = Focus[EvolutionState[StateType[P]]](_.s)
+  def archiveLens[P]: Lens[EvolutionState[StateType[P]], Archive[Individual[P]]] = Focus[EvolutionState[StateType[P]]](_.s.archive)
+  def distanceLens[P]: Lens[HDOSEState[P], Double] = Focus[HDOSEState[P]](_.s.distance)
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -54,7 +55,7 @@ object NoisyHDOSE:
     discrete: Vector[D],
     significanceC: Vector[Double],
     significanceD: Vector[Int],
-    diversityDistance: Double,
+    archiveSize: Int,
     limit: Vector[Double],
     reject: Option[Genome => Boolean]): Breeding[HDOSEState[P], Individual[P], Genome] =
     NoisyHDOSEOperations.adaptiveBreeding[HDOSEState[P], Individual[P], Genome, P](
@@ -68,7 +69,7 @@ object NoisyHDOSE:
       discrete,
       scaledValues(continuous),
       HDOSE.distanceByComponent(significanceC, significanceD),
-      diversityDistance,
+      distanceLens.get,
       buildGenome,
       logOfPopulationSize,
       lambda,
@@ -88,7 +89,7 @@ object NoisyHDOSE:
     components: Vector[C],
     significanceC: Vector[Double],
     significanceD: Vector[Int],
-    diversityDistance: Double,
+    archiveSize: Int,
     limit: Vector[Double]): Elitism[HDOSEState[P], Individual[P]] =
     def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
 
@@ -103,7 +104,8 @@ object NoisyHDOSE:
       mu,
       archiveLens,
       HDOSE.distanceByComponent(significanceC, significanceD),
-      diversityDistance
+      distanceLens,
+      archiveSize
     )
 
 
@@ -117,7 +119,7 @@ object NoisyHDOSE:
         then Some(Result(c, d, f, r, i))
         else None
 
-    state.s.toVector.map: i =>
+    state.s.archive.toVector.map: i =>
       val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
       Result(c, d, f, r, i)
     ++ goodIndividuals
@@ -128,7 +130,7 @@ object NoisyHDOSE:
   def reject[P](pse: NoisyHDOSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
 
   given [P: Manifest]: Algorithm[NoisyHDOSE[P], Individual[P], Genome, HDOSEState[P]] with
-    def initialState(t: NoisyHDOSE[P], rng: scala.util.Random) = EvolutionState(s = Archive.empty)
+    def initialState(t: NoisyHDOSE[P], rng: scala.util.Random) = EvolutionState(s = StateType(Archive.empty, 1.0))
 
     def initialPopulation(t: NoisyHDOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
@@ -148,7 +150,7 @@ object NoisyHDOSE:
           t.discrete,
           t.significanceC,
           t.significanceD,
-          t.diversityDistance,
+          t.archiveSize,
           t.limit,
           reject(t)),
         NoisyHDOSE.expression(t.fitness, t.continuous),
@@ -159,7 +161,7 @@ object NoisyHDOSE:
           t.continuous,
           t.significanceC,
           t.significanceD,
-          t.diversityDistance,
+          t.archiveSize,
           t.limit),
         Focus[HDOSEState[P]](_.generation),
         Focus[HDOSEState[P]](_.evaluated)
@@ -172,7 +174,7 @@ case class NoisyHDOSE[P](
   lambda: Int,
   fitness: (util.Random, Vector[Double], Vector[Int]) => P,
   limit: Vector[Double],
-  diversityDistance: Double,
+  archiveSize: Int,
   aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
@@ -197,7 +199,7 @@ object NoisyHDOSEOperations:
     discrete: Vector[D],
     scaledValues: G => (Vector[Double], Vector[Int]),
     distance: HDOSEOperation.Distance,
-    diversityDistance: Double,
+    diversityDistance: S => Double,
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
     tournamentRounds: Int => Int,
     lambda: Int,
@@ -221,7 +223,7 @@ object NoisyHDOSEOperations:
           archivedPopulation ++ promising,
           scaledValues,
           genome,
-          diversityDistance)
+          diversityDistance(s))
 
       def filterTooCloseFromArchiveOrPromising(genomes: Vector[G]) = genomes.filterNot(tooCloseFromArchiveOrPromising)
 
@@ -259,8 +261,9 @@ object NoisyHDOSEOperations:
     mu: Int,
     archive: monocle.Lens[S, Archive[I]],
     distance: HDOSEOperation.Distance,
-    diversityDistance: Double): Elitism[S, I] =
-    (s, population, candidates, rng) =>
+    diversityDistance: monocle.Lens[S, Double],
+    archiveSize: Int): Elitism[S, I] =
+    (s1, population, candidates, rng) =>
       def fitness = NoisyOSEOperations.aggregated(history, aggregation)
       val memoizedFitness = mgo.tools.memoize(fitness)
       val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
@@ -271,16 +274,44 @@ object NoisyHDOSEOperations:
           filter(i => history(i).size == historySize).
           filter(c => OSEOperation.patternIsReached(memoizedFitness(c), limit))
 
-      val s2 = archive.modify(_ ++ newlyReaching)(s)
+      val s2 = archive.modify(_ ++ newlyReaching)(s1)
+
+
+      val s3 =
+        if archive.get(s2).size <= archiveSize
+        then s2
+        else
+          val newDiversityDistance =
+            HDOSEOperation.computeDistance(
+              distance,
+              archive.get(s2),
+              scaledValues,
+              genome,
+              archiveSize,
+              diversityDistance.get(s2)
+            )
+
+          val newArchive =
+            HDOSEOperation.shrinkArchive(
+              distance,
+              archive.get(s2),
+              scaledValues,
+              genome,
+              newDiversityDistance
+            )
+
+          (archive.replace(newArchive) andThen diversityDistance.replace(newDiversityDistance))(s2)
+
+
       val filteredPopulation =
         merged.filterNot: i =>
           HDOSEOperation.isTooCloseFromArchive(
             distance,
-            archive.get(s2),
+            archive.get(s3),
             scaledValues,
             genome,
-            diversityDistance)(genome(i))
+            diversityDistance.get(s3))(genome(i))
 
-      NoisyNSGA2Operations.elitism[S, I, P](memoizedFitness, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
+      NoisyNSGA2Operations.elitism[S, I, P](memoizedFitness, mergeHistories, mu)(s3, filteredPopulation, Vector.empty, rng)
 
 

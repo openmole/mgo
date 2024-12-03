@@ -15,16 +15,16 @@ object RastriginHDOSE extends App:
     lambda = 100,
     fitness = (x, _) => Vector(rastrigin.compute(x)),
     limit = Vector(10.0),
-    diversityDistance = 10,
+    archiveSize = 10,
     continuous = rastrigin.continuous(dimensions))
 
   val (finalState, finalPopulation) =
     hdose.
       until(afterGeneration(5000)).
-      trace { (s, is) => println("" + s.generation + " " + s.s.size) }.
+      trace { (s, is) => println("" + s.generation + " " + s.s.archive.size + " " + s.s.distance) }.
       eval(new util.Random(42))
 
-  File("/tmp/hdose.csv") write HDOSE.result(hdose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
+  File("/tmp/hdose.csv") write HDOSE.result(hdose, finalState, finalPopulation).map( r => (r.continuous ++ r.fitness).mkString(",")).mkString("\n")
 
 
 //object NoisyRastriginOSE extends App {

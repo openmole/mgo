@@ -254,3 +254,27 @@ def median(sequence: Vector[Double]) =
     else sorted(size / 2)
   else Double.NaN
 
+
+def findFirstUnder(target: Double, f: Double => Double, start: Double, precision: Double): Double =
+  require(precision > 0, "Precision should be positive.")
+
+  var low = start
+  var highRange = precision
+
+  while f(low + highRange) >= target
+  do
+    low = low + highRange
+    highRange *= 2
+
+  var high = low + highRange
+
+  while high - low > precision
+  do
+    val mid = low + (high - low) / 2
+    val midValue = f(mid)
+
+    if midValue < target
+    then high = mid
+    else low = mid
+
+  if f(low) < target then low else high
