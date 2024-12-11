@@ -10,3 +10,10 @@ pom.xml
 *.DS_Store
 tags
 .bsp
+.bloop/
+.metals/
+.vscode/
+project/.bloop/
+project/metals.sbt
+project/project/
+

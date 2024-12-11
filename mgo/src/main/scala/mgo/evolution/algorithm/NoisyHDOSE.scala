@@ -43,6 +43,8 @@ object NoisyHDOSE:
   def archiveLens[P]: Lens[EvolutionState[StateType[P]], Archive[Individual[P]]] = Focus[EvolutionState[StateType[P]]](_.s.archive)
   def distanceLens[P]: Lens[HDOSEState[P], Double] = Focus[HDOSEState[P]](_.s.distance)
 
+  def initialState[P]: HDOSEState[P] = EvolutionState(s = StateType(Archive.empty, 1.0))
+
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
@@ -55,7 +57,6 @@ object NoisyHDOSE:
     discrete: Vector[D],
     significanceC: Vector[Double],
     significanceD: Vector[Int],
-    archiveSize: Int,
     limit: Vector[Double],
     reject: Option[Genome => Boolean]): Breeding[HDOSEState[P], Individual[P], Genome] =
     NoisyHDOSEOperations.adaptiveBreeding[HDOSEState[P], Individual[P], Genome, P](
@@ -130,8 +131,8 @@ object NoisyHDOSE:
   def reject[P](pse: NoisyHDOSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
 
   given [P: Manifest]: Algorithm[NoisyHDOSE[P], Individual[P], Genome, HDOSEState[P]] with
-    def initialState(t: NoisyHDOSE[P], rng: scala.util.Random) = EvolutionState(s = StateType(Archive.empty, 1.0))
-
+    def initialState(t: NoisyHDOSE[P], rng: scala.util.Random) = NoisyHDOSE.initialState
+    
     def initialPopulation(t: NoisyHDOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
@@ -150,7 +151,6 @@ object NoisyHDOSE:
           t.discrete,
           t.significanceC,
           t.significanceD,
-          t.archiveSize,
           t.limit,
           reject(t)),
         NoisyHDOSE.expression(t.fitness, t.continuous),
