@@ -42,7 +42,7 @@ object HDOSE:
   def archiveLens[P]: Lens[HDOSEState[P], Archive[Individual[P]]] = Focus[HDOSEState[P]](_.s.archive)
   def distanceLens[P]: Lens[HDOSEState[P], Double] = Focus[HDOSEState[P]](_.s.distance)
 
-  def initialState[P]: HDOSEState[P] = EvolutionState(s = StateType(Archive.empty, 1.0))
+  def initialState[P](distance: Double = 1.0): HDOSEState[P] = EvolutionState(s = StateType(Archive.empty, distance))
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -129,7 +129,7 @@ object HDOSE:
     deltaC + deltaD
 
   given Algorithm[HDOSE, Individual[Vector[Double]], Genome, HDOSEState[Vector[Double]]] with
-    override def initialState(t: HDOSE, rng: scala.util.Random) = HDOSE.initialState
+    override def initialState(t: HDOSE, rng: scala.util.Random) = HDOSE.initialState(t.distance)
     override def initialPopulation(t: HDOSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
         HDOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
@@ -156,7 +156,8 @@ case class HDOSE(
   significanceC: Vector[Double] = Vector.empty,
   significanceD: Vector[Int] = Vector.empty,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None,
+  distance: Double = 1.0)
 
 object HDOSEOperation:
 
