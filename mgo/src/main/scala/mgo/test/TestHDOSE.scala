@@ -27,36 +27,38 @@ object RastriginHDOSE extends App:
   File("/tmp/hdose.csv") write HDOSE.result(hdose, finalState, finalPopulation).map( r => (r.continuous ++ r.fitness).mkString(",")).mkString("\n")
 
 
-//object NoisyRastriginOSE extends App {
-//
-//  import algorithm._
-//  import niche._
-//  import NoisyOSE._
-//
-//  def dimensions = 3
-//
-//  val ose: NoisyOSE[Vector[Double]] = NoisyOSE(
-//    mu = 100,
-//    lambda = 100,
-//    fitness = (rng, x, _) => Vector(rastrigin.compute(x) + rng.nextGaussian() * 0.25),
-//    aggregation = Aggregation.average,
-//    limit = Vector(10.0),
+object NoisyRastriginHDOSE extends App:
+
+  import algorithm._
+  import niche._
+  import NoisyOSE._
+
+  def dimensions = 3
+
+  val hdose = NoisyHDOSE(
+    mu = 100,
+    lambda = 100,
+    fitness = (rng, x, _) => Vector(rastrigin.compute(x) + rng.nextGaussian() * 0.25),
+    aggregation = Aggregation.average,
+    limit = Vector(10.0),
+    archiveSize = 10,
+    historySize = 5,
 //    origin =
 //      (c, _) =>
 //        boundedGrid(
 //          lowBound = Vector.fill(dimensions)(-10.0),
 //          highBound = Vector.fill(dimensions)(10.0),
 //          definition = Vector.fill(dimensions)(100))(c),
-//    continuous = rastrigin.continuous(dimensions))
-//
-//  val (finalState, finalPopulation) =
-//    ose.
-//      until(afterGeneration(50000)).
-//      trace { (s, is) => println("" + s.generation + " " + s.s._1.size) }.
-//      eval(new util.Random(42))
-//
-//  File("/tmp/ose.csv") write NoisyOSE.result(ose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
-//}
+    continuous = rastrigin.continuous(dimensions))
+
+  val (finalState, finalPopulation) =
+    hdose.
+      until(afterGeneration(2000)).
+      trace { (s, is) => println("" + s.generation + " " + s.s._1.size) }.
+      eval(new util.Random(42))
+
+  File("/tmp/hdose.csv") write NoisyHDOSE.result(hdose, finalState, finalPopulation).map(_.continuous.mkString(",")).mkString("\n")
+
 //
 ///**
 // * Benchmark function used in

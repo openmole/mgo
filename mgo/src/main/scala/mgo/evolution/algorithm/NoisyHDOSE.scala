@@ -270,13 +270,12 @@ object NoisyHDOSEOperations:
       val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
 
       // FIXME individuals can be close to each other but yet added to the archive
-      def newlyReaching =
-        candidates.
+      def reachingIndividuals =
+        merged.
           filter(i => history(i).size == historySize).
           filter(c => OSEOperation.patternIsReached(memoizedFitness(c), limit))
 
-      val s2 = archive.modify(_ ++ newlyReaching)(s1)
-
+      val s2 = archive.modify(_ ++ reachingIndividuals)(s1)
 
       val s3 =
         if archive.get(s2).size <= archiveSize
