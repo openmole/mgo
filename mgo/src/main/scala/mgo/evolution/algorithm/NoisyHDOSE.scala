@@ -141,6 +141,9 @@ object NoisyHDOSE:
         parallel)
 
     def step(t: NoisyHDOSE[P]) =
+      val sC = t.significanceC.getOrElse(Vector.fill(t.continuous.size)(1.0))
+      val sD = t.significanceD.getOrElse(Vector.fill(t.discrete.size)(1))
+
       noisy.step[HDOSEState[P], Individual[P], Genome](
         NoisyHDOSE.adaptiveBreeding[P](
           t.lambda,
@@ -149,8 +152,8 @@ object NoisyHDOSE:
           t.aggregation,
           t.continuous,
           t.discrete,
-          t.significanceC,
-          t.significanceD,
+          sC,
+          sD,
           t.limit,
           reject(t)),
         NoisyHDOSE.expression(t.fitness, t.continuous),
@@ -159,8 +162,8 @@ object NoisyHDOSE:
           t.historySize,
           t.aggregation,
           t.continuous,
-          t.significanceC,
-          t.significanceD,
+          sC,
+          sD,
           t.archiveSize,
           t.limit),
         Focus[HDOSEState[P]](_.generation),
@@ -178,8 +181,8 @@ case class NoisyHDOSE[P](
   aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
-  significanceC: Vector[Double] = Vector.empty,
-  significanceD: Vector[Int] = Vector.empty,
+  significanceC: Option[Vector[Double]] = None,
+  significanceD: Option[Vector[Int]] = None,
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,

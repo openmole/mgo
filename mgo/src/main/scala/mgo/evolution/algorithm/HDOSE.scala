@@ -118,14 +118,30 @@ object HDOSE:
     val (c1, d1) = g1
     val (c2, d2) = g2
 
-    val deltaC =
-      val delta = (c1 zip c2).map((c1, c2) => Math.abs(c1 - c2))
-      if significanceC.isEmpty then delta.sum else (delta zip significanceC).map((d, s) => d / s).sum
+    def deltaC =
+      var i = 0
+      var sum = 0.0
+      val cSize = c1.size
 
-    val deltaD =
-      val delta = (d1 zip d2).map((c1, c2) => Math.abs(c1 - c2))
-      if significanceD.isEmpty then delta.sum else (delta zip significanceD).map((d, s) => d / s).sum
+      while i < cSize
+      do
+        sum += Math.abs(c1(i) - c2(i)) / significanceC(i)
+        i += 1
 
+      sum
+
+    def deltaD =
+      var i = 0
+      var sum = 0.0
+      val cSize = d1.size
+
+      while i < cSize
+      do
+        sum += Math.abs(d1(i) - d2(i)) / significanceD(i)
+        i += 1
+
+      sum
+    
     deltaC + deltaD
 
   given Algorithm[HDOSE, Individual[Vector[Double]], Genome, HDOSEState[Vector[Double]]] with
@@ -137,10 +153,13 @@ object HDOSE:
         parallel)
 
     def step(t: HDOSE) =
+      val sC = t.significanceC.getOrElse(Vector.fill(t.continuous.size)(1.0))
+      val sD = t.significanceD.getOrElse(Vector.fill(t.discrete.size)(1))
+
       deterministic.step[HDOSEState[Vector[Double]], Individual[Vector[Double]], Genome](
-        HDOSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, t.significanceC, t.significanceD, identity, reject(t)),
+        HDOSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, sC, sD, identity, reject(t)),
         HDOSE.expression(t.fitness, t.continuous),
-        HDOSE.elitism(t.mu, t.limit, t.significanceC, t.significanceD, t.archiveSize, t.continuous, identity),
+        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, identity),
         Focus[HDOSEState[Vector[Double]]](_.generation),
         Focus[HDOSEState[Vector[Double]]](_.evaluated))
 
@@ -153,8 +172,8 @@ case class HDOSE(
   archiveSize: Int = 1000,
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
-  significanceC: Vector[Double] = Vector.empty,
-  significanceD: Vector[Int] = Vector.empty,
+  significanceC: Option[Vector[Double]] = None,
+  significanceD: Option[Vector[Int]] = None,
   operatorExploration: Double = 0.1,
   reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None,
   distance: Double = 1.0)
