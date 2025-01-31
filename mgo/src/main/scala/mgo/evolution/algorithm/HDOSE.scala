@@ -137,11 +137,11 @@ object HDOSE:
 
       while i < cSize
       do
-        sum += Math.abs(d1(i) - d2(i)) / significanceD(i)
+        sum += Math.abs(d1(i) - d2(i)).toDouble / significanceD(i)
         i += 1
 
       sum
-    
+
     deltaC + deltaD
 
   given Algorithm[HDOSE, Individual[Vector[Double]], Genome, HDOSEState[Vector[Double]]] with
