@@ -82,15 +82,16 @@ package object evolution {
   }
 
   implicit def double2Scalable(d: Double): double2Scalable = new double2Scalable(d)
-  class double2Scalable(d: Double) {
+  class double2Scalable(d: Double):
     def scale(min: Double, max: Double): Double = changeScale(d, 0, 1, min, max)
     def scale(s: C): Double = scale(s.low, s.high)
     //def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
-  }
 
-  def arrayToVectorIso[A: Manifest]: Iso[Array[A], Vector[A]] = monocle.Iso[Array[A], Vector[A]](_.toVector)(v => v.toArray)
+  def arrayToVectorIso[A: Manifest]: Iso[IArray[A], Vector[A]] = monocle.Iso[IArray[A], Vector[A]](_.toVector)(v => IArray.from(v))
   def array2ToVectorLens[A: Manifest]: Iso[Array[Array[A]], Vector[Vector[A]]] = monocle.Iso[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => v.map(_.toArray).toArray)
   def intToUnsignedIntOption: Iso[Int, Option[Int]] = monocle.Iso[Int, Option[Int]](i => if (i < 0) None else Some(i))(v => v.getOrElse(-1))
+
+  def iArrayTupleToVector(p: (IArray[Double], IArray[Int])) = (Vector.from(p._1), Vector.from(p._2))
 
   case class C(low: Double, high: Double)
   case class D(low: Int, high: Int)

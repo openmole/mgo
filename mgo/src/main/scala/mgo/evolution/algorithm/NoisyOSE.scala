@@ -41,9 +41,9 @@ object NoisyOSE {
       vectorPhenotype[P].get,
       aggregation,
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousVectorValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteVectorValues.get,
       discreteOperator.get,
       discrete,
       buildGenome,
@@ -61,7 +61,7 @@ object NoisyOSE {
     NoisyIndividual.expression[P](fitness, continuous)
 
   def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (Vector[Double], Vector[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
+    def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
 
     NoisyOSEOperations.elitism[OSEState[P], Individual[P], P](
       vectorPhenotype[P].get,

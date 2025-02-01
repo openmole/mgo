@@ -59,9 +59,9 @@ object HDOSE:
     HDOSEOperation.adaptiveBreeding[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousVectorValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteVectorValues.get,
       discreteOperator.get,
       scaledValues(continuous),
       discrete,
@@ -94,8 +94,8 @@ object HDOSE:
       distanceByComponent(significanceC, significanceD),
       distanceLens,
       archiveSize,
-      continuousValues.get,
-      discreteValues.get,
+      continuousVectorValues.get,
+      discreteVectorValues.get,
       Focus[Individual[P]](_.genome).get
     )
 
@@ -106,7 +106,7 @@ object HDOSE:
       archiveLens.get(state).toVector ++ (if keepAll then population else Seq())
 
     indivduals.map: i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, DeterministicIndividual.individualFitness(fitness)(i), i)
+      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, DeterministicIndividual.individualFitness(fitness)(i), i)
 
 
   def result(ose: HDOSE, state: HDOSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
@@ -180,13 +180,13 @@ case class HDOSE(
 
 object HDOSEOperation:
 
-  type GenomeValue =  (Vector[Double], Vector[Int])
+  type GenomeValue =  (IArray[Double], IArray[Int])
   type Distance = (GenomeValue, GenomeValue) => Double
 
   def isTooCloseFromArchive[G, I](
     distance: Distance,
     archive: Archive[I],
-    scaledValues: G => (Vector[Double], Vector[Int]),
+    scaledValues: G => (IArray[Double], IArray[Int]),
     genome: I => G,
     diversityDistance: Double)(g: G): Boolean =
 
@@ -201,7 +201,7 @@ object HDOSEOperation:
   def shrinkArchive[G, I: ClassTag](
     distance: Distance,
     archive: Archive[I],
-    scaledValues: G => (Vector[Double], Vector[Int]),
+    scaledValues: G => (IArray[Double], IArray[Int]),
     genome: I => G,
     diversityDistance: Double): Archive[I] =
 
@@ -221,7 +221,7 @@ object HDOSEOperation:
   def computeDistance[G, I: ClassTag](
     distance: Distance,
     archive: Archive[I],
-    scaledValues: G => (Vector[Double], Vector[Int]),
+    scaledValues: G => (IArray[Double], IArray[Int]),
     genome: I => G,
     targetSize: Int,
     currentDistance: Double) =
@@ -246,7 +246,7 @@ object HDOSEOperation:
     continuousOperator: G => Option[Int],
     discreteValues: G => Vector[Int],
     discreteOperator: G => Option[Int],
-    scaledValues: G => (Vector[Double], Vector[Int]),
+    scaledValues: G => (IArray[Double], IArray[Int]),
     discrete: Vector[D],
     distance: Distance,
     diversityDistance: S => Double,
@@ -290,7 +290,7 @@ object HDOSEOperation:
   def elitism[S, I: ClassTag, G](
     fitness: I => Vector[Double],
     limit: Vector[Double],
-    scaledValues: G => (Vector[Double], Vector[Int]),
+    scaledValues: G => (IArray[Double], IArray[Int]),
     mu: Int,
     archive: monocle.Lens[S, Archive[I]],
     distance: Distance,
@@ -342,7 +342,7 @@ object HDOSEOperation:
             genome,
             diversityDistance.get(s3))(genome(i))
 
-      NSGA2Operations.elitism[S, I](memoizedFitness, genome andThen scaledValues, mu)(s3, filteredPopulation, Vector.empty, rng)
+      NSGA2Operations.elitism[S, I](memoizedFitness, genome andThen scaledValues andThen iArrayTupleToVector, mu)(s3, filteredPopulation, Vector.empty, rng)
 
 
 

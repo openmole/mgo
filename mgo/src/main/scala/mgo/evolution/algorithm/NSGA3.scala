@@ -55,9 +55,9 @@ object NSGA3 {
     NSGA3Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousVectorValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteVectorValues.get,
       discreteOperator.get,
       discrete,
       buildGenome,
@@ -71,7 +71,7 @@ object NSGA3 {
   def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA3Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => scaledValues(components)(i.genome),
+      i => scaledVectorValues(components)(i.genome),
       references,
       mu)
 
@@ -80,7 +80,7 @@ object NSGA3 {
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
     individuals.map { i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, individualFitness(fitness)(i), i)
+      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, individualFitness(fitness)(i), i)
     }
   }
 
@@ -88,8 +88,8 @@ object NSGA3 {
 
   def reject(f: Option[(Vector[Double], Vector[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
-      val scaledContinuous = scaleContinuousValues(continuousValues.get(g), continuous)
-      val discreteValue = discreteValues get g
+      val scaledContinuous = scaleContinuousVectorValues(continuousVectorValues.get(g), continuous)
+      val discreteValue = discreteVectorValues get g
       reject(scaledContinuous, discreteValue)
     }
 

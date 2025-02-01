@@ -44,8 +44,8 @@ object PSE:
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], pattern: P => Vector[Int]): Vector[Result[P]] =
     population.map: i =>
       Result(
-        scaleContinuousValues(continuousValues.get(i.genome), continuous),
-        i.focus(_.genome) andThen discreteValues get,
+        scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous),
+        i.focus(_.genome) andThen discreteVectorValues get,
         pattern(i.phenotype),
         i.phenotype,
         i)
@@ -69,9 +69,9 @@ object PSE:
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     PSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousVectorValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteVectorValues.get,
       discreteOperator.get,
       discrete,
       Focus[Individual[P]](_.phenotype).get andThen pattern,
@@ -85,7 +85,7 @@ object PSE:
 
   def elitism[P: CanBeNaN](pattern: P => Vector[Int], continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
     PSEOperations.elitism[PSEState, Individual[P], P](
-      i => scaledValues(continuous)(i.genome),
+      i => scaledVectorValues(continuous)(i.genome),
       Focus[Individual[P]](_.phenotype).get,
       pattern,
       Focus[PSEState](_.s)
@@ -93,7 +93,7 @@ object PSE:
 
   def expression[P](phenotype: (Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
     deterministic.expression[Genome, P, Individual[P]](
-      scaledValues(continuous),
+      scaledVectorValues(continuous),
       buildIndividual,
       phenotype)
 

@@ -63,9 +63,9 @@ object NoisyHDOSE:
       vectorPhenotype[P].get,
       aggregation,
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousVectorValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteVectorValues.get,
       discreteOperator.get,
       discrete,
       scaledValues(continuous),
@@ -92,7 +92,7 @@ object NoisyHDOSE:
     significanceD: Vector[Int],
     archiveSize: Int,
     limit: Vector[Double]): Elitism[HDOSEState[P], Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
+    def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
 
     NoisyHDOSEOperations.elitism[HDOSEState[P], Individual[P], P, Genome](
       _.genome,
@@ -201,7 +201,7 @@ object NoisyHDOSEOperations:
     discreteValues: G => Vector[Int],
     discreteOperator: G => Option[Int],
     discrete: Vector[D],
-    scaledValues: G => (Vector[Double], Vector[Int]),
+    scaledValues: G => (IArray[Double], IArray[Int]),
     distance: HDOSEOperation.Distance,
     diversityDistance: S => Double,
     buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
@@ -258,7 +258,7 @@ object NoisyHDOSEOperations:
     genome: I => G,
     history: I => Vector[P],
     aggregation: Vector[P] => Vector[Double],
-    scaledValues: G => (Vector[Double], Vector[Int]),
+    scaledValues: G => (IArray[Double], IArray[Int]),
     limit: Vector[Double],
     historySize: Int,
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],

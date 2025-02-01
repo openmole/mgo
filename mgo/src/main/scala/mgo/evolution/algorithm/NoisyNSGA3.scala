@@ -51,9 +51,9 @@ object NoisyNSGA3 {
     NoisyNSGA3Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousVectorValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteVectorValues.get,
       discreteOperator.get,
       discrete,
       buildGenome,
@@ -65,7 +65,7 @@ object NoisyNSGA3 {
     NoisyIndividual.expression[P](phenotype, continuous)
 
   def elitism[S, P: Manifest](mu: Int, references: NSGA3Operations.ReferencePoints, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] = {
-    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
+    def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
 
     NoisyNSGA3Operations.elitism[S, Individual[P]](
       fitness[P](aggregation),

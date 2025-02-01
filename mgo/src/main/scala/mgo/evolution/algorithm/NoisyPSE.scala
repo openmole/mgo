@@ -57,9 +57,9 @@ object NoisyPSE {
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     NoisyPSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousVectorValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteVectorValues.get,
       discreteOperator.get,
       discrete,
       vectorPhenotype[P].get _ andThen aggregation andThen pattern,
@@ -78,7 +78,7 @@ object NoisyPSE {
     historySize: Int,
     continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
     NoisyPSEOperations.elitism[PSEState, Individual[P], P](
-      i => scaledValues(continuous)(i.genome),
+      i => scaledVectorValues(continuous)(i.genome),
       vectorPhenotype[P],
       aggregation,
       pattern,
@@ -88,13 +88,13 @@ object NoisyPSE {
 
   def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
     noisy.expression[Genome, Individual[P], P](
-      scaledValues(continuous),
+      scaledVectorValues(continuous),
       buildIndividual[P])(fitness)
 
   def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]): (Vector[Double], Vector[Int], Vector[Double], Vector[Int], Int) =
     (
-      scaleContinuousValues(continuousValues.get(i.genome), continuous),
-      i.focus(_.genome) andThen discreteValues get,
+      scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous),
+      i.focus(_.genome) andThen discreteVectorValues get,
       aggregation(vectorPhenotype[P].get(i)),
       (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),
       i.phenotypeHistory.size)

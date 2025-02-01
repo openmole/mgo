@@ -37,9 +37,9 @@ object OSE:
     OSEOperation.adaptiveBreeding[OSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousVectorValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteVectorValues.get,
       discreteOperator.get,
       discrete,
       origin,
@@ -58,7 +58,7 @@ object OSE:
     OSEOperation.elitism[OSEState[P], Individual[P]](
       individualFitness(fitness),
       limit,
-      i => scaledValues(components)(i.genome),
+      i => scaledVectorValues(components)(i.genome),
       origin,
       mu,
       archiveLens[P],
@@ -70,7 +70,7 @@ object OSE:
     val indivduals = archiveLens.get(state).toVector ++ { if (keepAll) population else Seq() }
 
     indivduals.map: i =>
-      Result(scaleContinuousValues(continuousValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteValues get, DeterministicIndividual.individualFitness(fitness)(i), i)
+      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, DeterministicIndividual.individualFitness(fitness)(i), i)
 
   }
 
