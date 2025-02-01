@@ -235,7 +235,17 @@ object Aggregation:
   def median(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(tools.median)
 
 def scaleContinuousValues(values: Vector[Double], genomeComponents: Vector[C]): Vector[Double] =
-  (values zip genomeComponents).map((v, c) => v.scale(c))
+  val size = values.size
+  val res = Array.ofDim[Double](size)
+
+  loop(
+    0,
+    _ < size,
+    i => i + 1
+  ): i =>
+    res(i) = values(i).scale(genomeComponents(i))
+
+  res.toVector
 
 object CDGenome {
 

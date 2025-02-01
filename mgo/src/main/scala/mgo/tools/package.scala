@@ -23,6 +23,7 @@ import org.apache.commons.math3.random.RandomGenerator
 
 import scala.collection.mutable
 import java.lang.Math.{abs, max, min, pow, sqrt}
+import scala.reflect.ClassTag
 
 
 //  implicit def lazyOrdering[T](implicit ord: scala.Ordering[T]): scala.Ordering[Lazy[T]] = scala.Ordering.by(_.value)
@@ -278,3 +279,22 @@ def findFirstUnder(target: Double, f: Double => Double, start: Double, precision
     else low = mid
 
   if f(low) < target then low else high
+
+
+/** standard C-style for loop */
+inline def loop[A](
+  inline start: A,
+  inline condition: A => Boolean,
+  inline advance: A => A)(inline loopBody: A => Any): Unit =
+  var a = start
+  while condition(a) do
+    loopBody(a)
+    a = advance(a)
+
+inline def map[A, B: ClassTag](a: IArray[A])(f: A => B) =
+  val length = a.length
+  val result = Array.ofDim[B](length)
+  loop(0, _ < length, _ + 1): i =>
+    result(i) = f(a(i))
+  IArray.unsafeFromArray(result)
+
