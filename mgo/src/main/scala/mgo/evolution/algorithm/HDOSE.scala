@@ -65,7 +65,7 @@ object HDOSE:
       discreteOperator.get,
       scaledValues(continuous),
       discrete,
-      toCloseByComponent(significanceC, significanceD),
+      tooCloseByComponent(significanceC, significanceD),
       distanceLens.get,
       buildGenome,
       logOfPopulationSize,
@@ -91,7 +91,7 @@ object HDOSE:
       scaledValues(components),
       mu,
       archiveLens[P],
-      toCloseByComponent(significanceC, significanceD),
+      tooCloseByComponent(significanceC, significanceD),
       distanceLens,
       archiveSize,
       continuousVectorValues.get,
@@ -114,7 +114,7 @@ object HDOSE:
 
   def reject(ose: HDOSE): Option[Genome => Boolean] = NSGA2.reject(ose.reject, ose.continuous)
 
-  def toCloseByComponent(significanceC: Vector[Double], significanceD: Vector[Int]): HDOSEOperation.TooClose = (g1, g2, d) =>
+  def tooCloseByComponent(significanceC: Vector[Double], significanceD: Vector[Int]): HDOSEOperation.TooClose = (g1, g2, d) =>
     val (c1, d1) = g1
     val (c2, d2) = g2
 

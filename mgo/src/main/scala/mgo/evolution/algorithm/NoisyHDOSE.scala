@@ -69,7 +69,7 @@ object NoisyHDOSE:
       discreteOperator.get,
       discrete,
       scaledValues(continuous),
-      HDOSE.toCloseByComponent(significanceC, significanceD),
+      HDOSE.tooCloseByComponent(significanceC, significanceD),
       distanceLens.get,
       buildGenome,
       logOfPopulationSize,
@@ -104,7 +104,7 @@ object NoisyHDOSE:
       mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu,
       archiveLens,
-      HDOSE.toCloseByComponent(significanceC, significanceD),
+      HDOSE.tooCloseByComponent(significanceC, significanceD),
       distanceLens,
       archiveSize
     )
