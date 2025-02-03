@@ -84,7 +84,8 @@ object HDOSE:
     significanceD: Vector[Int],
     archiveSize: Int,
     components: Vector[C],
-    fitness: P => Vector[Double]): Elitism[HDOSEState[P], Individual[P]] =
+    fitness: P => Vector[Double],
+    precision: Double): Elitism[HDOSEState[P], Individual[P]] =
     HDOSEOperation.elitism[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       limit,
@@ -92,6 +93,7 @@ object HDOSE:
       mu,
       archiveLens[P],
       tooCloseByComponent(significanceC, significanceD),
+      precision,
       distanceLens,
       archiveSize,
       continuousVectorValues.get,
@@ -154,7 +156,7 @@ object HDOSE:
       deterministic.step[HDOSEState[Vector[Double]], Individual[Vector[Double]], Genome](
         HDOSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, sC, sD, identity, reject(t)),
         HDOSE.expression(t.fitness, t.continuous),
-        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, identity),
+        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, identity, t.distance),
         Focus[HDOSEState[Vector[Double]]](_.generation),
         Focus[HDOSEState[Vector[Double]]](_.evaluated))
 
@@ -219,7 +221,8 @@ object HDOSEOperation:
                                        scaledValues: G => (IArray[Double], IArray[Int]),
                                        genome: I => G,
                                        targetSize: Int,
-                                       currentDistance: Double) =
+                                       currentDistance: Double,
+                                       precision: Double) =
     def computeSize(d: Double) =
       shrinkArchive(distance, archive, scaledValues, genome, d).size.toDouble
 
@@ -228,7 +231,7 @@ object HDOSEOperation:
         targetSize,
         computeSize,
         currentDistance,
-        1.0
+        precision
       )
 
     newDistance
@@ -289,6 +292,7 @@ object HDOSEOperation:
                                   mu: Int,
                                   archive: monocle.Lens[S, Archive[I]],
                                   distance: TooClose,
+                                  precision: Double,
                                   diversityDistance: Lens[S, Double],
                                   archiveSize: Int,
                                   continuousValues: G => Vector[Double],
@@ -314,7 +318,8 @@ object HDOSEOperation:
               scaledValues,
               genome,
               archiveSize,
-              diversityDistance.get(s2)
+              diversityDistance.get(s2),
+              precision
             )
 
           val newArchive =

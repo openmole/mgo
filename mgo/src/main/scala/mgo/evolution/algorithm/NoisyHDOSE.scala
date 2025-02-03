@@ -91,7 +91,8 @@ object NoisyHDOSE:
     significanceC: Vector[Double],
     significanceD: Vector[Int],
     archiveSize: Int,
-    limit: Vector[Double]): Elitism[HDOSEState[P], Individual[P]] =
+    limit: Vector[Double],
+    precision: Double): Elitism[HDOSEState[P], Individual[P]] =
     def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
 
     NoisyHDOSEOperations.elitism[HDOSEState[P], Individual[P], P, Genome](
@@ -105,6 +106,7 @@ object NoisyHDOSE:
       mu,
       archiveLens,
       HDOSE.tooCloseByComponent(significanceC, significanceD),
+      precision,
       distanceLens,
       archiveSize
     )
@@ -165,7 +167,8 @@ object NoisyHDOSE:
           sC,
           sD,
           t.archiveSize,
-          t.limit),
+          t.limit,
+          t.distance),
         Focus[HDOSEState[P]](_.generation),
         Focus[HDOSEState[P]](_.evaluated)
       )
@@ -265,6 +268,7 @@ object NoisyHDOSEOperations:
                                      mu: Int,
                                      archive: monocle.Lens[S, Archive[I]],
                                      distance: HDOSEOperation.TooClose,
+                                     precision: Double,
                                      diversityDistance: monocle.Lens[S, Double],
                                      archiveSize: Int): Elitism[S, I] =
     (s1, population, candidates, rng) =>
@@ -291,7 +295,8 @@ object NoisyHDOSEOperations:
               scaledValues,
               genome,
               archiveSize,
-              diversityDistance.get(s2)
+              diversityDistance.get(s2),
+              precision
             )
 
           val newArchive =
