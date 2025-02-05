@@ -64,15 +64,23 @@ object OSE:
       archiveLens[P],
       reachMapLens)
 
-  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P], archive: Boolean)
 
-  def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
-    val indivduals = archiveLens.get(state).toVector ++ { if (keepAll) population else Seq() }
+  def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
 
-    indivduals.map: i =>
-      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, DeterministicIndividual.individualFitness(fitness)(i), i)
+    def individualToResult(i: Individual[P], archive: Boolean) =
+      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
 
-  }
+    val goodIndividuals =
+      if keepAll
+      then population.map(i => individualToResult(i, false))
+      else Seq()
+
+    val archiveIndividuals =
+      archiveLens.get(state).toVector.map(i => individualToResult(i, true))
+
+    archiveIndividuals ++ goodIndividuals
+
 
   def result(ose: OSE, state: OSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
     result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity, population = population, keepAll = false)

@@ -101,15 +101,21 @@ object HDOSE:
       Focus[Individual[P]](_.genome).get
     )
 
-  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P], archive: Boolean)
 
   def result[P](state: HDOSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
-    val indivduals =
-      archiveLens.get(state).toVector ++ (if keepAll then population else Seq())
+    def individualToResult(i: Individual[P], archive: Boolean) =
+      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
 
-    indivduals.map: i =>
-      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, DeterministicIndividual.individualFitness(fitness)(i), i)
+    val goodIndividuals =
+      if keepAll
+      then population.map(i => individualToResult(i, false))
+      else Seq()
 
+    val archiveIndividuals =
+      archiveLens.get(state).toVector.map(i => individualToResult(i, true))
+
+    archiveIndividuals ++ goodIndividuals
 
   def result(ose: HDOSE, state: HDOSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
     result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity, population = population, keepAll = false)

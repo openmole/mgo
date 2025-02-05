@@ -112,19 +112,19 @@ object NoisyHDOSE:
     )
 
 
-  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
+  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P], archive: Boolean)
 
   def result[P: Manifest](state: HDOSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     def goodIndividuals =
       population.flatMap: i =>
         val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
-        if (keepAll || OSEOperation.patternIsReached(f, limit))
-        then Some(Result(c, d, f, r, i))
+        if keepAll || OSEOperation.patternIsReached(f, limit)
+        then Some(Result(c, d, f, r, i, false))
         else None
 
     state.s.archive.toVector.map: i =>
       val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
-      Result(c, d, f, r, i)
+      Result(c, d, f, r, i, true)
     ++ goodIndividuals
 
   def result[P: Manifest](noisyHDOSE: NoisyHDOSE[P], state: HDOSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
