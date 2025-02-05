@@ -110,7 +110,6 @@ object GenomeVectorDouble {
 
   def continuousCrossovers[S]: IArray[GACrossover[S, Double]] =
     IArray(
-      sbxC(1.0),
       sbxC(1.5),
       sbxC(2.0),
       sbxC(5.0),
@@ -299,9 +298,9 @@ object CDGenome {
 
   case class Genome(
     continuousValues: IArray[Double],
-    continuousOperator: Int,
+    continuousOperator: Byte,
     discreteValues: IArray[Int],
-    discreteOperator: Int)
+    discreteOperator: Byte)
 
   def buildGenome(
     continuous: IArray[Double],
@@ -310,18 +309,18 @@ object CDGenome {
     discreteOperator: Option[Int]): Genome =
     Genome(
       continuous,
-      continuousOperator.getOrElse(-1),
+      continuousOperator.getOrElse(-1).toByte,
       discrete,
-      discreteOperator.getOrElse(-1))
+      discreteOperator.getOrElse(-1).toByte)
 
 
   def continuousValues = Focus[Genome](_.continuousValues)
   def continuousVectorValues: PLens[Genome, Genome, Vector[Double], Vector[Double]] = Focus[Genome](_.continuousValues) andThen arrayToVectorIso[Double]
-  def continuousOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.continuousOperator) andThen intToUnsignedIntOption
+  def continuousOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.continuousOperator) andThen byteToUnsignedIntOption
 
   def discreteValues = Focus[Genome](_.discreteValues)
   def discreteVectorValues: PLens[Genome, Genome, Vector[Int], Vector[Int]] = Focus[Genome](_.discreteValues) andThen arrayToVectorIso[Int]
-  def discreteOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.discreteOperator) andThen intToUnsignedIntOption
+  def discreteOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.discreteOperator) andThen byteToUnsignedIntOption
 
 
   def scaledValues(continuous: Vector[C]) = (g: Genome) =>

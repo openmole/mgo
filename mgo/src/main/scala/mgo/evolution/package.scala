@@ -90,6 +90,7 @@ package object evolution {
   def arrayToVectorIso[A: Manifest]: Iso[IArray[A], Vector[A]] = monocle.Iso[IArray[A], Vector[A]](_.toVector)(v => IArray.from(v))
   def array2ToVectorLens[A: Manifest]: Iso[Array[Array[A]], Vector[Vector[A]]] = monocle.Iso[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => v.map(_.toArray).toArray)
   def intToUnsignedIntOption: Iso[Int, Option[Int]] = monocle.Iso[Int, Option[Int]](i => if (i < 0) None else Some(i))(v => v.getOrElse(-1))
+  def byteToUnsignedIntOption: Iso[Byte, Option[Int]] = monocle.Iso[Byte, Option[Int]](i => if i < 0 then None else Some(i))(v => v.getOrElse(-1).toByte)
 
   def iArrayTupleToVector(p: (IArray[Double], IArray[Int])) = (Vector.from(p._1), Vector.from(p._2))
 
