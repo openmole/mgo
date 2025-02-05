@@ -60,26 +60,25 @@ def operatorProportions[I](operation: I => Option[Int], is: Vector[I]): Map[Int,
     toMap
 
 def selectOperator[S, G](
-  operators: Vector[(S, G, scala.util.Random) => G],
+  operators: IArray[(S, G, scala.util.Random) => G],
   opStats: Map[Int, Double],
-  exploration: Double): (S, G, Random) => (G, Int) = {
+  exploration: Double): (S, G, Random) => (G, Int) =
 
   def allOps =
-    operators.zipWithIndex.map {
-      case (op, index) => (op, opStats.getOrElse(index, 0.0))
-    }
+    operators.zipWithIndex.map: (op, index) =>
+      (op, opStats.getOrElse(index, 0.0))
 
-  (s: S, g: G, rng: scala.util.Random) => {
+  (s: S, g: G, rng: scala.util.Random) =>
     val (op, i) = drawOperator(allOps, exploration, rng)
     (op(s, g, rng), i)
-  }
-}
 
-def drawOperator[O](opsAndWeights: Vector[(O, Double)], exploration: Double, rng: scala.util.Random): (O, Int) =
+
+def drawOperator[O](opsAndWeights: IArray[(O, Double)], exploration: Double, rng: scala.util.Random): (O, Int) =
   val explore = rng.nextDouble
 
   val i =
-    if (explore < exploration) rng.nextInt(opsAndWeights.size)
+    if explore < exploration
+    then rng.nextInt(opsAndWeights.size)
     else multinomialDraw(opsAndWeights.zipWithIndex.map { case ((op, w), i) => (w, i) }, rng)._1
 
   (opsAndWeights(i)._1, i)
@@ -98,12 +97,12 @@ object GenomeVectorDouble {
     val rejectValue = reject.getOrElse((_: G) => false)
 
     def generate(acc: List[G], n: Int): Vector[G] =
-      if (n >= mu) acc.toVector
-      else {
+      if n >= mu
+      then acc.toVector
+      else 
         val g = randomG(rng)
         if (rejectValue(g)) generate(acc, n)
         else generate(g :: acc, n + 1)
-      }
 
     generate(List(), 0)
   }
@@ -111,43 +110,57 @@ object GenomeVectorDouble {
   def filterNaN[I, T](values: Vector[I], value: I => T)(implicit cbn: CanBeNaN[T]): Vector[I] =
     values.filter { i => !cbn.isNaN(value(i)) }
 
-  def continuousCrossovers[S]: Vector[GACrossover[S]] =
-    Vector(
+  def continuousCrossovers[S]: IArray[GACrossover[S]] =
+    IArray(
+      sbxC(1.0),
+      sbxC(1.5),
       sbxC(2.0),
       sbxC(5.0),
-      sbxC(20.0))
+      sbxC(20.0),
+      sbxC(30.0)
+    )
 
-  def discreteCrossovers[S]: Vector[Crossover[S, (Vector[Int], Vector[Int]), (Vector[Int], Vector[Int])]] =
-    Vector(
+  def discreteCrossovers[S]: IArray[Crossover[S, (Vector[Int], Vector[Int]), (Vector[Int], Vector[Int])]] =
+    IArray(
+      binaryCrossover(0.5 / _),
       binaryCrossover(1.0 / _),
       binaryCrossover(2.0 / _),
       binaryCrossover(_ => 0.1),
       binaryCrossover(_ => 0.5))
 
-  def continuousMutations[S]: Vector[GAMutation[S]] =
-    Vector(
-      gaussianMutation(mutationRate = 1.0 / _, sigma = 0.0000001),
-      gaussianMutation(mutationRate = 1.0 / _, sigma = 0.0001),
-      gaussianMutation(mutationRate = 1.0 / _, sigma = 0.1),
-      gaussianMutation(mutationRate = _ => 0.1, sigma = 0.1),
-      gaussianMutation(mutationRate = _ => 0.5, sigma = 0.5))
+  def continuousMutations[S]: IArray[GAMutation[S]] =
+    val locals =
+      for
+        exp <- 1 to 7
+      yield
+        gaussianMutation(mutationRate = 1.0 / _, sigma = Math.pow(10, -exp))
 
-  def discreteMutations[S](discrete: Vector[D]): Vector[Mutation[S, Vector[Int], Vector[Int]]] =
-    Vector(
+    IArray.unsafeFromArray(locals.toArray) ++
+      Vector(
+        gaussianMutation(mutationRate = _ => 0.1, sigma = 0.1),
+        gaussianMutation(mutationRate = _ => 0.5, sigma = 0.5),
+        gaussianMutation(mutationRate = _ => 0.8, sigma = 0.5)
+      )
+
+  def discreteMutations[S](discrete: Vector[D]): IArray[Mutation[S, Vector[Int], Vector[Int]]] =
+    IArray(
+      randomMutation(0.5 / _, discrete),
       randomMutation(1.0 / _, discrete),
       randomMutation(2.0 / _, discrete),
       randomMutation(_ => 0.1, discrete),
-      randomMutation(_ => 0.5, discrete))
+      randomMutation(_ => 0.5, discrete),
+      randomMutation(_ => 0.8, discrete)
+    )
 
   type CrossoverAndMutation[S, G] = (S, G, scala.util.Random) => G
 
-  def continuousCrossoversAndMutations[S]: Vector[CrossoverAndMutation[S, (Vector[Double], Vector[Double])]] =
+  def continuousCrossoversAndMutations[S]: IArray[CrossoverAndMutation[S, (Vector[Double], Vector[Double])]] =
     for
       c <- continuousCrossovers[S]
       m <- continuousMutations[S]
     yield crossoverAndMutation[S, Vector[Double]](c, m)
 
-  def discreteCrossoversAndMutations[S](discrete: Vector[D]): Vector[CrossoverAndMutation[S, (Vector[Int], Vector[Int])]] =
+  def discreteCrossoversAndMutations[S](discrete: Vector[D]): IArray[CrossoverAndMutation[S, (Vector[Int], Vector[Int])]] =
     for
       c <- discreteCrossovers[S]
       m <- discreteMutations[S](discrete)

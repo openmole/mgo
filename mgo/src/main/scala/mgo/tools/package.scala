@@ -194,18 +194,17 @@ def mse(sequence: Vector[Double]): Double = {
   average(sequence.map { v ⇒ pow(v - avg, 2) })
 }
 
-def multinomialDraw[T](s: Vector[(Double, T)], rng: util.Random): (T, List[(Double, T)]) = {
+def multinomialDraw[T](s: IArray[(Double, T)], rng: util.Random): (T, List[(Double, T)]) =
   assert(!s.isEmpty, "Input sequence should not be empty")
   def select(remaining: List[(Double, T)], value: Double, begin: List[(Double, T)] = List.empty): (T, List[(Double, T)]) =
-    remaining match {
+    remaining match
       case (weight, e) :: tail =>
         if (value <= weight) (e, begin.reverse ::: tail)
         else select(tail, value - weight, (weight, e) :: begin)
       case _ => sys.error(s"Bug $remaining $value $begin")
-    }
+
   val totalWeight = s.unzip._1.sum
   select(s.toList, rng.nextDouble * totalWeight)
-}
 
 def findInterval[A: Ordering](s: Vector[A], v: A): Int = {
   import scala.collection.Searching._

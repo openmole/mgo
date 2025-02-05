@@ -37,18 +37,16 @@ object Profile {
 
   case class Result[N, P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, individual: Individual[P])
 
-  def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[N, P]] = {
+  def result[N, P](population: Vector[Individual[P]], niche: Individual[P] => N, continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[N, P]] =
     val individuals = if (keepAll) population else nicheElitism[Individual[P], N](population, keepFirstFront(_, individualFitness(fitness)), niche)
 
-    individuals.map { i =>
+    individuals.map: i =>
       Result(
         scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous),
         i.focus(_.genome) andThen discreteVectorValues get,
         individualFitness(fitness)(i),
         niche(i),
         i)
-    }
-  }
 
   def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =
     mgo.evolution.niche.continuousProfile[Individual[P]](_.focus(_.genome) andThen continuousVectorValues get, x, nX)

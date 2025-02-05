@@ -102,14 +102,15 @@ object breeding {
    *
    */
   def sbxC[S](distributionIndex: Double = 2.0): GACrossover[S] =
-    (s, mates: (Vector[Double], Vector[Double]), random) => {
+    (s, mates: (Vector[Double], Vector[Double]), random) =>
       val exponent = 1.0 / (distributionIndex + 1.0)
 
-      def elementCrossover(x0i: Double, x1i: Double): (Double, Double) = {
+      def elementCrossover(x0i: Double, x1i: Double): (Double, Double) =
         val u = random.nextDouble
         val bq =
-          if (u <= 0.5) math.pow(2 * u, exponent)
-          else math.pow(1.0 / (2.0 * (1.0 - u)), exponent)
+          if u <= 0.5
+          then Math.pow(2 * u, exponent)
+          else Math.pow(1.0 / (2.0 * (1.0 - u)), exponent)
 
         val lb = 0.0
         val ub = 1.0
@@ -121,16 +122,18 @@ object breeding {
         val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
 
         (newX0, newX1)
-      }
 
       val (g1, g2) = mates
       val zippedgs = g1 zip g2
 
-      val r = zippedgs.map { case (g1e, g2e) => elementCrossover(g1e, g2e) }
+      val r =
+        zippedgs.map: (g1e, g2e) =>
+          elementCrossover(g1e, g2e)
+
       val (o1, o2) = r.unzip
       assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
       (o1, o2)
-    }
+
 
 /**** Mutation ****/
 
