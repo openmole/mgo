@@ -59,9 +59,9 @@ object HDOSE:
     HDOSEOperation.adaptiveBreeding[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       scaledValues(continuous),
       discrete,
@@ -74,7 +74,7 @@ object HDOSE:
       operatorExploration,
       archiveLens[P].get)
 
-  def expression[P](fitness: (Vector[Double], Vector[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
+  def expression[P](fitness: (IArray[Double], IArray[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
     DeterministicIndividual.expression(fitness, components)
 
   def elitism[P](
@@ -170,7 +170,7 @@ object HDOSE:
 case class HDOSE(
   mu: Int,
   lambda: Int,
-  fitness: (Vector[Double], Vector[Int]) => Vector[Double],
+  fitness: (IArray[Double], IArray[Int]) => Vector[Double],
   limit: Vector[Double],
   archiveSize: Int = 1000,
   continuous: Vector[C] = Vector.empty,
@@ -178,7 +178,7 @@ case class HDOSE(
   significanceC: Option[Vector[Double]] = None,
   significanceD: Option[Vector[Int]] = None,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None,
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None,
   distance: Double = 1.0)
 
 object HDOSEOperation:
@@ -244,22 +244,22 @@ object HDOSEOperation:
 
 
   def adaptiveBreeding[S, I, G](
-                                 fitness: I => Vector[Double],
-                                 genome: I => G,
-                                 continuousValues: G => Vector[Double],
-                                 continuousOperator: G => Option[Int],
-                                 discreteValues: G => Vector[Int],
-                                 discreteOperator: G => Option[Int],
-                                 scaledValues: G => (IArray[Double], IArray[Int]),
-                                 discrete: Vector[D],
-                                 distance: TooClose,
-                                 diversityDistance: S => Double,
-                                 buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
-                                 tournamentRounds: Int => Int,
-                                 lambda: Int,
-                                 reject: Option[G => Boolean],
-                                 operatorExploration: Double,
-                                 archive: S => Archive[I]): Breeding[S, I, G] =
+    fitness: I => Vector[Double],
+    genome: I => G,
+    continuousValues: G => IArray[Double],
+    continuousOperator: G => Option[Int],
+    discreteValues: G => IArray[Int],
+    discreteOperator: G => Option[Int],
+    scaledValues: G => (IArray[Double], IArray[Int]),
+    discrete: Vector[D],
+    distance: TooClose,
+    diversityDistance: S => Double,
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
+    tournamentRounds: Int => Int,
+    lambda: Int,
+    reject: Option[G => Boolean],
+    operatorExploration: Double,
+    archive: S => Archive[I]): Breeding[S, I, G] =
     (s, population, rng) =>
       val archivedPopulation = archive(s)
       val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, fitness, rng)
@@ -292,18 +292,18 @@ object HDOSEOperation:
 
 
   def elitism[S, I: ClassTag, G](
-                                  fitness: I => Vector[Double],
-                                  limit: Vector[Double],
-                                  scaledValues: G => (IArray[Double], IArray[Int]),
-                                  mu: Int,
-                                  archive: monocle.Lens[S, Archive[I]],
-                                  distance: TooClose,
-                                  precision: Double,
-                                  diversityDistance: Lens[S, Double],
-                                  archiveSize: Int,
-                                  continuousValues: G => Vector[Double],
-                                  discreteValues: G => Vector[Int],
-                                  genome: I => G): Elitism[S, I] =
+    fitness: I => Vector[Double],
+    limit: Vector[Double],
+    scaledValues: G => (IArray[Double], IArray[Int]),
+    mu: Int,
+    archive: monocle.Lens[S, Archive[I]],
+    distance: TooClose,
+    precision: Double,
+    diversityDistance: Lens[S, Double],
+    archiveSize: Int,
+    continuousValues: G => Vector[Double],
+    discreteValues: G => Vector[Int],
+    genome: I => G): Elitism[S, I] =
     (s1, population, candidates, rng) =>
       val memoizedFitness = mgo.tools.memoize(fitness)
       val cloneRemoved = filterNaN(keepFirst(genome andThen scaledValues)(population, candidates), memoizedFitness)
@@ -348,7 +348,7 @@ object HDOSEOperation:
             genome,
             diversityDistance.get(s3))(genome(i))
 
-      NSGA2Operations.elitism[S, I](memoizedFitness, genome andThen scaledValues andThen iArrayTupleToVector, mu)(s3, filteredPopulation, Vector.empty, rng)
+      NSGA2Operations.elitism(memoizedFitness, genome andThen scaledValues, mu)(s3, filteredPopulation, Vector.empty, rng)
 
 
 

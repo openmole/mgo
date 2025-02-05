@@ -26,7 +26,7 @@ object SphereNSGAII extends App {
   val nsga2: NSGA2 = NSGA2(
     mu = 100,
     lambda = 100,
-    fitness = (v: Vector[Double], _) => Vector(sphere.compute(v)),
+    fitness = (v, _) => Vector(sphere.compute(v)),
     continuous = sphere.genome(6))
 
   def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =

@@ -27,7 +27,7 @@ object ZDT4PSE extends App {
 
   val pse = PSE(
     lambda = 10,
-    phenotype = zdt4.compute,
+    phenotype = (c, d) => zdt4.compute(c, d),
     pattern =
       boundedGrid(
         lowBound = Vector(0.0, 0.0),

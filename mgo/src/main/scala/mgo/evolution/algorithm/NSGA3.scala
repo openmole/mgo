@@ -55,9 +55,9 @@ object NSGA3 {
     NSGA3Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       buildGenome,
@@ -65,13 +65,13 @@ object NSGA3 {
       operatorExploration,
       lambda)
 
-  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]) =
+  def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C]) =
     DeterministicIndividual.expression(express, components)
 
   def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA3Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => scaledVectorValues(components)(i.genome),
+      i => scaledValues(components)(i.genome),
       references,
       mu)
 
@@ -86,10 +86,10 @@ object NSGA3 {
 
   def result(nsga3: NSGA3, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga3.continuous, identity[Vector[Double]] _, keepAll = false)
 
-  def reject(f: Option[(Vector[Double], Vector[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
+  def reject(f: Option[(IArray[Double], IArray[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
-      val scaledContinuous = scaleContinuousVectorValues(continuousVectorValues.get(g), continuous)
-      val discreteValue = discreteVectorValues get g
+      val scaledContinuous = scaleContinuousValues(continuousValues.get(g), continuous)
+      val discreteValue = discreteValues get g
       reject(scaledContinuous, discreteValue)
     }
 
@@ -117,11 +117,11 @@ object NSGA3 {
 case class NSGA3(
   popSize: Int,
   referencePoints: NSGA3Operations.ReferencePoints,
-  fitness: (Vector[Double], Vector[Int]) => Vector[Double],
+  fitness: (IArray[Double], IArray[Int]) => Vector[Double],
   continuous: Vector[C],
   discrete: Vector[D] = Vector.empty,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
 object NSGA3Operations {
 
@@ -267,12 +267,12 @@ object NSGA3Operations {
   def adaptiveBreeding[S, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
-    continuousValues: G => Vector[Double],
+    continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
-    discreteValues: G => Vector[Int],
+    discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
     discrete: Vector[D],
-    buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     reject: Option[G => Boolean],
     operatorExploration: Double,
     lambda: Int = -1): Breeding[S, I, G] = (s, population, rng) => {
@@ -314,7 +314,7 @@ object NSGA3Operations {
    */
   def elitism[S, I](
     fitness: I => Vector[Double],
-    values: I => (Vector[Double], Vector[Int]),
+    values: I => (IArray[Double], IArray[Int]),
     references: ReferencePoints,
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>

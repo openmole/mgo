@@ -51,9 +51,9 @@ object NoisyNSGA3 {
     NoisyNSGA3Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       buildGenome,
@@ -61,11 +61,11 @@ object NoisyNSGA3 {
       operatorExploration,
       cloneProbability)
 
-  def expression[P: Manifest](phenotype: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
+  def expression[P: Manifest](phenotype: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
     NoisyIndividual.expression[P](phenotype, continuous)
 
   def elitism[S, P: Manifest](mu: Int, references: NSGA3Operations.ReferencePoints, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] = {
-    def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
+    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
 
     NoisyNSGA3Operations.elitism[S, Individual[P]](
       fitness[P](aggregation),
@@ -107,14 +107,14 @@ object NoisyNSGA3 {
 case class NoisyNSGA3[P](
   popSize: Int,
   referencePoints: NSGA3Operations.ReferencePoints,
-  fitness: (util.Random, Vector[Double], Vector[Int]) => P,
+  fitness: (util.Random, IArray[Double], IArray[Int]) => P,
   aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
 object NoisyNSGA3Operations {
 
@@ -125,32 +125,30 @@ object NoisyNSGA3Operations {
   def adaptiveBreeding[S, I, G, P](
     fitness: I => Vector[Double],
     genome: I => G,
-    continuousValues: G => Vector[Double],
+    continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
-    discreteValues: G => Vector[Int],
+    discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
     discrete: Vector[D],
-    buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     reject: Option[G => Boolean],
     operatorExploration: Double,
     cloneProbability: Double,
-    lambda: Int = -1): Breeding[S, I, G] = (s, population, rng) => {
+    lambda: Int = -1): Breeding[S, I, G] = (s, population, rng) =>
     // same as deterministic, but eventually adding clones
     val breededGenomes = NSGA3Operations.adaptiveBreeding(fitness, genome, continuousValues, continuousOperator, discreteValues, discreteOperator, discrete, buildGenome, reject, operatorExploration, lambda)(s, population, rng)
     clonesReplace(cloneProbability, population, genome, randomSelection[S, I])(s, breededGenomes, rng)
-  }
 
   def elitism[S, I](
     fitness: I => Vector[Double],
-    values: I => (Vector[Double], Vector[Int]),
+    values: I => (IArray[Double], IArray[Int]),
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     mu: Int,
     references: NSGA3Operations.ReferencePoints): Elitism[S, I] =
-    (s, population, candidates, rng) => {
+    (s, population, candidates, rng) =>
       val mergedHistories = mergeHistories(population, candidates)
       val filtered: Vector[I] = filterNaN(mergedHistories, fitness)
       (s, NSGA3Operations.eliteWithReference[S, I](filtered, fitness, references, mu)(rng))
-    }
 
 }
 

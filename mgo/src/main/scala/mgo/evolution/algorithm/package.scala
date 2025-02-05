@@ -85,12 +85,11 @@ def drawOperator[O](opsAndWeights: IArray[(O, Double)], exploration: Double, rng
 
 object GenomeVectorDouble {
 
-  def randomGenomes[G](cons: (Vector[Double], Vector[Int]) => G)(mu: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[G => Boolean], rng: scala.util.Random): Vector[G] = {
-    def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = Vector.fill(genomeLength)(() => rng.nextDouble()).map(_())
-    def randomDiscreteValues(genome: Vector[D], rng: scala.util.Random): Vector[Int] = {
+  def randomGenomes[G](cons: (IArray[Double], IArray[Int]) => G)(mu: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[G => Boolean], rng: scala.util.Random): Vector[G] =
+    def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
+    def randomDiscreteValues(genome: Vector[D], rng: scala.util.Random): IArray[Int] =
       def part(d: D) = tools.randomInt(rng, d)
-      genome.map(part)
-    }
+      IArray.from(genome.map(part))
 
     def randomG(rng: scala.util.Random) = cons(randomUnscaledContinuousValues(continuous.size, rng), randomDiscreteValues(discrete, rng))
 
@@ -99,18 +98,17 @@ object GenomeVectorDouble {
     def generate(acc: List[G], n: Int): Vector[G] =
       if n >= mu
       then acc.toVector
-      else 
+      else
         val g = randomG(rng)
         if (rejectValue(g)) generate(acc, n)
         else generate(g :: acc, n + 1)
 
     generate(List(), 0)
-  }
 
   def filterNaN[I, T](values: Vector[I], value: I => T)(implicit cbn: CanBeNaN[T]): Vector[I] =
     values.filter { i => !cbn.isNaN(value(i)) }
 
-  def continuousCrossovers[S]: IArray[GACrossover[S]] =
+  def continuousCrossovers[S]: IArray[GACrossover[S, Double]] =
     IArray(
       sbxC(1.0),
       sbxC(1.5),
@@ -120,13 +118,14 @@ object GenomeVectorDouble {
       sbxC(30.0)
     )
 
-  def discreteCrossovers[S]: IArray[Crossover[S, (Vector[Int], Vector[Int]), (Vector[Int], Vector[Int])]] =
+  def discreteCrossovers[S]: IArray[GACrossover[S, Int]] =
     IArray(
-      binaryCrossover(0.5 / _),
-      binaryCrossover(1.0 / _),
-      binaryCrossover(2.0 / _),
-      binaryCrossover(_ => 0.1),
-      binaryCrossover(_ => 0.5))
+      binaryCrossover[S, Int](0.5 / _),
+      binaryCrossover[S, Int](1.0 / _),
+      binaryCrossover[S, Int](2.0 / _),
+      binaryCrossover[S, Int](_ => 0.1),
+      binaryCrossover[S, Int](_ => 0.5)
+    )
 
   def continuousMutations[S]: IArray[GAMutation[S]] =
     val locals =
@@ -142,7 +141,7 @@ object GenomeVectorDouble {
         gaussianMutation(mutationRate = _ => 0.8, sigma = 0.5)
       )
 
-  def discreteMutations[S](discrete: Vector[D]): IArray[Mutation[S, Vector[Int], Vector[Int]]] =
+  def discreteMutations[S](discrete: Vector[D]): IArray[Mutation[S, IArray[Int], IArray[Int]]] =
     IArray(
       randomMutation(0.5 / _, discrete),
       randomMutation(1.0 / _, discrete),
@@ -154,17 +153,17 @@ object GenomeVectorDouble {
 
   type CrossoverAndMutation[S, G] = (S, G, scala.util.Random) => G
 
-  def continuousCrossoversAndMutations[S]: IArray[CrossoverAndMutation[S, (Vector[Double], Vector[Double])]] =
+  def continuousCrossoversAndMutations[S]: IArray[CrossoverAndMutation[S, (IArray[Double], IArray[Double])]] =
     for
       c <- continuousCrossovers[S]
       m <- continuousMutations[S]
-    yield crossoverAndMutation[S, Vector[Double]](c, m)
+    yield crossoverAndMutation[S, IArray[Double]](c, m)
 
-  def discreteCrossoversAndMutations[S](discrete: Vector[D]): IArray[CrossoverAndMutation[S, (Vector[Int], Vector[Int])]] =
+  def discreteCrossoversAndMutations[S](discrete: Vector[D]): IArray[CrossoverAndMutation[S, (IArray[Int], IArray[Int])]] =
     for
       c <- discreteCrossovers[S]
       m <- discreteMutations[S](discrete)
-    yield crossoverAndMutation[S, Vector[Int]](c, m)
+    yield crossoverAndMutation[S, IArray[Int]](c, m)
 
   def crossoverAndMutation[S, G](crossover: Crossover[S, (G, G), (G, G)], mutation: Mutation[S, G, G]): CrossoverAndMutation[S, (G, G)] =
     (s, mates, rng) =>
@@ -184,9 +183,9 @@ object GenomeVectorDouble {
 
   def applyContinuousDynamicOperators[S, I](
     selection: Selection[S, I],
-    genome: I => Vector[Double],
+    genome: I => IArray[Double],
     operatorStatistics: Map[Int, Double],
-    operatorExploration: Double): (S, Vector[I], Random) => ((Vector[Double], Vector[Double]), Int) =
+    operatorExploration: Double): (S, Vector[I], Random) => ((IArray[Double], IArray[Double]), Int) =
 
     def applyOperator =
       selectOperator(
@@ -202,13 +201,13 @@ object GenomeVectorDouble {
 
   def applyDynamicOperators[S, I, G](
     selection: Selection[S, I],
-    continuousValues: I => Vector[Double],
-    discreteValues: I => Vector[Int],
+    continuousValues: I => IArray[Double],
+    discreteValues: I => IArray[Int],
     continuousOperatorStatistics: Map[Int, Double],
     discreteOperatorStatistics: Map[Int, Double],
     discrete: Vector[D],
     operatorExploration: Double,
-    buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G): (S, Vector[I], Random) => Vector[G] =
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G): (S, Vector[I], Random) => Vector[G] =
 
     def continuousOperator =
       selectOperator(
@@ -271,9 +270,9 @@ object CDGenome {
     def individualFitness[P](fitness: P => Vector[Double]): Individual[P] => Vector[Double] = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
     def buildIndividual[P](g: Genome, p: P, generation: Long, initial: Boolean): Individual[P] = Individual(g, p, generation, initial)
 
-    def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
+    def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
       deterministic.expression[Genome, P, Individual[P]](
-        scaledVectorValues(components),
+        scaledValues(components),
         buildIndividual[P],
         express)
 
@@ -292,9 +291,9 @@ object CDGenome {
     def buildIndividual[P: Manifest](g: Genome, f: P, generation: Long, initial: Boolean): Individual[P] = Individual[P](g, IArray(f), 1, generation, initial)
     def vectorPhenotype[P: Manifest]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso[P]
 
-    def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]): (util.Random, Genome, Long, Boolean) => Individual[P] =
+    def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]): (util.Random, Genome, Long, Boolean) => Individual[P] =
       noisy.expression[Genome, Individual[P], P](
-        scaledVectorValues(continuous),
+        scaledValues(continuous),
         buildIndividual[P])(fitness)
 
 
@@ -305,14 +304,14 @@ object CDGenome {
     discreteOperator: Int)
 
   def buildGenome(
-    continuous: Seq[Double],
+    continuous: IArray[Double],
     continuousOperator: Option[Int],
-    discrete: Seq[Int],
+    discrete: IArray[Int],
     discreteOperator: Option[Int]): Genome =
     Genome(
-      IArray.from(continuous),
+      continuous,
       continuousOperator.getOrElse(-1),
-      IArray.from(discrete),
+      discrete,
       discreteOperator.getOrElse(-1))
 
 
@@ -370,9 +369,9 @@ object deterministic:
     (s4, elitePopulation)
 
   def expression[G, P, I](
-    values: G => (Vector[Double], Vector[Int]),
+    values: G => (IArray[Double], IArray[Int]),
     build: (G, P, Long, Boolean) => I,
-    fitness: (Vector[Double], Vector[Int]) => P) =
+    fitness: (IArray[Double], IArray[Int]) => P) =
     (g: G, generation: Long, initial: Boolean) =>
       val (cs, ds) = values(g)
       build(g, fitness(cs, ds), generation, initial)
@@ -421,8 +420,8 @@ object noisy:
     (s4, elitePopulation)
 
   def expression[G, I, P](
-    values: G => (Vector[Double], Vector[Int]),
-    build: (G, P, Long, Boolean) => I)(phenotype: (util.Random, Vector[Double], Vector[Int]) => P) =
+    values: G => (IArray[Double], IArray[Int]),
+    build: (G, P, Long, Boolean) => I)(phenotype: (util.Random, IArray[Double], IArray[Int]) => P) =
     (rg: util.Random, g: G, generation: Long, initial: Boolean) =>
       val (cs, ds) = values(g)
       build(g, phenotype(rg, cs, ds), generation, initial)

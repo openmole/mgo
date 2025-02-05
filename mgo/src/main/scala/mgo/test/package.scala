@@ -22,6 +22,9 @@ import scala.util.Random
 
 package object test {
 
+  given intConv: Conversion[IArray[Int], Vector[Int]] = _.toVector
+  given doubleConv: Conversion[IArray[Double], Vector[Double]] = _.toVector
+
   def twoVarInter(x1: Double, x2: Double): Double = x1 + x2 + x1 * x2
 
   def average(s: Seq[Double]): Double = s.sum / s.size
@@ -49,9 +52,8 @@ package object test {
 
   object rastrigin {
     def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-5.12, 5.12))
-    def compute(i: Vector[Double]): Double = {
+    def compute(i: Vector[Double]): Double =
       10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
-    }
   }
 
   def himmelblau(x: Double, y: Double): Double = {

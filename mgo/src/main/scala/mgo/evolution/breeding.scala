@@ -1,11 +1,14 @@
 package mgo.evolution
 
-import cats._
-import cats.data._
-import cats.implicits._
+import cats.*
+import cats.data.*
+import cats.implicits.*
 import mgo.tools
-import mgo.tools._
-import mgo.tools.execution._
+import mgo.tools.*
+import mgo.tools.execution.*
+
+import scala.reflect.ClassTag
+
 
 object breeding {
 
@@ -70,17 +73,17 @@ object breeding {
    */
 
   type Crossover[S, P, O] = (S, P, scala.util.Random) => O
-  type GACrossover[S] = Crossover[S, (Vector[Double], Vector[Double]), (Vector[Double], Vector[Double])]
+  type GACrossover[S, T] = Crossover[S, (IArray[T], IArray[T]), (IArray[T], IArray[T])]
 
-  def blxC[S](alpha: Double = 0.5): Crossover[S, (Vector[Double], Vector[Double]), Vector[Double]] =
+
+  def blxC[S](alpha: Double = 0.5): Crossover[S, (IArray[Double], IArray[Double]), IArray[Double]] =
     (s, mates, random) =>
-      (mates._1 zip mates._2).map {
-        case (c1, c2) =>
-          val cmin = math.min(c1, c2)
-          val cmax = math.max(c1, c2)
-          val range = cmax - cmin
-          random.nextDouble.scale(cmin - alpha * range, cmax + alpha * range)
-      }
+      (mates._1 zip mates._2).map: (c1, c2) =>
+        val cmin = math.min(c1, c2)
+        val cmax = math.max(c1, c2)
+        val range = cmax - cmin
+        random.nextDouble.scale(cmin - alpha * range, cmax + alpha * range)
+
 
   /**
    * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :
@@ -101,45 +104,51 @@ object breeding {
    * Implementation based on http://repository.ias.ac.in/9415/1/318.pdf
    *
    */
-  def sbxC[S](distributionIndex: Double = 2.0): GACrossover[S] =
-    (s, mates: (Vector[Double], Vector[Double]), random) =>
-      val exponent = 1.0 / (distributionIndex + 1.0)
+  def sbxC[S](distributionIndex: Double = 2.0): GACrossover[S, Double] = (s, mates, random) =>
+    val exponent = 1.0 / (distributionIndex + 1.0)
 
-      def elementCrossover(x0i: Double, x1i: Double): (Double, Double) =
-        val u = random.nextDouble
-        val bq =
-          if u <= 0.5
-          then Math.pow(2 * u, exponent)
-          else Math.pow(1.0 / (2.0 * (1.0 - u)), exponent)
+    def elementCrossover(x0i: Double, x1i: Double): (Double, Double) =
+      val u = random.nextDouble
+      val bq =
+        if u <= 0.5
+        then Math.pow(2 * u, exponent)
+        else Math.pow(1.0 / (2.0 * (1.0 - u)), exponent)
 
-        val lb = 0.0
-        val ub = 1.0
+      val lb = 0.0
+      val ub = 1.0
 
-        val x0 = clamp(x0i, lb, ub)
-        val x1 = clamp(x1i, lb, ub)
+      val x0 = clamp(x0i, lb, ub)
+      val x1 = clamp(x1i, lb, ub)
 
-        val newX0 = 0.5 * ((1.0 + bq) * x0 + (1.0 - bq) * x1)
-        val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
+      val newX0 = 0.5 * ((1.0 + bq) * x0 + (1.0 - bq) * x1)
+      val newX1 = 0.5 * ((1.0 - bq) * x0 + (1.0 + bq) * x1)
 
-        (newX0, newX1)
+      (newX0, newX1)
 
-      val (g1, g2) = mates
-      val zippedgs = g1 zip g2
+    val (g1, g2) = mates
 
-      val r =
-        zippedgs.map: (g1e, g2e) =>
-          elementCrossover(g1e, g2e)
+    val size = Math.min(g1.length, g2.length)
+    val o1 = Array.ofDim[Double](size)
+    val o2 = Array.ofDim[Double](size)
 
-      val (o1, o2) = r.unzip
-      assert(!o1.exists(_.isNaN) && !o2.exists(_.isNaN), s"$o1, $o2 from $g1, $g2")
-      (o1, o2)
+    loop(
+      0,
+      _ < size,
+      _ + 1
+    ): i =>
+      val (e1, e2) = elementCrossover(g1(i), g2(i))
+      o1(i) = e1
+      o2(i) = e2
+
+
+    (IArray.unsafeFromArray(o1), IArray.unsafeFromArray(o2))
 
 
 /**** Mutation ****/
 
   /** A mutation is a function from a single genome to another single genome */
   type Mutation[S, G1, G2] = (S, G1, scala.util.Random) => G2
-  type GAMutation[S] = Mutation[S, Vector[Double], Vector[Double]]
+  type GAMutation[S] = Mutation[S, IArray[Double], IArray[Double]]
 
   //  def bga[M[_]: cats.Monad: Random](mutationRate: Int => Double, mutationRange: Double): Mutation[M, Vector[Double], Vector[Double]] =
   //    Mutation { (g: Vector[Double]) =>
@@ -270,15 +279,14 @@ object breeding {
   //  }
 
   /** Randomly replaces some of the genomes in gs by genomes taken from the original population of I */
-  def clonesReplace[S, I, G](cloneProbability: Double, population: Vector[I], genome: I => G, selection: Selection[S, I]): Breeding[S, G, G] =
-    (s, gs, rng) => {
-      def cloneOrKeep(g: G): G = {
-        val clone = rng.nextDouble < cloneProbability
-        if (clone) genome(selection(s, population, rng)) else g
-      }
+  def clonesReplace[S, I, G](cloneProbability: Double, population: Vector[I], genome: I => G, selection: Selection[S, I]): Breeding[S, G, G] = (s, gs, rng) =>
+    gs.map: g =>
+      val clone = rng.nextDouble < cloneProbability
+      if clone
+      then genome(selection(s, population, rng))
+      else g
 
-      gs map cloneOrKeep
-    }
+
 
   //  def opOrClone[M[_]: cats.Monad: RandomGen, I, G](
   //    clone: I => G,
@@ -299,19 +307,35 @@ object breeding {
 
   /* ----------------- Discrete operators ----------------------- */
 
-  def randomMutation[S](mutationRate: Int => Double, discrete: Vector[D]): Mutation[S, Vector[Int], Vector[Int]] =
+  def randomMutation[S](mutationRate: Int => Double, discrete: Vector[D]): Mutation[S, IArray[Int], IArray[Int]] =
     (s, values, rng) =>
-      (values zip discrete) map {
-        case (v, d) =>
-          if (rng.nextDouble() < mutationRate(values.size)) tools.randomInt(rng, d) else v
-      }
+      val size = discrete.size
+      val r = mutationRate(size)
+      val res = Array.ofDim[Int](size)
 
-  def binaryCrossover[S, V](rate: Int => Double): Crossover[S, (Vector[V], Vector[V]), (Vector[V], Vector[V])] = {
-    (s, v, rng) =>
-      val (v1, v2) = v
-      def switch(x: V, y: V) = if (rng.nextDouble() < rate(v1.size)) (y, x) else (x, y)
-      (v1 zip v2).map(Function.tupled(switch)).unzip
-  }
+      loop(0, _ < size, _ + 1): i =>
+        if rng.nextDouble() < r
+        then res(i) = tools.randomInt(rng, discrete(i))
+        else res(i) = values(i)
+
+      IArray.unsafeFromArray(res)
+
+  def binaryCrossover[S, V: ClassTag](rate: Int => Double): GACrossover[S, V] = (s, v, rng) =>
+    val size = v._1.size
+    val r = rate(size)
+    val r1 = Array.ofDim[V](size)
+    val r2 = Array.ofDim[V](size)
+
+    loop(0, _ < size, _ + 1): i =>
+      if rng.nextDouble() < r
+      then
+        r2(i) = v._1(i)
+        r1(i) = v._2(i)
+      else
+        r1(i) = v._1(i)
+        r2(i) = v._2(i)
+
+    (IArray.unsafeFromArray(r1), IArray.unsafeFromArray(r2))
 
   /* tool functions */
 

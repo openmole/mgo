@@ -95,9 +95,9 @@ object NoisyProfile {
     NoisyNSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome, P](
       aggregatedFitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       buildGenome,
@@ -109,7 +109,7 @@ object NoisyProfile {
 
   def elitism[N, P: Manifest](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[ProfileState, Individual[P]] = {
 
-    def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
+    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
 
     NoisyProfileOperations.elitism[ProfileState, Individual[P], N, P](
       aggregatedFitness(aggregation),
@@ -119,7 +119,7 @@ object NoisyProfile {
       muByNiche)
   }
 
-  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
+  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
     NoisyIndividual.expression[P](fitness, continuous)
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
@@ -163,7 +163,7 @@ object NoisyProfile {
 case class NoisyProfile[N, P](
   muByNiche: Int,
   lambda: Int,
-  fitness: (util.Random, Vector[Double], Vector[Int]) => P,
+  fitness: (util.Random, IArray[Double], IArray[Int]) => P,
   aggregation: Vector[P] => Vector[Double],
   niche: Niche[CDGenome.NoisyIndividual.Individual[P], N],
   continuous: Vector[C] = Vector.empty,
@@ -171,14 +171,14 @@ case class NoisyProfile[N, P](
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
 object NoisyProfileOperations:
 
   def elitism[S, I, N, P](
     fitness: I => Vector[Double],
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
-    values: I => (Vector[Double], Vector[Int]),
+    values: I => (IArray[Double], IArray[Int]),
     niche: Niche[I, N],
     muByNiche: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>

@@ -1,7 +1,5 @@
 resolvers += Resolver.sonatypeRepo("staging")
 
-addSbtPlugin("org.scalariform" % "sbt-scalariform" % "1.8.2")
-
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.11")
 
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.11.1")

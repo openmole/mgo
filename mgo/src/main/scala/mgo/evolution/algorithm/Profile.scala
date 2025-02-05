@@ -73,9 +73,9 @@ object Profile {
     NSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       buildGenome,
@@ -84,13 +84,13 @@ object Profile {
       reject,
       operatorExploration)
 
-  def expression[P](express: (Vector[Double], Vector[Int]) => P, components: Vector[C]) =
+  def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C]) =
     DeterministicIndividual.expression(express, components)
 
   def elitism[N, P](niche: Niche[Individual[P], N], mu: Int, components: Vector[C], fitness: P => Vector[Double]): Elitism[ProfileState, Individual[P]] =
     ProfileOperations.elitism[ProfileState, Individual[P], N](
       individualFitness(fitness),
-      i => scaledVectorValues(components)(i.genome),
+      i => scaledValues(components)(i.genome),
       niche,
       mu)
 
@@ -122,19 +122,19 @@ object Profile {
 
 case class Profile[N](
   lambda: Int,
-  fitness: (Vector[Double], Vector[Int]) => Vector[Double],
+  fitness: (IArray[Double], IArray[Int]) => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   niche: Niche[CDGenome.DeterministicIndividual.Individual[Vector[Double]], N],
   nicheSize: Int = 20,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
 object ProfileOperations {
 
   def elitism[S, I, N](
     fitness: I => Vector[Double],
-    values: I => (Vector[Double], Vector[Int]),
+    values: I => (IArray[Double], IArray[Int]),
     niche: Niche[I, N],
     muByNiche: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>

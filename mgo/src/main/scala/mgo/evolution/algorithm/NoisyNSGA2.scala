@@ -70,9 +70,9 @@ object NoisyNSGA2 {
     NoisyNSGA2Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       buildGenome,
@@ -82,17 +82,16 @@ object NoisyNSGA2 {
       operatorExploration,
       cloneProbability)
 
-  def expression[P: Manifest](phenotype: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
+  def expression[P: Manifest](phenotype: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
     NoisyIndividual.expression[P](phenotype, continuous)
 
-  def elitism[S, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] = {
+  def elitism[S, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] =
     def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
 
     NoisyNSGA2Operations.elitism[S, Individual[P], P](
       fitness[P](aggregation),
       mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu)
-  }
 
   def reject[P](pse: NoisyNSGA2[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
 
@@ -131,14 +130,14 @@ object NoisyNSGA2 {
 case class NoisyNSGA2[P](
   mu: Int,
   lambda: Int,
-  fitness: (util.Random, Vector[Double], Vector[Int]) => P,
+  fitness: (util.Random, IArray[Double], IArray[Int]) => P,
   aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
 object NoisyNSGA2Operations {
 
@@ -148,18 +147,18 @@ object NoisyNSGA2Operations {
   def adaptiveBreeding[S, I, G, P](
     fitness: I => Vector[Double],
     genome: I => G,
-    continuousValues: G => Vector[Double],
+    continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
-    discreteValues: G => Vector[Int],
+    discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
     discrete: Vector[D],
-    buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     tournamentRounds: Int => Int,
     lambda: Int,
     reject: Option[G => Boolean],
     operatorExploration: Double,
     cloneProbability: Double): Breeding[S, I, G] =
-    (s, population, rng) => {
+    (s, population, rng) =>
       val ranks = ranking.paretoRankingMinAndCrowdingDiversity(population, fitness, rng)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
@@ -176,7 +175,7 @@ object NoisyNSGA2Operations {
       val offspring = breed[S, I, G](breeding, lambda, reject)(s, population, rng)
       val sizedOffspringGenomes = randomTake(offspring, lambda, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
-    }
+
 
   def elitism[S, I, P](
     fitness: I => Vector[Double],

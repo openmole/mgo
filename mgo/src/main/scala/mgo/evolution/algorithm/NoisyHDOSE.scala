@@ -63,9 +63,9 @@ object NoisyHDOSE:
       vectorPhenotype[P].get,
       aggregation,
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       scaledValues(continuous),
@@ -80,7 +80,7 @@ object NoisyHDOSE:
       limit,
       archiveLens.get)
 
-  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
+  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
     NoisyIndividual.expression[P](fitness, continuous)
 
   def elitism[P: Manifest](
@@ -178,7 +178,7 @@ object NoisyHDOSE:
 case class NoisyHDOSE[P](
   mu: Int,
   lambda: Int,
-  fitness: (util.Random, Vector[Double], Vector[Int]) => P,
+  fitness: (util.Random, IArray[Double], IArray[Int]) => P,
   limit: Vector[Double],
   archiveSize: Int,
   aggregation: Vector[P] => Vector[Double],
@@ -189,32 +189,32 @@ case class NoisyHDOSE[P](
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None,
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None,
   distance: Double = 1.0)
 
 object NoisyHDOSEOperations:
 
 
   def adaptiveBreeding[S, I: ClassTag, G, P](
-                                              history: I => Vector[P],
-                                              aggregation: Vector[P] => Vector[Double],
-                                              genome: I => G,
-                                              continuousValues: G => Vector[Double],
-                                              continuousOperator: G => Option[Int],
-                                              discreteValues: G => Vector[Int],
-                                              discreteOperator: G => Option[Int],
-                                              discrete: Vector[D],
-                                              scaledValues: G => (IArray[Double], IArray[Int]),
-                                              distance: HDOSEOperation.TooClose,
-                                              diversityDistance: S => Double,
-                                              buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
-                                              tournamentRounds: Int => Int,
-                                              lambda: Int,
-                                              reject: Option[G => Boolean],
-                                              operatorExploration: Double,
-                                              cloneProbability: Double,
-                                              limit: Vector[Double],
-                                              archive: S => Archive[I]): Breeding[S, I, G] =
+    history: I => Vector[P],
+    aggregation: Vector[P] => Vector[Double],
+    genome: I => G,
+    continuousValues: G => IArray[Double],
+    continuousOperator: G => Option[Int],
+    discreteValues: G => IArray[Int],
+    discreteOperator: G => Option[Int],
+    discrete: Vector[D],
+    scaledValues: G => (IArray[Double], IArray[Int]),
+    distance: HDOSEOperation.TooClose,
+    diversityDistance: S => Double,
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
+    tournamentRounds: Int => Int,
+    lambda: Int,
+    reject: Option[G => Boolean],
+    operatorExploration: Double,
+    cloneProbability: Double,
+    limit: Vector[Double],
+    archive: S => Archive[I]): Breeding[S, I, G] =
     (s, population, rng) =>
       val archivedPopulation = archive(s)
 
@@ -258,19 +258,19 @@ object NoisyHDOSEOperations:
 
 
   def elitism[S, I: ClassTag, P, G](
-                                     genome: I => G,
-                                     history: I => Vector[P],
-                                     aggregation: Vector[P] => Vector[Double],
-                                     scaledValues: G => (IArray[Double], IArray[Int]),
-                                     limit: Vector[Double],
-                                     historySize: Int,
-                                     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
-                                     mu: Int,
-                                     archive: monocle.Lens[S, Archive[I]],
-                                     distance: HDOSEOperation.TooClose,
-                                     precision: Double,
-                                     diversityDistance: monocle.Lens[S, Double],
-                                     archiveSize: Int): Elitism[S, I] =
+    genome: I => G,
+    history: I => Vector[P],
+    aggregation: Vector[P] => Vector[Double],
+    scaledValues: G => (IArray[Double], IArray[Int]),
+    limit: Vector[Double],
+    historySize: Int,
+    mergeHistories: (Vector[I], Vector[I]) => Vector[I],
+    mu: Int,
+    archive: monocle.Lens[S, Archive[I]],
+    distance: HDOSEOperation.TooClose,
+    precision: Double,
+    diversityDistance: monocle.Lens[S, Double],
+    archiveSize: Int): Elitism[S, I] =
     (s1, population, candidates, rng) =>
       def fitness = NoisyOSEOperations.aggregated(history, aggregation)
       val memoizedFitness = mgo.tools.memoize(fitness)

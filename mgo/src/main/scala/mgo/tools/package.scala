@@ -101,16 +101,16 @@ implicit class ScalaToApacheRng(rng: util.Random) extends RandomGenerator {
     }
 }     */
 
-implicit class GroupByOrderedImplicitImpl[A](val t: Traversable[A]) extends AnyVal {
-  def groupByOrdered[K](f: A => K): collection.Map[K, List[A]] = {
-    val map = mutable.LinkedHashMap[K, List[A]]()
-    for (i <- t) {
-      val key = f(i)
+implicit class GroupByOrderedImplicitImpl[A](val t: Traversable[A]) extends AnyVal:
+  def groupByOrdered[K: ImplementEqualMethod as eqm](f: A => K): collection.Map[ImplementEqualMethod.EQM[K], List[A]] =
+    val map = mutable.LinkedHashMap[ImplementEqualMethod.EQM[K], List[A]]()
+    for (i <- t)
+    do
+      val key = eqm(f(i))
       map(key) = i :: map.getOrElse(key, Nil)
-    }
+
     map.mapValues(_.reverse).toMap
-  }
-}
+
 
 def time[R](label: String, block: => R): (R, Long) = {
   val t0 = java.lang.System.nanoTime()

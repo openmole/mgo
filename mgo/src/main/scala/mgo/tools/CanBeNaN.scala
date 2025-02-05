@@ -17,11 +17,10 @@
  */
 package mgo.tools
 
-object CanBeNaN {
-  implicit def doubleCanBeNaN: CanBeNaN[Double] = _.isNaN
-  implicit def vectorCanBeNaN[T](implicit cbn: CanBeNaN[T]): CanBeNaN[Vector[T]] = _.exists(cbn.isNaN)
-}
+object CanBeNaN:
+  given CanBeNaN[Double] = _.isNaN
+  given [T](using cbn: CanBeNaN[T]): CanBeNaN[Vector[T]] = _.exists(cbn.isNaN)
 
-trait CanBeNaN[T] {
+
+trait CanBeNaN[T]:
   def isNaN(t: T): Boolean
-}

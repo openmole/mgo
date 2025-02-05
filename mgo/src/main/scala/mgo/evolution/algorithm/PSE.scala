@@ -69,9 +69,9 @@ object PSE:
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     PSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       Focus[Individual[P]](_.phenotype).get andThen pattern,
@@ -85,15 +85,14 @@ object PSE:
 
   def elitism[P: CanBeNaN](pattern: P => Vector[Int], continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
     PSEOperations.elitism[PSEState, Individual[P], P](
-      i => scaledVectorValues(continuous)(i.genome),
       Focus[Individual[P]](_.phenotype).get,
       pattern,
       Focus[PSEState](_.s)
     )
 
-  def expression[P](phenotype: (Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
+  def expression[P](phenotype: (IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
     deterministic.expression[Genome, P, Individual[P]](
-      scaledVectorValues(continuous),
+      scaledValues(continuous),
       buildIndividual,
       phenotype)
 
@@ -119,25 +118,25 @@ object PSE:
 
 case class PSE[P](
   lambda: Int,
-  phenotype: (Vector[Double], Vector[Int]) => P,
+  phenotype: (IArray[Double], IArray[Int]) => P,
   pattern: P => Vector[Int],
   maxRareSample: Int = 10,
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
 object PSEOperations:
 
   def adaptiveBreeding[S, I, G](
     genome: I => G,
-    continuousValues: G => Vector[Double],
+    continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
-    discreteValues: G => Vector[Int],
+    discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
     discrete: Vector[D],
     pattern: I => Vector[Int],
-    buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     lambda: Int,
     reject: Option[G => Boolean],
     operatorExploration: Double,
@@ -168,7 +167,6 @@ object PSEOperations:
         randomTake(offspring, lambda, rng)
 
   def elitism[S, I, P: CanBeNaN](
-    values: I => (Vector[Double], Vector[Int]),
     phenotype: I => P,
     pattern: P => Vector[Int],
     hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =

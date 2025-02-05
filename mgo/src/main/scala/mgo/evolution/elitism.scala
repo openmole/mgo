@@ -83,40 +83,41 @@ object elitism:
   //  def keepFirst[M[_]: cats.Monad, I]: UncloneStrategy[M, I] =
   //    (clones: Vector[I]) => clones.head.pure[M]
 
-  def keepRandomElementInNiches[I, N](niche: I => N, random: scala.util.Random): Vector[I] => Vector[I] = individuals =>
+  def keepRandomElementInNiches[I, N: ImplementEqualMethod as eqm](niche: I => N, random: scala.util.Random): Vector[I] => Vector[I] = individuals =>
     val indivsByNiche = individuals.groupByOrdered(niche)
     indivsByNiche.values.toVector.map(_.toVector).flatMap: individuals =>
       if individuals.isEmpty
       then individuals
       else Vector(individuals(random.nextInt(individuals.size)))
 
-  def keepNiches[I, N](niche: I => N, keep: Vector[I] => Vector[I]): Vector[I] => Vector[I] =
+  def keepNiches[I, N: ImplementEqualMethod as eqm](niche: I => N, keep: Vector[I] => Vector[I]): Vector[I] => Vector[I] =
     (individuals: Vector[I]) =>
       val indivsByNiche = individuals.groupByOrdered(niche)
       indivsByNiche.values.toVector.map(_.toVector).flatMap(keep.apply)
 
-  def keepFirst[G, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]): Vector[I] =
+  def keepFirst[G: ImplementEqualMethod as eqm, I](genome: I => G)(population: Vector[I], newIndividuals: Vector[I]): Vector[I] =
     val filteredClone =
-      val existingGenomes = population.map(genome).toSet
-      newIndividuals.filter(i => !existingGenomes.contains(genome(i)))
+      val existingGenomes = population.map(genome).map(eqm.apply).toSet
+      newIndividuals.filter: i =>
+        !existingGenomes.contains(eqm(genome(i)))
 
     population ++ filteredClone
 
-  def mergeHistories[G, I, P](genome: I => G, history: monocle.Lens[I, Vector[P]], historyAge: monocle.Lens[I, Long], historySize: Int): (Vector[I], Vector[I]) => Vector[I] =
+  def mergeHistories[G: ImplementEqualMethod as eqm, I, P](genome: I => G, history: monocle.Lens[I, Vector[P]], historyAge: monocle.Lens[I, Long], historySize: Int): (Vector[I], Vector[I]) => Vector[I] =
     (population: Vector[I], newIndividuals: Vector[I]) =>
       val mergedClones =
         val indexedNI = newIndividuals.groupByOrdered(genome)
         for
           i <- population
-          clones = indexedNI.getOrElse(genome(i), List())
+          clones = indexedNI.getOrElse(eqm(genome(i)), List())
         yield
           val additionalHistory = clones.flatMap(history.get)
           history.modify(h => (h ++ additionalHistory).takeRight(historySize)) andThen
-            historyAge.modify(_ + additionalHistory.size) apply (i)
+            historyAge.modify(_ + additionalHistory.size) apply i
 
       val filteredClone =
-        val filter = population.map(genome).toSet
-        newIndividuals.filter(i => !filter.contains(genome(i)))
+        val filter = population.map(genome andThen eqm.apply).toSet
+        newIndividuals.filter(i => !filter.contains(eqm(genome(i))))
 
       mergedClones ++ filteredClone
 

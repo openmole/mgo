@@ -1,16 +1,16 @@
 package mgo.evolution.algorithm
 
-import cats.implicits._
-import mgo.evolution._
-import mgo.evolution.algorithm.GenomeVectorDouble._
-import mgo.evolution.breeding._
-import mgo.evolution.elitism._
-import mgo.evolution.ranking._
-import mgo.tools.execution._
+import cats.implicits.*
+import mgo.evolution.*
+import mgo.evolution.breeding.*
+import mgo.evolution.elitism.*
+import mgo.evolution.ranking.*
+import mgo.tools.ImplementEqualMethod
+import mgo.tools.execution.*
+import monocle.*
+import monocle.syntax.all.*
 
-import monocle._
-import monocle.syntax.all._
-
+import GenomeVectorDouble.*
 import scala.reflect.ClassTag
 
 object OSE:
@@ -31,15 +31,15 @@ object OSE:
     lambda: Int,
     operatorExploration: Double,
     discrete: Vector[D],
-    origin: (Vector[Double], Vector[Int]) => Vector[Int],
+    origin: (IArray[Double], IArray[Int]) => Vector[Int],
     fitness: P => Vector[Double],
     reject: Option[Genome => Boolean]): Breeding[OSEState[P], Individual[P], Genome] =
     OSEOperation.adaptiveBreeding[OSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       origin,
@@ -51,14 +51,14 @@ object OSE:
       archiveLens[P].get,
       reachMapLens.get)
 
-  def expression[P](fitness: (Vector[Double], Vector[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
+  def expression[P](fitness: (IArray[Double], IArray[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
     DeterministicIndividual.expression(fitness, components)
 
-  def elitism[P](mu: Int, limit: Vector[Double], origin: (Vector[Double], Vector[Int]) => Vector[Int], components: Vector[C], fitness: P => Vector[Double]): Elitism[OSEState[P], Individual[P]] =
+  def elitism[P](mu: Int, limit: Vector[Double], origin: (IArray[Double], IArray[Int]) => Vector[Int], components: Vector[C], fitness: P => Vector[Double]): Elitism[OSEState[P], Individual[P]] =
     OSEOperation.elitism[OSEState[P], Individual[P]](
       individualFitness(fitness),
       limit,
-      i => scaledVectorValues(components)(i.genome),
+      i => scaledValues(components)(i.genome),
       origin,
       mu,
       archiveLens[P],
@@ -109,13 +109,13 @@ object OSE:
 case class OSE(
   mu: Int,
   lambda: Int,
-  fitness: (Vector[Double], Vector[Int]) => Vector[Double],
+  fitness: (IArray[Double], IArray[Int]) => Vector[Double],
   limit: Vector[Double],
-  origin: (Vector[Double], Vector[Int]) => Vector[Int],
+  origin: (IArray[Double], IArray[Int]) => Vector[Int],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
 object OSEOperation:
 
@@ -132,13 +132,13 @@ object OSEOperation:
   def adaptiveBreeding[S, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
-    continuousValues: G => Vector[Double],
+    continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
-    discreteValues: G => Vector[Int],
+    discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
     discrete: Vector[D],
-    origin: (Vector[Double], Vector[Int]) => Vector[Int],
-    buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
+    origin: (IArray[Double], IArray[Int]) => Vector[Int],
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     tournamentRounds: Int => Int,
     lambda: Int,
     reject: Option[G => Boolean],
@@ -157,7 +157,7 @@ object OSEOperation:
       val breeding: Breeding[S, I, G] =
         (s, pop, rng) =>
           val newGs =
-            applyDynamicOperators[S, I, G](
+            applyDynamicOperators(
               tournament(allRanks, tournamentRounds),
               genome andThen continuousValues,
               genome andThen discreteValues,
@@ -177,8 +177,8 @@ object OSEOperation:
   def elitism[S, I: ClassTag](
     fitness: I => Vector[Double],
     limit: Vector[Double],
-    values: I => (Vector[Double], Vector[Int]),
-    origin: (Vector[Double], Vector[Int]) => Vector[Int],
+    values: I => (IArray[Double], IArray[Int]),
+    origin: (IArray[Double], IArray[Int]) => Vector[Int],
     mu: Int,
     archive: monocle.Lens[S, Archive[I]],
     reachMap: monocle.Lens[S, ReachMap]): Elitism[S, I] =

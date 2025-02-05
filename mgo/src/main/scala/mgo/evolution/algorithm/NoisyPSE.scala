@@ -17,16 +17,15 @@
  */
 package mgo.evolution.algorithm
 
-import cats.implicits._
-import mgo.evolution._
-import mgo.evolution.algorithm.GenomeVectorDouble._
-import mgo.evolution.breeding._
-import mgo.evolution.elitism._
-import mgo.tools.CanBeNaN
-import mgo.tools.execution._
-
-import monocle._
-import monocle.syntax.all._
+import cats.implicits.*
+import mgo.evolution.*
+import mgo.evolution.algorithm.GenomeVectorDouble.*
+import mgo.evolution.breeding.*
+import mgo.evolution.elitism.*
+import mgo.tools.{CanBeNaN, ImplementEqualMethod}
+import mgo.tools.execution.*
+import monocle.*
+import monocle.syntax.all.*
 
 import scala.util.Random
 
@@ -57,9 +56,9 @@ object NoisyPSE {
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     NoisyPSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Focus[Individual[P]](_.genome).get,
-      continuousVectorValues.get,
+      continuousValues.get,
       continuousOperator.get,
-      discreteVectorValues.get,
+      discreteValues.get,
       discreteOperator.get,
       discrete,
       vectorPhenotype[P].get _ andThen aggregation andThen pattern,
@@ -78,7 +77,7 @@ object NoisyPSE {
     historySize: Int,
     continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
     NoisyPSEOperations.elitism[PSEState, Individual[P], P](
-      i => scaledVectorValues(continuous)(i.genome),
+      i => scaledValues(continuous)(i.genome),
       vectorPhenotype[P],
       aggregation,
       pattern,
@@ -86,20 +85,20 @@ object NoisyPSE {
       historySize,
       Focus[EvolutionState[HitMap]](_.s))
 
-  def expression[P: Manifest](fitness: (util.Random, Vector[Double], Vector[Int]) => P, continuous: Vector[C]) =
+  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
     noisy.expression[Genome, Individual[P], P](
-      scaledVectorValues(continuous),
+      scaledValues(continuous),
       buildIndividual[P])(fitness)
 
-  def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]): (Vector[Double], Vector[Int], Vector[Double], Vector[Int], Int) =
+  def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]): (IArray[Double], IArray[Int], Vector[Double], Vector[Int], Int) =
     (
-      scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous),
-      i.focus(_.genome) andThen discreteVectorValues get,
+      scaleContinuousValues(continuousValues.get(i.genome), continuous),
+      i.focus(_.genome) andThen discreteValues get,
       aggregation(vectorPhenotype[P].get(i)),
       (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),
       i.phenotypeHistory.size)
 
-  case class Result[P](continuous: Vector[Double], discrete: Vector[Int], aggregation: Vector[Double], pattern: Vector[Int], replications: Int, individual: Individual[P])
+  case class Result[P](continuous: IArray[Double], discrete: IArray[Int], aggregation: Vector[Double], pattern: Vector[Int], replications: Int, individual: Individual[P])
 
   def result[P: Manifest](
     population: Vector[Individual[P]],
@@ -153,7 +152,7 @@ object NoisyPSE {
 
 case class NoisyPSE[P](
   lambda: Int,
-  phenotype: (util.Random, Vector[Double], Vector[Int]) => P,
+  phenotype: (util.Random, IArray[Double], IArray[Int]) => P,
   pattern: Vector[Double] => Vector[Int],
   aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
@@ -162,19 +161,19 @@ case class NoisyPSE[P](
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
-  reject: Option[(Vector[Double], Vector[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
 object NoisyPSEOperations:
 
   def adaptiveBreeding[S, I, G](
     genome: I => G,
-    continuousValues: G => Vector[Double],
+    continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
-    discreteValues: G => Vector[Int],
+    discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
     discrete: Vector[D],
     pattern: I => Vector[Int],
-    buildGenome: (Vector[Double], Option[Int], Vector[Int], Option[Int]) => G,
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     lambda: Int,
     reject: Option[G => Boolean],
     cloneProbability: Double,
@@ -202,7 +201,7 @@ object NoisyPSEOperations:
       clonesReplace[S, I, G](cloneProbability, population, genome, randomSelection)(s, gs, rng)
 
   def elitism[S, I, P: CanBeNaN](
-    values: I => (Vector[Double], Vector[Int]),
+    values: I => (IArray[Double], IArray[Int]),
     history: monocle.Lens[I, Vector[P]],
     aggregation: Vector[P] => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
@@ -211,12 +210,13 @@ object NoisyPSEOperations:
     hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedPattern = mgo.tools.memoize(history.get _ andThen aggregation andThen pattern)
-      val candidateValues = candidates.map(values).toSet
+      val eqm = summon[ImplementEqualMethod[(IArray[Double], IArray[Int])]]
+      val candidateValues = candidates.map(values andThen eqm.apply).toSet
       val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get _ andThen aggregation)
 
       def newHits =
         merged.flatMap: i =>
-          if candidateValues.contains(values(i)) then Some(i) else None
+          if candidateValues.contains(eqm(values(i))) then Some(i) else None
 
       val hm2 = addHits[I](memoizedPattern, newHits, hitmap.get(s))
       val elite = keepNiches[I, Vector[Int]](memoizedPattern, maximiseO(i => history.get(i).size, 1)) apply merged

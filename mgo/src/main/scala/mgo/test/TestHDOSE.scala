@@ -13,7 +13,7 @@ object RastriginHDOSE extends App:
   val hdose: HDOSE = HDOSE(
     mu = 100,
     lambda = 100,
-    fitness = (x, _) => Vector(rastrigin.compute(x)),
+    fitness = (x, _) => IArray(rastrigin.compute(x)),
     limit = Vector(10.0),
     archiveSize = 10,
     continuous = rastrigin.continuous(dimensions))

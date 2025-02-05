@@ -1,16 +1,10 @@
 
 name := "mgo"
 ThisBuild / organization := "org.openmole"
-ThisBuild / scalaVersion := "3.3.3"
+ThisBuild / scalaVersion := "3.6.2"
 ThisBuild / crossScalaVersions := Seq("3.3.3")
 
 val monocleVersion = "3.2.0"
-
-def scala2(scalaVersion: String): Boolean =
-  CrossVersion.partialVersion(scalaVersion) match {
-    case Some((2, _))  => true
-    case _             => false
-  }
 
 lazy val settings: Seq[Setting[_]] = Seq(
   //addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
@@ -19,7 +13,6 @@ lazy val settings: Seq[Setting[_]] = Seq(
   resolvers += Resolver.sonatypeRepo("snapshots"),
   javacOptions ++= Seq("-source", "11", "-target", "11"),
   scalacOptions ++= Seq("-Xtarget:11", "-language:higherKinds"),
-  scalariformAutoformat := true,
   scalacOptions ++= Seq("-language:postfixOps")
 //  scalacOptions ++= (
 //    if (priorTo2_13(scalaVersion.value)) Nil else Seq("-Ymacro-annotations", "-language:postfixOps")
