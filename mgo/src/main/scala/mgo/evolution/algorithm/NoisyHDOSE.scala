@@ -55,8 +55,8 @@ object NoisyHDOSE:
     aggregation: Vector[P] => Vector[Double],
     continuous: Vector[C],
     discrete: Vector[D],
-    significanceC: Vector[Double],
-    significanceD: Vector[Int],
+    weightC: Vector[Double],
+    weightD: Vector[Double],
     limit: Vector[Double],
     reject: Option[Genome => Boolean]): Breeding[HDOSEState[P], Individual[P], Genome] =
     NoisyHDOSEOperations.adaptiveBreeding[HDOSEState[P], Individual[P], Genome, P](
@@ -69,7 +69,7 @@ object NoisyHDOSE:
       discreteOperator.get,
       discrete,
       scaledValues(continuous),
-      HDOSE.tooCloseByComponent(significanceC, significanceD),
+      HDOSE.tooCloseByComponent(weightC, weightD, discrete),
       distanceLens.get,
       buildGenome,
       logOfPopulationSize,
@@ -87,25 +87,27 @@ object NoisyHDOSE:
     mu: Int,
     historySize: Int,
     aggregation: Vector[P] => Vector[Double],
-    components: Vector[C],
-    significanceC: Vector[Double],
-    significanceD: Vector[Int],
+    continuous: Vector[C],
+    discrete: Vector[D],
+    weightC: Vector[Double],
+    weightD: Vector[Double],
     archiveSize: Int,
     limit: Vector[Double],
     precision: Double): Elitism[HDOSEState[P], Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
+    def individualValues(i: Individual[P]) = scaledVectorValues(continuous)(i.genome)
 
     NoisyHDOSEOperations.elitism[HDOSEState[P], Individual[P], P, Genome](
       _.genome,
       vectorPhenotype[P].get,
       aggregation,
-      scaledValues(components),
+      continuousValues.get,
+      discreteValues.get,
       limit,
       historySize,
       mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu,
       archiveLens,
-      HDOSE.tooCloseByComponent(significanceC, significanceD),
+      HDOSE.tooCloseByComponent(weightC, weightD, discrete),
       precision,
       distanceLens,
       archiveSize
@@ -143,8 +145,8 @@ object NoisyHDOSE:
         parallel)
 
     def step(t: NoisyHDOSE[P]) =
-      val sC = t.significanceC.getOrElse(Vector.fill(t.continuous.size)(1.0))
-      val sD = t.significanceD.getOrElse(Vector.fill(t.discrete.size)(1))
+      val wC = t.weightC.getOrElse(Vector.fill(t.continuous.size)(1.0))
+      val wD = t.weightD.getOrElse(Vector.fill(t.discrete.size)(1.0))
 
       noisy.step[HDOSEState[P], Individual[P], Genome](
         NoisyHDOSE.adaptiveBreeding[P](
@@ -154,8 +156,8 @@ object NoisyHDOSE:
           t.aggregation,
           t.continuous,
           t.discrete,
-          sC,
-          sD,
+          wC,
+          wD,
           t.limit,
           reject(t)),
         NoisyHDOSE.expression(t.fitness, t.continuous),
@@ -164,8 +166,9 @@ object NoisyHDOSE:
           t.historySize,
           t.aggregation,
           t.continuous,
-          sC,
-          sD,
+          t.discrete,
+          wC,
+          wD,
           t.archiveSize,
           t.limit,
           t.distance),
@@ -184,8 +187,8 @@ case class NoisyHDOSE[P](
   aggregation: Vector[P] => Vector[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
-  significanceC: Option[Vector[Double]] = None,
-  significanceD: Option[Vector[Int]] = None,
+  weightC: Option[Vector[Double]] = None,
+  weightD: Option[Vector[Double]] = None,
   historySize: Int = 100,
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
@@ -228,7 +231,8 @@ object NoisyHDOSEOperations:
         HDOSEOperation.isTooCloseFromArchive[G, I](
           distance,
           archivedPopulation ++ promising,
-          scaledValues,
+          continuousValues,
+          discreteValues,
           genome,
           diversityDistance(s))
 
@@ -261,7 +265,8 @@ object NoisyHDOSEOperations:
     genome: I => G,
     history: I => Vector[P],
     aggregation: Vector[P] => Vector[Double],
-    scaledValues: G => (IArray[Double], IArray[Int]),
+    continuousValues: G => IArray[Double],
+    discreteValues: G => IArray[Int],
     limit: Vector[Double],
     historySize: Int,
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
@@ -292,7 +297,8 @@ object NoisyHDOSEOperations:
             HDOSEOperation.computeDistance(
               distance,
               archive.get(s2),
-              scaledValues,
+              continuousValues,
+              discreteValues,
               genome,
               archiveSize,
               diversityDistance.get(s2),
@@ -303,7 +309,8 @@ object NoisyHDOSEOperations:
             HDOSEOperation.shrinkArchive(
               distance,
               archive.get(s2),
-              scaledValues,
+              continuousValues,
+              discreteValues,
               genome,
               newDiversityDistance
             )
@@ -316,7 +323,8 @@ object NoisyHDOSEOperations:
           HDOSEOperation.isTooCloseFromArchive(
             distance,
             archive.get(s3),
-            scaledValues,
+            continuousValues,
+            discreteValues,
             genome,
             diversityDistance.get(s3))(genome(i))
 

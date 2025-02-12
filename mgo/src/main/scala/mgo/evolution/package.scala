@@ -76,10 +76,9 @@ package object evolution {
 
   def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
 
-  def changeScale(v: Double, fromMin: Double, fromMax: Double, toMin: Double, toMax: Double): Double = {
+  def changeScale(v: Double, fromMin: Double, fromMax: Double, toMin: Double, toMax: Double): Double =
     val factor = (toMax - toMin) / (fromMax - fromMin)
-    (factor * (v - fromMin) + toMin)
-  }
+    factor * (v - fromMin) + toMin
 
   implicit def double2Scalable(d: Double): double2Scalable = new double2Scalable(d)
   class double2Scalable(d: Double):

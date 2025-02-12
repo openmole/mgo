@@ -52,8 +52,8 @@ object HDOSE:
     operatorExploration: Double,
     continuous: Vector[C],
     discrete: Vector[D],
-    significanceC: Vector[Double],
-    significanceD: Vector[Int],
+    weightC: Vector[Double],
+    weightD: Vector[Double],
     fitness: P => Vector[Double],
     reject: Option[Genome => Boolean]): Breeding[HDOSEState[P], Individual[P], Genome] =
     HDOSEOperation.adaptiveBreeding[HDOSEState[P], Individual[P], Genome](
@@ -63,9 +63,8 @@ object HDOSE:
       continuousOperator.get,
       discreteValues.get,
       discreteOperator.get,
-      scaledValues(continuous),
       discrete,
-      tooCloseByComponent(significanceC, significanceD),
+      tooCloseByComponent(weightC, weightD, discrete),
       distanceLens.get,
       buildGenome,
       logOfPopulationSize,
@@ -80,24 +79,25 @@ object HDOSE:
   def elitism[P](
     mu: Int,
     limit: Vector[Double],
-    significanceC: Vector[Double],
-    significanceD: Vector[Int],
+    weightC: Vector[Double],
+    weightD: Vector[Double],
     archiveSize: Int,
-    components: Vector[C],
+    continuous: Vector[C],
+    discrete: Vector[D],
     fitness: P => Vector[Double],
     precision: Double): Elitism[HDOSEState[P], Individual[P]] =
     HDOSEOperation.elitism[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       limit,
-      scaledValues(components),
+      scaledValues(continuous),
       mu,
       archiveLens[P],
-      tooCloseByComponent(significanceC, significanceD),
+      tooCloseByComponent(weightC, weightD, discrete),
       precision,
       distanceLens,
       archiveSize,
-      continuousVectorValues.get,
-      discreteVectorValues.get,
+      continuousValues.get,
+      discreteValues.get,
       Focus[Individual[P]](_.genome).get
     )
 
@@ -122,7 +122,7 @@ object HDOSE:
 
   def reject(ose: HDOSE): Option[Genome => Boolean] = NSGA2.reject(ose.reject, ose.continuous)
 
-  def tooCloseByComponent(significanceC: Vector[Double], significanceD: Vector[Int]): HDOSEOperation.TooClose = (g1, g2, d) =>
+  def tooCloseByComponent(weightC: Vector[Double], weightD: Vector[Double], discrete: Vector[D]): HDOSEOperation.TooClose = (g1, g2, d) =>
     val (c1, d1) = g1
     val (c2, d2) = g2
 
@@ -133,7 +133,7 @@ object HDOSE:
 
     while ic < cSize && sum < d
     do
-      sum += Math.abs(c1(ic) - c2(ic)) / significanceC(ic)
+      sum += Math.abs(c1(ic) - c2(ic)) * weightC(ic)
       ic += 1
 
 
@@ -142,7 +142,11 @@ object HDOSE:
 
     while id < dSize && sum < d
     do
-      sum += Math.abs(d1(id) - d2(id)).toDouble / significanceD(id)
+      val d = discrete(id)
+      def scale(x: Int) =
+        changeScale(x, d.low, d.high, 0.0, 1.0)
+
+      sum += Math.abs(scale(d1(id)) - scale(d2(id))) * weightD(id)
       id += 1
 
     sum < d
@@ -156,13 +160,13 @@ object HDOSE:
         parallel)
 
     def step(t: HDOSE) =
-      val sC = t.significanceC.getOrElse(Vector.fill(t.continuous.size)(1.0))
-      val sD = t.significanceD.getOrElse(Vector.fill(t.discrete.size)(1))
+      val sC = t.weightC.getOrElse(Vector.fill(t.continuous.size)(1.0))
+      val sD = t.weightD.getOrElse(Vector.fill(t.discrete.size)(1.0))
 
       deterministic.step[HDOSEState[Vector[Double]], Individual[Vector[Double]], Genome](
         HDOSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, sC, sD, identity, reject(t)),
         HDOSE.expression(t.fitness, t.continuous),
-        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, identity, t.distance),
+        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, t.discrete, identity, t.distance),
         Focus[HDOSEState[Vector[Double]]](_.generation),
         Focus[HDOSEState[Vector[Double]]](_.evaluated))
 
@@ -175,8 +179,8 @@ case class HDOSE(
   archiveSize: Int = 1000,
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
-  significanceC: Option[Vector[Double]] = None,
-  significanceD: Option[Vector[Int]] = None,
+  weightC: Option[Vector[Double]] = None,
+  weightD: Option[Vector[Double]] = None,
   operatorExploration: Double = 0.1,
   reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None,
   distance: Double = 1.0)
@@ -189,12 +193,14 @@ object HDOSEOperation:
   def isTooCloseFromArchive[G, I](
     tooClose: TooClose,
     archive: Archive[I],
-    scaledValues: G => (IArray[Double], IArray[Int]),
+    continuousValues: G => IArray[Double],
+    discreteValues: G => IArray[Int],
     genome: I => G,
     diversityDistance: Double)(g: G): Boolean =
 
     def tooCloseGenome(g1: G, g2: G, d: Double): Boolean =
-      tooClose(scaledValues(g1), scaledValues(g2), d)
+      def genomeValues(g: G) = (continuousValues(g), discreteValues(g))
+      tooClose(genomeValues(g1), genomeValues(g2), d)
 
     def tooCloseFromArchive(g: G) =
       archive.exists(i => tooCloseGenome(genome(i), g, diversityDistance))
@@ -202,14 +208,15 @@ object HDOSEOperation:
     tooCloseFromArchive(g)
 
   def shrinkArchive[G, I: ClassTag](
-                                     distance: TooClose,
-                                     archive: Archive[I],
-                                     scaledValues: G => (IArray[Double], IArray[Int]),
-                                     genome: I => G,
-                                     diversityDistance: Double): Archive[I] =
+    distance: TooClose,
+    archive: Archive[I],
+    continuousValues: G => IArray[Double],
+    discreteValues: G => IArray[Int],
+    genome: I => G,
+    diversityDistance: Double): Archive[I] =
 
     def isTooClose(archive: Archive[I], g: G) =
-      isTooCloseFromArchive(distance, archive, scaledValues, genome, diversityDistance)(g)
+      isTooCloseFromArchive(distance, archive, continuousValues, discreteValues, genome, diversityDistance)(g)
 
     val newArchive = ListBuffer[I]()
     newArchive.addOne(archive.head)
@@ -222,15 +229,16 @@ object HDOSEOperation:
     IArray.unsafeFromArray(newArchive.toArray)
 
   def computeDistance[G, I: ClassTag](
-                                       distance: TooClose,
-                                       archive: Archive[I],
-                                       scaledValues: G => (IArray[Double], IArray[Int]),
-                                       genome: I => G,
-                                       targetSize: Int,
-                                       currentDistance: Double,
-                                       precision: Double) =
+    distance: TooClose,
+    archive: Archive[I],
+    continuousValues: G => IArray[Double],
+    discreteValues: G => IArray[Int],
+    genome: I => G,
+    targetSize: Int,
+    currentDistance: Double,
+    precision: Double) =
     def computeSize(d: Double) =
-      shrinkArchive(distance, archive, scaledValues, genome, d).size.toDouble
+      shrinkArchive(distance, archive, continuousValues, discreteValues, genome, d).size.toDouble
 
     val newDistance =
       mgo.tools.findFirstUnder(
@@ -250,7 +258,6 @@ object HDOSEOperation:
     continuousOperator: G => Option[Int],
     discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
-    scaledValues: G => (IArray[Double], IArray[Int]),
     discrete: Vector[D],
     distance: TooClose,
     diversityDistance: S => Double,
@@ -283,7 +290,8 @@ object HDOSEOperation:
             isTooCloseFromArchive[G, I](
               distance,
               archivedPopulation,
-              scaledValues,
+              continuousValues,
+              discreteValues,
               genome,
               diversityDistance(s))
 
@@ -301,8 +309,8 @@ object HDOSEOperation:
     precision: Double,
     diversityDistance: Lens[S, Double],
     archiveSize: Int,
-    continuousValues: G => Vector[Double],
-    discreteValues: G => Vector[Int],
+    continuousValues: G => IArray[Double],
+    discreteValues: G => IArray[Int],
     genome: I => G): Elitism[S, I] =
     (s1, population, candidates, rng) =>
       val memoizedFitness = mgo.tools.memoize(fitness)
@@ -321,7 +329,8 @@ object HDOSEOperation:
             computeDistance(
               distance,
               archive.get(s2),
-              scaledValues,
+              continuousValues,
+              discreteValues,
               genome,
               archiveSize,
               diversityDistance.get(s2),
@@ -332,7 +341,8 @@ object HDOSEOperation:
             shrinkArchive(
               distance,
               archive.get(s2),
-              scaledValues,
+              continuousValues,
+              discreteValues,
               genome,
               newDiversityDistance
             )
@@ -344,7 +354,8 @@ object HDOSEOperation:
           isTooCloseFromArchive(
             distance,
             archive.get(s3),
-            scaledValues,
+            continuousValues,
+            discreteValues,
             genome,
             diversityDistance.get(s3))(genome(i))
 
