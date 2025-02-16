@@ -2,7 +2,7 @@
 name := "mgo"
 ThisBuild / organization := "org.openmole"
 ThisBuild / scalaVersion := "3.6.2"
-ThisBuild / crossScalaVersions := Seq("3.6.2")
+//ThisBuild / crossScalaVersions := Seq("3.6.2")
 
 val monocleVersion = "3.2.0"
 
