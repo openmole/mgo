@@ -13,7 +13,7 @@ lazy val settings: Seq[Setting[_]] = Seq(
   resolvers += Resolver.sonatypeRepo("snapshots"),
   javacOptions ++= Seq("-source", "11", "-target", "11"),
   scalacOptions ++= Seq("-Xtarget:11", "-language:higherKinds"),
-  scalacOptions ++= Seq("-language:postfixOps")
+  scalacOptions ++= Seq("-language:postfixOps", "-source:3.7")
 //  scalacOptions ++= (
 //    if (priorTo2_13(scalaVersion.value)) Nil else Seq("-Ymacro-annotations", "-language:postfixOps")
 //  ),

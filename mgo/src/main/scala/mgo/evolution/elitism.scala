@@ -103,21 +103,22 @@ object elitism:
 
     population ++ filteredClone
 
-  def mergeHistories[G: ImplementEqualMethod as eqm, I, P](genome: I => G, history: monocle.Lens[I, Vector[P]], historyAge: monocle.Lens[I, Long], historySize: Int): (Vector[I], Vector[I]) => Vector[I] =
+  def mergeHistories[G: ImplementEqualMethod, I, P](genome: I => G, history: monocle.Lens[I, Vector[P]], historyAge: monocle.Lens[I, Long], historySize: Int): (Vector[I], Vector[I]) => Vector[I] =
     (population: Vector[I], newIndividuals: Vector[I]) =>
       val mergedClones =
         val indexedNI = newIndividuals.groupByOrdered(genome)
+
         for
           i <- population
-          clones = indexedNI.getOrElse(eqm(genome(i)), List())
+          clones = indexedNI.getOrElse(ImplementEqualMethod(genome(i)), List())
         yield
           val additionalHistory = clones.flatMap(history.get)
           history.modify(h => (h ++ additionalHistory).takeRight(historySize)) andThen
             historyAge.modify(_ + additionalHistory.size) apply i
 
       val filteredClone =
-        val filter = population.map(genome andThen eqm.apply).toSet
-        newIndividuals.filter(i => !filter.contains(eqm(genome(i))))
+        val filter = population.map(genome andThen ImplementEqualMethod.apply).toSet
+        newIndividuals.filter(i => !filter.contains(ImplementEqualMethod(genome(i))))
 
       mergedClones ++ filteredClone
 
