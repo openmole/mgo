@@ -22,11 +22,11 @@ object ImplementEqualMethod:
   inline given ImplementEqualMethod[Double] = d => d
 
   inline given [T: ImplementEqualMethod as imeq]: ImplementEqualMethod[IArray[T]] = a => IArray.genericWrapArray(a.map(imeq.apply))
-  inline given [T]: ImplementEqualMethod[Vector[T]] = identity
+  inline given [T: ImplementEqualMethod as imeq]: ImplementEqualMethod[Vector[T]] = v => v.map(imeq.apply)
   inline given [T1: ImplementEqualMethod, T2: ImplementEqualMethod]: ImplementEqualMethod[(T1, T2)] = identity
 
   opaque type EQM[T] = Any
-  
+
   def apply[T: ImplementEqualMethod as eq](t: T) = eq(t)
 
 trait ImplementEqualMethod[T]:
