@@ -18,12 +18,12 @@ package mgo.tools
  */
 
 object ImplementEqualMethod:
-  inline given ImplementEqualMethod[Int] = i => i
-  inline given ImplementEqualMethod[Double] = d => d
+  inline given ImplementEqualMethod[Int] = identity
+  inline given ImplementEqualMethod[Double] = identity
 
   inline given [T: ImplementEqualMethod as imeq]: ImplementEqualMethod[IArray[T]] = a => IArray.genericWrapArray(a.map(imeq.apply))
   inline given [T: ImplementEqualMethod as imeq]: ImplementEqualMethod[Vector[T]] = v => v.map(imeq.apply)
-  inline given [T1: ImplementEqualMethod, T2: ImplementEqualMethod]: ImplementEqualMethod[(T1, T2)] = identity
+  inline given [T1: ImplementEqualMethod as eq1, T2: ImplementEqualMethod as eq2]: ImplementEqualMethod[(T1, T2)] = t => (eq1(t._1), eq2(t._2))
 
   opaque type EQM[T] = Any
 
