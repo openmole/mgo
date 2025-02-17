@@ -58,11 +58,11 @@ object NoisyPSE {
       Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       discreteOperator.get,
       discrete,
       vectorPhenotype[P].get _ andThen aggregation andThen pattern,
-      buildGenome,
+      buildGenome(discrete),
       lambda,
       reject,
       operatorExploration,
@@ -71,13 +71,14 @@ object NoisyPSE {
       maxRareSample,
       (s, rng) => NoisyPSE.initialGenomes(s, continuous, discrete, reject, rng))
 
-  def elitism[P: CanBeNaN: Manifest](
+  def elitism[P: {CanBeNaN, Manifest}](
     pattern: Vector[Double] => Vector[Int],
     aggregation: Vector[P] => Vector[Double],
     historySize: Int,
-    continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
+    continuous: Vector[C],
+    discrete: Vector[D]): Elitism[PSEState, Individual[P]] =
     NoisyPSEOperations.elitism[PSEState, Individual[P], P](
-      i => scaledValues(continuous)(i.genome),
+      i => scaledValues(continuous, discrete)(i.genome),
       vectorPhenotype[P],
       aggregation,
       pattern,
@@ -85,15 +86,15 @@ object NoisyPSE {
       historySize,
       Focus[EvolutionState[HitMap]](_.s))
 
-  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
+  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     noisy.expression[Genome, Individual[P], P](
-      scaledValues(continuous),
+      scaledValues(continuous, discrete),
       buildIndividual[P])(fitness)
 
-  def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C]): (IArray[Double], IArray[Int], Vector[Double], Vector[Int], Int) =
+  def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C], discrete: Vector[D]): (IArray[Double], IArray[Int], Vector[Double], Vector[Int], Int) =
     (
       scaleContinuousValues(continuousValues.get(i.genome), continuous),
-      i.focus(_.genome) andThen discreteValues get,
+      i.focus(_.genome) andThen discreteValues(discrete) get,
       aggregation(vectorPhenotype[P].get(i)),
       (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),
       i.phenotypeHistory.size)
@@ -104,25 +105,25 @@ object NoisyPSE {
     population: Vector[Individual[P]],
     aggregation: Vector[P] => Vector[Double],
     pattern: Vector[Double] => Vector[Int],
-    continuous: Vector[C]): Vector[Result[P]] =
-    population.map:
-      i =>
-        val (c, d, f, p, r) = aggregate[P](i, aggregation, pattern, continuous)
-        Result[P](c, d, f, p, r, i)
+    continuous: Vector[C],
+    discrete: Vector[D]): Vector[Result[P]] =
+    population.map: i =>
+      val (c, d, f, p, r) = aggregate[P](i, aggregation, pattern, continuous, discrete)
+      Result[P](c, d, f, p, r, i)
 
   def result[P: Manifest](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
-    result(population, pse.aggregation, pse.pattern, pse.continuous)
+    result(population, pse.aggregation, pse.pattern, pse.continuous, pse.discrete)
 
-  def reject[P](pse: NoisyPSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
+  def reject[P](pse: NoisyPSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
-  implicit def isAlgorithm[P: Manifest: CanBeNaN]: Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] = new Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] {
+  given isAlgorithm[P: {Manifest, CanBeNaN}]: Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] with {
 
     def initialState(t: NoisyPSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
     def initialPopulation(t: NoisyPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyPSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        NoisyPSE.expression(t.phenotype, t.continuous),
+        NoisyPSE.expression(t.phenotype, t.continuous, t.discrete),
         rng,
         parallel)
 
@@ -138,12 +139,13 @@ object NoisyPSE {
           t.pattern,
           t.maxRareSample,
           reject(t)),
-        NoisyPSE.expression(t.phenotype, t.continuous),
+        NoisyPSE.expression(t.phenotype, t.continuous, t.discrete),
         NoisyPSE.elitism[P](
           t.pattern,
           t.aggregation,
           t.historySize,
-          t.continuous),
+          t.continuous,
+          t.discrete),
         Focus[PSEState](_.generation),
         Focus[PSEState](_.evaluated))
 

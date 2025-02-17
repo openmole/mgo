@@ -57,43 +57,42 @@ object NSGA3 {
       Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       discreteOperator.get,
       discrete,
-      buildGenome,
+      buildGenome(discrete),
       reject,
       operatorExploration,
       lambda)
 
-  def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C]) =
-    DeterministicIndividual.expression(express, components)
+  def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C], discrete: Vector[D]) =
+    DeterministicIndividual.expression(express, components, discrete)
 
-  def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
+  def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], discrete: Vector[D], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA3Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => scaledValues(components)(i.genome),
+      i => scaledValues(components, discrete)(i.genome),
       references,
       mu)
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
 
-  def result[P](population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] = {
+  def result[P](population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
-    individuals.map { i =>
-      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, individualFitness(fitness)(i), i)
-    }
-  }
+    individuals.map: i =>
+      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, individualFitness(fitness)(i), i)
 
-  def result(nsga3: NSGA3, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga3.continuous, identity[Vector[Double]] _, keepAll = false)
 
-  def reject(f: Option[(IArray[Double], IArray[Int]) => Boolean], continuous: Vector[C]): Option[Genome => Boolean] =
+  def result(nsga3: NSGA3, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga3.continuous, nsga3.discrete, identity[Vector[Double]] _, keepAll = false)
+
+  def reject(f: Option[(IArray[Double], IArray[Int]) => Boolean], continuous: Vector[C], discrete: Vector[D]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
       val scaledContinuous = scaleContinuousValues(continuousValues.get(g), continuous)
-      val discreteValue = discreteValues get g
+      val discreteValue = discreteValues(discrete).get(g)
       reject(scaledContinuous, discreteValue)
     }
 
-  def reject(nsga3: NSGA3): Option[Genome => Boolean] = reject(nsga3.reject, nsga3.continuous)
+  def reject(nsga3: NSGA3): Option[Genome => Boolean] = reject(nsga3.reject, nsga3.continuous, nsga3.discrete)
 
   implicit def isAlgorithm: Algorithm[NSGA3, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
     new Algorithm[NSGA3, Individual[Vector[Double]], Genome, NSGA3State] {
@@ -101,13 +100,13 @@ object NSGA3 {
       override def initialPopulation(t: NSGA3, rng: scala.util.Random, parallel: Algorithm.ParallelContext): Vector[Individual[Vector[Double]]] =
         deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
           NSGA3.initialGenomes(t.popSize, t.continuous, t.discrete, reject(t), rng),
-          NSGA3.expression(t.fitness, t.continuous),
+          NSGA3.expression(t.fitness, t.continuous, t.discrete),
           parallel)
       override def step(t: NSGA3) =
         deterministic.step[NSGA3State, Individual[Vector[Double]], Genome](
           NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.discrete, identity, reject(t)),
-          NSGA3.expression(t.fitness, t.continuous),
-          NSGA3.elitism[NSGA3State, Vector[Double]](t.popSize, t.referencePoints, t.continuous, identity),
+          NSGA3.expression(t.fitness, t.continuous, t.discrete),
+          NSGA3.elitism[NSGA3State, Vector[Double]](t.popSize, t.referencePoints, t.continuous, t.discrete, identity),
           Focus[EvolutionState[Unit]](_.generation),
           Focus[EvolutionState[Unit]](_.evaluated))
     }

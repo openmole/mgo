@@ -39,11 +39,11 @@ object OSE:
       Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       discreteOperator.get,
       discrete,
       origin,
-      buildGenome,
+      buildGenome(discrete),
       logOfPopulationSize,
       lambda,
       reject,
@@ -51,14 +51,14 @@ object OSE:
       archiveLens[P].get,
       reachMapLens.get)
 
-  def expression[P](fitness: (IArray[Double], IArray[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
-    DeterministicIndividual.expression(fitness, components)
+  def expression[P](fitness: (IArray[Double], IArray[Int]) => P, components: Vector[C], discrete: Vector[D]): (Genome, Long, Boolean) => Individual[P] =
+    DeterministicIndividual.expression(fitness, components, discrete)
 
-  def elitism[P](mu: Int, limit: Vector[Double], origin: (IArray[Double], IArray[Int]) => Vector[Int], components: Vector[C], fitness: P => Vector[Double]): Elitism[OSEState[P], Individual[P]] =
+  def elitism[P](mu: Int, limit: Vector[Double], origin: (IArray[Double], IArray[Int]) => Vector[Int], components: Vector[C], discrete: Vector[D], fitness: P => Vector[Double]): Elitism[OSEState[P], Individual[P]] =
     OSEOperation.elitism[OSEState[P], Individual[P]](
       individualFitness(fitness),
       limit,
-      i => scaledValues(components)(i.genome),
+      i => scaledValues(components, discrete)(i.genome),
       origin,
       mu,
       archiveLens[P],
@@ -66,10 +66,10 @@ object OSE:
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P], archive: Boolean)
 
-  def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
+  def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
 
     def individualToResult(i: Individual[P], archive: Boolean) =
-      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
+      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
 
     val goodIndividuals =
       if keepAll
@@ -82,25 +82,25 @@ object OSE:
     archiveIndividuals ++ goodIndividuals
 
 
-  def result(ose: OSE, state: OSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
-    result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity, population = population, keepAll = false)
+  def result(t: OSE, state: OSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
+    result[Vector[Double]](state = state, continuous = t.continuous, discrete = t.discrete, fitness = identity, population = population, keepAll = false)
 
-  def reject(ose: OSE): Option[Genome => Boolean] = NSGA2.reject(ose.reject, ose.continuous)
+  def reject(t: OSE): Option[Genome => Boolean] = NSGA2.reject(t.reject, t.continuous, t.discrete)
 
-  implicit def isAlgorithm: Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] = new Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]]:
+  given isAlgorithm: Algorithm[OSE, Individual[Vector[Double]], Genome, OSEState[Vector[Double]]] with
     override def initialState(t: OSE, rng: scala.util.Random) = EvolutionState(s = (Archive.empty, Array.empty))
 
     override def initialPopulation(t: OSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
         OSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        OSE.expression(t.fitness, t.continuous),
+        OSE.expression(t.fitness, t.continuous, t.discrete),
         parallel)
 
     def step(t: OSE) =
       deterministic.step[OSEState[Vector[Double]], Individual[Vector[Double]], Genome](
         OSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.discrete, t.origin, identity, reject(t)),
-        OSE.expression(t.fitness, t.continuous),
-        OSE.elitism(t.mu, t.limit, t.origin, t.continuous, identity),
+        OSE.expression(t.fitness, t.continuous, t.discrete),
+        OSE.elitism(t.mu, t.limit, t.origin, t.continuous, t.discrete, identity),
         Focus[OSEState[Vector[Double]]](_.generation),
         Focus[OSEState[Vector[Double]]](_.evaluated))
   

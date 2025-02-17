@@ -41,17 +41,17 @@ object PSE:
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: P, individual: Individual[P])
 
-  def result[P](population: Vector[Individual[P]], continuous: Vector[C], pattern: P => Vector[Int]): Vector[Result[P]] =
+  def result[P](population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], pattern: P => Vector[Int]): Vector[Result[P]] =
     population.map: i =>
       Result(
         scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous),
-        i.focus(_.genome) andThen discreteVectorValues get,
+        i.focus(_.genome) andThen discreteVectorValues(discrete) get,
         pattern(i.phenotype),
         i.phenotype,
         i)
 
   def result[P](pse: PSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
-    result(population, pse.continuous, pse.pattern)
+    result(population, pse.continuous, pse.discrete, pse.pattern)
 
   def buildIndividual[P](g: Genome, f: P, generation: Long, initial: Boolean) = CDGenome.DeterministicIndividual.buildIndividual(g, f, generation, initial)
   //def vectorPhenotype[P]: PLens[Individual[P], Individual[P], Vector[Double], Vector[Double]] = Focus[Individual[P]](_.phenotype) andThen arrayToVectorIso[Double]
@@ -71,11 +71,11 @@ object PSE:
       Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       discreteOperator.get,
       discrete,
       Focus[Individual[P]](_.phenotype).get andThen pattern,
-      buildGenome,
+      buildGenome(discrete),
       lambda,
       reject,
       operatorExploration,
@@ -83,35 +83,35 @@ object PSE:
       maxRareSample,
       (s, rng) => PSE.initialGenomes(s, continuous, discrete, reject, rng))
 
-  def elitism[P: CanBeNaN](pattern: P => Vector[Int], continuous: Vector[C]): Elitism[PSEState, Individual[P]] =
+  def elitism[P: CanBeNaN](pattern: P => Vector[Int]): Elitism[PSEState, Individual[P]] =
     PSEOperations.elitism[PSEState, Individual[P], P](
       Focus[Individual[P]](_.phenotype).get,
       pattern,
       Focus[PSEState](_.s)
     )
 
-  def expression[P](phenotype: (IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
+  def expression[P](phenotype: (IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     deterministic.expression[Genome, P, Individual[P]](
-      scaledValues(continuous),
+      scaledValues(continuous, discrete),
       buildIndividual,
       phenotype)
 
-  def reject[P](pse: PSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
+  def reject[P](pse: PSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
-  implicit def isAlgorithm[P: CanBeNaN]: Algorithm[PSE[P], Individual[P], Genome, EvolutionState[HitMap]] = new Algorithm[PSE[P], Individual[P], Genome, EvolutionState[HitMap]]:
+  given isAlgorithm[P: CanBeNaN]: Algorithm[PSE[P], Individual[P], Genome, EvolutionState[HitMap]] with
     def initialState(t: PSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
     override def initialPopulation(t: PSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual[P]](
         PSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        PSE.expression(t.phenotype, t.continuous),
+        PSE.expression(t.phenotype, t.continuous, t.discrete),
         parallel)
 
     override def step(t: PSE[P]) =
       deterministic.step[EvolutionState[HitMap], Individual[P], Genome](
         PSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.continuous, t.discrete, t.pattern, t.maxRareSample, reject(t)),
-        PSE.expression(t.phenotype, t.continuous),
-        PSE.elitism(t.pattern, t.continuous),
+        PSE.expression(t.phenotype, t.continuous, t.discrete),
+        PSE.elitism(t.pattern),
         Focus[PSEState](_.generation),
         Focus[PSEState](_.evaluated))
 

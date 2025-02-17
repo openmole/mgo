@@ -1,10 +1,10 @@
 package mgo.test
 
-import mgo.evolution._
+import mgo.evolution.*
 
 object NichedNSGAII extends App {
 
-  import algorithm._
+  import algorithm.*
 
   case class Phenotype(diversity: Double, optimisation: Double)
 
@@ -13,7 +13,7 @@ object NichedNSGAII extends App {
     fitness = discreteSphere.compute,
     continuous = discreteSphere.continuous(6),
     discrete = discreteSphere.discrete(3),
-    niche = i => i.genome.discreteValues.take(2).toSeq)
+    niche = i => CDGenome.discreteValues(discreteSphere.discrete(3)).get(i.genome).take(2).toSeq)
 
   def evolution: RunAlgorithm[Profile[Seq[Int]], CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, Profile.ProfileState] =
     nsga2.

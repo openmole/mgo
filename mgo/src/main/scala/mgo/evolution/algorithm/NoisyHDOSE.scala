@@ -65,13 +65,13 @@ object NoisyHDOSE:
       Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       discreteOperator.get,
       discrete,
-      scaledValues(continuous),
+      scaledValues(continuous, discrete),
       HDOSE.tooCloseByComponent(weightC, weightD, discrete),
       distanceLens.get,
-      buildGenome,
+      buildGenome(discrete),
       logOfPopulationSize,
       lambda,
       reject,
@@ -80,8 +80,8 @@ object NoisyHDOSE:
       limit,
       archiveLens.get)
 
-  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
-    NoisyIndividual.expression[P](fitness, continuous)
+  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
+    NoisyIndividual.expression[P](fitness, continuous, discrete)
 
   def elitism[P: Manifest](
     mu: Int,
@@ -94,14 +94,14 @@ object NoisyHDOSE:
     archiveSize: Int,
     limit: Vector[Double],
     precision: Double): Elitism[HDOSEState[P], Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledVectorValues(continuous)(i.genome)
+    def individualValues(i: Individual[P]) = scaledVectorValues(continuous, discrete)(i.genome)
 
     NoisyHDOSEOperations.elitism[HDOSEState[P], Individual[P], P, Genome](
       _.genome,
       vectorPhenotype[P].get,
       aggregation,
       continuousValues.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       limit,
       historySize,
       mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
@@ -116,23 +116,23 @@ object NoisyHDOSE:
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P], archive: Boolean)
 
-  def result[P: Manifest](state: HDOSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
+  def result[P: Manifest](state: HDOSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     def goodIndividuals =
       population.flatMap: i =>
-        val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
+        val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous, discrete)
         if keepAll || OSEOperation.patternIsReached(f, limit)
         then Some(Result(c, d, f, r, i, false))
         else None
 
     state.s.archive.toVector.map: i =>
-      val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
+      val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous, discrete)
       Result(c, d, f, r, i, true)
     ++ goodIndividuals
 
   def result[P: Manifest](noisyHDOSE: NoisyHDOSE[P], state: HDOSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
-    result[P](state, population, noisyHDOSE.aggregation, noisyHDOSE.continuous, noisyHDOSE.limit, keepAll = false)
+    result[P](state, population, noisyHDOSE.aggregation, noisyHDOSE.continuous, noisyHDOSE.discrete, noisyHDOSE.limit, keepAll = false)
 
-  def reject[P](pse: NoisyHDOSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
+  def reject[P](t: NoisyHDOSE[P]): Option[Genome => Boolean] = NSGA2.reject(t.reject, t.continuous, t.discrete)
 
   given [P: Manifest]: Algorithm[NoisyHDOSE[P], Individual[P], Genome, HDOSEState[P]] with
     def initialState(t: NoisyHDOSE[P], rng: scala.util.Random) = NoisyHDOSE.initialState(t.distance)
@@ -140,7 +140,7 @@ object NoisyHDOSE:
     def initialPopulation(t: NoisyHDOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        NoisyOSE.expression[P](t.fitness, t.continuous),
+        NoisyOSE.expression[P](t.fitness, t.continuous, t.discrete),
         rng,
         parallel)
 
@@ -160,7 +160,7 @@ object NoisyHDOSE:
           wD,
           t.limit,
           reject(t)),
-        NoisyHDOSE.expression(t.fitness, t.continuous),
+        NoisyHDOSE.expression(t.fitness, t.continuous, t.discrete),
         NoisyHDOSE.elitism[P](
           t.mu,
           t.historySize,

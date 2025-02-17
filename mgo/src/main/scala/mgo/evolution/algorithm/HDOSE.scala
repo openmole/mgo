@@ -61,20 +61,20 @@ object HDOSE:
       Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       discreteOperator.get,
       discrete,
       tooCloseByComponent(weightC, weightD, discrete),
       distanceLens.get,
-      buildGenome,
+      buildGenome(discrete),
       logOfPopulationSize,
       lambda,
       reject,
       operatorExploration,
       archiveLens[P].get)
 
-  def expression[P](fitness: (IArray[Double], IArray[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
-    DeterministicIndividual.expression(fitness, components)
+  def expression[P](fitness: (IArray[Double], IArray[Int]) => P, components: Vector[C], discrete: Vector[D]): (Genome, Long, Boolean) => Individual[P] =
+    DeterministicIndividual.expression(fitness, components, discrete)
 
   def elitism[P](
     mu: Int,
@@ -89,7 +89,7 @@ object HDOSE:
     HDOSEOperation.elitism[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       limit,
-      scaledValues(continuous),
+      scaledValues(continuous, discrete),
       mu,
       archiveLens[P],
       tooCloseByComponent(weightC, weightD, discrete),
@@ -97,15 +97,15 @@ object HDOSE:
       distanceLens,
       archiveSize,
       continuousValues.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       Focus[Individual[P]](_.genome).get
     )
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P], archive: Boolean)
 
-  def result[P](state: HDOSEState[P], population: Vector[Individual[P]], continuous: Vector[C], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
+  def result[P](state: HDOSEState[P], population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     def individualToResult(i: Individual[P], archive: Boolean) =
-      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
+      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues(discrete) get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
 
     val goodIndividuals =
       if keepAll
@@ -117,10 +117,10 @@ object HDOSE:
 
     archiveIndividuals ++ goodIndividuals
 
-  def result(ose: HDOSE, state: HDOSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
-    result[Vector[Double]](state = state, continuous = ose.continuous, fitness = identity, population = population, keepAll = false)
+  def result(t: HDOSE, state: HDOSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
+    result[Vector[Double]](state = state, continuous = t.continuous, discrete = t.discrete, fitness = identity, population = population, keepAll = false)
 
-  def reject(ose: HDOSE): Option[Genome => Boolean] = NSGA2.reject(ose.reject, ose.continuous)
+  def reject(t: HDOSE): Option[Genome => Boolean] = NSGA2.reject(t.reject, t.continuous, t.discrete)
 
   def tooCloseByComponent(weightC: Vector[Double], weightD: Vector[Double], discrete: Vector[D]): HDOSEOperation.TooClose = (g1, g2, d) =>
     val (c1, d1) = g1
@@ -156,7 +156,7 @@ object HDOSE:
     override def initialPopulation(t: HDOSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
         HDOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        HDOSE.expression(t.fitness, t.continuous),
+        HDOSE.expression(t.fitness, t.continuous, t.discrete),
         parallel)
 
     def step(t: HDOSE) =
@@ -165,7 +165,7 @@ object HDOSE:
 
       deterministic.step[HDOSEState[Vector[Double]], Individual[Vector[Double]], Genome](
         HDOSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, sC, sD, identity, reject(t)),
-        HDOSE.expression(t.fitness, t.continuous),
+        HDOSE.expression(t.fitness, t.continuous, t.discrete),
         HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, t.discrete, identity, t.distance),
         Focus[HDOSEState[Vector[Double]]](_.generation),
         Focus[HDOSEState[Vector[Double]]](_.evaluated))

@@ -28,6 +28,7 @@ import mgo.tools.execution.Algorithm
 import monocle.*
 import monocle.syntax.all.*
 
+import java.nio.ByteBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -261,7 +262,7 @@ def scaleContinuousValues(values: IArray[Double], genomeComponents: Vector[C]): 
 def scaleContinuousVectorValues(values: Vector[Double], genomeComponents: Vector[C]): Vector[Double] =
   scaleContinuousValues(IArray.from(values), genomeComponents).toVector
 
-object CDGenome {
+object CDGenome:
 
   object DeterministicIndividual:
     case class Individual[P](genome: Genome, phenotype: P, generation: Long, initial: Boolean)
@@ -269,18 +270,18 @@ object CDGenome {
     def individualFitness[P](fitness: P => Vector[Double]): Individual[P] => Vector[Double] = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
     def buildIndividual[P](g: Genome, p: P, generation: Long, initial: Boolean): Individual[P] = Individual(g, p, generation, initial)
 
-    def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C]): (Genome, Long, Boolean) => Individual[P] =
+    def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C], discrete: Vector[D]): (Genome, Long, Boolean) => Individual[P] =
       deterministic.expression[Genome, P, Individual[P]](
-        scaledValues(components),
+        scaledValues(components, discrete),
         buildIndividual[P],
         express)
 
   object NoisyIndividual:
 
-    def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C]): (Vector[Double], Vector[Int], Vector[Double], Int) =
+    def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D]): (Vector[Double], Vector[Int], Vector[Double], Int) =
       (
         scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous),
-        i.focus(_.genome) andThen discreteVectorValues get,
+        i.focus(_.genome) andThen discreteVectorValues(discrete) get,
         aggregation(vectorPhenotype[P].get(i)),
         i.focus(_.phenotypeHistory).get.size
       )
@@ -290,19 +291,19 @@ object CDGenome {
     def buildIndividual[P: Manifest](g: Genome, f: P, generation: Long, initial: Boolean): Individual[P] = Individual[P](g, IArray(f), 1, generation, initial)
     def vectorPhenotype[P: Manifest]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso[P]
 
-    def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]): (util.Random, Genome, Long, Boolean) => Individual[P] =
+    def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]): (util.Random, Genome, Long, Boolean) => Individual[P] =
       noisy.expression[Genome, Individual[P], P](
-        scaledValues(continuous),
+        scaledValues(continuous, discrete),
         buildIndividual[P])(fitness)
 
 
   case class Genome(
     continuousValues: IArray[Double],
     continuousOperator: Byte,
-    discreteValues: IArray[Int],
+    discreteValues: Compacted.CompactedArrayInt,
     discreteOperator: Byte)
 
-  def buildGenome(
+  def buildGenome(d: Vector[D])(
     continuous: IArray[Double],
     continuousOperator: Option[Int],
     discrete: IArray[Int],
@@ -310,7 +311,7 @@ object CDGenome {
     Genome(
       continuous,
       continuousOperator.getOrElse(-1).toByte,
-      discrete,
+      Compacted.CompactedArrayInt.compact(discrete, d),
       discreteOperator.getOrElse(-1).toByte)
 
 
@@ -318,21 +319,95 @@ object CDGenome {
   def continuousVectorValues: PLens[Genome, Genome, Vector[Double], Vector[Double]] = Focus[Genome](_.continuousValues) andThen arrayToVectorIso[Double]
   def continuousOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.continuousOperator) andThen byteToUnsignedIntOption
 
-  def discreteValues = Focus[Genome](_.discreteValues)
-  def discreteVectorValues: PLens[Genome, Genome, Vector[Int], Vector[Int]] = Focus[Genome](_.discreteValues) andThen arrayToVectorIso[Int]
+  def discreteValues(d: Vector[D]) = Focus[Genome](_.discreteValues) andThen Compacted.CompactedArrayInt.iso(d)
+  def discreteVectorValues(d: Vector[D]): PLens[Genome, Genome, Vector[Int], Vector[Int]] = discreteValues(d) andThen arrayToVectorIso[Int]
   def discreteOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.discreteOperator) andThen byteToUnsignedIntOption
 
 
-  def scaledValues(continuous: Vector[C]) = (g: Genome) =>
-    (scaleContinuousValues(continuousValues.get(g), continuous), discreteValues.get(g))
+  def scaledValues(continuous: Vector[C], d: Vector[D]) = (g: Genome) =>
+    (scaleContinuousValues(continuousValues.get(g), continuous), discreteValues(d).get(g))
 
-  def scaledVectorValues(continuous: Vector[C]) = (g: Genome) =>
-    (scaleContinuousVectorValues(continuousVectorValues.get(g), continuous), discreteVectorValues.get(g))
+  def scaledVectorValues(continuous: Vector[C], d: Vector[D]) = (g: Genome) =>
+    (scaleContinuousVectorValues(continuousVectorValues.get(g), continuous), discreteVectorValues(d).get(g))
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
-    GenomeVectorDouble.randomGenomes[Genome]((c, d) => buildGenome(c, None, d, None))(lambda, continuous, discrete, reject, rng)
+    GenomeVectorDouble.randomGenomes[Genome]((c, d) => buildGenome(discrete)(c, None, d, None))(lambda, continuous, discrete, reject, rng)
 
-}
+  object Compacted:
+    object CompactedArrayInt:
+      def iso(d: Vector[D]) =
+        Iso[CompactedArrayInt, IArray[Int]](c => decompact(c, d))(a => compact(a, d))
+
+      object CompactedType:
+        extension (t: CompactedType)
+          def size =
+            t match
+              case Byte => 1
+              case Short => 2
+              case Int => 4
+
+      enum CompactedType:
+        case Byte, Short, Int
+
+      val byteRange = Byte.MaxValue.toInt - Byte.MinValue
+      val shortRange = Short.MaxValue.toInt - Short.MinValue
+
+      def compactedType(d: D) =
+        val interval = Math.abs(d.high.toLong - d.low)
+        if interval <= byteRange
+        then CompactedType.Byte
+        else if interval <= shortRange
+        then CompactedType.Short
+        else CompactedType.Int
+
+      def compact(a: IArray[Int], d: Vector[D]): CompactedArrayInt =
+        val size = a.length
+        val compactedTypes = d.map(compactedType)
+
+        val buffer = ByteBuffer.allocate(compactedTypes.map(_.size).sum)
+
+
+        loop(0, _ < size, _ + 1): i =>
+          def toByte(v: Int, d: D) = (v - d.low + Byte.MinValue).toByte
+          def toShort(v: Int, d: D) = (v - d.low + Short.MinValue).toShort
+
+          compactedTypes(i) match
+            case CompactedType.Byte => buffer.put(toByte(a(i), d(i)))
+            case CompactedType.Short => buffer.putShort(toShort(a(i), d(i)))
+            case CompactedType.Int => buffer.putInt(a(i))
+
+        IArray.unsafeFromArray(buffer.array())
+
+      def decompact(b: CompactedArrayInt, d: Vector[D]): IArray[Int] =
+        val size = d.length
+        val compactedTypes = d.map(compactedType)
+
+        var index: Int = 0
+        val result = Array.ofDim[Int](size)
+
+        loop(0, _ < size, _ + 1): i =>
+          val ct = compactedTypes(i)
+
+          def fromByte(b1: Byte, d: D) = b1.toInt - Byte.MinValue + d.low
+
+          def fromShort(b1: Byte, b2: Byte, d: D) =
+            val v = ((b1.toInt & 0xFF) << 8 | (b2.toInt & 0xFF)).asInstanceOf[Short]
+            v.toInt - Short.MinValue + d.low
+
+          def fromInt(b1: Byte, b2: Byte, b3: Byte, b4: Int) =
+            (b(index) << 24) & 0xff000000 | (b(index + 1) << 16) & 0x00ff0000 | (b(index + 2) << 8) & 0x0000ff00 | (b(index + 3) << 0) & 0x000000ff
+
+          compactedTypes(i) match
+            case CompactedType.Byte => result(i) = fromByte(b(index), d(i))
+            case CompactedType.Short => result(i) = fromShort(b(index), b(index + 1), d(i))
+            case CompactedType.Int => result(i) = fromInt(b(index), b(index + 1), b(index + 2), b(index + 3))
+
+          index = index + ct.size
+
+        IArray.unsafeFromArray(result)
+
+    opaque type CompactedArrayInt = IArray[Byte]
+
 
 object deterministic:
 

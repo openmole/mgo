@@ -43,10 +43,10 @@ object NoisyOSE {
       Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       discreteOperator.get,
       discrete,
-      buildGenome,
+      buildGenome(discrete),
       logOfPopulationSize,
       lambda,
       reject,
@@ -57,11 +57,11 @@ object NoisyOSE {
       archiveLens.get,
       reachMapLens.get)
 
-  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
-    NoisyIndividual.expression[P](fitness, continuous)
+  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
+    NoisyIndividual.expression[P](fitness, continuous, discrete)
 
-  def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], origin: (IArray[Double], IArray[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledValues(components)(i.genome)
+  def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], discrete: Vector[D], origin: (IArray[Double], IArray[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] =
+    def individualValues(i: Individual[P]) = scaledValues(components, discrete)(i.genome)
 
     NoisyOSEOperations.elitism[OSEState[P], Individual[P], P](
       vectorPhenotype[P].get,
@@ -77,21 +77,21 @@ object NoisyOSE {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P], archive: Boolean)
 
-  def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
+  def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     def goodIndividuals =
       population.flatMap: i =>
-        val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous)
+        val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous, discrete)
         if (keepAll || OSEOperation.patternIsReached(f, limit)) then Some(Result(c, d, f, r, i, false)) else None
 
     state.s._1.toVector.map: i =>
-      val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
+      val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous, discrete)
       Result(c, d, f, r, i, true)
     ++ goodIndividuals
 
   def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
-    result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.limit, keepAll = false)
+    result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.discrete, noisyOSE.limit, keepAll = false)
 
-  def reject[P](pse: NoisyOSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
+  def reject[P](t: NoisyOSE[P]): Option[Genome => Boolean] = NSGA2.reject(t.reject, t.continuous, t.discrete)
 
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] = new Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] {
     def initialState(t: NoisyOSE[P], rng: scala.util.Random) = EvolutionState(s = (Archive.empty, Array.empty))
@@ -99,7 +99,7 @@ object NoisyOSE {
     def initialPopulation(t: NoisyOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        NoisyOSE.expression[P](t.fitness, t.continuous),
+        NoisyOSE.expression[P](t.fitness, t.continuous, t.discrete),
         rng,
         parallel)
 
@@ -114,12 +114,13 @@ object NoisyOSE {
           t.origin,
           t.limit,
           reject(t)),
-        NoisyOSE.expression(t.fitness, t.continuous),
+        NoisyOSE.expression(t.fitness, t.continuous, t.discrete),
         NoisyOSE.elitism[P](
           t.mu,
           t.historySize,
           t.aggregation,
           t.continuous,
+          t.discrete,
           t.origin,
           t.limit),
         Focus[OSEState[P]](_.generation),

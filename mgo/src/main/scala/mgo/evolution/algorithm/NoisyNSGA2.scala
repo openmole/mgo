@@ -39,17 +39,16 @@ object NoisyNSGA2 {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], keepAll: Boolean): Vector[Result[P]] =
+  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D], keepAll: Boolean): Vector[Result[P]] =
     val individuals = if (keepAll) population else keepFirstFront(population, fitness(aggregation))
 
-    individuals.map {
-      i =>
-        val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous)
-        Result(c, d, f, r, i)
-    }
+    individuals.map: i =>
+      val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous, discrete)
+      Result(c, d, f, r, i)
+
 
   def result[P: Manifest](nsga2: NoisyNSGA2[P], population: Vector[Individual[P]]): Vector[Result[P]] =
-    result[P](population, nsga2.aggregation, nsga2.continuous, keepAll = false)
+    result[P](population, nsga2.aggregation, nsga2.continuous, nsga2.discrete, keepAll = false)
 
   def fitness[P: Manifest](aggregation: Vector[P] => Vector[Double]): Individual[P] => Vector[Double] =
     NoisyNSGA2Operations.aggregated[Individual[P], P](
@@ -72,28 +71,28 @@ object NoisyNSGA2 {
       Focus[Individual[P]](_.genome).get,
       continuousValues.get,
       continuousOperator.get,
-      discreteValues.get,
+      discreteValues(discrete).get,
       discreteOperator.get,
       discrete,
-      buildGenome,
+      buildGenome(discrete),
       _ => 1,
       lambda,
       reject,
       operatorExploration,
       cloneProbability)
 
-  def expression[P: Manifest](phenotype: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C]) =
-    NoisyIndividual.expression[P](phenotype, continuous)
+  def expression[P: Manifest](phenotype: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
+    NoisyIndividual.expression[P](phenotype, continuous, discrete)
 
-  def elitism[S, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C]): Elitism[S, Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledVectorValues(components)(i.genome)
+  def elitism[S, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], discrete: Vector[D]): Elitism[S, Individual[P]] =
+    def individualValues(i: Individual[P]) = scaledVectorValues(components, discrete)(i.genome)
 
     NoisyNSGA2Operations.elitism[S, Individual[P], P](
       fitness[P](aggregation),
       mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu)
 
-  def reject[P](pse: NoisyNSGA2[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous)
+  def reject[P](nsga2: NoisyNSGA2[P]): Option[Genome => Boolean] = NSGA2.reject(nsga2.reject, nsga2.continuous, nsga2.discrete)
 
   implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] = new Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] {
     def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = ())
@@ -101,7 +100,7 @@ object NoisyNSGA2 {
     def initialPopulation(t: NoisyNSGA2[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
         NoisyNSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
-        NoisyNSGA2.expression[P](t.fitness, t.continuous),
+        NoisyNSGA2.expression[P](t.fitness, t.continuous, t.discrete),
         rng,
         parallel)
 
@@ -114,12 +113,13 @@ object NoisyNSGA2 {
           t.aggregation,
           t.discrete,
           reject(t)),
-        NoisyNSGA2.expression(t.fitness, t.continuous),
+        NoisyNSGA2.expression(t.fitness, t.continuous, t.discrete),
         NoisyNSGA2.elitism[NSGA2State, P](
           t.mu,
           t.historySize,
           t.aggregation,
-          t.continuous),
+          t.continuous,
+          t.discrete),
         Focus[NSGA2State](_.generation),
         Focus[NSGA2State](_.evaluated))
 
