@@ -43,6 +43,7 @@ object NoisyNSGA3 {
   def adaptiveBreeding[S, P: Manifest](
     operatorExploration: Double,
     cloneProbability: Double,
+    continuous: Vector[C],
     discrete: Vector[D],
     aggregation: Vector[P] => Vector[Double],
     reject: Option[Genome => Boolean],
@@ -50,7 +51,7 @@ object NoisyNSGA3 {
     NoisyNSGA3Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
@@ -89,7 +90,7 @@ object NoisyNSGA3 {
 
       override def step(t: NoisyNSGA3[P]) =
         noisy.step[NSGA3State, Individual[P], Genome](
-          NoisyNSGA3.adaptiveBreeding[NSGA3State, P](t.operatorExploration, t.cloneProbability, t.discrete, t.aggregation, reject(t)),
+          NoisyNSGA3.adaptiveBreeding[NSGA3State, P](t.operatorExploration, t.cloneProbability, t.continuous, t.discrete, t.aggregation, reject(t)),
           NoisyNSGA3.expression(t.fitness, t.continuous, t.discrete),
           NoisyNSGA3.elitism[NSGA3State, P](
             t.popSize, t.referencePoints,

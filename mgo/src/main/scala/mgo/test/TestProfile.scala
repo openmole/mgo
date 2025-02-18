@@ -27,11 +27,11 @@ object SphereProfile extends App {
   val algo: Profile[Int] = Profile(
     lambda = 100,
     fitness = discreteSphere.compute,
-    niche = Profile.continuousProfile(x = 0, nX = 10),
+    niche = Profile.continuousProfile(discreteSphere.continuous(2), x = 0, nX = 10),
     continuous = discreteSphere.continuous(2),
     discrete = discreteSphere.discrete(2))
 
-  def evolution: RunAlgorithm[Profile[Int], CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, Profile.ProfileState] =
+  def evolution =
     algo.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -56,11 +56,11 @@ object NoisySphereProfile extends App {
     lambda = 100,
     fitness = noisyDiscreteSphere.compute,
     aggregation = aggregation,
-    niche = NoisyProfile.continuousProfile[Vector[Double]](x = 0, nX = 10),
+    niche = NoisyProfile.continuousProfile(noisyDiscreteSphere.continuous(2), x = 0, nX = 10),
     continuous = noisyDiscreteSphere.continuous(2),
     discrete = noisyDiscreteSphere.discrete(2))
 
-  def evolution: RunAlgorithm[NoisyProfile[Int, Vector[Double]], CDGenome.NoisyIndividual.Individual[Vector[Double]], CDGenome.Genome, NoisyProfile.ProfileState] =
+  def evolution =
     algo.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))

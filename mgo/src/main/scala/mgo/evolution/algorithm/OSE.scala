@@ -30,6 +30,7 @@ object OSE:
   def adaptiveBreeding[P](
     lambda: Int,
     operatorExploration: Double,
+    continuous: Vector[C],
     discrete: Vector[D],
     origin: (IArray[Double], IArray[Int]) => Vector[Int],
     fitness: P => Vector[Double],
@@ -37,7 +38,7 @@ object OSE:
     OSEOperation.adaptiveBreeding[OSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
@@ -69,7 +70,7 @@ object OSE:
   def result[P](state: OSEState[P], population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
 
     def individualToResult(i: Individual[P], archive: Boolean) =
-      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
+      Result(scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
 
     val goodIndividuals =
       if keepAll
@@ -98,7 +99,7 @@ object OSE:
 
     def step(t: OSE) =
       deterministic.step[OSEState[Vector[Double]], Individual[Vector[Double]], Genome](
-        OSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.discrete, t.origin, identity, reject(t)),
+        OSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, t.origin, identity, reject(t)),
         OSE.expression(t.fitness, t.continuous, t.discrete),
         OSE.elitism(t.mu, t.limit, t.origin, t.continuous, t.discrete, identity),
         Focus[OSEState[Vector[Double]]](_.generation),

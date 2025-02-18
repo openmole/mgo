@@ -59,7 +59,7 @@ object HDOSE:
     HDOSEOperation.adaptiveBreeding[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
@@ -96,7 +96,7 @@ object HDOSE:
       precision,
       distanceLens,
       archiveSize,
-      continuousValues.get,
+      continuousValues(continuous).get,
       discreteValues(discrete).get,
       Focus[Individual[P]](_.genome).get
     )
@@ -105,7 +105,7 @@ object HDOSE:
 
   def result[P](state: HDOSEState[P], population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     def individualToResult(i: Individual[P], archive: Boolean) =
-      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues(discrete) get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
+      Result(scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues(discrete) get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
 
     val goodIndividuals =
       if keepAll

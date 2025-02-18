@@ -51,11 +51,11 @@ object NSGA3 {
   def initialGenomes(populationSize: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(populationSize, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[S, P](operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean], lambda: Int = -1): Breeding[S, Individual[P], Genome] =
+  def adaptiveBreeding[S, P](operatorExploration: Double, continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean], lambda: Int = -1): Breeding[S, Individual[P], Genome] =
     NSGA3Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
@@ -80,14 +80,14 @@ object NSGA3 {
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
     individuals.map: i =>
-      Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, individualFitness(fitness)(i), i)
+      Result(scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, individualFitness(fitness)(i), i)
 
 
   def result(nsga3: NSGA3, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga3.continuous, nsga3.discrete, identity[Vector[Double]] _, keepAll = false)
 
   def reject(f: Option[(IArray[Double], IArray[Int]) => Boolean], continuous: Vector[C], discrete: Vector[D]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
-      val scaledContinuous = scaleContinuousValues(continuousValues.get(g), continuous)
+      val scaledContinuous = scaleContinuousValues(continuousValues(continuous).get(g), continuous)
       val discreteValue = discreteValues(discrete).get(g)
       reject(scaledContinuous, discreteValue)
     }
@@ -104,7 +104,7 @@ object NSGA3 {
           parallel)
       override def step(t: NSGA3) =
         deterministic.step[NSGA3State, Individual[Vector[Double]], Genome](
-          NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.discrete, identity, reject(t)),
+          NSGA3.adaptiveBreeding[NSGA3State, Vector[Double]](t.operatorExploration, t.continuous, t.discrete, identity, reject(t)),
           NSGA3.expression(t.fitness, t.continuous, t.discrete),
           NSGA3.elitism[NSGA3State, Vector[Double]](t.popSize, t.referencePoints, t.continuous, t.discrete, identity),
           Focus[EvolutionState[Unit]](_.generation),

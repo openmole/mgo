@@ -64,12 +64,13 @@ object NoisyNSGA2 {
     operatorExploration: Double,
     cloneProbability: Double,
     aggregation: Vector[P] => Vector[Double],
+    continuous: Vector[C],
     discrete: Vector[D],
     reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
     NoisyNSGA2Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
@@ -111,6 +112,7 @@ object NoisyNSGA2 {
           t.operatorExploration,
           t.cloneProbability,
           t.aggregation,
+          t.continuous,
           t.discrete,
           reject(t)),
         NoisyNSGA2.expression(t.fitness, t.continuous, t.discrete),

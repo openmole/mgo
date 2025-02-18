@@ -56,7 +56,7 @@ object NoisyPSE {
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     NoisyPSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
@@ -93,7 +93,7 @@ object NoisyPSE {
 
   def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C], discrete: Vector[D]): (IArray[Double], IArray[Int], Vector[Double], Vector[Int], Int) =
     (
-      scaleContinuousValues(continuousValues.get(i.genome), continuous),
+      scaleContinuousValues(continuousValues(continuous).get(i.genome), continuous),
       i.focus(_.genome) andThen discreteValues(discrete) get,
       aggregation(vectorPhenotype[P].get(i)),
       (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),

@@ -44,7 +44,7 @@ object PSE:
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], pattern: P => Vector[Int]): Vector[Result[P]] =
     population.map: i =>
       Result(
-        scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous),
+        scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous),
         i.focus(_.genome) andThen discreteVectorValues(discrete) get,
         pattern(i.phenotype),
         i.phenotype,
@@ -69,7 +69,7 @@ object PSE:
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     PSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,

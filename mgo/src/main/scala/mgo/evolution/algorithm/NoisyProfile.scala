@@ -66,17 +66,17 @@ object NoisyProfile {
   def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = true): Vector[Result[N, P]] =
     result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, noisyProfile.discrete, onlyOldest, keepAll = false)
 
-  def continuousProfile[P](x: Int, nX: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.continuousProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen continuousVectorValues).get _, x, nX)
+  def continuousProfile[P](continuous: Vector[C], x: Int, nX: Int): Niche[Individual[P], Int] =
+    mgo.evolution.niche.continuousProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen continuousVectorValues(continuous)).get _, x, nX)
 
   def discreteProfile[P](discrete: Vector[D], x: Int): Niche[Individual[P], Int] =
     mgo.evolution.niche.discreteProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen discreteVectorValues(discrete)).get _, x)
 
   def boundedContinuousProfile[P](continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
-    mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), x, nX, min, max)
+    mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), x, nX, min, max)
 
   def gridContinuousProfile[P](continuous: Vector[C], x: Int, intervals: Vector[Double]): Niche[Individual[P], Int] =
-    mgo.evolution.niche.gridContinuousProfile[Individual[P]](i => scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), x, intervals)
+    mgo.evolution.niche.gridContinuousProfile[Individual[P]](i => scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), x, intervals)
 
   def boundedObjectiveProfile[P: Manifest](aggregation: Vector[P] => Vector[Double], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
     mgo.evolution.niche.boundedContinuousProfile[Individual[P]](aggregatedFitness(aggregation), x, nX, min, max)
@@ -89,12 +89,13 @@ object NoisyProfile {
     operatorExploration: Double,
     cloneProbability: Double,
     aggregation: Vector[P] => Vector[Double],
+    continuous: Vector[C],
     discrete: Vector[D],
     reject: Option[Genome => Boolean]): Breeding[ProfileState, Individual[P], Genome] =
     NoisyNSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome, P](
       aggregatedFitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
@@ -142,6 +143,7 @@ object NoisyProfile {
           t.operatorExploration,
           t.cloneProbability,
           t.aggregation,
+          t.continuous,
           t.discrete,
           reject(t)),
         NoisyProfile.expression(t.fitness, t.continuous, t.discrete),

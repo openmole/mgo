@@ -280,7 +280,7 @@ object CDGenome:
 
     def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D]): (Vector[Double], Vector[Int], Vector[Double], Int) =
       (
-        scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous),
+        scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous),
         i.focus(_.genome) andThen discreteVectorValues(discrete) get,
         aggregation(vectorPhenotype[P].get(i)),
         i.focus(_.phenotypeHistory).get.size
@@ -296,12 +296,17 @@ object CDGenome:
         scaledValues(continuous, discrete),
         buildIndividual[P])(fitness)
 
+  object Genome:
+    extension (g: Genome)
+      def discreteValues(d: Vector[D]) = CDGenome.discreteValues(d).get(g)
+      def continuousValues(c: Vector[C]) = CDGenome.continuousValues(c).get(g)
+      def scaledContinuousValues(c: Vector[C]) = scaleContinuousValues(CDGenome.continuousValues(c).get(g), c)
 
   case class Genome(
-    continuousValues: IArray[Double],
-    continuousOperator: Byte,
-    discreteValues: Compacted.CompactedArrayInt,
-    discreteOperator: Byte)
+     continuousValues: IArray[Double],
+     continuousOperator: Byte,
+     compactedDiscreteValues: Compacted.CompactedArrayInt,
+     discreteOperator: Byte)
 
   def buildGenome(d: Vector[D])(
     continuous: IArray[Double],
@@ -315,20 +320,20 @@ object CDGenome:
       discreteOperator.getOrElse(-1).toByte)
 
 
-  def continuousValues = Focus[Genome](_.continuousValues)
-  def continuousVectorValues: PLens[Genome, Genome, Vector[Double], Vector[Double]] = Focus[Genome](_.continuousValues) andThen arrayToVectorIso[Double]
+  def continuousValues(c: Vector[C]) = Focus[Genome](_.continuousValues)
+  def continuousVectorValues(c: Vector[C]): PLens[Genome, Genome, Vector[Double], Vector[Double]] = Focus[Genome](_.continuousValues) andThen arrayToVectorIso[Double]
   def continuousOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.continuousOperator) andThen byteToUnsignedIntOption
 
-  def discreteValues(d: Vector[D]) = Focus[Genome](_.discreteValues) andThen Compacted.CompactedArrayInt.iso(d)
+  def discreteValues(d: Vector[D]) = Focus[Genome](_.compactedDiscreteValues) andThen Compacted.CompactedArrayInt.iso(d)
   def discreteVectorValues(d: Vector[D]): PLens[Genome, Genome, Vector[Int], Vector[Int]] = discreteValues(d) andThen arrayToVectorIso[Int]
   def discreteOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.discreteOperator) andThen byteToUnsignedIntOption
 
 
   def scaledValues(continuous: Vector[C], d: Vector[D]) = (g: Genome) =>
-    (scaleContinuousValues(continuousValues.get(g), continuous), discreteValues(d).get(g))
+    (scaleContinuousValues(continuousValues(continuous).get(g), continuous), discreteValues(d).get(g))
 
   def scaledVectorValues(continuous: Vector[C], d: Vector[D]) = (g: Genome) =>
-    (scaleContinuousVectorValues(continuousVectorValues.get(g), continuous), discreteVectorValues(d).get(g))
+    (scaleContinuousVectorValues(continuousVectorValues(continuous).get(g), continuous), discreteVectorValues(d).get(g))
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     GenomeVectorDouble.randomGenomes[Genome]((c, d) => buildGenome(discrete)(c, None, d, None))(lambda, continuous, discrete, reject, rng)

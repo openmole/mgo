@@ -38,11 +38,11 @@ object NSGA2 {
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
+  def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
     NSGA2Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousValues.get,
+      continuousValues(continuous).get,
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
@@ -66,14 +66,14 @@ object NSGA2 {
 
   def reject(f: Option[(IArray[Double], IArray[Int]) => Boolean], continuous: Vector[C], discrete: Vector[D]): Option[Genome => Boolean] =
     f.map { reject => (g: Genome) =>
-      val scaledContinuous = scaleContinuousValues(continuousValues.get(g), continuous)
+      val scaledContinuous = g.scaledContinuousValues(continuous)
       val discreteValue = discreteValues(discrete).get(g)
       reject(scaledContinuous, discreteValue)
     }
 
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     val individuals = if (keepAll) population else keepFirstFront(population, individualFitness(fitness))
-    individuals.map { i => Result(scaleContinuousVectorValues(continuousVectorValues.get(i.genome), continuous), (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, individualFitness(fitness)(i), i) }
+    individuals.map { i => Result(scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, individualFitness(fitness)(i), i) }
 
   given isAlgorithm: Algorithm[NSGA2, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
     new Algorithm[NSGA2, Individual[Vector[Double]], Genome, NSGA2State]:
@@ -85,7 +85,7 @@ object NSGA2 {
           parallel)
       override def step(t: NSGA2) =
         deterministic.step[NSGA2State, Individual[Vector[Double]], Genome](
-          NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.discrete, identity, reject(t)),
+          NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, identity, reject(t)),
           NSGA2.expression(t.fitness, t.continuous, t.discrete),
           NSGA2.elitism[NSGA2State, Vector[Double]](t.mu, t.continuous, t.discrete, identity),
           Focus[EvolutionState[Unit]](_.generation),
