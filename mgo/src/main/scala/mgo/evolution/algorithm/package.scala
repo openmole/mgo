@@ -343,58 +343,32 @@ object CDGenome:
       def iso(d: Vector[D]) =
         Iso[CompactedArrayInt, IArray[Int]](c => decompact(c, d))(a => compact(a, d))
 
-      object CompactedType:
-        extension (t: CompactedType)
-          def size =
-            t match
-              case Byte => 1
-              case Short => 2
-              case Int => 4
-
-      enum CompactedType:
-        case Byte, Short, Int
-
-      val byteRange = Byte.MaxValue.toInt - Byte.MinValue
-      val shortRange = Short.MaxValue.toInt - Short.MinValue
-
-      def compactedType(d: D) =
-        val interval = Math.abs(d.high.toLong - d.low)
-        if interval <= byteRange
-        then CompactedType.Byte
-        else if interval <= shortRange
-        then CompactedType.Short
-        else CompactedType.Int
-
       def compact(a: IArray[Int], d: Vector[D]): CompactedArrayInt =
         val size = a.length
-        val compactedTypes = d.map(compactedType)
-
-        val buffer = ByteBuffer.allocate(compactedTypes.map(_.size).sum)
-
+        val buffer = ByteBuffer.allocate(d.map(_.precision.size).sum)
 
         loop(0, _ < size, _ + 1): i =>
+          val dValue = d(i)
+
           def toByte(v: Int, d: D) = (v - d.low + Byte.MinValue).toByte
           def toShort(v: Int, d: D) = (v - d.low + Short.MinValue).toShort
 
-          compactedTypes(i) match
-            case CompactedType.Byte => buffer.put(toByte(a(i), d(i)))
-            case CompactedType.Short => buffer.putShort(toShort(a(i), d(i)))
-            case CompactedType.Int => buffer.putInt(a(i))
+          dValue.precision match
+            case D.IntegerPrecision.Byte => buffer.put(toByte(a(i), dValue))
+            case D.IntegerPrecision.Short => buffer.putShort(toShort(a(i), dValue))
+            case D.IntegerPrecision.Int => buffer.putInt(a(i))
 
         IArray.unsafeFromArray(buffer.array())
 
       def decompact(b: CompactedArrayInt, d: Vector[D]): IArray[Int] =
         val size = d.length
-        val compactedTypes = d.map(compactedType)
-
         var index: Int = 0
         val result = Array.ofDim[Int](size)
 
         loop(0, _ < size, _ + 1): i =>
-          val ct = compactedTypes(i)
+          val dValue = d(i)
 
           def fromByte(b1: Byte, d: D) = b1.toInt - Byte.MinValue + d.low
-
           def fromShort(b1: Byte, b2: Byte, d: D) =
             val v = ((b1.toInt & 0xFF) << 8 | (b2.toInt & 0xFF)).asInstanceOf[Short]
             v.toInt - Short.MinValue + d.low
@@ -402,12 +376,12 @@ object CDGenome:
           def fromInt(b1: Byte, b2: Byte, b3: Byte, b4: Int) =
             (b(index) << 24) & 0xff000000 | (b(index + 1) << 16) & 0x00ff0000 | (b(index + 2) << 8) & 0x0000ff00 | (b(index + 3) << 0) & 0x000000ff
 
-          compactedTypes(i) match
-            case CompactedType.Byte => result(i) = fromByte(b(index), d(i))
-            case CompactedType.Short => result(i) = fromShort(b(index), b(index + 1), d(i))
-            case CompactedType.Int => result(i) = fromInt(b(index), b(index + 1), b(index + 2), b(index + 3))
+          dValue.precision match
+            case D.IntegerPrecision.Byte => result(i) = fromByte(b(index), dValue)
+            case D.IntegerPrecision.Short => result(i) = fromShort(b(index), b(index + 1), dValue)
+            case D.IntegerPrecision.Int => result(i) = fromInt(b(index), b(index + 1), b(index + 2), b(index + 3))
 
-          index = index + ct.size
+          index = index + dValue.precision.size
 
         IArray.unsafeFromArray(result)
 

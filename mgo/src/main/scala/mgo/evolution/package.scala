@@ -91,6 +91,36 @@ def byteToUnsignedIntOption: Iso[Byte, Option[Int]] = monocle.Iso[Byte, Option[I
 def iArrayTupleToVector(p: (IArray[Double], IArray[Int])) = (Vector.from(p._1), Vector.from(p._2))
 
 case class C(low: Double, high: Double)
-case class D(low: Int, high: Int)
+
+object D:
+  object IntegerPrecision:
+    extension (t: IntegerPrecision)
+      def size =
+        t match
+          case Byte => 1
+          case Short => 2
+          case Int => 4
+
+  enum IntegerPrecision:
+    case Byte, Short, Int
+
+  val byteRange = Byte.MaxValue.toInt - Byte.MinValue
+  val shortRange = Short.MaxValue.toInt - Short.MinValue
+
+  def precision(low: Int, high: Int) =
+    val interval = Math.abs(high.toLong - low)
+    if interval <= byteRange
+    then IntegerPrecision.Byte
+    else if interval <= shortRange
+    then IntegerPrecision.Short
+    else IntegerPrecision.Int
+
+  def apply(low: Int, high: Int) =
+    val l = Math.min(low, high)
+    val h = Math.max(low, high)
+    val p = precision(l, h)
+    new D(l, h, p)
+
+case class D(low: Int, high: Int, precision: D.IntegerPrecision)
 
 
