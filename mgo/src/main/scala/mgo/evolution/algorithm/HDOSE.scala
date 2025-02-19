@@ -27,7 +27,7 @@ import mgo.tools.execution.*
 import monocle.*
 import monocle.syntax.all.*
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 
 object HDOSE:
@@ -218,7 +218,7 @@ object HDOSEOperation:
     def isTooClose(archive: Archive[I], g: G) =
       isTooCloseFromArchive(distance, archive, continuousValues, discreteValues, genome, diversityDistance)(g)
 
-    val newArchive = ListBuffer[I]()
+    val newArchive = new ArrayBuffer[I](archive.size)
     newArchive.addOne(archive.head)
 
     for
