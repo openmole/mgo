@@ -5,7 +5,6 @@ import mgo.evolution._
 import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
-import mgo.tools.execution._
 
 import monocle._
 import monocle.syntax.all._

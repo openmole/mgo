@@ -22,7 +22,6 @@ import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.tools.*
-import mgo.tools.execution._
 import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix }
 import org.apache.commons.math3.util.{ ArithmeticUtils, CombinatoricsUtils }
 

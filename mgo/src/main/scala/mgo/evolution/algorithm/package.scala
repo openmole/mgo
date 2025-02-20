@@ -24,13 +24,29 @@ import mgo.tools.*
 import cats.*
 import cats.implicits.*
 import cats.data.*
-import mgo.tools.execution.Algorithm
 import monocle.*
 import monocle.syntax.all.*
 
 import java.nio.ByteBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
+
+
+object Algorithm:
+  import scala.concurrent.ExecutionContext
+  import scala.util.Random
+
+  lazy val parallel = Parallel(ExecutionContext.global, s => util.Random(s))
+
+  sealed trait ParallelContext
+  case class Parallel(executionContext: ExecutionContext, seeder: Long => Random) extends ParallelContext
+
+  object Sequential extends ParallelContext
+
+trait Algorithm[T, I, G, S]:
+  def initialState(t: T, rng: Random): S
+  def initialPopulation(t: T, rng: Random, parallel: Algorithm.ParallelContext): Vector[I]
+  def step(t: T): (S, Vector[I], Random, Algorithm.ParallelContext) => (S, Vector[I])
 
 
 type HitMapState = Map[Vector[Int], Int]
@@ -481,6 +497,8 @@ object noisy:
       build(g, phenotype(rg, cs, ds), generation, initial)
 
 
-
 type HitMap = Map[Vector[Int], Int]
+
+
+
 

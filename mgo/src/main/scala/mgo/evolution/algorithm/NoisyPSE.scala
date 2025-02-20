@@ -23,7 +23,6 @@ import mgo.evolution.algorithm.GenomeVectorDouble.*
 import mgo.evolution.breeding.*
 import mgo.evolution.elitism.*
 import mgo.tools.{CanBeNaN, ImplementEqualMethod}
-import mgo.tools.execution.*
 import monocle.*
 import monocle.syntax.all.*
 import mgo.tools.*

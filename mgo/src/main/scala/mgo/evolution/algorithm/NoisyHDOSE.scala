@@ -25,7 +25,6 @@ import mgo.evolution.algorithm.OSEOperation.ReachMap
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.ranking._
-import mgo.tools.execution._
 import mgo.tools.*
 
 import monocle.function

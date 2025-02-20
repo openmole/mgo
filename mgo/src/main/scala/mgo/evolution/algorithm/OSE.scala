@@ -6,7 +6,6 @@ import mgo.evolution.breeding.*
 import mgo.evolution.elitism.*
 import mgo.evolution.ranking.*
 import mgo.tools.ImplementEqualMethod
-import mgo.tools.execution.*
 import mgo.tools.*
 import monocle.*
 import monocle.syntax.all.*

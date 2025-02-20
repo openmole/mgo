@@ -23,7 +23,6 @@ import mgo.evolution.algorithm.GenomeVectorDouble.*
 import mgo.evolution.breeding.*
 import mgo.evolution.elitism.*
 import mgo.evolution.ranking.*
-import mgo.tools.execution.*
 import monocle.*
 import monocle.syntax.all.*
 

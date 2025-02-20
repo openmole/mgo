@@ -21,7 +21,6 @@ import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.niche._
-import mgo.tools.execution._
 import mgo.tools.*
 
 import monocle._
