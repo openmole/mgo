@@ -27,8 +27,10 @@ import mgo.tools.execution.*
 import monocle.*
 import monocle.syntax.all.*
 
+import java.util
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
+import mgo.tools.*
 
 object HDOSE:
 
@@ -190,55 +192,55 @@ object HDOSEOperation:
   type GenomeValue =  (IArray[Double], IArray[Int])
   type TooClose = (GenomeValue, GenomeValue, Double) => Boolean
 
-  def isTooCloseFromArchive[G, I](
+  def isTooCloseFromArchive[I](
     tooClose: TooClose,
     archive: Archive[I],
-    continuousValues: G => IArray[Double],
-    discreteValues: G => IArray[Int],
-    genome: I => G,
-    diversityDistance: Double)(g: G): Boolean =
+    genomeValues: I => GenomeValue,
+    diversityDistance: Double)(g: GenomeValue): Boolean =
+    import mgo.tools.loop
+    import scala.util.boundary
+    import scala.jdk.CollectionConverters.*
 
-    def tooCloseGenome(g1: G, g2: G, d: Double): Boolean =
-      def genomeValues(g: G) = (continuousValues(g), discreteValues(g))
-      tooClose(genomeValues(g1), genomeValues(g2), d)
+    val size = archive.size
 
-    def tooCloseFromArchive(g: G) =
-      archive.exists(i => tooCloseGenome(genome(i), g, diversityDistance))
+    boundary[Boolean]:
+      loop(0, _ < size, _ + 1): i =>
+        val individual = archive(i)
 
-    tooCloseFromArchive(g)
+        if tooClose(genomeValues(individual), g, diversityDistance)
+        then boundary.break(true)
 
-  def shrinkArchive[G, I: ClassTag](
-    distance: TooClose,
+      false
+
+
+  def shrinkArchive[I: ClassTag](
+    tooClose: TooClose,
     archive: Archive[I],
-    continuousValues: G => IArray[Double],
-    discreteValues: G => IArray[Int],
-    genome: I => G,
+    genomeValues: I => GenomeValue,
     diversityDistance: Double): Archive[I] =
 
-    def isTooClose(archive: Archive[I], g: G) =
-      isTooCloseFromArchive(distance, archive, continuousValues, discreteValues, genome, diversityDistance)(g)
+    def isTooClose(archive: Archive[I], i: I) =
+      isTooCloseFromArchive(tooClose, archive, genomeValues, diversityDistance)(genomeValues(i))
 
     val newArchive = new ArrayBuffer[I](archive.size)
     newArchive.addOne(archive.head)
 
     for
       i <- archive.tail
-      if !isTooClose(IArray.unsafeFromArray(newArchive.toArray), genome(i))
+      if !isTooClose(IArray.unsafeFromArray(newArchive.toArray), i)
     do newArchive.addOne(i)
 
     IArray.unsafeFromArray(newArchive.toArray)
 
-  def computeDistance[G, I: ClassTag](
+  def computeDistance[I: ClassTag](
     distance: TooClose,
     archive: Archive[I],
-    continuousValues: G => IArray[Double],
-    discreteValues: G => IArray[Int],
-    genome: I => G,
+    genomeValues: I => GenomeValue,
     targetSize: Int,
     currentDistance: Double,
     precision: Double) =
     def computeSize(d: Double) =
-      shrinkArchive(distance, archive, continuousValues, discreteValues, genome, d).size.toDouble
+      shrinkArchive(distance, archive, genomeValues, d).size.toDouble
 
     val newDistance =
       mgo.tools.findFirstUnder(
@@ -274,26 +276,26 @@ object HDOSEOperation:
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
 
+      val genomeValue = (genome andThen (continuousValues, discreteValues).tupled).memoized
+
       val breeding: Breeding[S, I, G] =
         (s, pop, rng) =>
           val newGs =
             applyDynamicOperators[S, I, G](
               tournament(allRanks, tournamentRounds),
-              genome andThen continuousValues,
-              genome andThen discreteValues,
+              genomeValue,
               continuousOperatorStatistics,
               discreteOperatorStatistics,
               discrete,
               operatorExploration,
               buildGenome)(s, pop, rng)
-          newGs.filterNot:
-            isTooCloseFromArchive[G, I](
+          newGs.filterNot: g =>
+            val values = (continuousValues(g), discreteValues(g))
+            isTooCloseFromArchive(
               distance,
               archivedPopulation,
-              continuousValues,
-              discreteValues,
-              genome,
-              diversityDistance(s))
+              genomeValue,
+              diversityDistance(s))(values)
 
       val offspring = breed[S, I, G](breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
       randomTake(offspring, lambda, rng)
@@ -313,13 +315,15 @@ object HDOSEOperation:
     discreteValues: G => IArray[Int],
     genome: I => G): Elitism[S, I] =
     (s1, population, candidates, rng) =>
-      val memoizedFitness = mgo.tools.memoize(fitness)
+      val memoizedFitness = fitness.memoized
       val cloneRemoved = filterNaN(keepFirst(genome andThen scaledValues)(population, candidates), memoizedFitness)
 
       // FIXME individuals can be close to each other but yet added to the archive
       def newlyReaching = candidates.filter(c => OSEOperation.patternIsReached(memoizedFitness(c), limit))
 
       val s2 = archive.modify(_ ++ newlyReaching)(s1)
+
+      val genomeValue = (genome andThen (continuousValues, discreteValues).tupled).memoized
 
       val s3 =
         if archive.get(s2).size <= archiveSize
@@ -329,9 +333,7 @@ object HDOSEOperation:
             computeDistance(
               distance,
               archive.get(s2),
-              continuousValues,
-              discreteValues,
-              genome,
+              genomeValue,
               archiveSize,
               diversityDistance.get(s2),
               precision
@@ -341,9 +343,7 @@ object HDOSEOperation:
             shrinkArchive(
               distance,
               archive.get(s2),
-              continuousValues,
-              discreteValues,
-              genome,
+              genomeValue,
               newDiversityDistance
             )
 
@@ -354,10 +354,8 @@ object HDOSEOperation:
           isTooCloseFromArchive(
             distance,
             archive.get(s3),
-            continuousValues,
-            discreteValues,
-            genome,
-            diversityDistance.get(s3))(genome(i))
+            genomeValue,
+            diversityDistance.get(s3))(genomeValue(i))
 
       NSGA2Operations.elitism(memoizedFitness, genome andThen scaledValues, mu)(s3, filteredPopulation, Vector.empty, rng)
 

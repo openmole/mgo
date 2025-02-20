@@ -232,16 +232,16 @@ def apacheRandom(random: util.Random): RandomGenerator = new org.apache.commons.
   override def nextGaussian(): Double = random.nextGaussian()
 
 
-def memoize[A, B](f: A => B, onId: Boolean = true): A => B =
-  val memo =
-    if !onId
-    then scala.collection.mutable.Map[A, B]()
-    else
+
+extension [A, B](f: A => B)
+  def memoized: A => B =
+    val memo =
       import scala.jdk.CollectionConverters.*
       java.util.IdentityHashMap[A, B]().asScala
-  (a: A) =>
-    memo.synchronized:
-      memo.getOrElseUpdate(a, f(a))
+
+    (a: A) =>
+      memo.synchronized:
+        memo.getOrElseUpdate(a, f(a))
 
 
 def median(sequence: Vector[Double]) =

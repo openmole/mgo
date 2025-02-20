@@ -141,7 +141,7 @@ case class NoisyNSGA2[P](
   operatorExploration: Double = 0.1,
   reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
-object NoisyNSGA2Operations {
+object NoisyNSGA2Operations:
 
   def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double], accuracy: I => Double)(i: I): Vector[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / accuracy(i))
@@ -164,10 +164,11 @@ object NoisyNSGA2Operations {
       val ranks = ranking.paretoRankingMinAndCrowdingDiversity(population, fitness, rng)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+      val genomeValue = genome andThen (continuousValues, discreteValues).tupled
+
       val breeding = applyDynamicOperators[S, I, G](
         tournament(ranks, tournamentRounds),
-        genome andThen continuousValues,
-        genome andThen discreteValues,
+        genomeValue,
         continuousOperatorStatistics,
         discreteOperatorStatistics,
         discrete,
@@ -184,10 +185,10 @@ object NoisyNSGA2Operations {
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
-      val memoizedFitness = mgo.tools.memoize(fitness)
+      val memoizedFitness = fitness.memoized
       val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
       val ranks = paretoRankingMinAndCrowdingDiversity[I](merged, memoizedFitness, rng)
       (s, keepHighestRanked(merged, ranks, mu, rng))
 
 
-}
+

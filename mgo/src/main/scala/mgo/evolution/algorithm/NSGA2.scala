@@ -25,6 +25,7 @@ import mgo.evolution.ranking._
 import mgo.tools.execution._
 import monocle.Focus
 import monocle.syntax.all._
+import mgo.tools.*
 
 import scala.language.higherKinds
 
@@ -143,10 +144,11 @@ object NSGA2Operations {
       val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, fitness, rng)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+      val genomeValue = genome andThen (continuousValues, discreteValues).tupled
+
       val breeding: Breeding[S, I, G] = applyDynamicOperators[S, I, G](
         tournament(ranks, tournamentRounds),
-        genome andThen continuousValues,
-        genome andThen discreteValues,
+        genomeValue,
         continuousOperatorStatistics,
         discreteOperatorStatistics,
         discrete,
@@ -162,7 +164,7 @@ object NSGA2Operations {
     values: I => (IArray[Double], IArray[Int]),
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
-      val memoizedFitness = mgo.tools.memoize(fitness)
+      val memoizedFitness = fitness.memoized
       val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
       val ranks = paretoRankingMinAndCrowdingDiversity[I](cloneRemoved, memoizedFitness, rng)
       (s, keepHighestRanked(cloneRemoved, ranks, mu, rng))

@@ -21,6 +21,7 @@ import mgo.evolution._
 import mgo.evolution.algorithm.GenomeVectorDouble._
 import mgo.evolution.breeding._
 import mgo.evolution.elitism._
+import mgo.tools.*
 import mgo.tools.execution._
 import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix }
 import org.apache.commons.math3.util.{ ArithmeticUtils, CombinatoricsUtils }
@@ -278,11 +279,11 @@ object NSGA3Operations {
 
     val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
     val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+    val genomeValue = genome andThen (continuousValues, discreteValues).tupled
 
     def breedTwo: Breeding[S, I, G] = applyDynamicOperators[S, I, G](
       randomSelection[S, I],
-      genome andThen continuousValues,
-      genome andThen discreteValues,
+      genomeValue,
       continuousOperatorStatistics,
       discreteOperatorStatistics,
       discrete,

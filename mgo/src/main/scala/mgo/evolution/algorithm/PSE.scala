@@ -154,10 +154,11 @@ object PSEOperations:
         val ranks = hitCountRanking(s, population, pattern, hitmap).map(x => -x)
         val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
         val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+        val genomeValue = genome andThen (continuousValues, discreteValues).tupled
+
         val breeding = applyDynamicOperators[S, I, G](
           tournament(ranks, logOfPopulationSize),
-          genome andThen continuousValues,
-          genome andThen discreteValues,
+          genomeValue,
           continuousOperatorStatistics,
           discreteOperatorStatistics,
           discrete,
@@ -171,7 +172,7 @@ object PSEOperations:
     pattern: P => Vector[Int],
     hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =
     (s, population, candidates, rng) =>
-      val memoizedPattern = mgo.tools.memoize(phenotype andThen pattern)
+      val memoizedPattern = (phenotype andThen pattern).memoized
       val noNan = filterNaN(candidates, phenotype)
       def keepFirst(i: Vector[I]) = Vector(i.head)
       val hm2 = addHits(memoizedPattern, noNan, hitmap.get(s))

@@ -23,6 +23,7 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.niche._
 import mgo.tools.execution._
+import mgo.tools.*
 
 import monocle._
 import monocle.syntax.all._
@@ -183,7 +184,7 @@ object NoisyProfileOperations:
     niche: Niche[I, N],
     muByNiche: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
-      val memoizedFitness = mgo.tools.memoize(fitness)
+      val memoizedFitness = fitness.memoized
       def inNicheElitism(random: scala.util.Random)(p: Vector[I]) = keepOnFirstFront(p, memoizedFitness, muByNiche, random)
 
       val merged = mergeHistories(population, candidates)

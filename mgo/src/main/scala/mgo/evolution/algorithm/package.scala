@@ -201,8 +201,7 @@ object GenomeVectorDouble {
 
   def applyDynamicOperators[S, I, G](
     selection: Selection[S, I],
-    continuousValues: I => IArray[Double],
-    discreteValues: I => IArray[Int],
+    genomeValues: I => (IArray[Double], IArray[Int]),
     continuousOperatorStatistics: Map[Int, Double],
     discreteOperatorStatistics: Map[Int, Double],
     discrete: Vector[D],
@@ -224,11 +223,10 @@ object GenomeVectorDouble {
     (s: S, population: Vector[I], rng: scala.util.Random) =>
       val m1 = selection(s, population, rng)
       val m2 = selection(s, population, rng)
-      val c1 = continuousValues(m1)
-      val c2 = continuousValues(m2)
+      val (c1, d1) = genomeValues(m1)
+      val (c2, d2) = genomeValues(m2)
+
       val cOff = continuousOperator(s, (c1, c2), rng)
-      val d1 = discreteValues(m1)
-      val d2 = discreteValues(m2)
       val dOff = discreteOperator(s, (d1, d2), rng)
 
       val ((cOff1, cOff2), cop) = cOff
@@ -261,6 +259,8 @@ def scaleContinuousValues(values: IArray[Double], genomeComponents: Vector[C]): 
 
 def scaleContinuousVectorValues(values: Vector[Double], genomeComponents: Vector[C]): Vector[Double] =
   scaleContinuousValues(IArray.from(values), genomeComponents).toVector
+
+
 
 object CDGenome:
 
@@ -337,6 +337,7 @@ object CDGenome:
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     GenomeVectorDouble.randomGenomes[Genome]((c, d) => buildGenome(discrete)(c, None, d, None))(lambda, continuous, discrete, reject, rng)
+
 
   object Compacted:
     object CompactedArrayInt:

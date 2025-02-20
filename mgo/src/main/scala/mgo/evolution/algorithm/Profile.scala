@@ -22,6 +22,7 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.niche._
 import mgo.tools.execution._
+import mgo.tools.*
 
 import monocle._
 import monocle.syntax.all._
@@ -138,7 +139,7 @@ object ProfileOperations {
     niche: Niche[I, N],
     muByNiche: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
-      val memoizedFitness = mgo.tools.memoize(fitness)
+      val memoizedFitness = fitness.memoized
       val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
       def nsga2Elitism(p: Vector[I]) = NSGA2Operations.elitism[S, I](memoizedFitness, values, muByNiche).apply(s, p, Vector.empty, rng)._2
       val newPopulation = nicheElitism(cloneRemoved, nsga2Elitism, niche)

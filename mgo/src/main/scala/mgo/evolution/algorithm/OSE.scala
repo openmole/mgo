@@ -7,6 +7,7 @@ import mgo.evolution.elitism.*
 import mgo.evolution.ranking.*
 import mgo.tools.ImplementEqualMethod
 import mgo.tools.execution.*
+import mgo.tools.*
 import monocle.*
 import monocle.syntax.all.*
 
@@ -153,6 +154,8 @@ object OSEOperation:
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
 
+      val genomeValue = genome andThen (continuousValues, discreteValues).tupled
+
       val reached = reachMap(s).toSet
 
       val breeding: Breeding[S, I, G] =
@@ -160,8 +163,7 @@ object OSEOperation:
           val newGs =
             applyDynamicOperators(
               tournament(allRanks, tournamentRounds),
-              genome andThen continuousValues,
-              genome andThen discreteValues,
+              genomeValue,
               continuousOperatorStatistics,
               discreteOperatorStatistics,
               discrete,
@@ -184,8 +186,7 @@ object OSEOperation:
     archive: monocle.Lens[S, Archive[I]],
     reachMap: monocle.Lens[S, ReachMap]): Elitism[S, I] =
     (s, population, candidates, rng) =>
-
-      val memoizedFitness = mgo.tools.memoize(fitness)
+      val memoizedFitness = fitness.memoized
       val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
 
       def o(i: I) = Function.tupled(origin)(values(i))

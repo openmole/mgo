@@ -8,6 +8,7 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.ranking._
 import mgo.tools.execution._
+import mgo.tools.*
 
 import monocle.function
 import monocle._
@@ -196,13 +197,13 @@ object NoisyOSEOperations {
       val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
+      val genomeValue = genome andThen (continuousValues, discreteValues).tupled
 
       def breeding: Breeding[S, I, G] =
         (s, pop, g) => {
           val breed = applyDynamicOperators[S, I, G](
             tournament(allRanks, tournamentRounds),
-            genome andThen continuousValues,
-            genome andThen discreteValues,
+            genomeValue,
             continuousOperatorStatistics,
             discreteOperatorStatistics,
             discrete,
@@ -227,14 +228,14 @@ object NoisyOSEOperations {
     archive: monocle.Lens[S, Archive[I]],
     reachMap: monocle.Lens[S, ReachMap]): Elitism[S, I] =
     (s, population, candidates, rng) =>
-      val memoizedFitness = mgo.tools.memoize(aggregated(history, aggregation))
-      val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
+      val fitness = aggregated(history, aggregation).memoized
+      val merged = filterNaN(mergeHistories(population, candidates), fitness)
       val reached = reachMap.get(s).toSet
 
       def individualOrigin(i: I) = Function.tupled(origin)(values(i))
       def newlyReaching =
         def keepNewlyReaching(i: I): Option[I] =
-          if OSEOperation.patternIsReached(memoizedFitness(i), limit)
+          if OSEOperation.patternIsReached(fitness(i), limit)
           then
             reached.contains(individualOrigin(i)) match
               case true => None
@@ -248,6 +249,6 @@ object NoisyOSEOperations {
       val reaching = newlyReaching
       val s2 = reachMap.modify(_ ++ reaching.map(individualOrigin)).compose(archive.modify(_ ++ reaching))(s)
       val filteredPopulation = OSEOperation.filterAlreadyReached[I](i => Function.tupled(origin)(values(i)), reachMap.get(s2).toSet)(merged)
-      NoisyNSGA2Operations.elitism[S, I, P](memoizedFitness, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
+      NoisyNSGA2Operations.elitism[S, I, P](fitness, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
 
 }

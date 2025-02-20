@@ -26,6 +26,7 @@ import mgo.tools.{CanBeNaN, ImplementEqualMethod}
 import mgo.tools.execution.*
 import monocle.*
 import monocle.syntax.all.*
+import mgo.tools.*
 
 import scala.util.Random
 
@@ -211,7 +212,7 @@ object NoisyPSEOperations:
     historySize: Int,
     hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =
     (s, population, candidates, rng) =>
-      val memoizedPattern = mgo.tools.memoize(history.get _ andThen aggregation andThen pattern)
+      val memoizedPattern = (history.get _ andThen aggregation andThen pattern).memoized
       val eqm = summon[ImplementEqualMethod[(IArray[Double], IArray[Int])]]
       val candidateValues = candidates.map(values andThen eqm.apply).toSet
       val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get _ andThen aggregation)

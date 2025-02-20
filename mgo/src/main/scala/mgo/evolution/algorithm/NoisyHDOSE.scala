@@ -26,6 +26,7 @@ import mgo.evolution.breeding._
 import mgo.evolution.elitism._
 import mgo.evolution.ranking._
 import mgo.tools.execution._
+import mgo.tools.*
 
 import monocle.function
 import monocle._
@@ -221,22 +222,20 @@ object NoisyHDOSEOperations:
     (s, population, rng) =>
       val archivedPopulation = archive(s)
 
-      def fitness = NoisyOSEOperations.aggregated(history, aggregation)
-      val memoizedFitness = mgo.tools.memoize(fitness)
+      val memoizedFitness = NoisyOSEOperations.aggregated(history, aggregation).memoized
+      val value = (continuousValues, discreteValues).tupled
+      val genomeValue = (genome andThen value).memoized
 
       def promising: Vector[I] =
         population.filter(i => OSEOperation.patternIsReached(memoizedFitness(i), limit))
 
       val tooCloseFromArchiveOrPromising =
-        HDOSEOperation.isTooCloseFromArchive[G, I](
+        HDOSEOperation.isTooCloseFromArchive(
           distance,
           archivedPopulation ++ promising,
-          continuousValues,
-          discreteValues,
-          genome,
+          genomeValue,
           diversityDistance(s))
 
-      def filterTooCloseFromArchiveOrPromising(genomes: Vector[G]) = genomes.filterNot(tooCloseFromArchiveOrPromising)
 
       val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, memoizedFitness, rng)
       val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
@@ -247,14 +246,14 @@ object NoisyHDOSEOperations:
         (s, pop, g) =>
           val breed = applyDynamicOperators[S, I, G](
             tournament(allRanks, tournamentRounds),
-            genome andThen continuousValues,
-            genome andThen discreteValues,
+            genomeValue,
             continuousOperatorStatistics,
             discreteOperatorStatistics,
             discrete,
             operatorExploration,
             buildGenome)(s, pop, rng) //apply ()
-          filterTooCloseFromArchiveOrPromising(breed)
+
+          breed.filterNot(g => tooCloseFromArchiveOrPromising(value(g)))
 
       val offspring = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
       val sizedOffspringGenomes = randomTake[G](offspring, lambda, rng)
@@ -277,9 +276,10 @@ object NoisyHDOSEOperations:
     diversityDistance: monocle.Lens[S, Double],
     archiveSize: Int): Elitism[S, I] =
     (s1, population, candidates, rng) =>
-      def fitness = NoisyOSEOperations.aggregated(history, aggregation)
-      val memoizedFitness = mgo.tools.memoize(fitness)
+
+      val memoizedFitness = NoisyOSEOperations.aggregated(history, aggregation).memoized
       val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
+      val genomeValue = (genome andThen (continuousValues, discreteValues).tupled).memoized
 
       // FIXME individuals can be close to each other but yet added to the archive
       def reachingIndividuals =
@@ -297,9 +297,7 @@ object NoisyHDOSEOperations:
             HDOSEOperation.computeDistance(
               distance,
               archive.get(s2),
-              continuousValues,
-              discreteValues,
-              genome,
+              genomeValue,
               archiveSize,
               diversityDistance.get(s2),
               precision
@@ -309,9 +307,7 @@ object NoisyHDOSEOperations:
             HDOSEOperation.shrinkArchive(
               distance,
               archive.get(s2),
-              continuousValues,
-              discreteValues,
-              genome,
+              genomeValue,
               newDiversityDistance
             )
 
@@ -323,10 +319,8 @@ object NoisyHDOSEOperations:
           HDOSEOperation.isTooCloseFromArchive(
             distance,
             archive.get(s3),
-            continuousValues,
-            discreteValues,
-            genome,
-            diversityDistance.get(s3))(genome(i))
+            genomeValue,
+            diversityDistance.get(s3))(genomeValue(i))
 
       NoisyNSGA2Operations.elitism[S, I, P](memoizedFitness, mergeHistories, mu)(s3, filteredPopulation, Vector.empty, rng)
 
