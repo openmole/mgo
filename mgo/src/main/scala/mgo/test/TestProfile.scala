@@ -67,9 +67,9 @@ object NoisySphereProfile extends App {
 
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
-  println(
-    NoisyProfile.result(algo, finalPopulation).map {
+  println:
+    NoisyProfile.result(algo, finalPopulation).map:
       r => (r.continuous ++ r.discrete ++ r.fitness ++ Vector(r.replications)).mkString(",")
-    }.mkString("\n"))
+    .mkString("\n")
 
 }

@@ -33,36 +33,35 @@ object elitism:
 
   //  def incrementGeneration[M[_]: Generation] = Generation[M].increment
 
-  def addHits[I](cell: I => Vector[Int], population: Vector[I], hitmap: HitMap): HitMap = {
+  def addHits[I](cell: I => Vector[Int], population: Vector[I], hitmap: HitMap): HitMap =
     def hits(map: HitMap, c: Vector[Int]) = map.updated(c, map.getOrElse(c, 0) + 1)
     population.foldLeft(hitmap)((m, i) => hits(m, cell(i)))
-  }
 
   /** Returns the mu individuals with the highest ranks. */
-  def keepHighestRanked[I, K](population: Vector[I], ranks: Vector[K], mu: Int, rng: scala.util.Random)(implicit KO: Order[K]): Vector[I] =
-    if (population.size < mu) population
-    else {
+  def keepHighestRanked[I, K: Order as KO](population: Vector[I], ranks: Vector[K], mu: Int, rng: scala.util.Random): Vector[I] =
+    if population.size < mu
+    then population
+    else
       val sortedBestToWorst = (population zip ranks).sortBy { _._2 }(Order.reverse(KO).toOrdering).map { _._1 }
       sortedBestToWorst.take(mu)
-    }
 
-  def nicheElitism[I, N](population: Vector[I], keep: Vector[I] => Vector[I], niche: I => N): Vector[I] = {
+  def nicheElitism[I, N](population: Vector[I], keep: Vector[I] => Vector[I], niche: I => N): Vector[I] =
     val niches = population.groupBy(niche).toVector
     niches.flatMap { case (_, individuals) => keep(individuals) }
-  }
 
   def keepFirstFront[I](population: Vector[I], fitness: I => Vector[Double]): Vector[I] =
-    if (population.isEmpty) population
-    else {
+    if population.isEmpty
+    then population
+    else
       val dominating = ranking.numberOfDominating(fitness, population)
       val minDominating = dominating.map(_.value).min
-      (population zip dominating).filter { case (_, d) => d.value == minDominating }.map(_._1)
-    }
+      (population zip dominating).filter((_, d) => d.value == minDominating).map(_._1)
 
   def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random): Vector[I] =
     val first = keepFirstFront(population, fitness)
     val crowding = crowdingDistance[I](first, fitness, random)
-    keepHighestRanked(first, crowding, mu, random)
+    val res = keepHighestRanked(first, crowding, mu, random)
+    res
 
   //type UncloneStrategy[M[_], I] = Vector[I] => M[I]
 
@@ -119,6 +118,6 @@ object elitism:
       val filteredClone =
         val filter = population.map(genome andThen ImplementEqualMethod.apply).toSet
         newIndividuals.filter(i => !filter.contains(ImplementEqualMethod(genome(i))))
-
+      
       mergedClones ++ filteredClone
 

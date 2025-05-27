@@ -53,7 +53,7 @@ object NoisyNSGA2 {
     NoisyNSGA2Operations.aggregated[Individual[P], P](
       vectorPhenotype[P].get,
       aggregation,
-      i => i.focus(_.phenotypeHistory).get.size.toDouble)(_)
+      _.phenotypeHistory.size)(_)
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -94,7 +94,7 @@ object NoisyNSGA2 {
 
   def reject[P](nsga2: NoisyNSGA2[P]): Option[Genome => Boolean] = NSGA2.reject(nsga2.reject, nsga2.continuous, nsga2.discrete)
 
-  implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] = new Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] {
+  given isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] with
     def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = ())
 
     def initialPopulation(t: NoisyNSGA2[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
@@ -123,8 +123,6 @@ object NoisyNSGA2 {
           t.discrete),
         Focus[NSGA2State](_.generation),
         Focus[NSGA2State](_.evaluated))
-
-  }
 
 }
 

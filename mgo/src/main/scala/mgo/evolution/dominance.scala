@@ -16,29 +16,38 @@
  */
 package mgo.evolution
 
-object dominance {
+object dominance:
   /**
    * Dominance type between 2 solution
    */
-  trait Dominance {
+  trait Dominance:
     def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean
-  }
 
   /**
    * A point dominates another if the other is not better on any objective
    */
-  lazy val nonStrictDominance: Dominance = new Dominance {
-    override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
-      p1 != p2 && !(p1 zip p2).exists { case (g1, g2) => g1 < g2 }
-  }
+  lazy val nonStrictDominance: Dominance =
+    (p1: Seq[Double], p2: Seq[Double]) =>
+        val dominated =
+          import scala.util.boundary
+          var equal = true
+          boundary[Boolean]:
+            for (g1, g2) <- p1 lazyZip p2
+              do
+                if g1 < g2 then boundary.break(false)
+                if g1 != g2 then equal = false
+
+            !equal
+
+        dominated
+
 
   /**
    * A point dominates another if all its objective are better
    */
-  lazy val strictDominance: Dominance = new Dominance {
+  lazy val strictDominance: Dominance = new Dominance:
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
       (p1 zip p2).forall { case (g1, g2) => g2 < g1 }
-  }
 
   /**
    * A point is dominated if all its objectif are above another point in a range
@@ -46,17 +55,14 @@ object dominance {
    * J.M. Luque,   "Pareto-adaptive epsilon-dominance",
    *  presented at Evolutionary Computation, 2007, pp.493-517.
    */
-  def nonStrictEpsilonDominance(epsilons: Seq[Double]): Dominance = new Dominance {
+  def nonStrictEpsilonDominance(epsilons: Seq[Double]): Dominance = new Dominance:
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
       !(p1 zip p2 zip epsilons).exists {
         case (((g1, g2), e)) => g2 > e + g1
       }
-  }
 
-  def strictEpsilonDominance(epsilons: Seq[Double]): Dominance = new Dominance {
+  def strictEpsilonDominance(epsilons: Seq[Double]): Dominance = new Dominance:
     override def isDominated(p1: Seq[Double], p2: Seq[Double]): Boolean =
-      (p1 zip p2 zip epsilons).forall {
+      (p1 zip p2 zip epsilons).forall:
         case (((g1, g2), e)) => g1 > g2 + e
-      }
-  }
-}
+

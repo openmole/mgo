@@ -37,7 +37,7 @@ object NoisyProfile {
   type ProfileState = EvolutionState[Unit]
 
   def aggregatedFitness[N, P: Manifest](aggregation: Vector[P] => Vector[Double]): Individual[P] => Vector[Double] =
-    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorPhenotype[P].get, aggregation, i => i.phenotypeHistory.size)(_)
+    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorPhenotype[P].get, aggregation, _.phenotypeHistory.size)(_)
 
   case class Result[N, P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, replications: Int, individual: Individual[P])
 
@@ -51,17 +51,20 @@ object NoisyProfile {
     keepAll: Boolean): Vector[Result[N, P]] =
 
     def nicheResult(population: Vector[Individual[P]]) =
-      if (onlyOldest) {
+      if onlyOldest
+      then
         val front = keepFirstFront(population, aggregatedFitness(aggregation))
-        front.sortBy(-_.phenotypeHistory.size).headOption.toVector
-      } else keepFirstFront(population, aggregatedFitness(aggregation))
+        front.maxByOption(_.phenotypeHistory.size).toVector
+      else keepFirstFront(population, aggregatedFitness(aggregation))
 
-    val individuals = if (keepAll) population else nicheElitism[Individual[P], N](population, nicheResult, niche)
+    val individuals =
+      if keepAll
+      then population
+      else nicheElitism(population, nicheResult, niche)
 
-    individuals.map { i =>
+    individuals.map: i =>
       val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous, discrete)
       Result(c, d, f, niche(i), r, i)
-    }
 
   def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = true): Vector[Result[N, P]] =
     result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, noisyProfile.discrete, onlyOldest, keepAll = false)
@@ -111,12 +114,15 @@ object NoisyProfile {
 
     def individualValues(i: Individual[P]) = scaledValues(components, discrete)(i.genome)
 
-    NoisyProfileOperations.elitism[ProfileState, Individual[P], N, P](
-      aggregatedFitness(aggregation),
-      mergeHistories(individualValues, vectorPhenotype, Focus[Individual[P]](_.historyAge), historySize),
-      individualValues,
-      niche,
-      muByNiche)
+    (s, population, candidates, rng) =>
+      NoisyProfileOperations.elitism[ProfileState, Individual[P], N, P](
+        aggregatedFitness(aggregation),
+        mergeHistories(individualValues, vectorPhenotype, Focus[Individual[P]](_.historyAge), historySize),
+        individualValues,
+        niche,
+        muByNiche)(s, population, candidates, rng)
+
+
 
   def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     NoisyIndividual.expression[P](fitness, continuous, discrete)
@@ -126,7 +132,7 @@ object NoisyProfile {
 
   def reject[N, P](pse: NoisyProfile[N, P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
-  given isAlgorithm[N, P: Manifest]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] with {
+  given isAlgorithm[N, P: Manifest]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] with
     override def initialState(t: NoisyProfile[N, P], rng: scala.util.Random) = EvolutionState(s = ())
 
     def initialPopulation(t: NoisyProfile[N, P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
@@ -159,7 +165,7 @@ object NoisyProfile {
 
   }
 
-}
+
 
 case class NoisyProfile[N, P](
   muByNiche: Int,

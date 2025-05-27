@@ -63,19 +63,19 @@ object ranking {
   //    Ranking((values: Vector[I]) =>
   //      HierarchicalRanking.upRank(values.map(v => fitness(v))).pure[M])
 
-  def numberOfDominating[I](fitness: I => Vector[Double], values: Vector[I], dominance: Dominance = nonStrictDominance): Vector[Later[Int]] = {
+  def numberOfDominating[I](fitness: I => Vector[Double], values: Vector[I], dominance: Dominance = nonStrictDominance): Vector[Later[Int]] =
     val fitnesses = values.map(i => fitness(i))
     def ranks =
-      fitnesses.zipWithIndex.map {
-        case (v1, index1) =>
-          def containsNaN = v1.exists(_.isNaN)
-          def otherIndividuals = fitnesses.zipWithIndex.filter { case (_, index2) => index1 != index2 }
-          def numberOfDominatingIndividual = otherIndividuals.count { case (v2, _) => dominance.isDominated(v1, v2) }
-          Later(if (containsNaN) Int.MaxValue else numberOfDominatingIndividual)
-      }
+      fitnesses.zipWithIndex.map: (v1, index1) =>
+        def containsNaN = v1.exists(_.isNaN)
+        def otherIndividuals = fitnesses.zipWithIndex.filter((_, index2) => index1 != index2)
+        def numberOfDominatingIndividual = otherIndividuals.count((v2, _) => dominance.isDominated(v1, v2))
+        Later:
+          if containsNaN
+          then Int.MaxValue
+          else numberOfDominatingIndividual
 
     ranks
-  }
 
   //  def profileRanking[M[_]: cats.Monad, I](niche: Niche[I, Int], fitness: I => Double): Ranking[M, I] =
   //    Ranking((population: Vector[I]) => {
