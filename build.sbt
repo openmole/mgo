@@ -1,7 +1,7 @@
 
 name := "mgo"
 ThisBuild / organization := "org.openmole"
-ThisBuild / scalaVersion := "3.6.2"
+ThisBuild / scalaVersion := "3.7.0"
 //ThisBuild / crossScalaVersions := Seq("3.6.2")
 
 val monocleVersion = "3.2.0"
@@ -47,7 +47,7 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
     //"org.scalanlp" %% "breeze-natives" % breezeVersion
   ),
   excludeDependencies += ExclusionRule(organization = "org.typelevel", name = "cats-kernel_2.13"),
-  libraryDependencies += "com.edwardraff" % "JSAT" % "0.0.9",
+  //libraryDependencies += "com.edwardraff" % "JSAT" % "0.0.9",
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 )
 
