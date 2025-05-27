@@ -214,7 +214,7 @@ object NoisyPSEOperations:
       val memoizedPattern = (history.get _ andThen aggregation andThen pattern).memoized
       val eqm = summon[ImplementEqualMethod[(IArray[Double], IArray[Int])]]
       val candidateValues = candidates.map(values andThen eqm.apply).toSet
-      val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get _ andThen aggregation)
+      val merged = filterNaN(mergeHistories(values, history, historyAge, historySize).apply(population, candidates), history.get andThen aggregation)
 
       def newHits =
         merged.flatMap: i =>

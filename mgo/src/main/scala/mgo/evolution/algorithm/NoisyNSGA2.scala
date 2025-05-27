@@ -141,7 +141,7 @@ case class NoisyNSGA2[P](
 object NoisyNSGA2Operations:
 
   def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double], accuracy: I => Double)(i: I): Vector[Double] =
-    aggregation(fitness(i)) ++ Vector(1.0 / accuracy(i))
+    Vector(-accuracy(i)) ++ aggregation(fitness(i))
 
   def adaptiveBreeding[S, I, G, P](
     fitness: I => Vector[Double],

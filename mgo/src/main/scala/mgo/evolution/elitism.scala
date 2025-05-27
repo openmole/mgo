@@ -118,6 +118,6 @@ object elitism:
       val filteredClone =
         val filter = population.map(genome andThen ImplementEqualMethod.apply).toSet
         newIndividuals.filter(i => !filter.contains(ImplementEqualMethod(genome(i))))
-      
+
       mergedClones ++ filteredClone
 

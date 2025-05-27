@@ -29,7 +29,7 @@ import monocle.syntax.all._
 
 import scala.language.higherKinds
 
-object NoisyProfile {
+object NoisyProfile:
 
   import CDGenome._
   import NoisyIndividual._
@@ -70,10 +70,10 @@ object NoisyProfile {
     result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, noisyProfile.discrete, onlyOldest, keepAll = false)
 
   def continuousProfile[P](continuous: Vector[C], x: Int, nX: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.continuousProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen continuousVectorValues(continuous)).get _, x, nX)
+    mgo.evolution.niche.continuousProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen continuousVectorValues(continuous)).get, x, nX)
 
   def discreteProfile[P](discrete: Vector[D], x: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.discreteProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen discreteVectorValues(discrete)).get _, x)
+    mgo.evolution.niche.discreteProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen discreteVectorValues(discrete)).get, x)
 
   def boundedContinuousProfile[P](continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
     mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), x, nX, min, max)
@@ -123,7 +123,6 @@ object NoisyProfile {
         muByNiche)(s, population, candidates, rng)
 
 
-
   def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     NoisyIndividual.expression[P](fitness, continuous, discrete)
 
@@ -162,9 +161,6 @@ object NoisyProfile {
           t.discrete),
         Focus[ProfileState](_.generation),
         Focus[ProfileState](_.evaluated))
-
-  }
-
 
 
 case class NoisyProfile[N, P](
