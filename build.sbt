@@ -57,45 +57,30 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
 ThisBuild / publishMavenStyle := true
 ThisBuild / Test / publishArtifact := false
 publishArtifact := false
-ThisBuild / pomIncludeRepository := { _ => false }
 
-ThisBuild / publishTo := sonatypePublishToBundle.value
-
-ThisBuild / pomIncludeRepository := { _ => false }
-
-ThisBuild / licenses := Seq("Affero GPLv3" -> url("http://www.gnu.org/licenses/"))
-
+ThisBuild / licenses := Seq("GPLv3" -> url("http://www.gnu.org/licenses/"))
 ThisBuild / homepage := Some(url("https://github.com/openmole/mgo"))
-
 ThisBuild / scmInfo := Some(ScmInfo(url("https://github.com/openmole/mgo.git"), "scm:git:git@github.com:openmole/mgo.git"))
 
-ThisBuild / pomExtra := (
-  <developers>
-    <developer>
-      <id>romainreuillon</id>
-      <name>Romain Reuillon</name>
-    </developer>
-    <developer>
-      <id>guillaumecherel</id>
-      <name>Guillaume Chérel</name>
-    </developer>
-    <developer>
-      <id>justeraimbault</id>
-      <name>Juste Raimbault</name>
-    </developer>
-  </developers>
+ThisBuild / publishTo := {
+  val centralSnapshots = "https://central.sonatype.com/repository/maven-snapshots/"
+  if (isSnapshot.value) Some("central-snapshots" at centralSnapshots)
+  else localStaging.value
+}
+
+ThisBuild / developers := List(
+  Developer(
+    id    = "romainreuillon",
+    name  = "Romain Reuillon",
+    email = "",
+    url   = url("https://github.com/romainreuillon/")
+  )
 )
 
 releasePublishArtifactsAction := PgpKeys.publishSigned.value
-
 releaseVersionBump := sbtrelease.Version.Bump.Minor
-
 releaseTagComment := s"Releasing ${(ThisBuild / version).value}"
-
 releaseCommitMessage := s"Bump version to ${(ThisBuild / version).value}"
-
-sonatypeProfileName := "org.openmole"
-
 publishConfiguration := publishConfiguration.value.withOverwrite(true)
 
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
@@ -107,11 +92,10 @@ releaseProcess := Seq[ReleaseStep](
   runTest,
   setReleaseVersion,
   tagRelease,
-  releaseStepCommandAndRemaining("+publishSigned"),
-  releaseStepCommand("sonatypeBundleRelease"),
+  releaseStepCommandAndRemaining("publishSigned"),
+  releaseStepCommand("sonaRelease"),
   setNextVersion,
   commitNextVersion,
-  //releaseStepCommand("sonatypeReleaseAll"),
   pushChanges
 )
 
