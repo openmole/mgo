@@ -192,7 +192,7 @@ object NoisyOSEOperations {
         OSEOperation.filterAlreadyReached[G](genomeOrigin, reached)(genomes).filter(g => !promisingReachMapValue.contains(genomeOrigin(g)))
 
       val archivedPopulation = archive(s)
-      val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, aggregated(history, aggregation), rng)
+      val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, aggregated(history, aggregation))
       val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
@@ -212,8 +212,7 @@ object NoisyOSEOperations {
         }
 
       val offspring = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
-      val sizedOffspringGenomes = randomTake[G](offspring, lambda, rng)
-      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
+      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 
   def elitism[S, I: ClassTag, P](
     history: I => Vector[P],

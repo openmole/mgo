@@ -236,7 +236,7 @@ object NoisyHDOSEOperations:
           diversityDistance(s))
 
 
-      val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, memoizedFitness, rng)
+      val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, memoizedFitness)
       val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
@@ -255,8 +255,7 @@ object NoisyHDOSEOperations:
           breed.filterNot(g => tooCloseFromArchiveOrPromising(value(g)))
 
       val offspring = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
-      val sizedOffspringGenomes = randomTake[G](offspring, lambda, rng)
-      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
+      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 
 
   def elitism[S, I: ClassTag, P, G](

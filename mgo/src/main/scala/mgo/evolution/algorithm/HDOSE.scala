@@ -270,7 +270,7 @@ object HDOSEOperation:
     archive: S => Archive[I]): Breeding[S, I, G] =
     (s, population, rng) =>
       val archivedPopulation = archive(s)
-      val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, fitness, rng)
+      val ranks = ranking.paretoRankingMinAndCrowdingDiversity(population, fitness)
       val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
@@ -296,8 +296,7 @@ object HDOSEOperation:
               genomeValue,
               diversityDistance(s))(values)
 
-      val offspring = breed[S, I, G](breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
-      randomTake(offspring, lambda, rng)
+      breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
 
 
   def elitism[S, I: ClassTag, G](

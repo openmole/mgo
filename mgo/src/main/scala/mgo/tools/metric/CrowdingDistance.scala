@@ -24,7 +24,7 @@ import cats.implicits._
  * A fast elitist non-dominated sorting genetic algorithm for multi-objective
  * optimization: NSGA-II. Lecture notes in computer science 1917, 849–858 (2000).
  */
-object CrowdingDistance {
+object CrowdingDistance:
 
   /**
    * Compute the crowding distance
@@ -33,43 +33,42 @@ object CrowdingDistance {
    * @return the crowding distance of each point in the same order as the input
    * sequence
    */
-  def apply(data: Vector[Vector[Double]], random: scala.util.Random): Vector[Double] = {
-    def res =
-      data.transpose.map { (d: Vector[Double]) =>
-        val grouped: Map[Double, Seq[Int]] =
-          d.zipWithIndex.groupBy { case (d, _) => d }.mapValues { _.map { case (_, i) => i } }.toMap
+  def computeCrowdingDistance(data: Seq[Vector[Double]]): Seq[Double] =
+    case class Individual(objectives: Vector[Double], var distance: Double = 0.0)
 
-        val sortedDistances = grouped.keys.toVector.sorted
+    val n = data.length
+    if n == 0
+    then Seq.empty
+    else
+      val front = data.map(Individual(_, 0.0))
+      val numObjectives = front.head.objectives.length
 
-        type Crowding = (Double, Int)
+      for
+        m <- 0 until numObjectives
+      do
+        val sorted = front.sortBy(_.objectives(m))
 
-        def groupCrowding(group: Seq[Int], c: Double): List[(Double, Int)] = {
-          val randomIndex = random.nextInt(group.size)
-          (c -> group(randomIndex)) :: group.patch(randomIndex, Seq.empty, 1).toList.map { t => 0.0 -> t }
-        }
+        sorted.head.distance = Double.PositiveInfinity
+        sorted.last.distance = Double.PositiveInfinity
 
-        val res: Vector[Crowding] =
-          if (sortedDistances.size <= 2)
-            sortedDistances.flatMap { d => groupCrowding(grouped(d), Double.PositiveInfinity) }
-          else {
-            def crowding(distances: List[Double], acc: List[Crowding]): List[Crowding] =
-              distances match {
-                case d1 :: d2 :: Nil =>
-                  val g1 = groupCrowding(grouped(sortedDistances.head), Double.PositiveInfinity)
-                  val g2 = groupCrowding(grouped(sortedDistances.last), Double.PositiveInfinity)
-                  g1 ::: (g2 ::: acc).reverse
-                case d1 :: d2 :: d3 :: _ =>
-                  val gc = groupCrowding(grouped(d2), d3 - d1)
-                  crowding(distances.tail, gc ::: acc)
-                case _ => sys.error("Should never be empty")
-              }
+        val minObj = sorted.head.objectives(m)
+        val maxObj = sorted.last.objectives(m)
+        val range = maxObj - minObj
 
-            crowding(sortedDistances.toList, List.empty).toVector
-          }
-        res.sortBy { case (_, index) => index }.map { case (c, _) => c }
-      }
+        if range != 0.0
+        then
+          for (i <- 1 until n - 1)
+          do
+            val prev = sorted(i - 1).objectives(m)
+            val next = sorted(i + 1).objectives(m)
+            sorted(i).distance += (next - prev) / range
 
-    res.transpose.map { _.sum }
-  }
+      front.map(_.distance)
 
-}
+  def apply(data: Vector[Vector[Double]]): Vector[Double] =
+    val distinctData = data.distinct
+    val crowding = (distinctData zip computeCrowdingDistance(distinctData)).toMap
+    data.map(crowding)
+
+
+

@@ -163,8 +163,7 @@ object PSEOperations:
           discrete,
           operatorExploration,
           buildGenome)
-        val offspring = breed[S, I, G](breeding, lambda, reject)(s, population, rng)
-        randomTake(offspring, lambda, rng)
+        breed(breeding, lambda, reject)(s, population, rng)
 
   def elitism[S, I, P: CanBeNaN](
     phenotype: I => P,

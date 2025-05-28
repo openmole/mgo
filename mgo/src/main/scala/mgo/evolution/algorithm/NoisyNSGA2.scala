@@ -158,7 +158,7 @@ object NoisyNSGA2Operations:
     operatorExploration: Double,
     cloneProbability: Double): Breeding[S, I, G] =
     (s, population, rng) =>
-      val ranks = ranking.paretoRankingMinAndCrowdingDiversity(population, fitness, rng)
+      val ranks = ranking.paretoRankingMinAndCrowdingDiversity(population, fitness)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
       val genomeValue = genome andThen (continuousValues, discreteValues).tupled
@@ -172,9 +172,8 @@ object NoisyNSGA2Operations:
         operatorExploration,
         buildGenome)
 
-      val offspring = breed[S, I, G](breeding, lambda, reject)(s, population, rng)
-      val sizedOffspringGenomes = randomTake(offspring, lambda, rng)
-      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, sizedOffspringGenomes, rng)
+      val offspring = breed(breeding, lambda, reject)(s, population, rng)
+      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 
 
   def elitism[S, I, P](
@@ -184,8 +183,8 @@ object NoisyNSGA2Operations:
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
       val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
-      val ranks = paretoRankingMinAndCrowdingDiversity[I](merged, memoizedFitness, rng)
-      (s, keepHighestRanked(merged, ranks, mu, rng))
+      val ranks = paretoRankingMinAndCrowdingDiversity(merged, memoizedFitness)
+      (s, keepHighestRanked(merged, ranks, mu))
 
 
 

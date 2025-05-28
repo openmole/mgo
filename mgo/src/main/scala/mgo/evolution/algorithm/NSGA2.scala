@@ -140,7 +140,7 @@ object NSGA2Operations {
     reject: Option[G => Boolean],
     operatorExploration: Double): Breeding[S, I, G] =
     (s, population, rng) =>
-      val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, fitness, rng)
+      val ranks = ranking.paretoRankingMinAndCrowdingDiversity(population, fitness)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
       val genomeValue = genome andThen (continuousValues, discreteValues).tupled
@@ -154,8 +154,7 @@ object NSGA2Operations {
         operatorExploration,
         buildGenome)
 
-      val offspring = breed(breeding, lambda, reject)(s, population, rng)
-      randomTake(offspring, lambda, rng)
+      breed(breeding, lambda, reject)(s, population, rng)
 
 
   def elitism[S, I](
@@ -165,8 +164,8 @@ object NSGA2Operations {
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
       val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
-      val ranks = paretoRankingMinAndCrowdingDiversity[I](cloneRemoved, memoizedFitness, rng)
-      (s, keepHighestRanked(cloneRemoved, ranks, mu, rng))
+      val ranks = paretoRankingMinAndCrowdingDiversity[I](cloneRemoved, memoizedFitness)
+      (s, keepHighestRanked(cloneRemoved, ranks, mu))
 
 
 }

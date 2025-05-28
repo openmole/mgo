@@ -130,7 +130,7 @@ case class Profile[N](
   operatorExploration: Double = 0.1,
   reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
-object ProfileOperations {
+object ProfileOperations:
 
   def elitism[S, I, N](
     fitness: I => Vector[Double],
@@ -144,4 +144,3 @@ object ProfileOperations {
       val newPopulation = nicheElitism(cloneRemoved, nsga2Elitism, niche)
       (s, newPopulation)
 
-}

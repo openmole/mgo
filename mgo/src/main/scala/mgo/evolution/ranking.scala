@@ -134,13 +134,13 @@ object ranking {
   //TODO: the following functions don't produce rankings and don't belong here.
   def rankAndDiversity[M[_]: cats.Monad, I](ranking: Ranking[M, I], diversity: Diversity[M, I]): Kleisli[M, Vector[I], Vector[(Later[Int], Later[Double])]] =
     Kleisli((population: Vector[I]) =>
-      for {
+      for
         r <- ranking(population)
         d <- diversity(population)
-      } yield r zip d)
+      yield r zip d)
 
-  def paretoRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => Vector[Double], random: scala.util.Random): Vector[(Eval[Int], Double)] =
-    paretoRanking(population, fitness) zip crowdingDistance(population, fitness, random)
+  def paretoRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => Vector[Double]): Vector[(Eval[Int], Double)] =
+    paretoRanking(population, fitness) zip crowdingDistance(population, fitness)
 
   def worstParetoRanking: (Later[Int], Double) = (Later(Int.MinValue), Double.NegativeInfinity)
 

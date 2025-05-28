@@ -67,7 +67,6 @@ case class EvolutionState[S](
 //      g <- implicitly[Generation[M]].get
 //    } yield EvolutionState[T](g, s, rng, t)
 
-def randomTake[G](gs: Vector[G], lambda: Int, random: scala.util.Random): Vector[G] = random.shuffle(gs).take(lambda)
 
 def operatorProportions[I](operation: I => Option[Int], is: Vector[I]): Map[Int, Double] =
   is.map { operation }.

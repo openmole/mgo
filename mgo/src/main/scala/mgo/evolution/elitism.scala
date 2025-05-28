@@ -38,11 +38,11 @@ object elitism:
     population.foldLeft(hitmap)((m, i) => hits(m, cell(i)))
 
   /** Returns the mu individuals with the highest ranks. */
-  def keepHighestRanked[I, K: Order as KO](population: Vector[I], ranks: Vector[K], mu: Int, rng: scala.util.Random): Vector[I] =
+  def keepHighestRanked[I, K: Order as KO](population: Vector[I], ranks: Vector[K], mu: Int): Vector[I] =
     if population.size < mu
     then population
     else
-      val sortedBestToWorst = (population zip ranks).sortBy { _._2 }(Order.reverse(KO).toOrdering).map { _._1 }
+      val sortedBestToWorst = (population zip ranks).sortBy { _._2 }(using Order.reverse(KO).toOrdering).map { _._1 }
       sortedBestToWorst.take(mu)
 
   def nicheElitism[I, N](population: Vector[I], keep: Vector[I] => Vector[I], niche: I => N): Vector[I] =
@@ -59,8 +59,8 @@ object elitism:
 
   def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random): Vector[I] =
     val first = keepFirstFront(population, fitness)
-    val crowding = crowdingDistance[I](first, fitness, random)
-    val res = keepHighestRanked(first, crowding, mu, random)
+    val crowding = crowdingDistance(first, fitness)
+    val res = keepHighestRanked(first, crowding, mu)
     res
 
   //type UncloneStrategy[M[_], I] = Vector[I] => M[I]

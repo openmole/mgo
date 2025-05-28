@@ -7,6 +7,7 @@ import mgo.tools
 import mgo.tools.*
 import mgo.tools.execution.*
 
+import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 
@@ -31,14 +32,13 @@ object breeding {
 
   type Selection[S, I] = (S, Vector[I], scala.util.Random) => I
 
-  def tournament[S, I, K: Order](
+  def tournament[S, I, K: Order as ko](
     ranks: Vector[K],
     rounds: Int => Int = _ => 1): Selection[S, I] =
-    (s, individuals, rng) => {
+    (s, individuals, rng) =>
       val populationSize = individuals.size
       val challengersIndices = Vector.fill(rounds(populationSize) + 1)(() => rng.nextInt(populationSize)).map(_())
-      individuals(challengersIndices.maxBy(i => ranks(i))(implicitly[Order[K]].toOrdering))
-    }
+      individuals(challengersIndices.maxBy(i => ranks(i))(using ko.toOrdering))
 
   def log2(x: Int): Int = (math.log(x) / math.log(2)).toInt
   lazy val log2_256: Int = log2(256)
@@ -340,15 +340,18 @@ object breeding {
   /* tool functions */
 
   def breed[S, I, G](breeding: Breeding[S, I, G], lambda: Int, reject: Option[G => Boolean] = None): Breeding[S, I, G] =
+    val rejectValue = reject.getOrElse(_ => false)
     (s, population, rng) =>
-      def accumulate(acc: Vector[G] = Vector()): Vector[G] =
+      @tailrec def accumulate(acc: Vector[G] = Vector()): Vector[G] =
         if acc.size >= lambda
         then acc
         else
-          val rejectValue = reject.getOrElse((_: G) => false)
           val b = breeding(s, population, rng).filter(s => !rejectValue(s))
           accumulate(b ++ acc)
 
-      accumulate()
+      def randomTake[G](gs: Vector[G], lambda: Int, random: scala.util.Random): Vector[G] = random.shuffle(gs).take(lambda)
+
+      val generated = accumulate()
+      randomTake(generated, lambda, rng)
 
 }
