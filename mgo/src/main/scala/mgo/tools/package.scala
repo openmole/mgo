@@ -68,7 +68,7 @@ extension [A, B](f: A => B)
       memo.synchronized:
         memo.getOrElseUpdate(a, f(a))
 
-
-
+extension [A](a: IArray[A])
+  def unsafeToArray = a.asInstanceOf[Array[A]]
 
 

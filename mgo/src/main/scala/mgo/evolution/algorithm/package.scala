@@ -121,8 +121,8 @@ object GenomeVectorDouble {
 
     generate(List(), 0)
 
-  def filterNaN[I, T: CanBeNaN as cbn](values: Vector[I], value: I => T): Vector[I] =
-    values.filter { i => !cbn.isNaN(value(i)) }
+  def filterNaN[I, T: CanContainNaN as cbn](values: Vector[I], value: I => T): Vector[I] =
+    values.filter { i => !cbn.containsNaN(value(i)) }
 
   def continuousCrossovers[S]: IArray[GACrossover[S, Double]] =
     IArray(

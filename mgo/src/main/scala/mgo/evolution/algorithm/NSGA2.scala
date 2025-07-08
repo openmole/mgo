@@ -83,6 +83,7 @@ object NSGA2 {
           NSGA2.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
           NSGA2.expression(t.fitness, t.continuous, t.discrete),
           parallel)
+        
       override def step(t: NSGA2) =
         deterministic.step[NSGA2State, Individual[Vector[Double]], Genome](
           NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, identity, reject(t)),

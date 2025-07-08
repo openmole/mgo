@@ -17,10 +17,10 @@
  */
 package mgo.tools
 
-object CanBeNaN:
-  given CanBeNaN[Double] = _.isNaN
-  given [T](using cbn: CanBeNaN[T]): CanBeNaN[Vector[T]] = _.exists(cbn.isNaN)
+object CanContainNaN:
+  given CanContainNaN[Double] = _.isNaN
+  given [T](using cbn: CanContainNaN[T]): CanContainNaN[Vector[T]] = _.exists(cbn.containsNaN)
+  given [T](using cbn: CanContainNaN[T]): CanContainNaN[IArray[T]] = _.exists(cbn.containsNaN)
 
-
-trait CanBeNaN[T]:
-  def isNaN(t: T): Boolean
+trait CanContainNaN[T]:
+  def containsNaN(t: T): Boolean

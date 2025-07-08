@@ -22,7 +22,7 @@ import mgo.evolution.*
 import mgo.evolution.algorithm.GenomeVectorDouble.*
 import mgo.evolution.breeding.*
 import mgo.evolution.elitism.*
-import mgo.tools.{CanBeNaN, ImplementEqualMethod}
+import mgo.tools.{CanContainNaN, ImplementEqualMethod}
 import monocle.*
 import monocle.syntax.all.*
 import mgo.tools.*
@@ -71,7 +71,7 @@ object NoisyPSE {
       maxRareSample,
       (s, rng) => NoisyPSE.initialGenomes(s, continuous, discrete, reject, rng))
 
-  def elitism[P: {CanBeNaN, Manifest}](
+  def elitism[P: {CanContainNaN, Manifest}](
     pattern: Vector[Double] => Vector[Int],
     aggregation: Vector[P] => Vector[Double],
     historySize: Int,
@@ -116,7 +116,7 @@ object NoisyPSE {
 
   def reject[P](pse: NoisyPSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
-  given isAlgorithm[P: {Manifest, CanBeNaN}]: Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] with {
+  given isAlgorithm[P: {Manifest, CanContainNaN}]: Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] with {
 
     def initialState(t: NoisyPSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
@@ -202,7 +202,7 @@ object NoisyPSEOperations:
           randomGenomes)(s, population, rng)
       clonesReplace[S, I, G](cloneProbability, population, genome, randomSelection)(s, gs, rng)
 
-  def elitism[S, I, P: CanBeNaN](
+  def elitism[S, I, P: CanContainNaN](
     values: I => (IArray[Double], IArray[Int]),
     history: monocle.Lens[I, Vector[P]],
     aggregation: Vector[P] => Vector[Double],

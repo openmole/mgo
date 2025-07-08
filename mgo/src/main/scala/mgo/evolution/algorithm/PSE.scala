@@ -82,7 +82,7 @@ object PSE:
       maxRareSample,
       (s, rng) => PSE.initialGenomes(s, continuous, discrete, reject, rng))
 
-  def elitism[P: CanBeNaN](pattern: P => Vector[Int]): Elitism[PSEState, Individual[P]] =
+  def elitism[P: CanContainNaN](pattern: P => Vector[Int]): Elitism[PSEState, Individual[P]] =
     PSEOperations.elitism[PSEState, Individual[P], P](
       Focus[Individual[P]](_.phenotype).get,
       pattern,
@@ -97,7 +97,7 @@ object PSE:
 
   def reject[P](pse: PSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
-  given isAlgorithm[P: CanBeNaN]: Algorithm[PSE[P], Individual[P], Genome, EvolutionState[HitMap]] with
+  given isAlgorithm[P: CanContainNaN]: Algorithm[PSE[P], Individual[P], Genome, EvolutionState[HitMap]] with
     def initialState(t: PSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
 
     override def initialPopulation(t: PSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
@@ -165,7 +165,7 @@ object PSEOperations:
           buildGenome)
         breed(breeding, lambda, reject)(s, population, rng)
 
-  def elitism[S, I, P: CanBeNaN](
+  def elitism[S, I, P: CanContainNaN](
     phenotype: I => P,
     pattern: P => Vector[Int],
     hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =
