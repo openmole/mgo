@@ -1,7 +1,7 @@
 package mgo.tools
 
 /*
- * Copyright (C) 2021 Romain Reuillon
+ * Copyright (C) 2025 Romain Reuillon
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -17,5 +17,23 @@ package mgo.tools
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-class Lazy[T](t: => T):
-  lazy val value: T = t
+import scala.reflect.ClassTag
+
+object Loop:
+
+  /** standard C-style for loop */
+  inline def loop[A](
+    inline start: A,
+    inline condition: A => Boolean,
+    inline advance: A => A)(inline loopBody: A => Any): Unit =
+    var a = start
+    while condition(a) do
+      loopBody(a)
+      a = advance(a)
+
+  inline def map[A, B: ClassTag](a: IArray[A])(f: A => B) =
+    val length = a.length
+    val result = Array.ofDim[B](length)
+    loop(0, _ < length, _ + 1): i =>
+      result(i) = f(a(i))
+    IArray.unsafeFromArray(result)

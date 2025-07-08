@@ -8,6 +8,16 @@ import mgo.tools._
 
 object elitism:
 
+  extension [A](t: Iterable[A])
+    def groupByOrdered[K: ImplementEqualMethod as eqm](f: A => K): collection.Map[ImplementEqualMethod.EQM[K], List[A]] =
+      val map = collection.mutable.LinkedHashMap[ImplementEqualMethod.EQM[K], List[A]]()
+      for (i <- t)
+        do
+          val key = eqm(f(i))
+          map(key) = i :: map.getOrElse(key, Nil)
+
+      map.mapValues(_.reverse).toMap
+
   type Elitism[S, I] = (S, Vector[I], Vector[I], scala.util.Random) => (S, Vector[I])
 
   //  object Elitism {

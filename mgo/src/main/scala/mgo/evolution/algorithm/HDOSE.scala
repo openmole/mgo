@@ -191,12 +191,37 @@ object HDOSEOperation:
   type GenomeValue =  (IArray[Double], IArray[Int])
   type TooClose = (GenomeValue, GenomeValue, Double) => Boolean
 
+  def findFirstUnder(target: Double, f: Double => Double, start: Double, precision: Double): Double =
+    require(precision > 0, "Precision should be positive.")
+
+    var low = start
+    var highRange = precision
+
+    while f(low + highRange) >= target
+    do
+      low = low + highRange
+      highRange *= 2
+
+    var high = low + highRange
+
+    while high - low > precision
+    do
+      val mid = low + (high - low) / 2
+      val midValue = f(mid)
+
+      if midValue < target
+      then high = mid
+      else low = mid
+
+    if f(low) < target then low else high
+
+
   def isTooCloseFromArchive[I](
     tooClose: TooClose,
     archive: Archive[I],
     genomeValues: I => GenomeValue,
     diversityDistance: Double)(g: GenomeValue): Boolean =
-    import mgo.tools.loop
+    import mgo.tools.Loop.loop
     import scala.util.boundary
     import scala.jdk.CollectionConverters.*
 
@@ -242,7 +267,7 @@ object HDOSEOperation:
       shrinkArchive(distance, archive, genomeValues, d).size.toDouble
 
     val newDistance =
-      mgo.tools.findFirstUnder(
+      findFirstUnder(
         targetSize,
         computeSize,
         currentDistance,

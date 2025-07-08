@@ -247,23 +247,21 @@ object GenomeVectorDouble {
       val ((cOff1, cOff2), cop) = cOff
       val ((dOff1, dOff2), dop) = dOff
 
-      import mgo.tools.clamp
-
-      val ng1 = buildGenome(cOff1.map(clamp(_)), Some(cop), dOff1, Some(dop))
-      val ng2 = buildGenome(cOff2.map(clamp(_)), Some(cop), dOff2, Some(dop))
+      val ng1 = buildGenome(cOff1.map(breeding.clamp(_)), Some(cop), dOff1, Some(dop))
+      val ng2 = buildGenome(cOff2.map(breeding.clamp(_)), Some(cop), dOff2, Some(dop))
 
       Vector(ng1, ng2)
 }
 
 object Aggregation:
   def average(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(o => o.sum / o.size)
-  def median(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(tools.median)
+  def median(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(tools.Stats.median)
 
 def scaleContinuousValues(values: IArray[Double], genomeComponents: Vector[C]): IArray[Double] =
   val size = values.size
   val res = Array.ofDim[Double](size)
 
-  loop(
+  Loop.loop(
     0,
     _ < size,
     i => i + 1
@@ -363,7 +361,7 @@ object CDGenome:
         val size = a.length
         val buffer = ByteBuffer.allocate(d.map(_.precision.size).sum)
 
-        loop(0, _ < size, _ + 1): i =>
+        Loop.loop(0, _ < size, _ + 1): i =>
           val dValue = d(i)
 
           def toByte(v: Int, d: D) = (v - d.low + Byte.MinValue).toByte
@@ -381,7 +379,7 @@ object CDGenome:
         var index: Int = 0
         val result = Array.ofDim[Int](size)
 
-        loop(0, _ < size, _ + 1): i =>
+        Loop.loop(0, _ < size, _ + 1): i =>
           val dValue = d(i)
 
           def fromByte(b1: Byte, d: D) = b1.toInt - Byte.MinValue + d.low

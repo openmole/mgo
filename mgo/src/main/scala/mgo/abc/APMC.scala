@@ -20,7 +20,7 @@ package mgo.abc
 import mgo.tools.LinearAlgebra._
 import mgo.tools.execution._
 import mgo.tools._
-import mgo.tools.stats.weightedCovariance
+import mgo.tools.Stats.weightedCovariance
 import org.apache.commons.math3.distribution.{ EnumeratedIntegerDistribution, MultivariateNormalDistribution }
 import org.apache.commons.math3.linear.{ LUDecomposition, MatrixUtils, RealMatrix, RealVector }
 import org.apache.commons.math3.linear.SingularMatrixException

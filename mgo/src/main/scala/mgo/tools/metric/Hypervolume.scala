@@ -40,6 +40,15 @@ import scala.collection.mutable
  */
 object Hypervolume {
 
+
+  extension [A](xs: Vector[A])
+    /**
+     * Shadow each element of a set
+     */
+    def shadows[B]: IndexedSeq[Vector[A]] =
+      for (i <- xs.indices; (as, bs) = xs splitAt i) yield as ++ bs.tail
+
+
   /**
    * Compute the hypervolume contribution for each front
    */

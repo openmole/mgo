@@ -17,64 +17,42 @@ package mgo.tools
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-object RejectionSampler {
+import java.util.Random
 
-  /**
-   * Monte Carlo estimation of the success rate of the predicate.
-   *
-   * @param test
-   * @param pass
-   */
-  case class State(test: Long = 0L, pass: Long = 0L) {
-    def inverseProbability() = test.toDouble / pass
-  }
+object RejectionSampler:
+
+  case class State(test: Long = 0L, pass: Long = 0L)
 
   def success(state: State) = State(state.test + 1, state.pass + 1)
   def fail(state: State) = State(state.test + 1, state.pass)
-  def noSuccess(state: State) = state.pass == 0
+  def allFailed(state: State) = state.pass == 0L
 
-}
+  def warmup(sampler: RejectionSampler, n: Int, state: State = State()): State =
+    if n > 0
+    then
+      val (x, _) = sampler.sampleFunction()
+      if !sampler.accept(x)
+      then warmup(sampler, n - 1, RejectionSampler.fail(state))
+      else warmup(sampler, n - 1, RejectionSampler.success(state))
+    else state
 
-import RejectionSampler._
-import scala.annotation.tailrec
-/**
- * Rejection sampler with a predicate and a state.
- *
- * @param dist
- * @param patternFunction
- * @param accept
- */
-class RejectionSampler(_sample: () => (Vector[Double], Lazy[Double]), val accept: Vector[Double] => Boolean) {
+  def sample(sampler: RejectionSampler, state: State = State()): (State, (IArray[Double], Double)) =
+    val (x, density) = sampler.sampleFunction()
+    if !sampler.accept(x)
+    then sample(sampler, RejectionSampler.fail(state))
+    else
+      val newState = RejectionSampler.success(state)
+      val inverseProbability = newState.test.toDouble / newState.pass
+      (newState, (x, density.value / inverseProbability))
 
-  def warmup(n: Int, state: State = State()): State =
-    if (n > 0) {
-      val (x, _) = _sample()
-      if (!accept(x)) warmup(n - 1, fail(state))
-      else warmup(n - 1, success(state))
-    } else state
+  def sampleArray(sampler: RejectionSampler, n: Int, state: State = State(), res: List[(IArray[Double], Double)] = List()): (State, IArray[(IArray[Double], Double)]) =
+    if n > 0
+    then
+      val (newState, newSample) = sample(sampler, state)
+      sampleArray(sampler, n - 1, newState, newSample :: res)
+    else (state, IArray.unsafeFromArray(res.reverse.toArray))
 
-  def sample(state: State = State()): (State, (Vector[Double], Double)) = {
-    @tailrec def sample0(state: State): (State, (Vector[Double], Double)) = {
-      val (x, density) = _sample()
-      if (!accept(x)) {
-        // if the sample is rejected, resample and keep the failure in the state
-        sample0(fail(state))
-      } else {
-        val newState = success(state)
-        // if the sample is accepted, return the state, the sample pattern and the adjusted density
-        (newState, (x, density.value / newState.inverseProbability()))
-      }
-    }
-
-    sample0(state)
-  }
-
-  @tailrec final def sampleVector(n: Int, state: State = State(), res: List[(Vector[Double], Double)] = List()): (State, Vector[(Vector[Double], Double)]) = {
-    if (n > 0) {
-      val (newState, newSample) = sample(state)
-      sampleVector(n - 1, newState, newSample :: res)
-    } else (state, res.reverse.toVector)
-  }
-
-}
+case class RejectionSampler(
+  sampleFunction: () => (IArray[Double], Lazy[Double]),
+  accept: IArray[Double] => Boolean)
 

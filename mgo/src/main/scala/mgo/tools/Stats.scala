@@ -30,9 +30,9 @@ import java.lang.Math._
 import scala.util.Random
 import scala.collection.Searching.search
 
-object stats {
+object Stats:
 
-  def weightedCovariance(data: RealMatrix, weights: Array[Double]): RealMatrix = {
+  def weightedCovariance(data: RealMatrix, weights: Array[Double]): RealMatrix =
     val n = data.getRowDimension()
     val weightsSum = weights.sum
     val weightsSumSquared = pow(weightsSum, 2)
@@ -50,14 +50,21 @@ object stats {
       .scalarMultiply(weightsSumSquared /
         (weightsSumSquared - weightsSquaredSum))
     cov
-  }
 
-  def weightedSample[T](n: Int, data: Vector[T], weights: Vector[Double])(implicit rng: Random): Vector[T] = {
+  def weightedSample[T](n: Int, data: Vector[T], weights: Vector[Double])(implicit rng: Random): Vector[T] =
     val cumul = weights.drop(1).scanLeft(weights(0)) {
       case (acc, x) => acc + x
     }
     val randoms = Vector.fill(n)(() => rng.nextDouble()).map(_())
     randoms.map { r => data(cumul.search(r).insertionPoint) }
-  }
-}
+
+  def median(sequence: Vector[Double]) =
+    val sorted = sequence.toArray.filterNot(_.isNaN).sorted
+    val size = sorted.length
+    if size == sequence.size
+    then
+      if size % 2 == 0
+      then (sorted(size / 2) + sorted((size / 2) - 1)) / 2
+      else sorted(size / 2)
+    else Double.NaN
 

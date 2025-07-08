@@ -14,21 +14,11 @@ import scala.reflect.ClassTag
 object breeding {
 
   type Breeding[S, I, G] = (S, Vector[I], scala.util.Random) => Vector[G]
-
-  //  object Breeding {
-  //    def apply[S, I, G](f: (S, Vector[I]) => Vector[G]): Breeding[S, I, G] =
-  //      Kleisli[State[S, ?], Vector[I], Vector[G]](i => State.pure(f(i)))
-  //  }
-
-  //implicit def breedingToFunction[I, M[_]: cats.Monad, G](b: Breeding[I, M, G]): Vector[I] => M[Vector[G]] = b.run
-  //implicit def functionToBreeding[I, M[_]: cats.Monad, G](f: Vector[I] => M[Vector[G]]): Breeding[I, M, G] = Kleisli.kleisli[M, Vector[I], Vector[G]](f)
-
-  /*implicit def breedingcats.Monad[I, M[_]: cats.Monad]: cats.Monad[Breedingcats.Monad[I, M]#l] = new cats.Monad[Breedingcats.Monad[I, M]#l] {
-    def point[A](a: => A): Breeding[I, M, A] = { _ => a.point[M] }
-    def bind[A, B](fa: Breeding[I, M, A])(f: (A) ⇒ Breeding[I, M, B]): Breeding[I, M, B] = ???
-  }*/
-
-/**** Selection ****/
+  
+  def clamp(value: Double, min_v: Double = 0.0, max_v: Double = 1.0): Double =
+    Math.max(Math.min(value, max_v), min_v) 
+  
+  /*** Selection ****/
 
   type Selection[S, I] = (S, Vector[I], scala.util.Random) => I
 
@@ -131,7 +121,7 @@ object breeding {
     val o1 = Array.ofDim[Double](size)
     val o2 = Array.ofDim[Double](size)
 
-    loop(
+    Loop.loop(
       0,
       _ < size,
       _ + 1
@@ -313,7 +303,7 @@ object breeding {
       val r = mutationRate(size)
       val res = Array.ofDim[Int](size)
 
-      loop(0, _ < size, _ + 1): i =>
+      Loop.loop(0, _ < size, _ + 1): i =>
         if rng.nextDouble() < r
         then res(i) = tools.randomInt(rng, discrete(i))
         else res(i) = values(i)
@@ -326,7 +316,7 @@ object breeding {
     val r1 = Array.ofDim[V](size)
     val r2 = Array.ofDim[V](size)
 
-    loop(0, _ < size, _ + 1): i =>
+    Loop.loop(0, _ < size, _ + 1): i =>
       if rng.nextDouble() < r
       then
         r2(i) = v._1(i)
