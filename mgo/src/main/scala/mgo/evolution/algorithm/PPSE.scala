@@ -46,14 +46,13 @@ object PPSE:
     gmm: Option[GMM] = None,
     likelihoodRatioMap: SamplingWeightMap = Map())
 
-  case class Result[P](continuous: Vector[Double], pattern: Vector[Int], density: Double, phenotype: Vector[Double], individual: Individual[P])
+  case class Result[P](continuous: Vector[Double], pattern: Vector[Int], density: Double, phenotype: P, individual: Individual[P])
 
   def result[P](
     population: Vector[Individual[P]],
     state: EvolutionState[PPSEState],
     continuous: Vector[C],
-    phenotype: P => IArray[Double],
-    pattern: IArray[Double] => IArray[Int]) =
+    pattern: P => Vector[Int]) =
 
     def computePDF(likelihoodRatioMap: SamplingWeightMap) =
       val totalDensity = likelihoodRatioMap.values.sum
@@ -62,19 +61,18 @@ object PPSE:
     val densityMap = computePDF(state.s.likelihoodRatioMap)
 
     population.map: i =>
-      val ph = phenotype(i.phenotype)
-      val pa = pattern(ph)
+      val pa = pattern(i.phenotype)
 
       Result(
         scaleContinuousValues(i.genome._1, continuous).toVector,
-        pa.toVector,
-        densityMap.getOrElse(pa.toVector, 0.0),
-        ph.toVector,
+        pa,
+        densityMap.getOrElse(pa, 0.0),
+        i.phenotype,
         i)
 
 
-  def result(ppse: PPSE, population: Vector[Individual[IArray[Double]]], state: EvolutionState[PPSEState]): Vector[Result[IArray[Double]]] =
-    result[IArray[Double]](population, state, ppse.continuous, identity, ppse.pattern)
+  def result[P](ppse: PPSE[P], population: Vector[Individual[P]], state: EvolutionState[PPSEState]): Vector[Result[P]] =
+    result(population, state, ppse.continuous, ppse.pattern)
 
   type Genome = (IArray[Double], Double)
 
@@ -111,7 +109,7 @@ object PPSE:
       warmupSampler)
 
   def elitism[P: CanContainNaN](
-    pattern: P => IArray[Int],
+    pattern: P => Vector[Int],
     continuous: Vector[C],
     reject: Option[IArray[Double] => Boolean],
     iterations: Int,
@@ -140,16 +138,16 @@ object PPSE:
     val sc = scaleContinuousValues(genome._1, continuous)
     Individual(genome, phenotype(sc), generation, initial)
 
-  given Algorithm[PPSE, Individual[IArray[Double]], Genome, EvolutionState[PPSEState]]:
-    def initialState(t: PPSE, rng: util.Random) = EvolutionState[PPSEState](s = PPSEState())
+  given [P: CanContainNaN]:Algorithm[PPSE[P], Individual[P], Genome, EvolutionState[PPSEState]] with
+    def initialState(t: PPSE[P], rng: util.Random) = EvolutionState[PPSEState](s = PPSEState())
 
-    override def initialPopulation(t: PPSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
-      deterministic.initialPopulation[Genome, Individual[IArray[Double]]](
+    override def initialPopulation(t: PPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
+      deterministic.initialPopulation[Genome, Individual[P]](
         PPSE.initialGenomes(t.lambda, t.continuous, t.reject, t.warmupSampler, rng),
         PPSE.expression(t.phenotype, t.continuous), parallel)
 
-    def step(t: PPSE) =
-      deterministic.step[EvolutionState[PPSEState], Individual[IArray[Double]], Genome](
+    def step(t: PPSE[P]) =
+      deterministic.step[EvolutionState[PPSEState], Individual[P], Genome](
         PPSE.breeding(t.continuous, t.lambda, t.reject, t.warmupSampler),
         PPSE.expression(t.phenotype, t.continuous),
         PPSE.elitism(t.pattern, t.continuous, t.reject, t.iterations, t.tolerance, t.dilation, t.minClusterSize, t.warmupSampler, t.maxRareSample),
@@ -158,10 +156,10 @@ object PPSE:
       )
 
 
-case class PPSE(
+case class PPSE[P](
   lambda: Int,
-  phenotype: IArray[Double] => IArray[Double],
-  pattern: IArray[Double] => IArray[Int],
+  phenotype: IArray[Double] => P,
+  pattern: P => Vector[Int],
   continuous: Vector[C],
   reject: Option[IArray[Double] => Boolean] = None,
   iterations: Int = 1000,
@@ -226,7 +224,7 @@ object PPSEOperation:
   def elitism[S, I, P: CanContainNaN](
     values: I => (IArray[Double], Double),
     phenotype: I => P,
-    pattern: P => IArray[Int],
+    pattern: P => Vector[Int],
     continuous: Vector[C],
     reject: Option[IArray[Double] => Boolean],
     likelihoodRatioMap: monocle.Lens[S, PPSE.SamplingWeightMap],
@@ -240,8 +238,8 @@ object PPSEOperation:
     regularisationEpsilon: Double): Elitism[S, I] =  (state, population, candidates, rng) =>
 
     def computeGMM(
-      genomes: Array[IArray[Double]],
-      patterns: Array[IArray[Int]],
+      genomes: Array[Array[Double]],
+      patterns: Array[Array[Int]],
       hitMap: HitMap,
       maxRareSample: Int,
       regularisationEpsilon: Double,
@@ -262,26 +260,23 @@ object PPSEOperation:
         then None
         else
           Some:
-            import tools.unsafeToArray
-            val rareIndividualsArray = rareIndividuals.map(_.unsafeToArray)
-
             def fittedGMM =
               if rareIndividuals.length < minClusterSize
               then GMM.empty
               else
-                val (clusterMeans, clusterCovariances, clusterWeights) = HDBScan.clusterize(rareIndividualsArray, minClusterSize)
+                val (clusterMeans, clusterCovariances, clusterWeights) = HDBScan.clusterize(rareIndividuals, minClusterSize)
 
                 EMGMM.fit(
                   components = clusterMeans.length,
                   iterations = iterations,
                   tolerance = tolerance,
-                  x = rareIndividualsArray,
+                  x = rareIndividuals,
                   means = clusterMeans,
                   covariances = clusterCovariances,
                   weights = clusterWeights,
                   regularisationEpsilon = regularisationEpsilon)._1
 
-            def gmmWithOutliers = EMGMM.integrateOutliers(rareIndividualsArray, fittedGMM, regularisationEpsilon)
+            def gmmWithOutliers = EMGMM.integrateOutliers(rareIndividuals, fittedGMM, regularisationEpsilon)
 
             GMM.dilate(gmmWithOutliers, dilation)
 
@@ -290,10 +285,10 @@ object PPSEOperation:
       res
 
     def updateState(
-      genomes: Array[IArray[Double]],
-      patterns: Array[IArray[Int]],
+      genomes: Array[Array[Double]],
+      patterns: Array[Array[Int]],
       offspringGenomes: Array[(IArray[Double], Double)],
-      offspringPatterns: Array[IArray[Int]],
+      offspringPatterns: Array[Array[Int]],
       likelihoodRatioMap: PPSE.SamplingWeightMap,
       hitMap: HitMap,
       maxRareSample: Int,
@@ -313,7 +308,7 @@ object PPSEOperation:
           val groupedGenomes = (offspringGenomes zip offspringPatterns).groupMap(_._2)(_._1)
           groupedGenomes.view.mapValues(v => v.map((_, density) => 1 / density).sum).toSeq
 
-        def updatePatternDensity(map: PPSE.SamplingWeightMap, pattern: IArray[Int], density: Double): PPSE.SamplingWeightMap =
+        def updatePatternDensity(map: PPSE.SamplingWeightMap, pattern: Array[Int], density: Double): PPSE.SamplingWeightMap =
           map.updatedWith(pattern.toVector)(v => Some(v.getOrElse(0.0) + density))
 
         offSpringDensities.foldLeft(likelihoodRatioMap) { case (map, (pattern, density)) => updatePatternDensity(map, pattern, density) }
@@ -339,8 +334,11 @@ object PPSEOperation:
 
     val newPopulation = keepNiches(phenotype andThen pattern, keepRandom)(population ++ offSpringWithNoNan)
 
-    def genomes(p: Vector[I]) = p.map(values).map(_._1).toArray
-    def patterns(p: Vector[I]) = p.map(phenotype andThen pattern).toArray
+    def genomes(p: Vector[I]) =
+      import tools.unsafeToArray
+      p.map(values).map(_._1.unsafeToArray).toArray
+
+    def patterns(p: Vector[I]) = p.map(phenotype andThen pattern andThen (_.toArray)).toArray
 
     val (elitedHitMap, elitedDensity, elitedGMM) =
       updateState(
