@@ -112,6 +112,7 @@ object PPSE:
     pattern: P => Vector[Int],
     continuous: Vector[C],
     reject: Option[IArray[Double] => Boolean],
+    density: Option[IArray[Double] => Double],
     iterations: Int,
     tolerance: Double,
     dilation: Double,
@@ -132,7 +133,8 @@ object PPSE:
       dilation = dilation,
       maxRareSample = maxRareSample,
       minClusterSize = minClusterSize,
-      regularisationEpsilon = regularisationEpsilon)
+      regularisationEpsilon = regularisationEpsilon,
+      density = density)
 
   def expression[P](phenotype: IArray[Double] => P, continuous: Vector[C]) = (genome: Genome, generation: Long, initial: Boolean) =>
     val sc = scaleContinuousValues(genome._1, continuous)
@@ -150,7 +152,7 @@ object PPSE:
       deterministic.step[EvolutionState[PPSEState], Individual[P], Genome](
         PPSE.breeding(t.continuous, t.lambda, t.reject, t.warmupSampler),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, t.reject, t.iterations, t.tolerance, t.dilation, t.minClusterSize, t.warmupSampler, t.maxRareSample),
+        PPSE.elitism(t.pattern, t.continuous, t.reject, t.density, t.iterations, t.tolerance, t.dilation, t.minClusterSize, t.warmupSampler, t.maxRareSample),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -162,6 +164,7 @@ case class PPSE[P](
   pattern: P => Vector[Int],
   continuous: Vector[C],
   reject: Option[IArray[Double] => Boolean] = None,
+  density: Option[IArray[Double] => Double] = None,
   iterations: Int = 1000,
   tolerance: Double = 0.0001,
   warmupSampler: Int = 10000,
@@ -235,7 +238,8 @@ object PPSEOperation:
     dilation: Double,
     maxRareSample: Int,
     minClusterSize: Int,
-    regularisationEpsilon: Double): Elitism[S, I] =  (state, population, candidates, rng) =>
+    regularisationEpsilon: Double,
+    density: Option[IArray[Double] => Double]): Elitism[S, I] =  (state, population, candidates, rng) =>
 
     def computeGMM(
       genomes: Array[Array[Double]],
@@ -297,6 +301,8 @@ object PPSEOperation:
       tolerance: Double,
       dilation: Double,
       minClusterSize: Int,
+      inputDensity: Option[IArray[Double] => Double],
+      continuous: Vector[C],
       random: Random): (HitMap, PPSE.SamplingWeightMap, Option[GMM]) =
       val newHitMap =
         def updateHits(m: HitMap, p: Vector[Int]) = m.updatedWith(p)(v => Some(v.getOrElse(0) + 1))
@@ -306,7 +312,17 @@ object PPSEOperation:
       def newLikelihoodRatioMap =
         def offSpringDensities =
           val groupedGenomes = (offspringGenomes zip offspringPatterns).groupMap(_._2)(_._1)
-          groupedGenomes.view.mapValues(v => v.map((_, density) => 1 / density).sum).toSeq
+          groupedGenomes.view.mapValues: v =>
+            v.map: (genome, density) =>
+              val inputDensityValue =
+                inputDensity.map: df =>
+                  val scaled = scaleContinuousValues(genome, continuous)
+                  df(scaled)
+                .getOrElse(1.0)
+
+              inputDensityValue / density
+            .sum
+          .toSeq
 
         def updatePatternDensity(map: PPSE.SamplingWeightMap, pattern: Array[Int], density: Double): PPSE.SamplingWeightMap =
           map.updatedWith(pattern.toVector)(v => Some(v.getOrElse(0.0) + density))
@@ -354,6 +370,8 @@ object PPSEOperation:
         minClusterSize = minClusterSize,
         maxRareSample = maxRareSample,
         regularisationEpsilon = regularisationEpsilon,
+        inputDensity = density,
+        continuous = continuous,
         random = rng)
 
     def state2 =
