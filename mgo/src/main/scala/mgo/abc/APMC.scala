@@ -51,7 +51,7 @@ object APMC {
     pAcc: Double,
     epsilon: Double)
 
-  def sequential(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): Sequential[State] = Sequential[State](() => init(p.n, p.nAlpha, p.observed, p.priorSample, f), step(p, f, _), stop(p.pAccMin, _))
+  def sequential(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(using rng: util.Random): Sequential[State] = Sequential[State](() => init(p.n, p.nAlpha, p.observed, p.priorSample, f), step(p, f, _), stop(p.pAccMin, _))
 
   def run(p: Params, f: (Vector[Double], util.Random) => Vector[Double])(implicit rng: util.Random): State = sequential(p, f).run
 
@@ -73,7 +73,7 @@ object APMC {
 
   def initPreEval(n: Int, priorSample: util.Random => Array[Double])(implicit rng: util.Random): Matrix = Array.fill(n)(priorSample(rng))
 
-  def initPostEval(n: Int, nAlpha: Int, observed: Array[Double], thetas: Matrix, xs: Matrix)(implicit rng: util.Random): State = {
+  def initPostEval(n: Int, nAlpha: Int, observed: Array[Double], thetas: Matrix, xs: Matrix)(implicit rng: util.Random): State = 
     val thetasM = MatrixUtils.createRealMatrix(thetas)
     val xsM = MatrixUtils.createRealMatrix(xs)
 
@@ -99,7 +99,6 @@ object APMC {
       rhos = rhosSelected,
       pAcc = 1,
       epsilon = epsilon)
-  }
 
   def step(p: Params, f: (Vector[Double], util.Random) => Vector[Double], s: State)(implicit rng: util.Random): State =
     exposedStep(p).run(functorVectorVectorDoubleToMatrix(_.map { f(_, rng) }))(s)

@@ -1,10 +1,5 @@
 package mgo.evolution.algorithm
 
-import mgo.tools
-import mgo.tools.clustering.{EMGMM, GMM, HDBScan}
-
-import scala.reflect.ClassTag
-import scala.util.Random
 
 /*
  * Copyright (C) 09/11/2020 Romain Reuillon
@@ -35,6 +30,13 @@ import mgo.tools.execution._
 
 import monocle._
 import monocle.syntax.all._
+
+import mgo.tools
+import mgo.tools.clustering.{EMGMM, GMM, HDBScan}
+
+import scala.reflect.ClassTag
+import scala.util.Random
+
 
 object PPSE:
 

@@ -15,7 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package mgo
+package mgo.abc
 
 /**
  * Approximate Bayesian computation (ABC) methods are used to draw samples
@@ -24,7 +24,5 @@ package mgo
  * to the likelihood, typically via simulation.
  */
 
-package object abc {
-  type Matrix = Array[Array[Double]]
+type Matrix = Array[Array[Double]]
 
-}
