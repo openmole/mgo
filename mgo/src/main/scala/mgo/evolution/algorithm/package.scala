@@ -219,6 +219,7 @@ object GenomeVectorDouble {
     genomeValues: I => (IArray[Double], IArray[Int]),
     continuousOperatorStatistics: Map[Int, Double],
     discreteOperatorStatistics: Map[Int, Double],
+    continuous: Vector[C],
     discrete: Vector[D],
     operatorExploration: Double,
     buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G): (S, Vector[I], Random) => Vector[G] =

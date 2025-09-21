@@ -46,6 +46,7 @@ object NSGA2 {
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
+      continuous,
       discrete,
       buildGenome(discrete),
       _ => 1,
@@ -134,6 +135,7 @@ object NSGA2Operations {
     continuousOperator: G => Option[Int],
     discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
+    continuous: Vector[C],
     discrete: Vector[D],
     buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     tournamentRounds: Int => Int,
@@ -151,6 +153,7 @@ object NSGA2Operations {
         genomeValue,
         continuousOperatorStatistics,
         discreteOperatorStatistics,
+        continuous,
         discrete,
         operatorExploration,
         buildGenome)

@@ -67,6 +67,7 @@ object NoisyHDOSE:
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
+      continuous,
       discrete,
       scaledValues(continuous, discrete),
       HDOSE.tooCloseByComponent(weightC, weightD, discrete),
@@ -206,6 +207,7 @@ object NoisyHDOSEOperations:
     continuousOperator: G => Option[Int],
     discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
+    continuous: Vector[C],
     discrete: Vector[D],
     scaledValues: G => (IArray[Double], IArray[Int]),
     distance: HDOSEOperation.TooClose,
@@ -248,6 +250,7 @@ object NoisyHDOSEOperations:
             genomeValue,
             continuousOperatorStatistics,
             discreteOperatorStatistics,
+            continuous,
             discrete,
             operatorExploration,
             buildGenome)(s, pop, rng) //apply ()

@@ -72,6 +72,7 @@ object PSE:
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
+      continuous,
       discrete,
       Focus[Individual[P]](_.phenotype).get andThen pattern,
       buildGenome(discrete),
@@ -133,6 +134,7 @@ object PSEOperations:
     continuousOperator: G => Option[Int],
     discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
+    continuous: Vector[C],
     discrete: Vector[D],
     pattern: I => Vector[Int],
     buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
@@ -160,6 +162,7 @@ object PSEOperations:
           genomeValue,
           continuousOperatorStatistics,
           discreteOperatorStatistics,
+          continuous,
           discrete,
           operatorExploration,
           buildGenome)

@@ -59,6 +59,7 @@ object NSGA3 {
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
+      continuous,
       discrete,
       buildGenome(discrete),
       reject,
@@ -270,6 +271,7 @@ object NSGA3Operations {
     continuousOperator: G => Option[Int],
     discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
+    continuous: Vector[C],
     discrete: Vector[D],
     buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     reject: Option[G => Boolean],
@@ -285,6 +287,7 @@ object NSGA3Operations {
       genomeValue,
       continuousOperatorStatistics,
       discreteOperatorStatistics,
+      continuous,
       discrete,
       operatorExploration,
       buildGenome)

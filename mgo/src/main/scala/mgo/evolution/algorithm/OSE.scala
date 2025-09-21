@@ -42,6 +42,7 @@ object OSE:
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
+      continuous,
       discrete,
       origin,
       buildGenome(discrete),
@@ -137,6 +138,7 @@ object OSEOperation:
     continuousOperator: G => Option[Int],
     discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
+    continuous: Vector[C],
     discrete: Vector[D],
     origin: (IArray[Double], IArray[Int]) => Vector[Int],
     buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
@@ -165,6 +167,7 @@ object OSEOperation:
               genomeValue,
               continuousOperatorStatistics,
               discreteOperatorStatistics,
+              continuous,
               discrete,
               operatorExploration,
               buildGenome)(s, pop, rng)

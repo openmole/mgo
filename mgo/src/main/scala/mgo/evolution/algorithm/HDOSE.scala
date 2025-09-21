@@ -64,6 +64,7 @@ object HDOSE:
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
+      continuous,
       discrete,
       tooCloseByComponent(weightC, weightD, discrete),
       distanceLens.get,
@@ -284,6 +285,7 @@ object HDOSEOperation:
     continuousOperator: G => Option[Int],
     discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
+    continuous: Vector[C],
     discrete: Vector[D],
     distance: TooClose,
     diversityDistance: S => Double,
@@ -310,6 +312,7 @@ object HDOSEOperation:
               genomeValue,
               continuousOperatorStatistics,
               discreteOperatorStatistics,
+              continuous,
               discrete,
               operatorExploration,
               buildGenome)(s, pop, rng)

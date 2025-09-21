@@ -54,6 +54,7 @@ object NoisyNSGA3 {
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
+      continuous,
       discrete,
       buildGenome(discrete),
       reject,
@@ -129,6 +130,7 @@ object NoisyNSGA3Operations {
     continuousOperator: G => Option[Int],
     discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
+    continuous: Vector[C],
     discrete: Vector[D],
     buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G,
     reject: Option[G => Boolean],
@@ -136,7 +138,7 @@ object NoisyNSGA3Operations {
     cloneProbability: Double,
     lambda: Int = -1): Breeding[S, I, G] = (s, population, rng) =>
     // same as deterministic, but eventually adding clones
-    val breededGenomes = NSGA3Operations.adaptiveBreeding(fitness, genome, continuousValues, continuousOperator, discreteValues, discreteOperator, discrete, buildGenome, reject, operatorExploration, lambda)(s, population, rng)
+    val breededGenomes = NSGA3Operations.adaptiveBreeding(fitness, genome, continuousValues, continuousOperator, discreteValues, discreteOperator, continuous, discrete, buildGenome, reject, operatorExploration, lambda)(s, population, rng)
     clonesReplace(cloneProbability, population, genome, randomSelection[S, I])(s, breededGenomes, rng)
 
   def elitism[S, I](

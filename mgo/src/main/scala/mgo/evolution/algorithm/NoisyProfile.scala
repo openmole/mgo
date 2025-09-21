@@ -102,6 +102,7 @@ object NoisyProfile:
       continuousOperator.get,
       discreteValues(discrete).get,
       discreteOperator.get,
+      continuous,
       discrete,
       buildGenome(discrete),
       logOfPopulationSize,
