@@ -29,7 +29,7 @@ object SphereNSGAII extends App {
     fitness = (v, _) => Vector(sphere.compute(v)),
     continuous = sphere.genome(6))
 
-  def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))

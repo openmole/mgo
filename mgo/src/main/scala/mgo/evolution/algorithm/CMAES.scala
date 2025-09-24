@@ -27,14 +27,80 @@ import monocle.syntax.all.*
 import mgo.tools.*
 
 
-//object OnePlusOneCMAES
-//
-//case class OnePlusOneCMAES,
-//  fitness: IArray[Double] => Double,
-//  continuous: Vector[C] = Vector.empty,
-//  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
+object OnePlusOneCMAES:
+
+  type Genome = IArray[Double]
+  case class Individual(genome: Genome, fitness: Double, generation: Long, initial: Boolean)
+  type State = EvolutionState[OnePlusOneCMAESOperation.A]
+
+  case class Result(continuous: Vector[Double], fitness: Double, individual: Individual)
+
+  def initialGenomes(continuous: Vector[C], rng: scala.util.Random): Vector[Genome] =
+    Vector:
+      IArray.from:
+        continuous.map: c =>
+          rng.nextDouble()
+
+  def initialState(continuous: Vector[C]) : State =
+    val parameters = OnePlusOneCMAESOperation.Parameters(continuous.size)
+    val a =
+      OnePlusOneCMAESOperation.A(
+        parameters.p_targetSucc,
+        parameters.sigma,
+        IArray.fill(continuous.size)(0.0),
+        IArray.tabulate(continuous.size, continuous.size): (i, j) =>
+          if i == j then 1.0 else 0.0
+      )
+    EvolutionState(s = a)
+
+  def breeding: Breeding[State, Individual, Genome] =
+    OnePlusOneCMAESOperation.breeding[State, Individual, Genome](
+      _.genome,
+      _.s,
+      identity)
+
+  def expression(express: IArray[Double] => Double, continuous: Vector[C]): (Genome, Long, Boolean) => Individual =
+    (ge, g, i) =>
+      Individual(ge, express(scaleContinuousValues(ge, continuous)), g, i)
+
+  def elitism(continuous: Vector[C]): Elitism[State, Individual] =
+    val parameters = OnePlusOneCMAESOperation.Parameters(continuous.size)
+    OnePlusOneCMAESOperation.elitism[State, Individual](
+      parameters,
+      _.genome,
+      _.fitness,
+      Focus[State](_.s)
+    )
+
+  def result(population: Vector[Individual], continuous: Vector[C]): Vector[Result] =
+    population.map: i =>
+      Result(scaleContinuousVectorValues(i.genome.toVector, continuous), i.fitness, i)
+
+  def result(t: OnePlusOneCMAES, population: Vector[Individual]): Vector[Result] =
+    result(population, t.continuous)
 
 
+  given isAlgorithm: Algorithm[OnePlusOneCMAES, Individual, Genome, State] with
+      override def initialState(t: OnePlusOneCMAES, rng: scala.util.Random) =
+        OnePlusOneCMAES.initialState(t.continuous)
+
+      override def initialPopulation(t: OnePlusOneCMAES, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
+        deterministic.initialPopulation[Genome, Individual](
+          OnePlusOneCMAES.initialGenomes(t.continuous, rng),
+          OnePlusOneCMAES.expression(t.fitness, t.continuous),
+          parallel)
+
+      override def step(t: OnePlusOneCMAES) =
+        deterministic.step[State, Individual, Genome](
+          OnePlusOneCMAES.breeding,
+          OnePlusOneCMAES.expression(t.fitness, t.continuous),
+          OnePlusOneCMAES.elitism(t.continuous),
+          Focus[State](_.generation),
+          Focus[State](_.evaluated))
+
+case class OnePlusOneCMAES(
+  fitness: IArray[Double] => Double,
+  continuous: Vector[C] = Vector.empty)
 
 // Implementation of: https://ieeexplore.ieee.org/document/6792721
 object OnePlusOneCMAESOperation:
@@ -48,6 +114,7 @@ object OnePlusOneCMAESOperation:
       import org.apache.commons.math3.linear.*
 
       assert(population.size == 1)
+
       val i = population.head
 
       val distribution =
@@ -75,8 +142,7 @@ object OnePlusOneCMAESOperation:
     parameters: Parameters,
     values: I => IArray[Double],
     fitness: I => Double,
-    a: monocle.Lens[S, A],
-    mu: Int): Elitism[S, I] =
+    a: monocle.Lens[S, A]): Elitism[S, I] =
     (s, population, candidates, rng) =>
       assert(population.size == 1)
       assert(candidates.size == 1)
@@ -99,7 +165,7 @@ object OnePlusOneCMAESOperation:
         val newS = a.replace(covUpdated)(s)
         (newS, candidates)
 
-      else (s, population)
+      else (a.replace(stepUpdated)(s), population)
 
   object Parameters:
     def apply(n: Int) =
@@ -121,7 +187,8 @@ object OnePlusOneCMAESOperation:
     c_p: Double,
     c_c: Double,
     c_cov: Double,
-    p_thresh: Double)
+    p_thresh: Double,
+    epsilon: Double = 1e-12)
 
   case class A(pSuccBar: Double, sigma: Double, pc: IArray[Double], C: IArray[IArray[Double]])
 
@@ -132,7 +199,7 @@ object OnePlusOneCMAESOperation:
     val newSigma = a.sigma * Math.exp((1.0 / d) * (newPSuccBar - p_targetSucc) / (1.0 - p_targetSucc))
     a.copy(
       pSuccBar = newPSuccBar,
-      sigma = newSigma
+      sigma = Math.max(newSigma, epsilon)
     )
 
   def updateCovariance(a: A, x_step: IArray[Double], parameters: Parameters): A =
@@ -144,7 +211,7 @@ object OnePlusOneCMAESOperation:
     if a.pSuccBar < p_thresh
     then
       val newpc =
-        val lhs = a.pc.map(_ * 1.0 - c_c)
+        val lhs = a.pc.map(_ * (1.0 - c_c))
 
         val rhs =
           val f = Math.sqrt(c_c * (2.0 - c_c))
@@ -153,17 +220,19 @@ object OnePlusOneCMAESOperation:
         (lhs zip rhs).map(_ + _)
 
       val newC =
-        val lhs = cMatrix.scalarMultiply(.0 - c_cov)
+        val lhs = cMatrix.scalarMultiply(1.0 - c_cov)
 
         val rhs =
           val pcVector = ArrayRealVector(newpc.toArray)
           pcVector.outerProduct(pcVector).scalarMultiply(c_cov)
 
-        IArray.unsafeFromArray(lhs.add(rhs).getData.map(IArray.unsafeFromArray))
+        IArray.unsafeFromArray(
+          lhs.add(rhs).getData.map(IArray.unsafeFromArray)
+        )
 
       a.copy(pc = newpc, C = newC)
     else
-      val newpc = a.pc.map(_ * 1.0 - c_c)
+      val newpc = a.pc.map(_ * (1.0 - c_c))
 
       val newC =
         val lhs = cMatrix.scalarMultiply(1.0 - c_cov)
@@ -171,13 +240,15 @@ object OnePlusOneCMAESOperation:
         val rhs =
           val pcpct =
             val pcVector = ArrayRealVector(newpc.toArray)
-            pcVector.outerProduct(pcVector).scalarMultiply(c_cov)
+            pcVector.outerProduct(pcVector)
 
           val ccmul = cMatrix.scalarMultiply(c_c * (2.0 - c_c))
 
           pcpct.add(ccmul).scalarMultiply(c_cov)
 
-        IArray.unsafeFromArray(lhs.add(rhs).getData.map(IArray.unsafeFromArray))
+        IArray.unsafeFromArray(
+          lhs.add(rhs).getData.map(IArray.unsafeFromArray)
+        )
 
       a.copy(pc = newpc, C = newC)
 
