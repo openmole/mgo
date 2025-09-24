@@ -16,15 +16,16 @@
  */
 package mgo.evolution.algorithm
 
-import cats.implicits._
-import mgo.evolution._
-import mgo.evolution.algorithm.GenomeVectorDouble._
-import mgo.evolution.breeding._
-import mgo.evolution.elitism._
-import mgo.evolution.ranking._
+import cats.implicits.*
+import mgo.evolution.*
+import mgo.evolution.algorithm.GenomeVectorDouble.*
+import mgo.evolution.breeding.*
+import mgo.evolution.elitism.*
+import mgo.evolution.ranking.*
 import monocle.Focus
-import monocle.syntax.all._
+import monocle.syntax.all.*
 import mgo.tools.*
+import mgo.tools.metric.CrowdingDistance
 
 import scala.language.higherKinds
 
@@ -170,6 +171,28 @@ object NSGA2Operations {
       val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
       val ranks = paretoRankingMinAndCrowdingDiversity[I](cloneRemoved, memoizedFitness)
       (s, keepHighestRanked(cloneRemoved, ranks, mu))
+
+//      if cloneRemoved.nonEmpty
+//      then
+//        val dimension = memoizedFitness(cloneRemoved.head).size
+//        if dimension == 1
+//        then
+//          val distance = (cloneRemoved zip genomeDistance(cloneRemoved, values)).groupMap(_._1)(_._2)
+//          def diversityFitness(i: I) = fitness(i) ++ Seq(-distance(i).head)
+//          val ranks = paretoRankingMinAndCrowdingDiversity[I](cloneRemoved, diversityFitness)
+//          (s, keepHighestRanked(cloneRemoved, ranks, mu))
+//        else
+//          val ranks = paretoRankingMinAndCrowdingDiversity[I](cloneRemoved, memoizedFitness)
+//          (s, keepHighestRanked(cloneRemoved, ranks, mu))
+//      else (s, cloneRemoved)
+
+  def genomeDistance[I](
+    population: Vector[I],
+    values: I => (IArray[Double], IArray[Int])) =
+
+    val crowding = CrowdingDistance.computeCrowdingDistance(population.map(i => values(i)._1.toVector))
+    crowding
+
 
 
 }

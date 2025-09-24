@@ -20,7 +20,6 @@ import cats._
 import cats.data._
 import cats.implicits._
 import mgo.evolution.algorithm.HitMap
-import mgo.evolution.diversity._
 import mgo.evolution.dominance._
 import mgo.evolution.niche._
 import mgo.tools._
@@ -123,24 +122,14 @@ object ranking {
     def hitCount(cell: Vector[Int]): Int = hitmap.get(s).getOrElse(cell, 0)
     population.map { i => hitCount(cell(i)) }
 
-/**** Generic functions on rankings ****/
-
-  //  def reversedRanking[M[_]: cats.Monad, I](ranking: Ranking[M, I]): Ranking[M, I] =
-  //    Ranking((population: Vector[I]) => ranking(population).map { ranks => ranks.map { rank => rank.map(x => -x) } })
+  /**** Generic functions on rankings ****/
 
   def paretoRanking[I](population: Vector[I], fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Vector[Eval[Int]] =
     numberOfDominating(fitness, population, dominance).map(_.map(x => -x))
 
-  //TODO: the following functions don't produce rankings and don't belong here.
-  def rankAndDiversity[M[_]: cats.Monad, I](ranking: Ranking[M, I], diversity: Diversity[M, I]): Kleisli[M, Vector[I], Vector[(Later[Int], Later[Double])]] =
-    Kleisli((population: Vector[I]) =>
-      for
-        r <- ranking(population)
-        d <- diversity(population)
-      yield r zip d)
-
   def paretoRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => Vector[Double]): Vector[(Eval[Int], Double)] =
-    paretoRanking(population, fitness) zip crowdingDistance(population, fitness)
+    import mgo.tools.metric.CrowdingDistance
+    paretoRanking(population, fitness) zip CrowdingDistance(population.map(fitness))
 
   def worstParetoRanking: (Later[Int], Double) = (Later(Int.MinValue), Double.NegativeInfinity)
 

@@ -3,7 +3,6 @@ package mgo.evolution
 import cats.Order
 import cats.implicits._
 import mgo.evolution.algorithm.HitMap
-import mgo.evolution.diversity.crowdingDistance
 import mgo.tools._
 
 object elitism:
@@ -68,8 +67,9 @@ object elitism:
       (population zip dominating).filter((_, d) => d.value == minDominating).map(_._1)
 
   def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random): Vector[I] =
+    import mgo.tools.metric.CrowdingDistance
     val first = keepFirstFront(population, fitness)
-    val crowding = crowdingDistance(first, fitness)
+    val crowding = CrowdingDistance(first.map(fitness))
     val res = keepHighestRanked(first, crowding, mu)
     res
 
