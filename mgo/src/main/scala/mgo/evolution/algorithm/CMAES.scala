@@ -17,44 +17,194 @@
 
 package mgo.evolution.algorithm
 
-//import mgo.evolution._
-
-/*trait CMAES <: Evolution
-  with KeepOffspringElitism
-  with GAGenomeWithRandomValue
-  with MaxAggregation
-  with CMAESBreeding
-  with CMAESArchive
-  with ClampedGenome*/
-
+import mgo.evolution.*
+import mgo.evolution.algorithm.GenomeVectorDouble.*
+import mgo.evolution.breeding.*
+import mgo.evolution.elitism.*
+import mgo.evolution.ranking.*
+import monocle.Focus
+import monocle.syntax.all.*
+import mgo.tools.*
 
 
-object CMAESOperation:
+//object OnePlusOneCMAES
+//
+//case class OnePlusOneCMAES,
+//  fitness: IArray[Double] => Double,
+//  continuous: Vector[C] = Vector.empty,
+//  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
 
-  class CMAEvolutionStrategy (
-    iteration: Int,
-    mu: Int,
-    lambda: Int,
-    n: Int, // dimension
-//    ps: IArray[Double],
-//    pc: IArray[Double],
-//    b: IArray[IArray[Double]],
-//    c: IArray[IArray[Double]],
-//    d: IArray[Double],
-//    sigma: Double,
-//    xMean: IArray[Double]
-                                           ):
 
-    //private val mu = math.floor(lambda / 2).toInt
 
-    val (weights, mueff): (IArray[Double], Double) =
-      val w = IArray.tabulate(mu): i =>
-        Math.log(mu + 1.0 / 2.0) - math.log(1.0 + i)
-      val sumW = w.sum
-      val weights = w.map(_ / sumW)
-      (weights, weights.sum / weights.map(w => w * w).sum)
+// Implementation of: https://ieeexplore.ieee.org/document/6792721
+object OnePlusOneCMAESOperation:
 
-    val cs = (mueff + 2) / (n + mueff + 3)
+  def breeding[S, I, G](
+    values: I => IArray[Double],
+    a: S => A,
+    buildGenome: IArray[Double] => G): Breeding[S, I, G] =
+    (s, population, rng) =>
+      import org.apache.commons.math3.distribution.*
+      import org.apache.commons.math3.linear.*
+
+      assert(population.size == 1)
+      val i = population.head
+
+      val distribution =
+        val cov =
+          val aValue = a(s)
+          Array2DRowRealMatrix(aValue.C.map(_.unsafeArray).unsafeArray).
+            scalarMultiply(Math.pow(aValue.sigma, 2.0))
+
+
+        MultivariateNormalDistribution(
+          apacheRandom(rng),
+          values(i).unsafeArray,
+          cov.getData
+        )
+
+      val newX =
+        sampleInUnitSquare: () =>
+          val s = distribution.sample()
+          IArray.unsafeFromArray(s)
+
+
+      Vector(buildGenome(newX))
+
+  def elitism[S, I](
+    parameters: Parameters,
+    values: I => IArray[Double],
+    fitness: I => Double,
+    a: monocle.Lens[S, A],
+    mu: Int): Elitism[S, I] =
+    (s, population, candidates, rng) =>
+      assert(population.size == 1)
+      assert(candidates.size == 1)
+      val i_g = population.head
+      val i_gp1 = candidates.head
+
+      val success = fitness(i_gp1) <= fitness(i_g)
+
+      val stepUpdated =
+        updateStepSize(a.get(s), if success then 1.0 else 0.0, parameters)
+
+      if success
+      then
+        val sigma_g = a.get(s).sigma
+        val x_step = (values(i_gp1) zip values(i_g)).map: (x_gp1, x_g) =>
+          (x_gp1 - x_g) / sigma_g
+
+        val covUpdated = updateCovariance(stepUpdated, x_step, parameters)
+
+        val newS = a.replace(covUpdated)(s)
+        (newS, candidates)
+
+      else (s, population)
+
+  object Parameters:
+    def apply(n: Int) =
+      val p_TargetSucc = 1.0 / (5.0 + 1.0 / 2.0)
+      new Parameters(
+        sigma = 1.0 / 6.0,
+        d = 1 + math.floor(n / 2.0),
+        p_targetSucc = p_TargetSucc,
+        c_p = p_TargetSucc / (2.0 + p_TargetSucc),
+        c_c = 2.0 / (n + 2.0),
+        c_cov = 2.0 / (Math.pow(n, 2.0) + 6.0),
+        p_thresh = 0.44
+      )
+
+  case class Parameters(
+    sigma: Double,
+    d: Double,
+    p_targetSucc: Double,
+    c_p: Double,
+    c_c: Double,
+    c_cov: Double,
+    p_thresh: Double)
+
+  case class A(pSuccBar: Double, sigma: Double, pc: IArray[Double], C: IArray[IArray[Double]])
+
+  def updateStepSize(a: A, pSucc: Double, parameters: Parameters) =
+    import parameters.*
+
+    val newPSuccBar = (1.0 - parameters.c_p) * a.pSuccBar + c_p * pSucc
+    val newSigma = a.sigma * Math.exp((1.0 / d) * (newPSuccBar - p_targetSucc) / (1.0 - p_targetSucc))
+    a.copy(
+      pSuccBar = newPSuccBar,
+      sigma = newSigma
+    )
+
+  def updateCovariance(a: A, x_step: IArray[Double], parameters: Parameters): A =
+    import parameters.*
+    import org.apache.commons.math3.linear.*
+
+    lazy val cMatrix = Array2DRowRealMatrix(a.C.map(_.unsafeArray).unsafeArray)
+
+    if a.pSuccBar < p_thresh
+    then
+      val newpc =
+        val lhs = a.pc.map(_ * 1.0 - c_c)
+
+        val rhs =
+          val f = Math.sqrt(c_c * (2.0 - c_c))
+          x_step.map(_ * f)
+
+        (lhs zip rhs).map(_ + _)
+
+      val newC =
+        val lhs = cMatrix.scalarMultiply(.0 - c_cov)
+
+        val rhs =
+          val pcVector = ArrayRealVector(newpc.toArray)
+          pcVector.outerProduct(pcVector).scalarMultiply(c_cov)
+
+        IArray.unsafeFromArray(lhs.add(rhs).getData.map(IArray.unsafeFromArray))
+
+      a.copy(pc = newpc, C = newC)
+    else
+      val newpc = a.pc.map(_ * 1.0 - c_c)
+
+      val newC =
+        val lhs = cMatrix.scalarMultiply(1.0 - c_cov)
+
+        val rhs =
+          val pcpct =
+            val pcVector = ArrayRealVector(newpc.toArray)
+            pcVector.outerProduct(pcVector).scalarMultiply(c_cov)
+
+          val ccmul = cMatrix.scalarMultiply(c_c * (2.0 - c_c))
+
+          pcpct.add(ccmul).scalarMultiply(c_cov)
+
+        IArray.unsafeFromArray(lhs.add(rhs).getData.map(IArray.unsafeFromArray))
+
+      a.copy(pc = newpc, C = newC)
+
+//  class CMAEvolutionStrategy (
+//    iteration: Int,
+//    mu: Int,
+//    lambda: Int,
+//    n: Int, // dimension
+////    ps: IArray[Double],
+////    pc: IArray[Double],
+////    b: IArray[IArray[Double]],
+////    c: IArray[IArray[Double]],
+////    d: IArray[Double],
+////    sigma: Double,
+////    xMean: IArray[Double]
+//                                           ):
+//
+//    //private val mu = math.floor(lambda / 2).toInt
+//
+//    val (weights, mueff): (IArray[Double], Double) =
+//      val w = IArray.tabulate(mu): i =>
+//        Math.log(mu + 1.0 / 2.0) - math.log(1.0 + i)
+//      val sumW = w.sum
+//      val weights = w.map(_ / sumW)
+//      (weights, weights.sum / weights.map(w => w * w).sum)
+//
+//    val cs = (mueff + 2) / (n + mueff + 3)
 //
 //    private val cc = 4.0 / (n + 4.0)
 //

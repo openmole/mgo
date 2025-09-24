@@ -99,7 +99,7 @@ def drawOperator[O](opsAndWeights: IArray[(O, Double)], exploration: Double, rng
 
   (opsAndWeights(i)._1, i)
 
-object GenomeVectorDouble {
+object GenomeVectorDouble:
 
   def randomGenomes[G](cons: (IArray[Double], IArray[Int]) => G)(mu: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[G => Boolean], rng: scala.util.Random): Vector[G] =
     def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
@@ -252,7 +252,16 @@ object GenomeVectorDouble {
       val ng2 = buildGenome(cOff2.map(breeding.clamp(_)), Some(cop), dOff2, Some(dop))
 
       Vector(ng1, ng2)
-}
+
+  
+  def sampleInUnitSquare(sample: () => IArray[Double]) =
+    inline def isValid(x: IArray[Double]) = x.forall(x => x >= 0 && x <= 1.0)
+
+    var s = sample()
+    while !isValid(s) do s = sample()
+    s
+
+
 
 object Aggregation:
   def average(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(o => o.sum / o.size)
