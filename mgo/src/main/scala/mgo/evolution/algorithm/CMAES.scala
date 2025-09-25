@@ -120,8 +120,16 @@ object OnePlusOneCMAESOperation:
 
       val newX =
         util.Try:
+          def regularizePD(m: RealMatrix): RealMatrix =
+            val sym = m.add(m.transpose()).scalarMultiply(0.5)
+            val n = sym.getColumnDimension
+            val I = MatrixUtils.createRealIdentityMatrix(n)
+            val diagMin = (0 until n).map(i => sym.getEntry(i, i)).min
+            val eps = math.max(0.0, epsilon - diagMin)
+            sym.add(I.scalarMultiply(eps))
+
           val cov =
-            Array2DRowRealMatrix(aValue.C.map(_.unsafeArray).unsafeArray).
+            regularizePD(Array2DRowRealMatrix(aValue.C.map(_.unsafeArray).unsafeArray)).
               scalarMultiply(Math.pow(aValue.sigma, 2.0))
 
           val distribution =
@@ -186,7 +194,7 @@ object OnePlusOneCMAESOperation:
     def apply(n: Int) =
       val p_TargetSucc = 1.0 / (5.0 + 1.0 / 2.0)
       new Parameters(
-        sigma = 1.0 / 6.0,
+        sigma = 0.5, //1.0 / 6.0,
         d = 1 + math.floor(n / 2.0),
         p_targetSucc = p_TargetSucc,
         c_p = p_TargetSucc / (2.0 + p_TargetSucc),
@@ -222,14 +230,6 @@ object OnePlusOneCMAESOperation:
     import parameters.*
     import org.apache.commons.math3.linear.*
 
-    def regularizePD(m: RealMatrix): RealMatrix =
-      val sym = m.add(m.transpose()).scalarMultiply(0.5)
-      val n = sym.getColumnDimension
-      val I = MatrixUtils.createRealIdentityMatrix(n)
-      val diagMin = (0 until n).map(i => sym.getEntry(i, i)).min
-      val eps = math.max(0.0, epsilon - diagMin)
-      sym.add(I.scalarMultiply(eps))
-
     lazy val cMatrix = Array2DRowRealMatrix(a.C.map(_.unsafeArray).unsafeArray)
 
     if a.pSuccBar < p_thresh
@@ -251,7 +251,7 @@ object OnePlusOneCMAESOperation:
           pcVector.outerProduct(pcVector).scalarMultiply(c_cov)
 
         IArray.unsafeFromArray(
-          regularizePD(lhs.add(rhs)).getData.map(IArray.unsafeFromArray)
+          lhs.add(rhs).getData.map(IArray.unsafeFromArray)
         )
 
       a.copy(pc = newpc, C = newC)
@@ -271,7 +271,7 @@ object OnePlusOneCMAESOperation:
           pcpct.add(ccmul).scalarMultiply(c_cov)
 
         IArray.unsafeFromArray(
-          regularizePD(lhs.add(rhs)).getData.map(IArray.unsafeFromArray)
+          lhs.add(rhs).getData.map(IArray.unsafeFromArray)
         )
 
       a.copy(pc = newpc, C = newC)
