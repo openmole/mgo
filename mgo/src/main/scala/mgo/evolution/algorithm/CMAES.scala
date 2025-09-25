@@ -110,54 +110,11 @@ object OnePlusOneCMAESOperation:
     a: S => A,
     buildGenome: IArray[Double] => G): Breeding[S, I, G] =
     (s, population, rng) =>
-      import org.apache.commons.math3.distribution.*
-      import org.apache.commons.math3.linear.*
-
       assert(population.size == 1)
 
       val i = population.head
       val aValue = a(s)
-
-      val newX =
-        util.Try:
-          def regularizePD(m: RealMatrix): RealMatrix =
-            val sym = m.add(m.transpose()).scalarMultiply(0.5)
-            val n = sym.getColumnDimension
-            val I = MatrixUtils.createRealIdentityMatrix(n)
-            val diagMin = (0 until n).map(i => sym.getEntry(i, i)).min
-            val eps = math.max(0.0, epsilon - diagMin)
-            sym.add(I.scalarMultiply(eps))
-
-          val cov =
-            regularizePD(Array2DRowRealMatrix(aValue.C.map(_.unsafeArray).unsafeArray)).
-              scalarMultiply(Math.pow(aValue.sigma, 2.0))
-
-          val distribution =
-            MultivariateNormalDistribution(
-              apacheRandom(rng),
-              values(i).unsafeArray,
-              cov.getData
-            )
-
-          rejectSampleUnitSquare: () =>
-            val s = distribution.sample()
-            if s.exists(_.isNaN) then throw RuntimeException("Sample contains NaN")
-            IArray.unsafeFromArray(s)
-
-        .getOrElse:
-          val cov =
-            MatrixUtils.createRealIdentityMatrix(values(i).length).
-              scalarMultiply(Math.pow(aValue.sigma, 2.0))
-
-          val distribution =
-            MultivariateNormalDistribution(
-              apacheRandom(rng),
-              values(i).unsafeArray,
-              cov.getData
-            )
-
-          rejectSampleUnitSquare: () =>
-            IArray.unsafeFromArray(distribution.sample())
+      val newX = samplePoint(a(s), values(i), rng)
 
       Vector(buildGenome(newX))
 
@@ -215,6 +172,74 @@ object OnePlusOneCMAESOperation:
     sigmaMax: Double = 0.5)
 
   case class A(pSuccBar: Double, sigma: Double, pc: IArray[Double], C: IArray[IArray[Double]])
+
+  def samplePoint(a: A, x: IArray[Double], rng: util.Random) =
+    import org.apache.commons.math3.linear.*
+    import org.apache.commons.math3.distribution.*
+
+    util.Try:
+      //          def symmetrize(m: RealMatrix): RealMatrix =
+      //            m.add(m.transpose()).scalarMultiply(0.5)
+      //
+      //          def floorEigenvalues(m: RealMatrix, minEig: Double): RealMatrix =
+      //            val sym = symmetrize(m)
+      //            val eig = new EigenDecomposition(sym)
+      //            val D =
+      //              MatrixUtils.createRealDiagonalMatrix(
+      //                (0 until sym.getRowDimension).map: i =>
+      //                  math.max(eig.getRealEigenvalue(i), minEig)
+      //                .toArray
+      //              )
+      //            eig.getV.multiply(D).multiply(eig.getVT)
+      //
+      //          def regularizePD(m: RealMatrix, epsilon: Double): RealMatrix =
+      //            val sym = symmetrize(m)
+      //            val n = sym.getColumnDimension
+      //            val I = MatrixUtils.createRealIdentityMatrix(n)
+      //            val diagMin = (0 until n).map(i => sym.getEntry(i, i)).min
+      //            val addDiag = math.max(0.0, epsilon - diagMin)
+      //            floorEigenvalues(sym.add(I.scalarMultiply(addDiag)), epsilon)
+
+
+      def regularizePD(m: RealMatrix): RealMatrix =
+        val sym = m.add(m.transpose()).scalarMultiply(0.5)
+        val n = sym.getColumnDimension
+        val I = MatrixUtils.createRealIdentityMatrix(n)
+        val diagMin = (0 until n).map(i => sym.getEntry(i, i)).min
+        val eps = math.max(0.0, epsilon - diagMin)
+        sym.add(I.scalarMultiply(eps))
+
+      val cov =
+        regularizePD(Array2DRowRealMatrix(a.C.map(_.unsafeArray).unsafeArray)).
+          scalarMultiply(Math.pow(a.sigma, 2.0))
+
+      val distribution =
+        MultivariateNormalDistribution(
+          apacheRandom(rng),
+          x.unsafeArray,
+          cov.getData
+        )
+
+      rejectSampleUnitSquare: () =>
+        val s = distribution.sample()
+        if s.exists(_.isNaN) then throw RuntimeException("Sample contains NaN")
+        IArray.unsafeFromArray(s)
+
+    .getOrElse:
+      val cov =
+        MatrixUtils.createRealIdentityMatrix(x.length).
+          scalarMultiply(Math.pow(a.sigma, 2.0))
+
+      val distribution =
+        MultivariateNormalDistribution(
+          apacheRandom(rng),
+          x.unsafeArray,
+          cov.getData
+        )
+
+      rejectSampleUnitSquare: () =>
+        IArray.unsafeFromArray(distribution.sample())
+
 
   def updateStepSize(a: A, pSucc: Double, parameters: Parameters) =
     import parameters.*
