@@ -113,8 +113,12 @@ object OnePlusOneCMAESOperation:
       assert(population.size == 1)
 
       val i = population.head
+      val iValues = values(i)
       val aValue = a(s)
-      val newX = samplePoint(a(s), values(i), rng)
+
+      val newX =
+        val step = sampleStep(a(s), iValues.length, rng)
+        (iValues zip step).map(_ + _).map(x => clamp(x))
 
       Vector(buildGenome(newX))
 
@@ -173,7 +177,7 @@ object OnePlusOneCMAESOperation:
 
   case class A(pSuccBar: Double, sigma: Double, pc: IArray[Double], C: IArray[IArray[Double]])
 
-  def samplePoint(a: A, x: IArray[Double], rng: util.Random) =
+  def sampleStep(a: A, dim: Int, rng: util.Random) =
     import org.apache.commons.math3.linear.*
     import org.apache.commons.math3.distribution.*
 
@@ -216,29 +220,28 @@ object OnePlusOneCMAESOperation:
       val distribution =
         MultivariateNormalDistribution(
           apacheRandom(rng),
-          x.unsafeArray,
+          Array.fill(dim)(0.0),
           cov.getData
         )
 
-      rejectSampleUnitSquare: () =>
-        val s = distribution.sample()
-        if s.exists(_.isNaN) then throw RuntimeException("Sample contains NaN")
-        IArray.unsafeFromArray(s)
+
+      val s = distribution.sample()
+      if s.exists(_.isNaN) then throw RuntimeException("Sample contains NaN")
+      IArray.unsafeFromArray(s)
 
     .getOrElse:
       val cov =
-        MatrixUtils.createRealIdentityMatrix(x.length).
+        MatrixUtils.createRealIdentityMatrix(dim).
           scalarMultiply(Math.pow(a.sigma, 2.0))
 
       val distribution =
         MultivariateNormalDistribution(
           apacheRandom(rng),
-          x.unsafeArray,
+          Array.fill(dim)(0.0),
           cov.getData
         )
 
-      rejectSampleUnitSquare: () =>
-        IArray.unsafeFromArray(distribution.sample())
+      IArray.unsafeFromArray(distribution.sample())
 
 
   def updateStepSize(a: A, pSucc: Double, parameters: Parameters) =

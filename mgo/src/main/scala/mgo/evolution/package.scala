@@ -45,7 +45,7 @@ case class RunAlgorithm[T, I, G, S](
 
     def evolve(s: S, pop: Vector[I]): (S, Vector[I]) =
       traceOperation.foreach(_(s, pop))
-      if (stopCondition.getOrElse(never)(s, pop))
+      if stopCondition.getOrElse(never)(s, pop)
       then (s, pop)
       else
         val (s2, p2) = step(s, pop, rng, parallel)

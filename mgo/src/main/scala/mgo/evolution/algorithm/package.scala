@@ -254,15 +254,14 @@ object GenomeVectorDouble:
       Vector(ng1, ng2)
 
 
-  def refectSampleUnitSquare(sample: () => IArray[Double]) =
+  def reflectSampleUnitSquare(sample: IArray[Double]) =
     def reflectMod(y: IArray[Double]) =
       y.map: v =>
         val folded = math.abs(v) // fold negatives
         val modded = folded % 2.0 // reduce to [0,2)
         if modded > 1.0 then 2.0 - modded else modded
 
-    reflectMod(sample())
-
+    reflectMod(sample)
 
 
   def rejectSampleUnitSquare(sample: () => IArray[Double]) =
