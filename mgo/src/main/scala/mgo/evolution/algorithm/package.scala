@@ -253,8 +253,19 @@ object GenomeVectorDouble:
 
       Vector(ng1, ng2)
 
-  
-  def sampleInUnitSquare(sample: () => IArray[Double]) =
+
+  def refectSampleUnitSquare(sample: () => IArray[Double]) =
+    def reflectMod(y: IArray[Double]) =
+      y.map: v =>
+        val folded = math.abs(v) // fold negatives
+        val modded = folded % 2.0 // reduce to [0,2)
+        if modded > 1.0 then 2.0 - modded else modded
+
+    reflectMod(sample())
+
+
+
+  def rejectSampleUnitSquare(sample: () => IArray[Double]) =
     inline def isValid(x: IArray[Double]) = x.forall(x => x >= 0 && x <= 1.0)
 
     var s = sample()
