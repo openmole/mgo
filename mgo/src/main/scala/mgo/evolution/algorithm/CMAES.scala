@@ -116,34 +116,40 @@ object OnePlusOneCMAESOperation:
       assert(population.size == 1)
 
       val i = population.head
+      val aValue = a(s)
 
-      val distribution =
-        val aValue = a(s)
-
+      val newX =
         util.Try:
           val cov =
             Array2DRowRealMatrix(aValue.C.map(_.unsafeArray).unsafeArray).
               scalarMultiply(Math.pow(aValue.sigma, 2.0))
 
-          MultivariateNormalDistribution(
-            apacheRandom(rng),
-            values(i).unsafeArray,
-            cov.getData
-          )
+          val distribution =
+            MultivariateNormalDistribution(
+              apacheRandom(rng),
+              values(i).unsafeArray,
+              cov.getData
+            )
+
+          rejectSampleUnitSquare: () =>
+            val s = distribution.sample()
+            if s.exists(_.isNaN) then throw RuntimeException("Sample contains NaN")
+            IArray.unsafeFromArray(s)
+
         .getOrElse:
-          val cov = MatrixUtils.createRealIdentityMatrix(values(i).length).scalarMultiply(Math.pow(aValue.sigma, 2.0))
+          val cov =
+            MatrixUtils.createRealIdentityMatrix(values(i).length).
+              scalarMultiply(Math.pow(aValue.sigma, 2.0))
 
-          MultivariateNormalDistribution(
-            apacheRandom(rng),
-            values(i).unsafeArray,
-            cov.getData
-          )
+          val distribution =
+            MultivariateNormalDistribution(
+              apacheRandom(rng),
+              values(i).unsafeArray,
+              cov.getData
+            )
 
-      val newX =
-        refectSampleUnitSquare: () =>
-          val s = distribution.sample()
-          IArray.unsafeFromArray(s)
-
+          rejectSampleUnitSquare: () =>
+            IArray.unsafeFromArray(distribution.sample())
 
       Vector(buildGenome(newX))
 

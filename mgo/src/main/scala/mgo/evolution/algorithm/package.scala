@@ -269,7 +269,10 @@ object GenomeVectorDouble:
     inline def isValid(x: IArray[Double]) = x.forall(x => x >= 0 && x <= 1.0)
 
     var s = sample()
-    while !isValid(s) do s = sample()
+
+    while !isValid(s)
+    do s = sample()
+
     s
 
 
