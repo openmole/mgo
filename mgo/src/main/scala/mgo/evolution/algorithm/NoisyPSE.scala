@@ -186,7 +186,7 @@ object NoisyPSEOperations:
     maxRareSample: Int,
     randomGenomes: (Int, Random) => Vector[G]): Breeding[S, I, G] =
     (s, population, rng) =>
-      val gs =
+      val (newS, gs) =
         PSEOperations.adaptiveBreeding[S, I, G](
           genome,
           continuousValues,
@@ -203,7 +203,11 @@ object NoisyPSEOperations:
           hitmap,
           maxRareSample,
           randomGenomes)(s, population, rng)
-      clonesReplace[S, I, G](cloneProbability, population, genome, randomSelection)(s, gs, rng)
+
+      (
+        newS,
+        clonesReplace[S, I, G](cloneProbability, population, genome, randomSelection)(newS, gs, rng)
+      )
 
   def elitism[S, I, P: CanContainNaN](
     values: I => (IArray[Double], IArray[Int]),

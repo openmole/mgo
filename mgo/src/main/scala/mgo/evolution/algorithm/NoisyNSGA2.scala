@@ -175,8 +175,12 @@ object NoisyNSGA2Operations:
         operatorExploration,
         buildGenome)
 
-      val offspring = breed(breeding, lambda, reject)(s, population, rng)
-      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
+      val (newS, offspring) = breed(breeding, lambda, reject)(s, population, rng)
+
+      (
+        newS,
+        clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(newS, offspring, rng)
+      )
 
 
   def elitism[S, I, P](

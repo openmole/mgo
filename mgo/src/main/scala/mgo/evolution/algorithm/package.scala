@@ -222,7 +222,7 @@ object GenomeVectorDouble:
     continuous: Vector[C],
     discrete: Vector[D],
     operatorExploration: Double,
-    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G): (S, Vector[I], Random) => Vector[G] =
+    buildGenome: (IArray[Double], Option[Int], IArray[Int], Option[Int]) => G): Breeding[S, I, G] =
 
     def continuousOperator =
       selectOperator(
@@ -251,7 +251,7 @@ object GenomeVectorDouble:
       val ng1 = buildGenome(cOff1.map(breeding.clamp(_)), Some(cop), dOff1, Some(dop))
       val ng2 = buildGenome(cOff2.map(breeding.clamp(_)), Some(cop), dOff2, Some(dop))
 
-      Vector(ng1, ng2)
+      (s, Vector(ng1, ng2))
 
 
   def reflectSampleUnitSquare(sample: IArray[Double]) =
@@ -451,9 +451,9 @@ object deterministic:
     elitism: Elitism[S, I],
     generation: monocle.Lens[S, Long],
     evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
-    val newGenomes = breeding(s, population, rng)
-    val newPopulation = evaluation(newGenomes, expression(_, generation.get(s), false), parallel)
-    val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
+    val (s0, newGenomes) = breeding(s, population, rng)
+    val newPopulation = evaluation(newGenomes, expression(_, generation.get(s0), false), parallel)
+    val (s2, elitePopulation) = elitism(s0, population, newPopulation, rng)
     val s3 = generation.modify(_ + 1)(s2)
     val s4 = evaluated.modify(_ + newGenomes.size)(s3)
     (s4, elitePopulation)
@@ -500,10 +500,10 @@ object noisy:
     generation: monocle.Lens[S, Long],
     evaluated: monocle.Lens[S, Long])(s: S, population: Vector[I], rng: scala.util.Random, parallel: Algorithm.ParallelContext): (S, Vector[I]) =
 
-    val newGenomes = breeding(s, population, rng)
-    val newPopulation = evaluation(expression(_, _, generation.get(s), false), newGenomes, rng, parallel)
+    val (s1, newGenomes) = breeding(s, population, rng)
+    val newPopulation = evaluation(expression(_, _, generation.get(s1), false), newGenomes, rng, parallel)
 
-    val (s2, elitePopulation) = elitism(s, population, newPopulation, rng)
+    val (s2, elitePopulation) = elitism(s1, population, newPopulation, rng)
     val s3 = generation.modify(_ + 1)(s2)
     val s4 = evaluated.modify(_ + newGenomes.size)(s3)
 

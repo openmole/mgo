@@ -245,7 +245,7 @@ object NoisyHDOSEOperations:
 
       def breeding: Breeding[S, I, G] =
         (s, pop, g) =>
-          val breed = applyDynamicOperators[S, I, G](
+          val (newS, breed) = applyDynamicOperators[S, I, G](
             tournament(allRanks, tournamentRounds),
             genomeValue,
             continuousOperatorStatistics,
@@ -255,10 +255,14 @@ object NoisyHDOSEOperations:
             operatorExploration,
             buildGenome)(s, pop, rng) //apply ()
 
-          breed.filterNot(g => tooCloseFromArchiveOrPromising(value(g)))
+          (newS, breed.filterNot(g => tooCloseFromArchiveOrPromising(value(g))))
 
-      val offspring = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
-      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
+      val (newS, offspring) = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
+
+      (
+        newS,
+        clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(newS, offspring, rng)
+      )
 
 
   def elitism[S, I: ClassTag, P, G](

@@ -26,6 +26,15 @@ import monocle.Focus
 import monocle.syntax.all.*
 import mgo.tools.*
 
+//object MOCMAES:
+//  case class Genome(parentX: IArray[Double], parentSigma: Double, )
+
+
+//object MOCMAESOperation:
+//  def breeding = ???
+//
+//
+//  def update
 
 object OnePlusOneCMAES:
 
@@ -120,7 +129,7 @@ object OnePlusOneCMAESOperation:
         val step = sampleStep(a(s), iValues.length, rng)
         (iValues zip step).map(_ + _).map(x => clamp(x))
 
-      Vector(buildGenome(newX))
+      (s, Vector(buildGenome(newX)))
 
   def elitism[S, I](
     parameters: Parameters,
@@ -141,8 +150,9 @@ object OnePlusOneCMAESOperation:
       if success
       then
         val sigma_g = a.get(s).sigma
-        val x_step = (values(i_gp1) zip values(i_g)).map: (x_gp1, x_g) =>
-          (x_gp1 - x_g) / sigma_g
+        val x_step =
+          (values(i_gp1) zip values(i_g)).map: (x_gp1, x_g) =>
+            (x_gp1 - x_g) / sigma_g
 
         val covUpdated = updateCovariance(stepUpdated, x_step, parameters)
 

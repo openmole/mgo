@@ -214,16 +214,18 @@ object PPSEOperation:
           def sample() = (randomUnscaledContinuousValues(continuous.size, rng), Lazy(1.0))
           val sampler = toSampler(sample, reject, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
-          (0 to lambda).map: _ =>
-            val (g, d) = sample()
-            buildGenome(g, d.value)
-          .toVector
+          val breed =
+            (0 to lambda).map: _ =>
+              val (g, d) = sample()
+              buildGenome(g, d.value)
+            .toVector
+          (s, breed)
         case Some(gmmValue) =>
           val sampler = gmmToSampler(gmmValue, reject, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
           val (_, sampled) = RejectionSampler.sampleArray(sampler, lambda, samplerState)
           val breed = sampled.toVector.map(s => buildGenome(s._1, s._2))
-          breed
+          (s, breed)
 
 
   def elitism[S, I, P: CanContainNaN](
