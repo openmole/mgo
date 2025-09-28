@@ -161,7 +161,7 @@ object OSEOperation:
 
       val breeding: Breeding[S, I, G] =
         (s, pop, rng) =>
-          val (newS, newGs) =
+          val newGs =
             applyDynamicOperators(
               tournament(allRanks, tournamentRounds),
               genomeValue,
@@ -171,8 +171,7 @@ object OSEOperation:
               discrete,
               operatorExploration,
               buildGenome)(s, pop, rng)
-
-          (newS, filterAlreadyReached[G](g => origin(continuousValues(g), discreteValues(g)), reached)(newGs))
+          filterAlreadyReached[G](g => origin(continuousValues(g), discreteValues(g)), reached)(newGs)
 
       breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
 

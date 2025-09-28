@@ -150,7 +150,7 @@ object PSEOperations:
         population.forall(i => hitMapValue.getOrElse(pattern(i), 0) >= maxRareSample)
 
       if allAtMaxSample
-      then (s, randomGenomes(lambda, rng))
+      then randomGenomes(lambda, rng)
       else
         val ranks = hitCountRanking(s, population, pattern, hitmap).map(x => -x)
         val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)

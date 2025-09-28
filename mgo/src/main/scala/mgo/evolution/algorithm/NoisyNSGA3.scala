@@ -138,12 +138,8 @@ object NoisyNSGA3Operations {
     cloneProbability: Double,
     lambda: Int = -1): Breeding[S, I, G] = (s, population, rng) =>
     // same as deterministic, but eventually adding clones
-    val (newS, breededGenomes) = NSGA3Operations.adaptiveBreeding(fitness, genome, continuousValues, continuousOperator, discreteValues, discreteOperator, continuous, discrete, buildGenome, reject, operatorExploration, lambda)(s, population, rng)
-
-    (
-      newS,
-      clonesReplace(cloneProbability, population, genome, randomSelection[S, I])(newS, breededGenomes, rng)
-    )
+    val breededGenomes = NSGA3Operations.adaptiveBreeding(fitness, genome, continuousValues, continuousOperator, discreteValues, discreteOperator, continuous, discrete, buildGenome, reject, operatorExploration, lambda)(s, population, rng)
+    clonesReplace(cloneProbability, population, genome, randomSelection[S, I])(s, breededGenomes, rng)
 
   def elitism[S, I](
     fitness: I => Vector[Double],

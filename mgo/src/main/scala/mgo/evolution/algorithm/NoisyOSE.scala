@@ -201,8 +201,8 @@ object NoisyOSEOperations {
       val genomeValue = genome andThen (continuousValues, discreteValues).tupled
 
       def breeding: Breeding[S, I, G] =
-        (s, pop, g) =>
-          val (newS, breed) = applyDynamicOperators[S, I, G](
+        (s, pop, g) => {
+          val breed = applyDynamicOperators[S, I, G](
             tournament(allRanks, tournamentRounds),
             genomeValue,
             continuousOperatorStatistics,
@@ -211,15 +211,11 @@ object NoisyOSEOperations {
             discrete,
             operatorExploration,
             buildGenome)(s, pop, rng) //apply ()
+          filterAlreadyReachedAndNeighboursOfPromising(breed)
+        }
 
-          (newS, filterAlreadyReachedAndNeighboursOfPromising(breed))
-
-      val (newS, offspring) = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
-
-      (
-        newS,
-        clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(newS, offspring, rng)
-      )
+      val offspring = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
+      clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 
   def elitism[S, I: ClassTag, P](
     history: I => Vector[P],

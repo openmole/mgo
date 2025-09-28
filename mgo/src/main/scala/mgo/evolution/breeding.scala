@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
 
 object breeding {
 
-  type Breeding[S, I, G] = (S, Vector[I], scala.util.Random) => (S, Vector[G])
+  type Breeding[S, I, G] = (S, Vector[I], scala.util.Random) => Vector[G]
   
   def clamp(value: Double, min_v: Double = 0.0, max_v: Double = 1.0): Double =
     Math.max(Math.min(value, max_v), min_v) 
@@ -269,12 +269,13 @@ object breeding {
   //  }
 
   /** Randomly replaces some of the genomes in gs by genomes taken from the original population of I */
-  def clonesReplace[S, I, G](cloneProbability: Double, population: Vector[I], genome: I => G, selection: Selection[S, I])(s: S, gs: Vector[G], rng: util.Random) =
+  def clonesReplace[S, I, G](cloneProbability: Double, population: Vector[I], genome: I => G, selection: Selection[S, I]): Breeding[S, G, G] = (s, gs, rng) =>
     gs.map: g =>
       val clone = rng.nextDouble < cloneProbability
       if clone
       then genome(selection(s, population, rng))
       else g
+
 
 
   //  def opOrClone[M[_]: cats.Monad: RandomGen, I, G](
@@ -331,16 +332,16 @@ object breeding {
   def breed[S, I, G](breeding: Breeding[S, I, G], lambda: Int, reject: Option[G => Boolean] = None): Breeding[S, I, G] =
     val rejectValue = reject.getOrElse(_ => false)
     (s, population, rng) =>
-      @tailrec def accumulate(s: S, acc: Vector[G] = Vector()): (S, Vector[G]) =
+      @tailrec def accumulate(acc: Vector[G] = Vector()): Vector[G] =
         if acc.size >= lambda
-        then (s, acc)
+        then acc
         else
-          val (s1, b) = breeding(s, population, rng)
-          accumulate(s1, b.filter(o => !rejectValue(o)) ++ acc)
+          val b = breeding(s, population, rng).filter(s => !rejectValue(s))
+          accumulate(b ++ acc)
 
-      def randomTake(gs: Vector[G], lambda: Int, random: scala.util.Random): Vector[G] = random.shuffle(gs).take(lambda)
+      def randomTake[G](gs: Vector[G], lambda: Int, random: scala.util.Random): Vector[G] = random.shuffle(gs).take(lambda)
 
-      val (newS, generated) = accumulate(s)
-      (newS, randomTake(generated, lambda, rng))
+      val generated = accumulate()
+      randomTake(generated, lambda, rng)
 
 }

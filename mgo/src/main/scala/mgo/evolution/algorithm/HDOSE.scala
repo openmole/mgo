@@ -306,7 +306,7 @@ object HDOSEOperation:
 
       val breeding: Breeding[S, I, G] =
         (s, pop, rng) =>
-          val (newS, newGs) =
+          val newGs =
             applyDynamicOperators[S, I, G](
               tournament(allRanks, tournamentRounds),
               genomeValue,
@@ -316,17 +316,13 @@ object HDOSEOperation:
               discrete,
               operatorExploration,
               buildGenome)(s, pop, rng)
-
-          (
-            newS,
-            newGs.filterNot: g =>
-              val values = (continuousValues(g), discreteValues(g))
-              isTooCloseFromArchive(
-                distance,
-                archivedPopulation,
-                genomeValue,
-                diversityDistance(s))(values)
-          )
+          newGs.filterNot: g =>
+            val values = (continuousValues(g), discreteValues(g))
+            isTooCloseFromArchive(
+              distance,
+              archivedPopulation,
+              genomeValue,
+              diversityDistance(s))(values)
 
       breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
 
