@@ -31,28 +31,26 @@ object ranking {
   /**
    * Compute the ranks of the individuals in the same order
    */
-  type Ranking[M[_], I] = Kleisli[M, Vector[I], Vector[Later[Int]]]
+  type Ranking[I] = Vector[I] => Vector[Later[Int]]
 
-  object Ranking {
-    def apply[M[_]: cats.Monad, I](f: Vector[I] => M[Vector[Later[Int]]]): Ranking[M, I] = Kleisli(f)
-  }
+  object Ranking:
+    def apply[I](f: Vector[I] => Vector[Later[Int]]): Ranking[I] = f
 
-  def monoObjectiveRanking[M[_]: cats.Monad, I](fitness: I => Double): Ranking[M, I] =
-    Ranking((values: Vector[I]) => {
+  def monoObjectiveRanking[I](fitness: I => Double): Ranking[I] =
+    Ranking: values =>
 
       val byFitness = values.map(fitness).zipWithIndex.sortBy { case (v, _) => v }
       def ranks(fitnesses: List[Double], lastValue: Double = Double.NegativeInfinity, rank: Int = 0, rs: List[Int] = List()): List[Int] =
-        fitnesses match {
+        fitnesses match
           case h :: t =>
             if (h > lastValue) ranks(t, h, rank + 1, rank :: rs)
             else ranks(t, h, rank, rank :: rs)
           case Nil => rs.reverse
-        }
 
       val ranksValue = ranks(byFitness.unzip._1.toList)
 
       (ranksValue zip byFitness.unzip._2).sortBy { case (_, r) => r }.unzip._1.toVector.map(r => Later(r))
-    }.pure[M])
+
 
   //  def hyperVolumeRanking[M[_]: cats.Monad, I](referencePoint: Vector[Double], fitness: I => Vector[Double]): Ranking[M, I] =
   //    Ranking((values: Vector[I]) =>
