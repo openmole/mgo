@@ -86,7 +86,7 @@ object NoisySphereNSGAII extends App {
 
 }
 
-object ZDT4NSGAII extends App {
+object ZDT4NSGAII extends App:
 
   import algorithm._
 
@@ -106,9 +106,8 @@ object ZDT4NSGAII extends App {
 
   println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
 
-}
 
-object RastriginNSGAII extends App {
+object RastriginNSGAII extends App:
 
   import algorithm._
 
@@ -116,9 +115,9 @@ object RastriginNSGAII extends App {
     mu = 100,
     lambda = 100,
     fitness = (x, _) => Vector(rastrigin.compute(x)),
-    continuous = rastrigin.continuous(2))
+    continuous = rastrigin.continuous(10))
 
-  def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
       trace { (s, is) => println(s.generation) }
@@ -126,4 +125,4 @@ object RastriginNSGAII extends App {
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
-}
+

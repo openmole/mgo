@@ -51,7 +51,7 @@ object elitism:
     if population.size < mu
     then population
     else
-      val sortedBestToWorst = (population zip ranks).sortBy { _._2 }(using Order.reverse(KO).toOrdering).map { _._1 }
+      val sortedBestToWorst = (population zip ranks).sortBy(_._2)(using Order.reverse(KO).toOrdering).map(_._1)
       sortedBestToWorst.take(mu)
 
   def nicheElitism[I, N](population: Vector[I], keep: Vector[I] => Vector[I], niche: I => N): Vector[I] =

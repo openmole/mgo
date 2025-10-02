@@ -50,11 +50,10 @@ package object test {
     def discrete(size: Int): Vector[D] = Vector.fill(size)(D(-2, 2))
   }
 
-  object rastrigin {
+  object rastrigin:
     def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-5.12, 5.12))
     def compute(i: Vector[Double]): Double =
       10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
-  }
 
   def himmelblau(x: Double, y: Double): Double = {
     def z(x: Double, y: Double) =

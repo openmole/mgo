@@ -54,6 +54,56 @@ object WFGHypervolume:
 
       0
 
+
+
+  def nomalize(points: IArray[IArray[Double]]): IArray[IArray[Double]] =
+    if points.isEmpty
+    then points
+    else
+      val d = points.head.length
+
+      val mins = (0 until d).map(j => points.map(_(j)).min)
+      val maxs = (0 until d).map(j => points.map(_(j)).max)
+
+      points.map: f =>
+        IArray.from:
+          (0 until d).map: j =>
+            val denom = (maxs(j) - mins(j)) max mgo.tools.epsilon
+            (f(j) - mins(j)) / denom
+
+
+  def normalizedHypervolumeContribution(points: IArray[IArray[Double]]) =
+    import cats.Later
+    if points.isEmpty
+    then Vector()
+    else
+      val nPoints = nomalize(points)
+      val refPoint = IArray.fill(nPoints.head.length)(1.1)
+
+      val hvAll = Later(hypervolume(nPoints, refPoint))
+
+      nPoints.indices.map: i =>
+        Later:
+          val reduced = nPoints.patch(i, Nil, 1)
+          val hvReduced = hypervolume(reduced, refPoint)
+          hvAll.value - hvReduced
+      .toVector
+
+//
+//  // Usage:
+//  val (normalizeSet, mins, maxs) = normalizeObjectives(fitness, population)
+//  val normalized = normalizeSet(population)
+//  val reference  = Vector.fill(normalized.head.length)(1.05)
+
+  //def contributions(pointList: IArray[IArray[Double]], dimension: Int)
+
+  def hypervolume(pointList: IArray[IArray[Double]], referencePoint: IArray[Double]) =
+    if pointList.isEmpty
+    then 0.0
+    else
+      val dimension = pointList.head.length
+      wfg(pointList, referencePoint, dimension)
+
   /**
    * Recursive hypervolume calculation using slices.
    *

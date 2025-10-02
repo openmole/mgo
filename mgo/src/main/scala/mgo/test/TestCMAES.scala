@@ -37,3 +37,61 @@ object ShpereOnePlusOneCMAES extends App:
   println(OnePlusOneCMAES.result(cmaes, finalPopulation).mkString("\n"))
 
 
+object RastriginOnePlusOneCMAES extends App:
+
+  import algorithm._
+
+  val cmaes = OnePlusOneCMAES(
+    fitness = rastrigin.compute,
+    continuous = rastrigin.continuous(10)
+  )
+
+  def evolution =
+    cmaes.
+      until(afterGeneration(100000)).
+      trace { (s, is) => println(s.generation) }
+
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
+
+  println(OnePlusOneCMAES.result(cmaes, finalPopulation).mkString("\n"))
+
+
+object ShpereMOCMAES extends App:
+
+  val cmaes = MOCMAES(
+    mu = 100,
+    lambda = 100,
+    fitness = v => sphere.compute(v),
+    continuous = sphere.genome(2)
+  )
+
+  def evolution =
+    cmaes.
+      until(afterGeneration(1000)).
+      trace((s, is) => println(s.generation))
+
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
+
+  println(MOCMAES.result(cmaes, finalPopulation).mkString("\n"))
+
+
+
+object RastriginMOCMAES extends App:
+
+  import algorithm._
+
+  val cmaes = MOCMAES(
+    mu = 100,
+    lambda = 100,
+    fitness = rastrigin.compute,
+    continuous = rastrigin.continuous(10)
+  )
+
+  def evolution =
+    cmaes.
+      until(afterGeneration(1000)).
+      trace { (s, is) => println(s.generation) }
+
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
+
+  println(MOCMAES.result(cmaes, finalPopulation).mkString("\n"))

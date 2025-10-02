@@ -74,12 +74,8 @@ def afterGeneration[I, S](g: Long): StopCondition[EvolutionState[S], I] = stop.a
 
 def newRNG(seed: Long) = new util.Random(new RandomAdaptor(new SynchronizedRandomGenerator(new Well44497a(seed))))
 
-def changeScale(v: Double, fromMin: Double, fromMax: Double, toMin: Double, toMax: Double): Double =
-  val factor = (toMax - toMin) / (fromMax - fromMin)
-  factor * (v - fromMin) + toMin
-
 implicit class Double2Scalable(d: Double):
-  def scale(min: Double, max: Double): Double = changeScale(d, 0, 1, min, max)
+  def scale(min: Double, max: Double): Double = mgo.tools.changeScale(d, 0, 1, min, max)
   def scale(s: C): Double = scale(s.low, s.high)
   //def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
 

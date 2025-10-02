@@ -28,7 +28,7 @@ object breeding {
     (s, individuals, rng) =>
       val populationSize = individuals.size
       val challengersIndices = Vector.fill(rounds(populationSize) + 1)(() => rng.nextInt(populationSize)).map(_())
-      individuals(challengersIndices.maxBy(i => ranks(i))(using ko.toOrdering))
+      individuals(challengersIndices.maxBy(ranks)(using ko.toOrdering))
 
   def log2(x: Int): Int = (math.log(x) / math.log(2)).toInt
   lazy val log2_256: Int = log2(256)

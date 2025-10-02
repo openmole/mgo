@@ -71,4 +71,7 @@ extension [A, B](f: A => B)
 extension [A](a: IArray[A])
   def unsafeToArray = a.asInstanceOf[Array[A]]
 
+def changeScale(v: Double, fromMin: Double, fromMax: Double, toMin: Double, toMax: Double): Double =
+  val factor = (toMax - toMin) / (fromMax - fromMin)
+  factor * (v - fromMin) + toMin
 
