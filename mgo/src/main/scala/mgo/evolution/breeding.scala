@@ -66,14 +66,15 @@ object breeding {
   type GACrossover[S, T] = Crossover[S, (IArray[T], IArray[T]), (IArray[T], IArray[T])]
 
 
-  def blxC[S](alpha: Double = 0.5): Crossover[S, (IArray[Double], IArray[Double]), IArray[Double]] =
+  def blxC[S](alpha: Double = 0.5): GACrossover[S, Double] =
     (s, mates, random) =>
-      (mates._1 zip mates._2).map: (c1, c2) =>
-        val cmin = math.min(c1, c2)
-        val cmax = math.max(c1, c2)
-        val range = cmax - cmin
-        random.nextDouble.scale(cmin - alpha * range, cmax + alpha * range)
-
+      def generate =
+        (mates._1 zip mates._2).map: (c1, c2) =>
+          val cmin = math.min(c1, c2)
+          val cmax = math.max(c1, c2)
+          val range = cmax - cmin
+          random.nextDouble.scale(cmin - alpha * range, cmax + alpha * range)
+      (generate, generate)
 
   /**
    * SBX RGA operator with Bounded Variable modification, see APPENDIX A p30 into :
@@ -134,7 +135,13 @@ object breeding {
     (IArray.unsafeFromArray(o1), IArray.unsafeFromArray(o2))
 
 
-/**** Mutation ****/
+  def identityCrossover[S]: GACrossover[S, Double] = (s, mates, random) =>
+    if random.nextBoolean()
+    then mates
+    else mates.swap
+
+
+  /**** Mutation ****/
 
   /** A mutation is a function from a single genome to another single genome */
   type Mutation[S, G1, G2] = (S, G1, scala.util.Random) => G2
@@ -163,11 +170,44 @@ object breeding {
     (s, g, random) =>
       g.map { x =>
         val mutate = random.nextDouble < mutationRate(g.size)
-        if (mutate) {
+        if mutate
+        then
           val s = random.nextGaussian() * sigma
           x + s
-        } else x
+        else x
       }
+
+
+  def polynomialMutation[S](mutationRate: Int => Double, etaM: Double): GAMutation[S] =
+    (s, g, random) =>
+      val prob = mutationRate(g.length)
+
+      g.zipWithIndex.map: (x, i) =>
+        if random.nextDouble() <= prob
+        then
+          val xl = 0.0
+          val xu = 1.0
+
+          val delta1 = (x - xl) / (xu - xl)
+          val delta2 = (xu - x) / (xu - xl)
+          val rand = random.nextDouble()
+          val mutPow = 1.0 / (etaM + 1.0)
+
+          val deltaq =
+            if rand <= 0.5
+            then
+              val xy = 1.0 - delta1
+              val valA = 2.0 * rand + (1.0 - 2.0 * rand) * Math.pow(xy, etaM + 1.0)
+              Math.pow(valA, mutPow) - 1.0
+            else
+              val xy = 1.0 - delta2
+              val valA = 2.0 * (1.0 - rand) + 2.0 * (rand - 0.5) * Math.pow(xy, etaM + 1.0)
+              1.0 - Math.pow(valA, mutPow)
+
+          val mutated = x + deltaq * (xu - xl)
+          clamp(mutated, xl, xu)
+        else x
+
 
   //
   //  /**

@@ -18,6 +18,7 @@
 package mgo.evolution.algorithm
 
 import mgo.evolution.*
+import mgo.evolution.dominance.*
 import mgo.evolution.algorithm.GenomeVectorDouble.*
 import mgo.evolution.breeding.*
 import mgo.evolution.elitism.*
@@ -28,10 +29,10 @@ import mgo.tools.*
 
 object MOCMAES:
   case class Genome(x: IArray[Double], a: OnePlusOneCMAESOperation.A, ancestor: Option[MOCMEASOperation.Ancestor])
-  case class Individual(genome: Genome, fitness: Double, generation: Long, initial: Boolean)
+  case class Individual(genome: Genome, fitness: IArray[Double], generation: Long, initial: Boolean)
   type State = EvolutionState[Unit]
 
-  case class Result(continuous: Vector[Double], fitness: Double, individual: Individual)
+  case class Result(continuous: Vector[Double], fitness: Vector[Double], individual: Individual)
 
   def initialGenomes(parameters: OnePlusOneCMAESOperation.Parameters, lambda: Int, continuous: Vector[C], rng: scala.util.Random): Vector[Genome] =
     Vector.fill(lambda):
@@ -45,36 +46,38 @@ object MOCMAES:
 
   def initialState = EvolutionState[Unit](s = ())
 
-  def breeding(parameters: OnePlusOneCMAESOperation.Parameters, lambda: Int): Breeding[State, Individual, Genome] =
+  def breeding(parameters: OnePlusOneCMAESOperation.Parameters, lambda: Int, genomeDiversity: Boolean): Breeding[State, Individual, Genome] =
     MOCMEASOperation.breeding[State, Individual, Genome](
       parameters,
       lambda,
       _.genome.x,
-      _.fitness,
+      _.fitness.toVector,
       _.genome.a,
-      (g, a, ancestor) => Genome(g, a, Some(ancestor))
+      (g, a, ancestor) => Genome(g, a, Some(ancestor)),
+      genomeDiversity = genomeDiversity
     )
 
-  def elitism(parameters: OnePlusOneCMAESOperation.Parameters, mu: Int, continuous: Vector[C]): Elitism[State, Individual] =
+  def elitism(parameters: OnePlusOneCMAESOperation.Parameters, mu: Int, continuous: Vector[C], genomeDiversity: Boolean): Elitism[State, Individual] =
     MOCMEASOperation.elitism[State, Individual](
       parameters,
       mu,
       _.genome.x,
-      _.fitness,
+      _.fitness.toVector,
       Focus[Individual](_.genome.ancestor),
-      Focus[Individual](_.genome.a)
+      Focus[Individual](_.genome.a),
+      genomeDiversity = genomeDiversity
     )
 
-  def expression(express: IArray[Double] => Double, continuous: Vector[C]): (Genome, Long, Boolean) => Individual =
+  def expression(express: IArray[Double] => Vector[Double], continuous: Vector[C]): (Genome, Long, Boolean) => Individual =
     (ge, g, i) =>
-      Individual(ge, express(scaleContinuousValues(ge.x, continuous)), g, i)
+      Individual(ge, IArray.from(express(scaleContinuousValues(ge.x, continuous))), g, i)
 
   def result(t: MOCMAES, population: Vector[Individual]): Vector[Result] =
     result(population, t.continuous)
 
   def result(population: Vector[Individual], continuous: Vector[C]): Vector[Result] =
     population.map: i =>
-      Result(scaleContinuousVectorValues(i.genome.x.toVector, continuous), i.fitness, i)
+      Result(scaleContinuousVectorValues(i.genome.x.toVector, continuous), i.fitness.toVector, i)
 
   given isAlgorithm: Algorithm[MOCMAES, Individual, Genome, State] with
     override def initialState(t: MOCMAES, rng: scala.util.Random) = MOCMAES.initialState
@@ -87,9 +90,9 @@ object MOCMAES:
 
     override def step(t: MOCMAES) =
       deterministic.step[State, Individual, Genome](
-        MOCMAES.breeding(t.parameters, t.lambda),
+        MOCMAES.breeding(t.parameters, t.lambda, t.genomeDiversity),
         MOCMAES.expression(t.fitness, t.continuous),
-        MOCMAES.elitism(t.parameters, t.mu, t.continuous),
+        MOCMAES.elitism(t.parameters, t.mu, t.continuous, t.genomeDiversity),
         Focus[State](_.generation),
         Focus[State](_.evaluated)
       )
@@ -97,29 +100,32 @@ object MOCMAES:
   def apply(
    mu: Int,
    lambda: Int,
-   fitness: IArray[Double] => Double,
-   continuous: Vector[C]) =
+   fitness: IArray[Double] => Vector[Double],
+   continuous: Vector[C],
+   genomeDiversity: Boolean = false) =
     new MOCMAES(
       mu,
       lambda,
       fitness,
       continuous,
-      OnePlusOneCMAESOperation.Parameters(continuous.size)
+      OnePlusOneCMAESOperation.Parameters(continuous.size),
+      genomeDiversity = genomeDiversity
     )
 
 
 case class MOCMAES(
   mu: Int,
   lambda: Int,
-  fitness: IArray[Double] => Double,
+  fitness: IArray[Double] => Vector[Double],
   continuous: Vector[C],
-  parameters: OnePlusOneCMAESOperation.Parameters)
+  parameters: OnePlusOneCMAESOperation.Parameters,
+  genomeDiversity: Boolean)
 
 
 object MOCMEASOperation:
   import OnePlusOneCMAESOperation.{A, Parameters}
 
-  type Fitness = Double
+  type Fitness = Vector[Double]
   case class Ancestor(x: IArray[Double], fitness: Fitness)
 
   def sameKernel(x1: IArray[Double], a1: A, x2: IArray[Double], a2: A) =
@@ -133,10 +139,17 @@ object MOCMEASOperation:
     values: I => IArray[Double],
     fitness: I => Fitness,
     a: I => A,
-    buildGenome: (IArray[Double], A, Ancestor) => G): Breeding[S, I, G] =
+    buildGenome: (IArray[Double], A, Ancestor) => G,
+    genomeDiversity: Boolean): Breeding[S, I, G] =
     (s, population, rng) =>
+
+      val ranks =
+        if !genomeDiversity
+        then paretoRankingMinAndCrowdingDiversity(population, fitness)
+        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(population, fitness, i => (values(i), IArray.empty))
+
       def draw =
-        val selected = population(rng.nextInt(population.size))
+        val selected = tournament(ranks, _ => 1)(s, population, rng)
         val sampled = OnePlusOneCMAESOperation.breeding[A, I, IArray[Double]](parameters, values, identity, identity)(a(selected), Vector(selected), rng).head
         buildGenome(sampled, a(selected), Ancestor(values(selected), fitness(selected)))
 
@@ -146,9 +159,10 @@ object MOCMEASOperation:
     parameters: Parameters,
     mu: Int,
     x: I => IArray[Double],
-    fitness: I => Double,
+    fitness: I => Vector[Double],
     ancestor: monocle.Lens[I, Option[Ancestor]],
-    a: monocle.Lens[I, A]): Elitism[S, I] =
+    a: monocle.Lens[I, A],
+    genomeDiversity: Boolean): Elitism[S, I] =
     (s, population, candidates, rng) =>
 
       def processCandidate(population: Vector[I], candidate: I) =
@@ -159,7 +173,7 @@ object MOCMEASOperation:
               population.indexWhere: p =>
                 sameKernel(cAncestor.x, a.get(candidate), x(p), a.get(p))
 
-            val success = fitness(candidate) <= cAncestor.fitness
+            val success = !nonStrictDominance.isDominated(fitness(candidate), cAncestor.fitness)
 
             val updatedCandidate =
               val stepUpdated = OnePlusOneCMAESOperation.updateStepSize(a.get(candidate), if success then 1.0 else 0.0, parameters)
@@ -184,7 +198,15 @@ object MOCMEASOperation:
                 population.patch(index, Seq(updatedI), 1) ++ Vector(updatedCandidate)
 
       val updatedPopulation = candidates.foldLeft(population)(processCandidate)
-      (s, updatedPopulation.sortBy(fitness).take(mu).map(ancestor.replace(None)))
+
+      val ranks =
+        if !genomeDiversity
+        then paretoRankingMinAndCrowdingDiversity(updatedPopulation, fitness)
+        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(updatedPopulation, fitness, i => (x(i), IArray.empty))
+
+      val elitePopulation = keepHighestRanked(updatedPopulation, ranks, mu)
+
+      (s, elitePopulation.map(ancestor.replace(None)))
 
 
 object OnePlusOneCMAES:

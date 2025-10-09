@@ -25,17 +25,12 @@ import mgo.tools.KDTree
  *
  */
 
-object KNearestNeighboursAverageDistance {
+object KNearestNeighboursAverageDistance:
 
-  def apply(values: Vector[Seq[Double]], k: Int): Vector[Later[Double]] = {
+  def apply(values: Vector[Seq[Double]], k: Int): Vector[Later[Double]] =
     val tree = KDTree(values)
 
-    values.map {
-      v =>
-        Later {
-          val neighbours = tree.knearest(k, v)
-          neighbours.foldLeft(0: Double) { case (sum, cur) => sum + tree.distance(cur.toSeq, v) } / neighbours.size
-        }
-    }
-  }
-}
+    values.map: v =>
+      Later:
+        val neighbours = tree.knearest(k, v)
+        neighbours.map(tree.distance(_, v)).sum / neighbours.size

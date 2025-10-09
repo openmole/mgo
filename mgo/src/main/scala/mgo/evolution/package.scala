@@ -81,8 +81,27 @@ implicit class Double2Scalable(d: Double):
 
 def arrayToVectorIso[A: Manifest]: Iso[IArray[A], Vector[A]] = monocle.Iso[IArray[A], Vector[A]](_.toVector)(v => IArray.from(v))
 def array2ToVectorLens[A: Manifest]: Iso[Array[Array[A]], Vector[Vector[A]]] = monocle.Iso[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => v.map(_.toArray).toArray)
-def intToUnsignedIntOption: Iso[Int, Option[Int]] = monocle.Iso[Int, Option[Int]](i => if (i < 0) None else Some(i))(v => v.getOrElse(-1))
-def byteToUnsignedIntOption: Iso[Byte, Option[Int]] = monocle.Iso[Byte, Option[Int]](i => if i < 0 then None else Some(i))(v => v.getOrElse(-1).toByte)
+
+def intToUnsignedIntOption: Iso[Int, Option[Int]] =
+  monocle.Iso[Int, Option[Int]]( i =>
+    if i == Int.MaxValue
+    then None
+    else Some(i - Int.MinValue)
+  ) {
+    case Some(v) => Int.MinValue + v
+    case None => Int.MaxValue
+  }
+
+def byteToUnsignedIntOption: Iso[Byte, Option[Int]] =
+  monocle.Iso[Byte, Option[Int]]( i =>
+    assert(i < 256)
+    if i == Byte.MaxValue
+    then None
+    else Some(i - Byte.MinValue)
+  ) {
+    case Some(v) => (Byte.MinValue + v).toByte
+    case None => Byte.MaxValue
+  }
 
 def iArrayTupleToVector(p: (IArray[Double], IArray[Int])) = (Vector.from(p._1), Vector.from(p._2))
 
@@ -110,6 +129,8 @@ object D:
     else if interval <= shortRange
     then IntegerPrecision.Short
     else IntegerPrecision.Int
+
+  def cardinatily(d: D) = Math.abs(d.high.toLong - d.low).toInt
 
   def apply(low: Int, high: Int) =
     val l = Math.min(low, high)

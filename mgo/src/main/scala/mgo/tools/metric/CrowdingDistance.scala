@@ -65,6 +65,15 @@ object CrowdingDistance:
 
       front.map(_.distance)
 
+  def normalizedCrowdingDistance(data: Seq[Vector[Double]]): Seq[Double] =
+    val distances = computeCrowdingDistance(data)
+    val finiteMax = distances.filterNot(_.isPosInfinity).maxOption.getOrElse(1.0)
+
+    distances.map:
+      case d if d.isPosInfinity => 1.0
+      case d => d / finiteMax
+
+
   def apply(data: Vector[Vector[Double]]): Vector[Double] =
     val distinctData = data.distinct
     val crowding = (distinctData zip computeCrowdingDistance(distinctData)).toMap

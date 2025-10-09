@@ -27,7 +27,8 @@ object SphereNSGAII extends App {
     mu = 100,
     lambda = 100,
     fitness = (v, _) => Vector(sphere.compute(v)),
-    continuous = sphere.genome(6))
+    continuous = sphere.genome(6)
+  )
 
   def evolution =
     nsga2.
@@ -115,7 +116,8 @@ object RastriginNSGAII extends App:
     mu = 100,
     lambda = 100,
     fitness = (x, _) => Vector(rastrigin.compute(x)),
-    continuous = rastrigin.continuous(10))
+    continuous = rastrigin.continuous(40),
+    genomeDiversity = true)
 
   def evolution =
     nsga2.
@@ -126,3 +128,23 @@ object RastriginNSGAII extends App:
 
   println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))
 
+
+object RosenbrockNSGAII extends App:
+
+  import algorithm.*
+
+  val nsga2: NSGA2 = NSGA2(
+    mu = 100,
+    lambda = 100,
+    fitness = (x, _) => Vector(rosenbrock.compute(x)),
+    continuous = rosenbrock.continuous(10),
+    genomeDiversity = true)
+
+  def evolution =
+    nsga2.
+      until(afterGeneration(1000)).
+      trace { (s, is) => println(s.generation) }
+
+  val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
+
+  println(NSGA2.result(nsga2, finalPopulation).mkString("\n"))

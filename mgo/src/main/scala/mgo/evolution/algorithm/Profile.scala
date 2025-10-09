@@ -28,7 +28,7 @@ import monocle.syntax.all._
 
 import scala.language.higherKinds
 
-object Profile {
+object Profile:
 
   import CDGenome._
   import DeterministicIndividual._
@@ -73,9 +73,8 @@ object Profile {
     NSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      continuousValues(continuous).get,
+      _.genome.values(continuous, discrete),
       continuousOperator.get,
-      discreteValues(discrete).get,
       discreteOperator.get,
       continuous,
       discrete,
@@ -119,7 +118,7 @@ object Profile {
   def result[N](profile: Profile[N], population: Vector[Individual[Vector[Double]]]): Vector[Result[N, Vector[Double]]] =
     result[N, Vector[Double]](population, profile.niche, profile.continuous, profile.discrete, identity, keepAll = false)
 
-}
+
 
 case class Profile[N](
   lambda: Int,

@@ -29,7 +29,7 @@ import mgo.tools.metric.CrowdingDistance
 
 import scala.language.higherKinds
 
-object NSGA2 {
+object NSGA2:
 
   import CDGenome._
   import DeterministicIndividual._
@@ -39,13 +39,12 @@ object NSGA2 {
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean]): Breeding[S, Individual[P], Genome] =
+  def adaptiveBreeding[S, P](lambda: Int, operatorExploration: Double, continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], reject: Option[Genome => Boolean], genomeDiversity: Boolean): Breeding[S, Individual[P], Genome] =
     NSGA2Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
-      Focus[Individual[P]](_.genome).get,
-      continuousValues(continuous).get,
+      _.genome,
+      _.genome.values(continuous, discrete),
       continuousOperator.get,
-      discreteValues(discrete).get,
       discreteOperator.get,
       continuous,
       discrete,
@@ -53,16 +52,24 @@ object NSGA2 {
       _ => 1,
       lambda,
       reject,
-      operatorExploration)
+      operatorExploration,
+      genomeDiversity = genomeDiversity)
 
   def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C], discrete: Vector[D]) =
     DeterministicIndividual.expression(express, components, discrete)
 
-  def elitism[S, P](mu: Int, components: Vector[C], discrete: Vector[D], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
-    NSGA2Operations.elitism[S, Individual[P]](
-      individualFitness[P](fitness),
-      i => scaledValues(components, discrete)(i.genome),
-      mu)
+  def elitism[S, P](mu: Int, components: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], genomeDiversity: Boolean): Elitism[S, Individual[P]] =
+    if genomeDiversity
+    then
+      NSGA2Operations.elitismWithDiversity[S, Individual[P]](
+        individualFitness[P](fitness),
+        _.genome.values(components, discrete),
+        mu)
+    else
+      NSGA2Operations.elitism[S, Individual[P]](
+        individualFitness[P](fitness),
+        _.genome.values(components, discrete),
+        mu)
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
 
@@ -88,16 +95,15 @@ object NSGA2 {
         
       override def step(t: NSGA2) =
         deterministic.step[NSGA2State, Individual[Vector[Double]], Genome](
-          NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, identity, reject(t)),
+          NSGA2.adaptiveBreeding[NSGA2State, Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, identity, reject(t), t.genomeDiversity),
           NSGA2.expression(t.fitness, t.continuous, t.discrete),
-          NSGA2.elitism[NSGA2State, Vector[Double]](t.mu, t.continuous, t.discrete, identity),
+          NSGA2.elitism[NSGA2State, Vector[Double]](t.mu, t.continuous, t.discrete, identity, t.genomeDiversity),
           Focus[EvolutionState[Unit]](_.generation),
           Focus[EvolutionState[Unit]](_.evaluated))
 
   def result(nsga2: NSGA2, population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] = result[Vector[Double]](population, nsga2.continuous, nsga2.discrete, identity[Vector[Double]] _, keepAll = false)
   def reject(nsga2: NSGA2): Option[Genome => Boolean] = reject(nsga2.reject, nsga2.continuous, nsga2.discrete)
 
-}
 
 case class NSGA2(
   mu: Int,
@@ -106,16 +112,16 @@ case class NSGA2(
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   operatorExploration: Double = 0.1,
-  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None)
+  reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None,
+  genomeDiversity: Boolean = false)
 
 object NSGA2Operations:
 
   def adaptiveBreeding[S, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
-    continuousValues: G => IArray[Double],
+    values: I => (IArray[Double], IArray[Int]),
     continuousOperator: G => Option[Int],
-    discreteValues: G => IArray[Int],
     discreteOperator: G => Option[Int],
     continuous: Vector[C],
     discrete: Vector[D],
@@ -123,16 +129,20 @@ object NSGA2Operations:
     tournamentRounds: Int => Int,
     lambda: Int,
     reject: Option[G => Boolean],
-    operatorExploration: Double): Breeding[S, I, G] =
+    operatorExploration: Double,
+    genomeDiversity: Boolean = false): Breeding[S, I, G] =
     (s, population, rng) =>
-      val ranks = paretoRankingMinAndCrowdingDiversity(population, fitness)
+      val ranks =
+        if !genomeDiversity
+        then paretoRankingMinAndCrowdingDiversity(population, fitness)
+        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(population, fitness, values)
+
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
-      val genomeValue = genome andThen (continuousValues, discreteValues).tupled
 
       val breeding: Breeding[S, I, G] = applyDynamicOperators[S, I, G](
         tournament(ranks, tournamentRounds),
-        genomeValue,
+        values,
         continuousOperatorStatistics,
         discreteOperatorStatistics,
         continuous,
@@ -143,6 +153,18 @@ object NSGA2Operations:
       breed(breeding, lambda, reject)(s, population, rng)
 
 
+  def elitismWithDiversity[S, I](
+    fitness: I => Vector[Double],
+    values: I => (IArray[Double], IArray[Int]),
+    mu: Int): Elitism[S, I] =
+    (s, population, candidates, rng) =>
+      val memoizedFitness = fitness.memoized
+      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
+      val ranks = paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(cloneRemoved, memoizedFitness, values)
+
+      (s, keepHighestRanked(cloneRemoved, ranks, mu))
+
+
   def elitism[S, I](
     fitness: I => Vector[Double],
     values: I => (IArray[Double], IArray[Int]),
@@ -151,6 +173,7 @@ object NSGA2Operations:
       val memoizedFitness = fitness.memoized
       val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
       val ranks = paretoRankingMinAndCrowdingDiversity(cloneRemoved, memoizedFitness)
+
       (s, keepHighestRanked(cloneRemoved, ranks, mu))
 
 //      if cloneRemoved.nonEmpty

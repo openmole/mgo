@@ -67,11 +67,22 @@ package object test {
     1.0 + values.map(x => math.pow(x, 2.0) / 4000).sum - values.zipWithIndex.map { case (x, i) => x / math.sqrt(i + 1.0) }.map(math.cos).reduce(_ * _)
   }
 
-  def rosenbrock(x: Double, y: Double): Double = {
-    val sx = x.scale(-2048.0, 2048.0)
-    val sy = y.scale(-2048.0, 2048.0)
-    pow(1 - sx, 2) + 100 * pow(sy - pow(sx, 2), 2)
-  }
+  object rosenbrock:
+    def compute(x: Vector[Double]): Double =
+      require(x.length >= 2, "Rosenbrock function requires at least 2 dimensions.")
+      (0 until x.length - 1).map: i =>
+        val xi = x(i)
+        val xnext = x(i + 1)
+        100.0 * math.pow(xnext - xi * xi, 2) + math.pow(1 - xi, 2)
+      .sum
+
+    def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-5.0, 5.0))
+
+//    def compute(x: Double, y: Double): Double =
+//      val sx = x.scale(-2048.0, 2048.0)
+//      val sy = y.scale(-2048.0, 2048.0)
+//      pow(1 - sx, 2) + 100 * pow(sy - pow(sx, 2), 2)
+
 
   def saltelliB(x: Vector[Double], omega: Vector[Double]): Double =
     (0 to (x.size - 1)).map(i => x(i) * omega(i)).sum

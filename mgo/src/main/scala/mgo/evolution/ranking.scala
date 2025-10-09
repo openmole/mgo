@@ -23,14 +23,15 @@ import mgo.evolution.algorithm.HitMap
 import mgo.evolution.dominance.*
 import mgo.evolution.niche.*
 import mgo.tools.*
-import mgo.tools.metric.WFGHypervolume
+import mgo.tools.metric.{CrowdingDistance, EskinDistance, GoodallDistance, WFGHypervolume}
 
+import java.util
 import scala.language.higherKinds
 
 object ranking:
 
-  def monoObjectiveRanking[I](populatiom: Vector[I], fitness: I => Double) =
-    val byFitness = populatiom.map(fitness).zipWithIndex.sortBy { case (v, _) => v }
+  def monoObjectiveRanking[I](population: Vector[I], fitness: I => Double) =
+    val byFitness = population.map(fitness).zipWithIndex.sortBy { case (v, _) => v }
     def ranks(fitnesses: List[Double], lastValue: Double = Double.NegativeInfinity, rank: Int = 0, rs: List[Int] = List()): List[Int] =
       fitnesses match
         case h :: t =>
@@ -43,18 +44,25 @@ object ranking:
     (ranksValue zip byFitness.unzip._2).sortBy { case (_, r) => r }.unzip._1.toVector
 
   def numberOfDominating[I](fitness: I => Vector[Double], values: Vector[I], dominance: Dominance = nonStrictDominance): Vector[Later[Int]] =
-    val fitnesses = values.map(i => fitness(i))
+    val fitnesses = values.map(i => fitness(i)).toArray
     def ranks =
-      fitnesses.zipWithIndex.map: (v1, index1) =>
+      fitnesses.zipWithIndex.map: (v1, vi) =>
         def containsNaN = v1.exists(_.isNaN)
-        def otherIndividuals = fitnesses.zipWithIndex.filter((_, index2) => index1 != index2)
-        def numberOfDominatingIndividual = otherIndividuals.count((v2, _) => dominance.isDominated(v1, v2))
+
+        def numberOfDominatingIndividual =
+          val size = fitnesses.length
+          var dominating = 0
+          Loop.loop(0, _ < size, _ + 1): i =>
+            if i != vi && dominance.isDominated(v1, fitnesses(i))
+            then dominating += 1
+          dominating
+
         Later:
           if containsNaN
           then Int.MaxValue
           else numberOfDominatingIndividual
 
-    ranks
+    ranks.toVector
 
   //TODO: Lazy ne sert à rien ici. On pourrait redefinir le type Ranking en Ranking[M,I,K] avec K est de typeclass Order,
   def hitCountRanking[S, I](s: S, population: Vector[I], cell: I => Vector[Int], hitmap: monocle.Lens[S, HitMap]): Vector[Int] = 
@@ -64,13 +72,7 @@ object ranking:
   /**** Generic functions on rankings ****/
 
   def paretoRanking[I](population: Vector[I], fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Vector[Eval[Int]] =
-    if population.isEmpty
-    then Vector()
-    else
-      val dim = fitness(population.head).size
-      if dim == 1
-      then monoObjectiveRanking(population, x => fitness(x).head).map(Eval.now)
-      else numberOfDominating(fitness, population, dominance).map(_.map(x => -x))
+    numberOfDominating(fitness, population, dominance).map(_.map(x => -x))
 
   def paretoRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => Vector[Double]): Vector[(Eval[Int], Double)] =
     import mgo.tools.metric.CrowdingDistance
@@ -89,6 +91,42 @@ object ranking:
         loop(rest, front :: acc)
 
     loop(population, List())
+
+  def genomicDiversity[I](population: Vector[I], values: I => (IArray[Double], IArray[Int])) =
+    if population.isEmpty
+    then Vector()
+    else
+      val (cSize, dSize) = 
+        val (c, d) = values(population.head)
+        (c.length, d.length)
+
+      val continuousDiversity =
+        if cSize != 0
+        then CrowdingDistance.normalizedCrowdingDistance(population.map(i => values(i)._1.toVector))
+        else population.map(_ => 0.0)
+
+      val discreteDiversity =
+        if dSize != 0
+        then GoodallDistance.averageDiversity(population.map(i => values(i)._2))
+        else population.map(_ => 0.0)
+
+      (continuousDiversity zip discreteDiversity).map: (c, d) =>
+        (c * cSize + d * dSize) / (cSize + dSize)
+
+
+  def paretoRankingMinAndCrowdingDiversityWithGenomeDiversity[I](population: Vector[I], fitness: I => Vector[Double], values: I => (IArray[Double], IArray[Int])) =
+    val gDiversity =
+      import scala.jdk.CollectionConverters.*
+      val map = new util.IdentityHashMap[I, Double]().asScala
+      map.addAll:
+        (population zip genomicDiversity(population, values))
+      map
+
+    def amplifiedFitness(i: I) = fitness(i) ++ Seq(-gDiversity(i))
+
+    paretoRankingMinAndCrowdingDiversity(population, amplifiedFitness)
+
+
 
 //  def byFrontsRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Vector[(Int, Double)] =
 //    import mgo.tools.metric.CrowdingDistance

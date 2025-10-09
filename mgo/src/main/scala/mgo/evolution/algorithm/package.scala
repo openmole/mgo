@@ -69,7 +69,7 @@ case class EvolutionState[S](
 
 
 def operatorProportions[I](operation: I => Option[Int], is: Vector[I]): Map[Int, Double] =
-  is.map { operation }.
+  is.map(operation).
     collect { case Some(op) => op }.
     groupBy(identity).
     view.mapValues(_.length.toDouble / is.size).
@@ -116,7 +116,8 @@ object GenomeVectorDouble:
       then acc.toVector
       else
         val g = randomG(rng)
-        if (rejectValue(g)) generate(acc, n)
+        if rejectValue(g)
+        then generate(acc, n)
         else generate(g :: acc, n + 1)
 
     generate(List(), 0)
@@ -125,13 +126,33 @@ object GenomeVectorDouble:
     values.filter { i => !cbn.containsNaN(value(i)) }
 
   def continuousCrossovers[S]: IArray[GACrossover[S, Double]] =
-    IArray(
-      sbxC(1.5),
-      sbxC(2.0),
-      sbxC(5.0),
-      sbxC(20.0),
-      sbxC(30.0)
-    )
+    IArray(identityCrossover) ++ IArray(1.5, 2.0, 5.0, 20.0, 30.0).map(sbxC) ++ Seq(blxC(0.1), blxC(0.2), blxC(0.4))
+
+  def continuousMutations[S]: IArray[GAMutation[S]] =
+    val polynomial =
+      for
+        index <- Seq(5.0, 20.0, 50.0, 100.0)
+        s <- Seq(1.0)
+      yield
+        polynomialMutation(mutationRate = s / _, index)
+
+    val gaussians =
+      for
+        exp <- 1 to 20
+        s <- Seq(1.0)
+      yield
+        gaussianMutation(mutationRate = s / _, sigma = Math.pow(10, -exp))
+
+    val locals = polynomial ++ gaussians
+
+    val globals =
+      for
+        rate <- Seq(0.1, 0.5, 0.8)
+        sigma <- Seq(0.1, 0.5)
+      yield gaussianMutation(mutationRate = _ => rate, sigma = sigma)
+
+
+    IArray.from(locals) ++ globals
 
   def discreteCrossovers[S]: IArray[GACrossover[S, Int]] =
     IArray(
@@ -141,20 +162,6 @@ object GenomeVectorDouble:
       binaryCrossover[S, Int](_ => 0.1),
       binaryCrossover[S, Int](_ => 0.5)
     )
-
-  def continuousMutations[S]: IArray[GAMutation[S]] =
-    val locals =
-      for
-        exp <- 1 to 7
-      yield
-        gaussianMutation(mutationRate = 1.0 / _, sigma = Math.pow(10, -exp))
-
-    IArray.unsafeFromArray(locals.toArray) ++
-      Vector(
-        gaussianMutation(mutationRate = _ => 0.1, sigma = 0.1),
-        gaussianMutation(mutationRate = _ => 0.5, sigma = 0.5),
-        gaussianMutation(mutationRate = _ => 0.8, sigma = 0.5)
-      )
 
   def discreteMutations[S](discrete: Vector[D]): IArray[Mutation[S, IArray[Int], IArray[Int]]] =
     IArray(
@@ -335,8 +342,9 @@ object CDGenome:
   object Genome:
     extension (g: Genome)
       def discreteValues(d: Vector[D]) = CDGenome.discreteValues(d).get(g)
-      def continuousValues(c: Vector[C]) = CDGenome.continuousValues(c).get(g)
       def scaledContinuousValues(c: Vector[C]) = scaleContinuousValues(CDGenome.continuousValues(c).get(g), c)
+      def values(c: Vector[C], d: Vector[D]) = (g.continuousValues, g.discreteValues(d))
+      def scaledValues(c: Vector[C], d: Vector[D]) = (g.scaledContinuousValues(c), g.discreteValues(d))
 
   case class Genome(
      continuousValues: IArray[Double],
@@ -351,9 +359,10 @@ object CDGenome:
     discreteOperator: Option[Int]): Genome =
     Genome(
       continuous,
-      continuousOperator.getOrElse(-1).toByte,
+      byteToUnsignedIntOption(continuousOperator),
       Compacted.CompactedArrayInt.compact(discrete, d),
-      discreteOperator.getOrElse(-1).toByte)
+      byteToUnsignedIntOption(discreteOperator)
+    )
 
 
   def continuousValues(c: Vector[C]) = Focus[Genome](_.continuousValues)
@@ -363,7 +372,6 @@ object CDGenome:
   def discreteValues(d: Vector[D]) = Focus[Genome](_.compactedDiscreteValues) andThen Compacted.CompactedArrayInt.iso(d)
   def discreteVectorValues(d: Vector[D]): PLens[Genome, Genome, Vector[Int], Vector[Int]] = discreteValues(d) andThen arrayToVectorIso[Int]
   def discreteOperator: PLens[Genome, Genome, Option[Int], Option[Int]] = Focus[Genome](_.discreteOperator) andThen byteToUnsignedIntOption
-
 
   def scaledValues(continuous: Vector[C], d: Vector[D]) = (g: Genome) =>
     (scaleContinuousValues(continuousValues(continuous).get(g), continuous), discreteValues(d).get(g))
