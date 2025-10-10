@@ -36,12 +36,14 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 )
 
+lazy val root = (project in file(".")).aggregate(mgo).settings (
+  publishArtifact := false
+)
 
 /* Publish */
-
 ThisBuild / publishMavenStyle := true
 ThisBuild / Test / publishArtifact := false
-publishArtifact := false
+//publishArtifact := false
 
 ThisBuild / licenses := Seq("GPLv3" -> url("http://www.gnu.org/licenses/"))
 ThisBuild / homepage := Some(url("https://github.com/openmole/mgo"))
