@@ -28,60 +28,56 @@ trait KDTree {
   def right: KDTree
 
   def distance(p1: Seq[Double], p2: Seq[Double]): Double =
-    math.sqrt((p1 zip p2).map {
-      case (x, y) => math.pow(x - y, 2)
-    }.sum)
+    math.sqrt:
+      (p1 zip p2).map: (x, y) =>
+        math.pow(x - y, 2)
+      .sum
 
-  def nearest(query: Seq[Double], depth: Int = 0): Seq[Double] = {
+  def nearest(query: Seq[Double], depth: Int = 0): Seq[Double] =
     val axis = depth % node.size
     val (naturalDirection, unnaturalDirection) = if (query(axis) < node(axis)) (left, right) else (right, left)
 
     val curBest =
-      naturalDirection match {
+      naturalDirection match
         case EmptyTree => node
-        case child => {
+        case child =>
           val childBest = child.nearest(query, depth + 1)
           if (distance(query, node) < distance(query, childBest)) node else childBest
-        }
-      }
+
     val distCurBest = distance(query, curBest)
     val best =
-      if (distCurBest <= (query(axis) - node(axis)).abs) curBest
-      else unnaturalDirection match {
+      if (distCurBest <= (query(axis) - node(axis)).abs)
+      then curBest
+      else unnaturalDirection match
         case EmptyTree => curBest
-        case child => {
+        case child =>
           val childBest = child.nearest(query, depth + 1)
-          if (distance(query, curBest) <= distance(query, childBest)) curBest else childBest
-        }
-      }
-    best
-  }
+          if distance(query, curBest) <= distance(query, childBest) then curBest else childBest
 
-  def knearest(k: Int, query: Seq[Double], depth: Int = 0): Seq[Seq[Double]] = {
+    best
+
+  def knearest(k: Int, query: Seq[Double], depth: Int = 0): Seq[Seq[Double]] =
     val axis = depth % node.size
-    val (naturalDirection, unnaturalDirection) = if (query(axis) < node(axis)) (left, right) else (right, left)
+    val (naturalDirection, unnaturalDirection) = if query(axis) < node(axis) then (left, right) else (right, left)
 
     val curBest =
-      naturalDirection match {
+      naturalDirection match
         case EmptyTree => Vector(node)
-        case child => {
+        case child =>
           val childBest = child.knearest(k, query, depth + 1)
           insertInKNearest(childBest, node, query, k)
-        }
-      }
+
     val couldBeNearer: Boolean = curBest exists (distance(_, query) > (query(axis) - node(axis)).abs)
     val best =
-      if (!couldBeNearer && curBest.size >= k) curBest
-      else unnaturalDirection match {
+      if !couldBeNearer && curBest.size >= k
+      then curBest
+      else unnaturalDirection match
         case EmptyTree => curBest
-        case child => {
+        case child =>
           val childBest = child.knearest(k, query, depth + 1)
-
           childBest.foldLeft(curBest)((kn, n) => insertInKNearest(kn, n, query, k))
-        }
-      }
+
     best
-  }
 
   def insertInKNearest(l: Seq[Seq[Double]], e: Seq[Double], query: Seq[Double], k: Int): Seq[Seq[Double]] =
     (e +: l).sortWith(distance(_, query) < distance(_, query)).take(k)

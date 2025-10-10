@@ -23,7 +23,7 @@ import mgo.evolution.algorithm.HitMap
 import mgo.evolution.dominance.*
 import mgo.evolution.niche.*
 import mgo.tools.*
-import mgo.tools.metric.{CrowdingDistance, EskinDistance, GoodallDistance, WFGHypervolume}
+import mgo.tools.metric.{CrowdingDistance, EskinDistance, GoodallDistance, WFGHypervolume, KNearestNeighboursAverageDistance}
 
 import java.util
 import scala.language.higherKinds
@@ -119,7 +119,7 @@ object ranking:
       import scala.jdk.CollectionConverters.*
       val map = new util.IdentityHashMap[I, Double]().asScala
       map.addAll:
-        (population zip genomicDiversity(population, values))
+        population zip genomicDiversity(population, values)
       map
 
     def amplifiedFitness(i: I) = fitness(i) ++ Seq(-gDiversity(i))

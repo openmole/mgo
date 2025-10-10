@@ -27,10 +27,50 @@ import mgo.tools.KDTree
 
 object KNearestNeighboursAverageDistance:
 
-  def apply(values: Vector[Seq[Double]], k: Int): Vector[Later[Double]] =
-    val tree = KDTree(values)
+//  def apply(values: Vector[Seq[Double]], k: Int): Vector[Later[Double]] =
+//    val tree = KDTree(values)
+//
+//    values.map: v =>
+//      Later:
+//        val neighbours = tree.knearest(k, v)
+//        neighbours.map(tree.distance(_, v)).sum / neighbours.size
 
-    values.map: v =>
-      Later:
-        val neighbours = tree.knearest(k, v)
-        neighbours.map(tree.distance(_, v)).sum / neighbours.size
+
+  def normalizedDistance(values: Vector[Seq[Double]], k: Int): Seq[Double] =
+    val distances = knnDistances(values, k)
+    val max = distances.max
+    distances.map(_ / max)
+
+  def knnDistances(points: Seq[Seq[Double]], k: Int): Seq[Double] =
+    require(points.nonEmpty, "Points cannot be empty")
+    require(k > 0 && k < points.size, "k must be between 1 and number of points - 1")
+
+    inline def euclidean(a: Seq[Double], b: Seq[Double]): Double =
+      math.sqrt:
+        (a lazyZip b).map: (x, y) =>
+          val d = x - y
+          d * d
+        .sum
+
+    val n = points.size
+    // Mutable 2D array for storing distances
+    val distMatrix = Array.ofDim[Double](n, n)
+
+    // Compute only upper triangle (i < j)
+    for
+      i <- 0 until n
+      j <- (i + 1) until n
+    do
+      val d = euclidean(points(i), points(j))
+      distMatrix(i)(j) = d
+      distMatrix(j)(i) = d
+
+    // For each point, get k smallest non-zero distances
+    (0 until n).map: i =>
+      distMatrix(i)
+        .zipWithIndex
+        .filter(_._2 != i)
+        .map(_._1)
+        .sorted
+        .take(k)
+        .sum
