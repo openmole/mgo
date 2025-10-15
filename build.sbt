@@ -7,9 +7,7 @@ val monocleVersion = "3.2.0"
 
 lazy val settings: Seq[Setting[_]] = Seq(
   //addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
-  resolvers += Resolver.sonatypeRepo("public"),
-  resolvers += Resolver.sonatypeRepo("staging"),
-  resolvers += Resolver.sonatypeRepo("snapshots"),
+  resolvers += "jitpack" at "https://jitpack.io",
   javacOptions ++= Seq("-source", "11", "-target", "11"),
   scalacOptions ++= Seq("-Xtarget:11", "-language:higherKinds"),
   scalacOptions ++= Seq("-language:postfixOps", "-source:3.7")
@@ -31,7 +29,7 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   libraryDependencies += "dev.optics" %% "monocle-macro" % monocleVersion,
   libraryDependencies += "org.typelevel"  %% "squants"  % "1.8.3", //cross(CrossVersion.for2_13Use3),
   libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.2",
-  libraryDependencies += "com.edwardraff" % "JSAT" % "0.0.9",
+  libraryDependencies += "com.github.openmole" % "JSAT" % "52daf354b728051f22bdb429ca77f561f9791872",
   excludeDependencies += ExclusionRule(organization = "org.typelevel", name = "cats-kernel_2.13"),
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 )

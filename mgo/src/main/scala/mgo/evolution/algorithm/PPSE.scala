@@ -270,17 +270,12 @@ object PPSEOperation:
               if rareIndividuals.length < minClusterSize
               then GMM.empty
               else
-                val (clusterMeans, clusterCovariances, clusterWeights) = HDBScan.clusterize(rareIndividuals, minClusterSize)
-
-                EMGMM.fit(
-                  components = clusterMeans.length,
+                fitGMM(
+                  rareIndividuals,
+                  regularisationEpsilon = regularisationEpsilon,
                   iterations = iterations,
                   tolerance = tolerance,
-                  x = rareIndividuals,
-                  means = clusterMeans,
-                  covariances = clusterCovariances,
-                  weights = clusterWeights,
-                  regularisationEpsilon = regularisationEpsilon)._1
+                  minClusterSize = minClusterSize)
 
             def gmmWithOutliers = EMGMM.integrateOutliers(rareIndividuals, fittedGMM, regularisationEpsilon)
 
@@ -384,3 +379,34 @@ object PPSEOperation:
     (state2, newPopulation)
 
 
+  def fitGMM(
+    points: Array[Array[Double]],
+    regularisationEpsilon: Double,
+    iterations: Int,
+    tolerance: Double,
+    minClusterSize: Int) =
+    def clusterize(x: Array[Array[Double]], minPoints: Int): (Array[Array[Double]], Array[Array[Array[Double]]]) =
+      def covariance(x: Array[Array[Double]]) =
+        import org.apache.commons.math3.stat.correlation.Covariance
+        new Covariance(x).getCovarianceMatrix.getData
+
+      def computeCentroid(points: Array[Array[Double]]) =
+        points.transpose.map(x => x.sum / x.length)
+
+      val clusters = HDBScan.clusterize(x, minPoints)
+      val centroids = clusters.map(computeCentroid)
+      val covariances = clusters.map(covariance)
+      (centroids, covariances)
+
+    val (clusterMeans, clusterCovariances) = clusterize(points, minClusterSize)
+    val clusterWeights = Array.fill(clusterMeans.length)(1.0 / clusterMeans.length)
+
+    EMGMM.fit(
+      components = clusterMeans.length,
+      iterations = iterations,
+      tolerance = tolerance,
+      x = points,
+      means = clusterMeans,
+      covariances = clusterCovariances,
+      weights = clusterWeights,
+      regularisationEpsilon = regularisationEpsilon)._1

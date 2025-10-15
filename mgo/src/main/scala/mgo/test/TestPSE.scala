@@ -20,7 +20,7 @@ package mgo.test
 import mgo.evolution._
 import niche._
 
-object ZDT4PSE extends App {
+object ZDT4PSE extends App:
 
   import algorithm._
   import algorithm.PSE._
@@ -43,7 +43,6 @@ object ZDT4PSE extends App {
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
   println(result(pse, finalPopulation).mkString("\n"))
-}
 
 object ZDT4NoisyPSE extends App {
 
