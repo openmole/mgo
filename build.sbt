@@ -11,16 +11,6 @@ lazy val settings: Seq[Setting[_]] = Seq(
   javacOptions ++= Seq("-source", "11", "-target", "11"),
   scalacOptions ++= Seq("-Xtarget:11", "-language:higherKinds"),
   scalacOptions ++= Seq("-language:postfixOps", "-source:3.7")
-//  scalacOptions ++= (
-//    if (priorTo2_13(scalaVersion.value)) Nil else Seq("-Ymacro-annotations", "-language:postfixOps")
-//  ),
-//  libraryDependencies ++=
-//    (if (priorTo2_13(scalaVersion.value))
-//      Seq(
-//        compilerPlugin(("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.patch))
-//      )
-//    else Nil)
-  //libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.6"
 )
 
 lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
