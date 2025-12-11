@@ -94,7 +94,8 @@ object NoisyHDOSE:
     weightD: Vector[Double],
     archiveSize: Int,
     limit: Vector[Double],
-    precision: Double): Elitism[HDOSEState[P], Individual[P]] =
+    precision: Double,
+    shuffle: Boolean): Elitism[HDOSEState[P], Individual[P]] =
     def individualValues(i: Individual[P]) = scaledVectorValues(continuous, discrete)(i.genome)
 
     NoisyHDOSEOperations.elitism[HDOSEState[P], Individual[P], P, Genome](
@@ -111,7 +112,8 @@ object NoisyHDOSE:
       HDOSE.tooCloseByComponent(weightC, weightD, discrete),
       precision,
       distanceLens,
-      archiveSize
+      archiveSize,
+      shuffle = shuffle
     )
 
 
@@ -172,7 +174,8 @@ object NoisyHDOSE:
           wD,
           t.archiveSize,
           t.limit,
-          t.distance),
+          t.distance,
+          shuffle = t.shuffle),
         Focus[HDOSEState[P]](_.generation),
         Focus[HDOSEState[P]](_.evaluated)
       )
@@ -194,7 +197,8 @@ case class NoisyHDOSE[P](
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
   reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None,
-  distance: Double = 1.0)
+  distance: Double = 1.0,
+  shuffle: Boolean = true)
 
 object NoisyHDOSEOperations:
 
@@ -275,7 +279,8 @@ object NoisyHDOSEOperations:
     distance: HDOSEOperation.TooClose,
     precision: Double,
     diversityDistance: monocle.Lens[S, Double],
-    archiveSize: Int): Elitism[S, I] =
+    archiveSize: Int,
+    shuffle: Boolean): Elitism[S, I] =
     (s1, population, candidates, rng) =>
 
       val memoizedFitness = NoisyOSEOperations.aggregated(history, aggregation).memoized
@@ -294,25 +299,30 @@ object NoisyHDOSEOperations:
         if archive.get(s2).size <= archiveSize
         then s2
         else
+          val a2 =
+            if shuffle
+            then IArray.unsafeFromArray(rng.shuffle(archive.get(s2)).toArray)
+            else archive.get(s2)
+
           val newDiversityDistance =
             HDOSEOperation.computeDistance(
               distance,
-              archive.get(s2),
+              a2,
               genomeValue,
               archiveSize,
               diversityDistance.get(s2),
               precision
             )
 
-          val newArchive =
+          val a3 =
             HDOSEOperation.shrinkArchive(
               distance,
-              archive.get(s2),
+              a2,
               genomeValue,
               newDiversityDistance
             )
 
-          (archive.replace(newArchive) andThen diversityDistance.replace(newDiversityDistance))(s2)
+          (archive.replace(a3) andThen diversityDistance.replace(newDiversityDistance))(s2)
 
 
       val filteredPopulation =

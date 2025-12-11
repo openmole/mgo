@@ -87,7 +87,8 @@ object HDOSE:
     continuous: Vector[C],
     discrete: Vector[D],
     fitness: P => Vector[Double],
-    precision: Double): Elitism[HDOSEState[P], Individual[P]] =
+    precision: Double,
+    shuffle: Boolean): Elitism[HDOSEState[P], Individual[P]] =
     HDOSEOperation.elitism[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       limit,
@@ -100,7 +101,8 @@ object HDOSE:
       archiveSize,
       continuousValues(continuous).get,
       discreteValues(discrete).get,
-      Focus[Individual[P]](_.genome).get
+      Focus[Individual[P]](_.genome).get,
+      shuffle = shuffle
     )
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P], archive: Boolean)
@@ -168,7 +170,7 @@ object HDOSE:
       deterministic.step[HDOSEState[Vector[Double]], Individual[Vector[Double]], Genome](
         HDOSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, sC, sD, identity, reject(t)),
         HDOSE.expression(t.fitness, t.continuous, t.discrete),
-        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, t.discrete, identity, t.distance),
+        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, t.discrete, identity, t.distance, shuffle = t.shuffle),
         Focus[HDOSEState[Vector[Double]]](_.generation),
         Focus[HDOSEState[Vector[Double]]](_.evaluated))
 
@@ -185,7 +187,8 @@ case class HDOSE(
   weightD: Option[Vector[Double]] = None,
   operatorExploration: Double = 0.1,
   reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None,
-  distance: Double = 1.0)
+  distance: Double = 1.0,
+  shuffle: Boolean = true)
 
 object HDOSEOperation:
 
@@ -339,7 +342,8 @@ object HDOSEOperation:
     archiveSize: Int,
     continuousValues: G => IArray[Double],
     discreteValues: G => IArray[Int],
-    genome: I => G): Elitism[S, I] =
+    genome: I => G,
+    shuffle: Boolean): Elitism[S, I] =
     (s1, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
       val cloneRemoved = filterNaN(keepFirst(genome andThen scaledValues)(population, candidates), memoizedFitness)
@@ -355,25 +359,30 @@ object HDOSEOperation:
         if archive.get(s2).size <= archiveSize
         then s2
         else
+          val a2 =
+            if shuffle
+            then IArray.unsafeFromArray(rng.shuffle(archive.get(s2)).toArray)
+            else archive.get(s2)
+
           val newDiversityDistance =
             computeDistance(
               distance,
-              archive.get(s2),
+              a2,
               genomeValue,
               archiveSize,
               diversityDistance.get(s2),
               precision
             )
 
-          val newArchive =
+          val a3 =
             shrinkArchive(
               distance,
-              archive.get(s2),
+              a2,
               genomeValue,
               newDiversityDistance
             )
 
-          (archive.replace(newArchive) andThen diversityDistance.replace(newDiversityDistance))(s2)
+          (archive.replace(a3) andThen diversityDistance.replace(newDiversityDistance))(s2)
 
       val filteredPopulation =
         cloneRemoved.filterNot: i =>
