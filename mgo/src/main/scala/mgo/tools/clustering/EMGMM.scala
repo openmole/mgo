@@ -151,21 +151,6 @@ object EMGMM:
       array.zipWithIndex.map: (value, j) =>
         if i == j then value + v else value
 
-  def punctualGMM(x: Array[Array[Double]], regularisationEpsilon: Double): GMM =
-    if x.isEmpty
-    then GMM.empty
-    else
-      val size = x.head.length
-      val cov =
-        Array.tabulate(size, size): (i, j) =>
-          if i == j then regularisationEpsilon else 0.0
-
-      val components =
-        x.map: x =>
-          GMM.Component(x, cov, 1)
-
-      GMM(components)
-
 
   /**
    * M-step, update parameters.
@@ -198,8 +183,8 @@ object EMGMM:
     (weights, means, covariances)
 
   def integrateOutliers(x: Array[Array[Double]], gmm: GMM, regularisationEpsilon: Double) =
-    if GMM.isEmpty(gmm)
-    then punctualGMM(x, regularisationEpsilon)
+    if gmm.isEmpty
+    then GMM.punctual(x, regularisationEpsilon)
     else
       val (_, resp) = EMGMM.eStep(x, gmm.means, gmm.covariances, gmm.weights, regularisationEpsilon)
 
@@ -219,7 +204,7 @@ object EMGMM:
 
       val (w, m, c) = EMGMM.mStep(x, newResp, gmm.size + excluded, regularisationEpsilon)
       GMM(m, c, w)
-  
+
   /**
    * 2d matrix dot product.
    * @param A matrix A
@@ -250,20 +235,43 @@ object GMM:
 
     gmm.copy(dilatedComponents)
 
-  def toDistribution(gmm: GMM, random: Random): MixtureMultivariateNormalDistribution =
+  def toDistribution(gmm: GMM, regularisationEpsilon: Double, random: Random): MixtureMultivariateNormalDistribution =
     import org.apache.commons.math3.distribution._
     import org.apache.commons.math3.util._
 
     import scala.jdk.CollectionConverters._
 
-    def dist = (gmm.means zip gmm.covariances).map { case (m, c) => new MultivariateNormalDistribution(mgo.tools.apacheRandom(random), m, c) }
-    def pairs = (dist zip gmm.weights).map { case (d, w) => new Pair(java.lang.Double.valueOf(w), d) }.toList
+    def dist = (gmm.means zip gmm.covariances).map: (m, c) =>
+      util.Try(new MultivariateNormalDistribution(mgo.tools.apacheRandom(random), m, c)) match
+        case util.Success(v) => v
+        case util.Failure(e) =>
+          new MultivariateNormalDistribution(mgo.tools.apacheRandom(random), m, punctualCovariance(regularisationEpsilon, c.length))
+
+    def pairs = (dist zip gmm.weights).map((d, w) => new Pair(java.lang.Double.valueOf(w), d)).toList
 
     new MixtureMultivariateNormalDistribution(mgo.tools.apacheRandom(random), pairs.asJava)
 
   case class Component(mean: Array[Double], covariance: Array[Array[Double]], weight: Double)
 
   def empty: GMM = GMM(Seq.empty)
+
+  def punctualCovariance(regularisationEpsilon: Double, size: Int): Array[Array[Double]] =
+    Array.tabulate(size, size): (i, j) =>
+      if i == j then regularisationEpsilon else 0.0
+
+  def punctual(x: Array[Array[Double]], regularisationEpsilon: Double): GMM =
+    if x.isEmpty
+    then GMM.empty
+    else
+      val size = x.head.length
+      val cov = punctualCovariance(regularisationEpsilon, size)
+
+      val components =
+        x.map: x =>
+          GMM.Component(x, cov, 1)
+
+      GMM(components)
+
 
   extension (gmm: GMM)
     def means: Array[Array[Double]] = gmm.components.map(_.mean).toArray

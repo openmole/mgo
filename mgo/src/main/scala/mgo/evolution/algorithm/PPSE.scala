@@ -101,14 +101,16 @@ object PPSE:
     continuous: Vector[C],
     lambda: Int,
     reject: Option[IArray[Double] => Boolean],
-    warmupSampler: Int): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
+    warmupSampler: Int,
+    regularisationEpsilon: Double): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
     PPSEOperation.breeding(
       continuous,
       identity,
       lambda,
       reject,
       _.s.gmm,
-      warmupSampler)
+      warmupSampler,
+      regularisationEpsilon)
 
   def elitism[P: CanContainNaN](
     pattern: P => Vector[Int],
@@ -152,7 +154,7 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       deterministic.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, t.reject, t.warmupSampler),
+        PPSE.breeding(t.continuous, t.lambda, t.reject, t.warmupSampler, t.regularisationEpsilon),
         PPSE.expression(t.phenotype, t.continuous),
         PPSE.elitism(t.pattern, t.continuous, t.reject, t.density, t.iterations, t.tolerance, t.dilation, t.minClusterSize, t.warmupSampler, t.maxRareSample),
         Focus[EvolutionState[PPSEState]](_.generation),
@@ -191,9 +193,9 @@ object PPSEOperation:
 
     new RejectionSampler(sample, acceptFunction)
 
-  def gmmToSampler(gmm: GMM, reject: Option[IArray[Double] => Boolean], continuous: Vector[C], rng: Random) =
+  def gmmToSampler(gmm: GMM, regularisationEpsilon: Double, reject: Option[IArray[Double] => Boolean], continuous: Vector[C], rng: Random) =
     import mgo.tools.clustering.GMM
-    val distribution = GMM.toDistribution(gmm, rng)
+    val distribution = GMM.toDistribution(gmm, regularisationEpsilon, rng)
 
     def sample() =
       val x = distribution.sample()
@@ -207,24 +209,27 @@ object PPSEOperation:
     lambda: Int,
     reject: Option[IArray[Double] => Boolean],
     gmm: S => Option[GMM],
-    warmupSampler: Int): Breeding[S, I, G] =
+    warmupSampler: Int,
+    regularisationEpsilon: Double): Breeding[S, I, G] =
     (s, population, rng) =>
+      def sampleUniform: Vector[G] =
+        def sample() = (randomUnscaledContinuousValues(continuous.size, rng), Lazy(1.0))
+        val sampler = toSampler(sample, reject, continuous, rng)
+        val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
+        (0 to lambda).map: _ =>
+          val (g, d) = sample()
+          buildGenome(g, d.value)
+        .toVector
+
       gmm(s) match
-        case None =>
-          def sample() = (randomUnscaledContinuousValues(continuous.size, rng), Lazy(1.0))
-          val sampler = toSampler(sample, reject, continuous, rng)
-          val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
-          (0 to lambda).map: _ =>
-            val (g, d) = sample()
-            buildGenome(g, d.value)
-          .toVector
+        case None => sampleUniform
+        case Some(gmmValue) if gmmValue.isEmpty => sampleUniform
         case Some(gmmValue) =>
-          val sampler = gmmToSampler(gmmValue, reject, continuous, rng)
+          val sampler = gmmToSampler(gmmValue, regularisationEpsilon, reject, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
           val (_, sampled) = RejectionSampler.sampleArray(sampler, lambda, samplerState)
           val breed = sampled.toVector.map(s => buildGenome(s._1, s._2))
           breed
-
 
   def elitism[S, I, P: CanContainNaN](
     values: I => (IArray[Double], Double),
@@ -278,10 +283,7 @@ object PPSEOperation:
                   minClusterSize = minClusterSize)
 
             def gmmWithOutliers = EMGMM.integrateOutliers(rareIndividuals, fittedGMM, regularisationEpsilon)
-
             GMM.dilate(gmmWithOutliers, dilation)
-
-
 
       res
 
