@@ -29,6 +29,8 @@ object PatternMap:
         case _ => false
 
     override def hashCode(): Int = java.util.Arrays.hashCode(array)
+    
+    override def toString: String = array.mkString("ArrayWrapper(", ", ", ")")
 
   def empty[V]: PatternMap[V] = Map.empty
 
