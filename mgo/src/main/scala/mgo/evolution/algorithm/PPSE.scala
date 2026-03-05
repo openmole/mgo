@@ -40,13 +40,13 @@ import scala.util.Random
 
 object PPSE:
 
-  type SamplingWeightMap = Map[Vector[Int], Double]
-  type HitMap = Map[Vector[Int], Int]
+  type SamplingWeightMap = PatternMap[Double]
+  type HitMap = PatternMap[Int]
 
   case class PPSEState(
-    hitmap: HitMap = Map(),
+    hitmap: HitMap = PatternMap.empty,
     gmm: Option[GMM] = None,
-    likelihoodRatioMap: SamplingWeightMap = Map())
+    likelihoodRatioMap: SamplingWeightMap = PatternMap.empty)
 
   case class Result[P](continuous: Vector[Double], pattern: Vector[Int], density: Double, phenotype: P, individual: Individual[P])
 
@@ -58,7 +58,7 @@ object PPSE:
 
     def computePDF(likelihoodRatioMap: SamplingWeightMap) =
       val totalDensity = likelihoodRatioMap.values.sum
-      likelihoodRatioMap.map((p, density) => (p, density / totalDensity))
+      likelihoodRatioMap.toMap.map((p, density) => (p, density / totalDensity))
 
     val densityMap = computePDF(state.s.likelihoodRatioMap)
 

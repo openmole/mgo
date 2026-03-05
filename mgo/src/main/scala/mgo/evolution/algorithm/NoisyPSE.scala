@@ -35,6 +35,7 @@ object NoisyPSE {
 
   type PSEState = EvolutionState[HitMap]
 
+  def PSEState() = EvolutionState[HitMap](s = PatternMap.empty)
 
   type Individual[P] = CDGenome.NoisyIndividual.Individual[P]
 
@@ -118,8 +119,7 @@ object NoisyPSE {
   def reject[P](pse: NoisyPSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
   given isAlgorithm[P: {Manifest, CanContainNaN}]: Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] with {
-
-    def initialState(t: NoisyPSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
+    def initialState(t: NoisyPSE[P], rng: util.Random) = PSEState()
 
     def initialPopulation(t: NoisyPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](

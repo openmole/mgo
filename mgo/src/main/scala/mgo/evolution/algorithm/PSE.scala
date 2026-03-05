@@ -38,6 +38,8 @@ object PSE:
 
   type PSEState = EvolutionState[HitMap]
 
+  def PSEState() = EvolutionState[HitMap](s = PatternMap.empty)
+
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], pattern: Vector[Int], phenotype: P, individual: Individual[P])
 
   def result[P](population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], pattern: P => Vector[Int]): Vector[Result[P]] =
@@ -99,7 +101,7 @@ object PSE:
   def reject[P](pse: PSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
   given isAlgorithm[P: CanContainNaN]: Algorithm[PSE[P], Individual[P], Genome, EvolutionState[HitMap]] with
-    def initialState(t: PSE[P], rng: util.Random) = EvolutionState[HitMap](s = Map.empty)
+    def initialState(t: PSE[P], rng: util.Random) = PSEState()
 
     override def initialPopulation(t: PSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation[Genome, Individual[P]](

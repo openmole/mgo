@@ -525,7 +525,7 @@ object noisy:
       build(g, phenotype(rg, cs, ds), generation, initial)
 
 
-type HitMap = Map[Vector[Int], Int]
+type HitMap = PatternMap[Int]
 
 
 
