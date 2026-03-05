@@ -50,7 +50,7 @@ trait Algorithm[T, I, G, S]:
 
 
 type HitMapState = PatternMap[Int]
-type Archive[I] = IArray[I]
+type Archive[I] = IArray[I] 
 object Archive:
   def empty[I: ClassTag]: Archive[I] = IArray.empty[I]
 
