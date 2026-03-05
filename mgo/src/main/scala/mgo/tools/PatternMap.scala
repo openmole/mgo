@@ -43,7 +43,7 @@ object PatternMap:
 
 
   def add[V](m1: PatternMap[V], m2: PatternMap[V], sum: (V, V) => V, zero: V): PatternMap[V] =
-    def allKeys = (m1.keys ++ m2.keys).distinct
+    def allKeys = (m1.keys.toSeq ++ m2.keys).distinct
     def newMap = allKeys.map: k =>
       k -> sum(m1.getOrElse(k, zero), m2.getOrElse(k, zero))
 
