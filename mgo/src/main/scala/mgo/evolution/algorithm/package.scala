@@ -49,7 +49,7 @@ trait Algorithm[T, I, G, S]:
   def step(t: T): (S, Vector[I], Random, Algorithm.ParallelContext) => (S, Vector[I])
 
 
-type HitMapState = Map[Vector[Int], Int]
+type HitMapState = PatternMap[Int]
 type Archive[I] = IArray[I]
 object Archive:
   def empty[I: ClassTag]: Archive[I] = IArray.empty[I]
