@@ -34,7 +34,15 @@ object PatternMap:
 
   def empty[V]: PatternMap[V] = Map.empty
 
-  def sum[K, V](m1: PatternMap[V], m2: PatternMap[V], sum: (V, V) => V, zero: V): PatternMap[V] =
+  def sumLeft[V](m1: PatternMap[V], m2: PatternMap[V], sum: (V, V) => V, zero: V): PatternMap[V] =
+    def allKeys = m1.keys
+    def newMap = allKeys.map: k =>
+      k -> sum(m1(k), m2.getOrElse(k, zero))
+
+    newMap.toMap
+
+
+  def sum[V](m1: PatternMap[V], m2: PatternMap[V], sum: (V, V) => V, zero: V): PatternMap[V] =
     def allKeys = m1.keys ++ m2.keys
     def newMap = allKeys.map: k =>
       k -> sum(m1.getOrElse(k, zero), m2.getOrElse(k, zero))
