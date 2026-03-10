@@ -22,6 +22,7 @@ import java.util
  */
 
 object PatternMap:
+
   final case class ArrayWrapper(array: Array[Int]):
     override def equals(obj: Any): Boolean =
       obj match
