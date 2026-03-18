@@ -40,6 +40,17 @@ import scala.util.Random
 
 object PPSE:
 
+  object Genome:
+    def apply(values: IArray[Double], density: Option[Double] = None): Genome = values ++ density.orElse(Some(-1.0)).toSeq
+    def toTuple(g: Genome): (IArray[Double], Option[Double]) = (g.values, g.density)
+
+    extension (g: Genome)
+      def values: IArray[Double] = g.take(g.length - 1)
+      def density: Option[Double] = g.lastOption.filter(_ >= 0.0)
+
+  opaque type Genome = IArray[Double]
+
+
   type SamplingWeightMap = PatternMap[Double]
   type HitMap = PatternMap[Int]
 
@@ -66,7 +77,7 @@ object PPSE:
       val pa = pattern(i.phenotype)
 
       Result(
-        scaleContinuousValues(i.genome._1, continuous).toVector,
+        scaleContinuousValues(Genome.values(i.genome), continuous).toVector,
         pa,
         densityMap.getOrElse(pa, 0.0),
         i.phenotype,
@@ -75,8 +86,6 @@ object PPSE:
 
   def result[P](ppse: PPSE[P], population: Vector[Individual[P]], state: EvolutionState[PPSEState]): Vector[Result[P]] =
     result(population, state, ppse.continuous, ppse.pattern)
-
-  type Genome = (IArray[Double], Double)
 
   case class Individual[P](
     genome: Genome,
@@ -90,11 +99,10 @@ object PPSE:
     def sample() = (PPSEOperation.randomUnscaledContinuousValues(continuous.size, rng), Lazy(1.0))
 
     val sampler = PPSEOperation.toSampler(sample, reject, continuous, rng)
-    val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
 
     (0 to number).map: _ =>
-      val (g, d) = sample()
-      (g, d.value)
+      val g = RejectionSampler.sampleNoDensity(sampler)
+      Genome(g, None)
     .toVector
 
   def breeding[P](
@@ -105,7 +113,7 @@ object PPSE:
     regularisationEpsilon: Double): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
     PPSEOperation.breeding(
       continuous,
-      identity,
+      Genome.apply,
       lambda,
       reject,
       _.s.gmm,
@@ -124,7 +132,7 @@ object PPSE:
     maxRareSample: Int,
     regularisationEpsilon: Double) =
     PPSEOperation.elitism[EvolutionState[PPSEState], Individual[P], P](
-      values = _.genome,
+      values = i => Genome.toTuple(i.genome),
       phenotype = _.phenotype,
       continuous = continuous,
       reject = reject,
@@ -141,7 +149,7 @@ object PPSE:
       density = density)
 
   def expression[P](phenotype: IArray[Double] => P, continuous: Vector[C]) = (genome: Genome, generation: Long, initial: Boolean) =>
-    val sc = scaleContinuousValues(genome._1, continuous)
+    val sc = scaleContinuousValues(Genome.values(genome), continuous)
     Individual(genome, phenotype(sc), generation, initial)
 
   given [P: CanContainNaN]:Algorithm[PPSE[P], Individual[P], Genome, EvolutionState[PPSEState]] with
@@ -205,7 +213,7 @@ object PPSEOperation:
 
   def breeding[S, I, G](
     continuous: Vector[C],
-    buildGenome: ((IArray[Double], Double)) => G,
+    buildGenome: ((IArray[Double], Option[Double])) => G,
     lambda: Int,
     reject: Option[IArray[Double] => Boolean],
     gmm: S => Option[GMM],
@@ -215,10 +223,9 @@ object PPSEOperation:
       def sampleUniform: Vector[G] =
         def sample() = (randomUnscaledContinuousValues(continuous.size, rng), Lazy(1.0))
         val sampler = toSampler(sample, reject, continuous, rng)
-        val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
         (0 to lambda).map: _ =>
-          val (g, d) = sample()
-          buildGenome(g, d.value)
+          val g = RejectionSampler.sampleNoDensity(sampler)
+          buildGenome(g, None)
         .toVector
 
       gmm(s) match
@@ -228,11 +235,11 @@ object PPSEOperation:
           val sampler = gmmToSampler(gmmValue, regularisationEpsilon, reject, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
           val (_, sampled) = RejectionSampler.sampleArray(sampler, lambda, samplerState)
-          val breed = sampled.toVector.map(s => buildGenome(s._1, s._2))
+          val breed = sampled.toVector.map(s => buildGenome(s._1, Some(s._2)))
           breed
 
   def elitism[S, I, P: CanContainNaN](
-    values: I => (IArray[Double], Double),
+    values: I => (IArray[Double], Option[Double]),
     phenotype: I => P,
     pattern: P => Vector[Int],
     continuous: Vector[C],
@@ -290,7 +297,7 @@ object PPSEOperation:
     def updateState(
       genomes: Array[Array[Double]],
       patterns: Array[Array[Int]],
-      offspringGenomes: Array[(IArray[Double], Double)],
+      offspringGenomes: Array[(IArray[Double], Option[Double])],
       offspringPatterns: Array[Array[Int]],
       likelihoodRatioMap: PPSE.SamplingWeightMap,
       hitMap: HitMap,
@@ -312,14 +319,16 @@ object PPSEOperation:
         def offSpringDensities =
           val groupedGenomes = (offspringGenomes zip offspringPatterns).groupMap(_._2)(_._1)
           groupedGenomes.view.mapValues: v =>
-            v.map: (genome, density) =>
-              val inputDensityValue =
-                inputDensity.map: df =>
-                  val scaled = scaleContinuousValues(genome, continuous)
-                  df(scaled)
-                .getOrElse(1.0)
+            v.map:
+              case (genome, Some(density)) =>
+                val inputDensityValue =
+                  inputDensity.map: df =>
+                    val scaled = scaleContinuousValues(genome, continuous)
+                    df(scaled)
+                  .getOrElse(1.0)
 
-              inputDensityValue / density
+                inputDensityValue / density
+              case (genome, None) => 0.0
             .sum
           .toSeq
 

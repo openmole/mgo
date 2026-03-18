@@ -36,6 +36,12 @@ object RejectionSampler:
       else warmup(sampler, n - 1, RejectionSampler.success(state))
     else state
 
+  def sampleNoDensity(sampler: RejectionSampler): IArray[Double] =
+    val (x, density) = sampler.sampleFunction()
+    if !sampler.accept(x)
+    then sampleNoDensity(sampler)
+    else x
+
   def sample(sampler: RejectionSampler, state: State = State()): (State, (IArray[Double], Double)) =
     val (x, density) = sampler.sampleFunction()
     if !sampler.accept(x)
