@@ -41,14 +41,13 @@ import scala.util.Random
 object PPSE:
 
   object Genome:
-    def apply(values: IArray[Double], density: Option[Double] = None): Genome = values ++ density.orElse(Some(-1.0)).toSeq
-    def toTuple(g: Genome): (IArray[Double], Option[Double]) = (g.values, g.density)
+    def apply(values: IArray[Double], density: Option[Double] = None): Genome = values.unsafeToArray ++ density.orElse(Some(-1.0)).toSeq
+    def toTuple(g: Genome): (IArray[Double], Option[Double]) = (values(g), density(g))
 
-    extension (g: Genome)
-      def values: IArray[Double] = g.take(g.length - 1)
-      def density: Option[Double] = g.lastOption.filter(_ >= 0.0)
+    def values(g: Genome): IArray[Double] = IArray.unsafeFromArray(g.take(g.length - 1))
+    def density(g: Genome): Option[Double] = g.lastOption.filter(_ >= 0.0)
 
-  opaque type Genome = IArray[Double]
+  type Genome = Array[Double]
 
 
   type SamplingWeightMap = PatternMap[Double]
