@@ -97,7 +97,8 @@ object PPSE:
   def initialGenomes(number: Int, continuous: Vector[C], reject: Option[IArray[Double] => Boolean], warmupSampler: Int, rng: scala.util.Random) =
     def sample() = (PPSEOperation.randomUnscaledContinuousValues(continuous.size, rng), Lazy(1.0))
 
-    val sampler = PPSEOperation.toSampler(sample, reject, continuous, rng)
+    val rejectValue = reject.getOrElse(noRejection)
+    val sampler = PPSEOperation.toSampler(sample, rejectValue, continuous, rng)
 
     (0 to number).map: _ =>
       val g = RejectionSampler.sampleNoDensity(sampler)
@@ -188,20 +189,16 @@ case class PPSE[P](
 object PPSEOperation:
   def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
 
-  def toSampler(sample: () => (IArray[Double], Lazy[Double]), reject: Option[IArray[Double] => Boolean], continuous: Vector[C], rng: Random) =
+  def toSampler(sample: () => (IArray[Double], Lazy[Double]), reject: IArray[Double] => Boolean, continuous: Vector[C], rng: Random) =
     def acceptPoint(x: IArray[Double]) = x.forall(_ <= 1.0) && x.forall(_ >= 0.0)
 
     def acceptFunction(x: IArray[Double]) =
-      def rejectValue =
-        reject.map: r =>
-          r(scaleContinuousValues(x, continuous))
-        .getOrElse(false)
-
+      def rejectValue = reject(scaleContinuousValues(x, continuous))
       acceptPoint(x) && !rejectValue
 
     new RejectionSampler(sample, acceptFunction)
 
-  def gmmToSampler(gmm: GMM, regularisationEpsilon: Double, reject: Option[IArray[Double] => Boolean], continuous: Vector[C], rng: Random) =
+  def gmmToSampler(gmm: GMM, regularisationEpsilon: Double, reject: IArray[Double] => Boolean, continuous: Vector[C], rng: Random) =
     import mgo.tools.clustering.GMM
     val distribution = GMM.toDistribution(gmm, regularisationEpsilon, rng)
 
@@ -220,9 +217,10 @@ object PPSEOperation:
     warmupSampler: Int,
     regularisationEpsilon: Double): Breeding[S, I, G] =
     (s, population, rng) =>
+
       def sampleUniform: Vector[G] =
         def sample() = (randomUnscaledContinuousValues(continuous.size, rng), Lazy(1.0))
-        val sampler = toSampler(sample, reject, continuous, rng)
+        val sampler = toSampler(sample, reject.getOrElse(noRejection), continuous, rng)
         (0 to lambda).map: _ =>
           val g = RejectionSampler.sampleNoDensity(sampler)
           buildGenome(g, None)
@@ -232,7 +230,8 @@ object PPSEOperation:
         case None => sampleUniform
         case Some(gmmValue) if gmmValue.isEmpty => sampleUniform
         case Some(gmmValue) =>
-          val sampler = gmmToSampler(gmmValue, regularisationEpsilon, reject, continuous, rng)
+          val rejectValue = reject.getOrElse(noRejection) && rejectNaN[IArray[Double]](identity)
+          val sampler = gmmToSampler(gmmValue, regularisationEpsilon, rejectValue, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
           val (_, sampled) = RejectionSampler.sampleArray(sampler, lambda, samplerState)
           val breed = sampled.toVector.map(s => buildGenome(s._1, Some(s._2)))
