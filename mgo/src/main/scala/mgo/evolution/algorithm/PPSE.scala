@@ -139,6 +139,7 @@ object PPSE:
       likelihoodRatioMap = Focus[EvolutionState[PPSEState]](_.s.likelihoodRatioMap),
       hitmap = Focus[EvolutionState[PPSEState]](_.s.hitmap),
       gmm = Focus[EvolutionState[PPSEState]](_.s.gmm),
+      generation = Focus[Individual[P]](_.generation),
       iterations = iterations,
       tolerance = tolerance,
       dilation = dilation,
@@ -246,6 +247,7 @@ object PPSEOperation:
     likelihoodRatioMap: monocle.Lens[S, PPSE.SamplingWeightMap],
     hitmap: monocle.Lens[S, HitMap],
     gmm: monocle.Lens[S, Option[GMM]],
+    generation: monocle.Lens[I, Long],
     iterations: Int,
     tolerance: Double,
     dilation: Double,
@@ -353,7 +355,14 @@ object PPSEOperation:
       (newHitMap, newLikelihoodRatioMap, newGMM)
 
     def offSpringWithNoNan = filterNaN(candidates, phenotype)
-    def keepRandom(i: Vector[I]) = Vector(i(rng.nextInt(i.size)))
+
+    def keepRandom(i: Vector[I]): Vector[I] =
+      if i.isEmpty
+      then i
+      else
+        val first = i.map(generation.get).min
+        val selected = i(rng.nextInt(i.size))
+        Vector(generation.set(first)(selected))
 
     val newPopulation = keepNiches(phenotype andThen pattern, keepRandom)(population ++ offSpringWithNoNan)
 
