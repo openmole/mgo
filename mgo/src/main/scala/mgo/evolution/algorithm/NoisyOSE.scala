@@ -63,16 +63,16 @@ object NoisyOSE {
     NoisyIndividual.expression[P](fitness, continuous, discrete)
 
   def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], discrete: Vector[D], origin: (IArray[Double], IArray[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledValues(components, discrete)(i.genome)
-
     NoisyOSEOperations.elitism[OSEState[P], Individual[P], P](
       vectorPhenotype[P].get,
       aggregation,
-      individualValues,
+      _.genome.continuousValues,
+      _.genome.discreteValues(discrete),
+      components,
       origin,
       limit,
       historySize,
-      mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
+      mergeHistories(_.genome.values(components, discrete), vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu,
       archiveLens,
       reachMapLens)
@@ -179,7 +179,7 @@ object NoisyOSEOperations {
     reachMap: S => OSEOperation.ReachMap): Breeding[S, I, G] =
     (s, population, rng) =>
 
-      def genomeOrigin(g: G) = origin(continuousValues(g), discreteValues(g))
+      def genomeOrigin(g: G) = origin(scaleContinuousValues(continuousValues(g), continuous), discreteValues(g))
 
       val promisingReachMapValue =
         promisingReachMap[I](
@@ -198,13 +198,14 @@ object NoisyOSEOperations {
       val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
-      val genomeValue = genome andThen (continuousValues, discreteValues).tupled
 
       def breeding: Breeding[S, I, G] =
         (s, pop, g) => {
           val breed = applyDynamicOperators[S, I, G](
             tournament(allRanks, tournamentRounds),
-            genomeValue,
+            genome,
+            continuousValues,
+            discreteValues,
             continuousOperatorStatistics,
             discreteOperatorStatistics,
             continuous,
@@ -214,13 +215,16 @@ object NoisyOSEOperations {
           filterAlreadyReachedAndNeighboursOfPromising(breed)
         }
 
-      val offspring = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
+      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues)
+      val offspring = breed(breeding, lambda, rejectValue)(s, population ++ archivedPopulation, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 
   def elitism[S, I: ClassTag, P](
     history: I => Vector[P],
     aggregation: Vector[P] => Vector[Double],
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: I => IArray[Double],
+    discreteValues: I => IArray[Int],
+    continuous: Vector[C],
     origin: (IArray[Double], IArray[Int]) => Vector[Int],
     limit: Vector[Double],
     historySize: Int,
@@ -233,12 +237,12 @@ object NoisyOSEOperations {
       val merged = filterNaN(mergeHistories(population, candidates), fitness)
       val reached = reachMap.get(s).toSet
 
-      def individualOrigin(i: I) = Function.tupled(origin)(values(i))
+      def o(i: I) = origin(scaleContinuousValues(continuousValues(i), continuous), discreteValues(i))
       def newlyReaching =
         def keepNewlyReaching(i: I): Option[I] =
           if OSEOperation.patternIsReached(fitness(i), limit)
           then
-            reached.contains(individualOrigin(i)) match
+            reached.contains(o(i)) match
               case true => None
               case false if history(i).size >= historySize => Some(i)
               case _ => None
@@ -248,8 +252,8 @@ object NoisyOSEOperations {
         merged.flatMap(i => keepNewlyReaching(i).toVector)
 
       val reaching = newlyReaching
-      val s2 = reachMap.modify(_ ++ reaching.map(individualOrigin)).compose(archive.modify(_ ++ reaching))(s)
-      val filteredPopulation = OSEOperation.filterAlreadyReached[I](i => Function.tupled(origin)(values(i)), reachMap.get(s2).toSet)(merged)
+      val s2 = reachMap.modify(_ ++ reaching.map(o)).compose(archive.modify(_ ++ reaching))(s)
+      val filteredPopulation = OSEOperation.filterAlreadyReached[I](o, reachMap.get(s2).toSet)(merged)
       NoisyNSGA2Operations.elitism[S, I, P](fitness, mergeHistories, mu)(s2, filteredPopulation, Vector.empty, rng)
 
 }

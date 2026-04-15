@@ -11,7 +11,7 @@ import scala.annotation.tailrec
 import scala.reflect.ClassTag
 
 
-object breeding {
+object breeding:
 
   type Breeding[S, I, G] = (S, Vector[I], scala.util.Random) => Vector[G]
   
@@ -368,15 +368,13 @@ object breeding {
     (IArray.unsafeFromArray(r1), IArray.unsafeFromArray(r2))
 
   /* tool functions */
-
-  def breed[S, I, G](breeding: Breeding[S, I, G], lambda: Int, reject: Option[G => Boolean] = None): Breeding[S, I, G] =
-    val rejectValue = reject.getOrElse(_ => false)
+  def breed[S, I, G](breeding: Breeding[S, I, G], lambda: Int, reject: G => Boolean): Breeding[S, I, G] =
     (s, population, rng) =>
       @tailrec def accumulate(acc: Vector[G] = Vector()): Vector[G] =
         if acc.size >= lambda
         then acc
         else
-          val b = breeding(s, population, rng).filter(s => !rejectValue(s))
+          val b = breeding(s, population, rng).filter(s => !reject(s))
           accumulate(b ++ acc)
 
       def randomTake[G](gs: Vector[G], lambda: Int, random: scala.util.Random): Vector[G] = random.shuffle(gs).take(lambda)
@@ -384,4 +382,13 @@ object breeding {
       val generated = accumulate()
       randomTake(generated, lambda, rng)
 
-}
+  def rejectClone[V: ImplementEqualMethod as eqm, I, G](population: Vector[I], genome: I => G, value: G => V): G => Boolean =
+    val existingGenomes = population.map(genome andThen value).map(eqm.apply).toSet
+    (g: G) => existingGenomes.contains(eqm(value(g)))
+
+  def rejectNaN[G](values: G => IArray[Double]): G => Boolean = (g: G) => values(g).exists(_.isNaN)
+
+  def noRejection[G]: G => Boolean = _ => false
+
+  extension [G](f1: G => Boolean)
+    def &&(f2: G => Boolean) = (g: G) => f1(g) && f2(g)

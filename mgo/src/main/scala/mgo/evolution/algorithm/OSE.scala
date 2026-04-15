@@ -60,7 +60,9 @@ object OSE:
     OSEOperation.elitism[OSEState[P], Individual[P]](
       individualFitness(fitness),
       limit,
-      i => scaledValues(components, discrete)(i.genome),
+      _.genome.continuousValues,
+      _.genome.discreteValues(discrete),
+      components,
       origin,
       mu,
       archiveLens[P],
@@ -155,25 +157,29 @@ object OSEOperation:
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
 
-      val genomeValue = genome andThen (continuousValues, discreteValues).tupled
-
       val reached = reachMap(s).toSet
+
+      def o(g: G) = origin(scaleContinuousValues(continuousValues(g), continuous), discreteValues(g))
 
       val breeding: Breeding[S, I, G] =
         (s, pop, rng) =>
           val newGs =
             applyDynamicOperators(
               tournament(allRanks, tournamentRounds),
-              genomeValue,
+              genome,
+              continuousValues,
+              discreteValues,
               continuousOperatorStatistics,
               discreteOperatorStatistics,
               continuous,
               discrete,
               operatorExploration,
               buildGenome)(s, pop, rng)
-          filterAlreadyReached[G](g => origin(continuousValues(g), discreteValues(g)), reached)(newGs)
+          filterAlreadyReached[G](o, reached)(newGs)
 
-      breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
+      val rejectCloneValue = rejectClone(population, genome, (continuousValues, discreteValues).tupled)
+      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues) && rejectCloneValue
+      breed(breeding, lambda, rejectValue)(s, population ++ archivedPopulation, rng)
 
   def patternIsReached(fitness: Vector[Double], limit: Vector[Double]): Boolean =
     (fitness zip limit) forall ((f, l) => f <= l)
@@ -181,16 +187,18 @@ object OSEOperation:
   def elitism[S, I: ClassTag](
     fitness: I => Vector[Double],
     limit: Vector[Double],
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: I => IArray[Double],
+    discreteValues: I => IArray[Int],
+    continuous: Vector[C],
     origin: (IArray[Double], IArray[Int]) => Vector[Int],
     mu: Int,
     archive: monocle.Lens[S, Archive[I]],
     reachMap: monocle.Lens[S, ReachMap]): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
+      val noNaN = filterNaN(population, memoizedFitness)
 
-      def o(i: I) = Function.tupled(origin)(values(i))
+      def o(i: I) = origin(scaleContinuousValues(continuousValues(i), continuous), discreteValues(i))
       val reached = reachMap.get(s).toSet
 
       def newlyReaching =
@@ -202,10 +210,10 @@ object OSEOperation:
               case false => Some(i)
           else None
 
-        cloneRemoved.flatMap(i => keepNewlyReaching(i).toVector)
+        noNaN.flatMap(i => keepNewlyReaching(i).toVector)
 
       val reaching = newlyReaching
       val s2 = reachMap.modify(_ ++ reaching.map(o)).compose(archive.modify(_ ++ reaching))(s)
-      val filteredPopulation = filterAlreadyReached[I](i => Function.tupled(origin)(values(i)), reachMap.get(s2).toSet)(cloneRemoved)
-      NSGA2Operations.elitism[S, I](memoizedFitness, values, mu)(s2, filteredPopulation, Vector.empty, rng)
+      val filteredPopulation = filterAlreadyReached[I](o, reachMap.get(s2).toSet)(noNaN)
+      NSGA2Operations.elitism[S, I](memoizedFitness, continuousValues, discreteValues, mu)(s2, filteredPopulation, Vector.empty, rng)
 

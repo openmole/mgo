@@ -146,7 +146,7 @@ object MOCMEASOperation:
       val ranks =
         if !genomeDiversity
         then paretoRankingMinAndCrowdingDiversity(population, fitness)
-        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(population, fitness, i => (values(i), IArray.empty))
+        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(population, fitness, values, i => IArray.empty[Int])
 
       def draw =
         val selected = tournament(ranks, _ => 1)(s, population, rng)
@@ -202,7 +202,7 @@ object MOCMEASOperation:
       val ranks =
         if !genomeDiversity
         then paretoRankingMinAndCrowdingDiversity(updatedPopulation, fitness)
-        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(updatedPopulation, fitness, i => (x(i), IArray.empty))
+        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(updatedPopulation, fitness, x, i => IArray.empty[Int])
 
       val elitePopulation = keepHighestRanked(updatedPopulation, ranks, mu)
 

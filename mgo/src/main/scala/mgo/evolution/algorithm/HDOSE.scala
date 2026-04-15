@@ -92,7 +92,6 @@ object HDOSE:
     HDOSEOperation.elitism[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
       limit,
-      scaledValues(continuous, discrete),
       mu,
       archiveLens[P],
       tooCloseByComponent(weightC, weightD, discrete),
@@ -312,7 +311,9 @@ object HDOSEOperation:
           val newGs =
             applyDynamicOperators[S, I, G](
               tournament(allRanks, tournamentRounds),
-              genomeValue,
+              genome,
+              continuousValues,
+              discreteValues,
               continuousOperatorStatistics,
               discreteOperatorStatistics,
               continuous,
@@ -327,13 +328,14 @@ object HDOSEOperation:
               genomeValue,
               diversityDistance(s))(values)
 
-      breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
+      val rejectCloneValue = rejectClone(population, genome, (continuousValues, discreteValues).tupled)
+      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues) && rejectCloneValue
+      breed(breeding, lambda, rejectValue)(s, population ++ archivedPopulation, rng)
 
 
   def elitism[S, I: ClassTag, G](
     fitness: I => Vector[Double],
     limit: Vector[Double],
-    scaledValues: G => (IArray[Double], IArray[Int]),
     mu: Int,
     archive: monocle.Lens[S, Archive[I]],
     distance: TooClose,
@@ -346,14 +348,12 @@ object HDOSEOperation:
     shuffle: Boolean): Elitism[S, I] =
     (s1, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val cloneRemoved = filterNaN(keepFirst(genome andThen scaledValues)(population, candidates), memoizedFitness)
+      val genomeValue = (genome andThen (continuousValues, discreteValues).tupled).memoized
 
       // FIXME individuals can be close to each other but yet added to the archive
       def newlyReaching = candidates.filter(c => OSEOperation.patternIsReached(memoizedFitness(c), limit))
 
       val s2 = archive.modify(_ ++ newlyReaching)(s1)
-
-      val genomeValue = (genome andThen (continuousValues, discreteValues).tupled).memoized
 
       val s3 =
         if archive.get(s2).size <= archiveSize
@@ -385,14 +385,14 @@ object HDOSEOperation:
           (archive.replace(a3) andThen diversityDistance.replace(newDiversityDistance))(s2)
 
       val filteredPopulation =
-        cloneRemoved.filterNot: i =>
+        filterNaN(population, memoizedFitness).filterNot: i =>
           isTooCloseFromArchive(
             distance,
             archive.get(s3),
             genomeValue,
             diversityDistance.get(s3))(genomeValue(i))
 
-      NSGA2Operations.elitism(memoizedFitness, genome andThen scaledValues, mu)(s3, filteredPopulation, Vector.empty, rng)
+      NSGA2Operations.elitism(memoizedFitness, genome andThen continuousValues, genome andThen discreteValues, mu)(s3, filteredPopulation, Vector.empty, rng)
 
 
 

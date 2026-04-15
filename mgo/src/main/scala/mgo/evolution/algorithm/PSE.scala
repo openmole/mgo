@@ -157,18 +157,22 @@ object PSEOperations:
         val ranks = hitCountRanking(s, population, pattern, hitmap).map(x => -x)
         val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
         val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
-        val genomeValue = genome andThen (continuousValues, discreteValues).tupled
 
         val breeding = applyDynamicOperators[S, I, G](
           tournament(ranks, logOfPopulationSize),
-          genomeValue,
+          genome,
+          continuousValues,
+          discreteValues,
           continuousOperatorStatistics,
           discreteOperatorStatistics,
           continuous,
           discrete,
           operatorExploration,
           buildGenome)
-        breed(breeding, lambda, reject)(s, population, rng)
+
+        val rejectCloneValue = rejectClone(population, genome, (continuousValues, discreteValues).tupled)
+        val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues) && rejectCloneValue
+        breed(breeding, lambda, rejectValue)(s, population, rng)
 
   def elitism[S, I, P: CanContainNaN](
     phenotype: I => P,

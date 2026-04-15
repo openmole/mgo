@@ -72,7 +72,8 @@ object NSGA3 {
   def elitism[S, P](mu: Int, references: NSGA3Operations.ReferencePoints, components: Vector[C], discrete: Vector[D], fitness: P => Vector[Double]): Elitism[S, Individual[P]] =
     NSGA3Operations.elitism[S, Individual[P]](
       individualFitness[P](fitness),
-      i => scaledValues(components, discrete)(i.genome),
+      _.genome.continuousValues,
+      _.genome.discreteValues(discrete),
       references,
       mu)
 
@@ -280,11 +281,12 @@ object NSGA3Operations {
 
     val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
     val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
-    val genomeValue = genome andThen (continuousValues, discreteValues).tupled
 
     def breedTwo: Breeding[S, I, G] = applyDynamicOperators[S, I, G](
       randomSelection[S, I],
-      genomeValue,
+      genome,
+      continuousValues,
+      discreteValues,
       continuousOperatorStatistics,
       discreteOperatorStatistics,
       continuous,
@@ -294,7 +296,10 @@ object NSGA3Operations {
 
     val breededsize = if (lambda == -1) 2 * population.size else lambda
 
-    breed(breedTwo, breededsize, reject)(s, population, rng)
+    val rejectCloneValue = rejectClone(population, genome, (continuousValues, discreteValues).tupled)
+    val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues) && rejectCloneValue
+
+    breed(breedTwo, breededsize, rejectValue)(s, population, rng)
   }
 
   /**
@@ -316,11 +321,12 @@ object NSGA3Operations {
    */
   def elitism[S, I](
     fitness: I => Vector[Double],
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: I => IArray[Double],
+    discreteValues: I => IArray[Int],
     references: ReferencePoints,
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
-      (s, eliteWithReference[S, I](filterNaN(keepFirst(values)(population, candidates), fitness), fitness, references, mu)(rng))
+      (s, eliteWithReference[S, I](filterNaN(population, fitness), fitness, references, mu)(rng))
 
   /**
    * Exact successive fronts computation

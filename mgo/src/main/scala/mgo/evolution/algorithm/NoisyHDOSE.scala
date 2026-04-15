@@ -96,8 +96,6 @@ object NoisyHDOSE:
     limit: Vector[Double],
     precision: Double,
     shuffle: Boolean): Elitism[HDOSEState[P], Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledVectorValues(continuous, discrete)(i.genome)
-
     NoisyHDOSEOperations.elitism[HDOSEState[P], Individual[P], P, Genome](
       _.genome,
       vectorPhenotype[P].get,
@@ -106,7 +104,7 @@ object NoisyHDOSE:
       discreteValues(discrete).get,
       limit,
       historySize,
-      mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
+      mergeHistories(_.genome.values(continuous, discrete), vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
       mu,
       archiveLens,
       HDOSE.tooCloseByComponent(weightC, weightD, discrete),
@@ -241,7 +239,6 @@ object NoisyHDOSEOperations:
           genomeValue,
           diversityDistance(s))
 
-
       val ranks = ranking.paretoRankingMinAndCrowdingDiversity[I](population, memoizedFitness)
       val allRanks = ranks ++ Vector.fill(archivedPopulation.size)(worstParetoRanking)
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
@@ -251,7 +248,9 @@ object NoisyHDOSEOperations:
         (s, pop, g) =>
           val breed = applyDynamicOperators[S, I, G](
             tournament(allRanks, tournamentRounds),
-            genomeValue,
+            genome,
+            continuousValues,
+            discreteValues,
             continuousOperatorStatistics,
             discreteOperatorStatistics,
             continuous,
@@ -261,7 +260,8 @@ object NoisyHDOSEOperations:
 
           breed.filterNot(g => tooCloseFromArchiveOrPromising(value(g)))
 
-      val offspring = breed(breeding, lambda, reject)(s, population ++ archivedPopulation, rng)
+      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues)
+      val offspring = breed(breeding, lambda, rejectValue)(s, population ++ archivedPopulation, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 
 

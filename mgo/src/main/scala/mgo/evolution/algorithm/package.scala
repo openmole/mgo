@@ -223,7 +223,9 @@ object GenomeVectorDouble:
 
   def applyDynamicOperators[S, I, G](
     selection: Selection[S, I],
-    genomeValues: I => (IArray[Double], IArray[Int]),
+    genome: I => G,
+    continuousValues: G => IArray[Double],
+    discreteValues: G => IArray[Int],
     continuousOperatorStatistics: Map[Int, Double],
     discreteOperatorStatistics: Map[Int, Double],
     continuous: Vector[C],
@@ -244,11 +246,12 @@ object GenomeVectorDouble:
         operatorExploration)
 
     (s: S, population: Vector[I], rng: scala.util.Random) =>
-      val m1 = selection(s, population, rng)
-      val m2 = selection(s, population, rng)
-      val (c1, d1) = genomeValues(m1)
-      val (c2, d2) = genomeValues(m2)
-
+      val m1 = genome(selection(s, population, rng))
+      val m2 = genome(selection(s, population, rng))
+      val c1 = continuousValues(m1)
+      val c2 = continuousValues(m2)
+      val d1 = discreteValues(m1)
+      val d2 = discreteValues(m2)
       val cOff = continuousOperator(s, (c1, c2), rng)
       val dOff = discreteOperator(s, (d1, d2), rng)
 

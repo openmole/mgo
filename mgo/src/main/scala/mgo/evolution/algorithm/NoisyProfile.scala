@@ -98,7 +98,8 @@ object NoisyProfile:
     NoisyNSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome, P](
       aggregatedFitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      _.genome.values(continuous, discrete),
+      _.continuousValues,
+      _.discreteValues(discrete),
       continuousOperator.get,
       discreteOperator.get,
       continuous,

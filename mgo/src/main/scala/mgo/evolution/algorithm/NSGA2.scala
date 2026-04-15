@@ -43,7 +43,8 @@ object NSGA2:
     NSGA2Operations.adaptiveBreeding[S, Individual[P], Genome](
       individualFitness[P](fitness),
       _.genome,
-      _.genome.values(continuous, discrete),
+      continuousValues(continuous).get,
+      discreteValues(discrete).get,
       continuousOperator.get,
       discreteOperator.get,
       continuous,
@@ -63,12 +64,14 @@ object NSGA2:
     then
       NSGA2Operations.elitismWithDiversity[S, Individual[P]](
         individualFitness[P](fitness),
-        _.genome.values(components, discrete),
+        _.genome.continuousValues,
+        _.genome.discreteValues(discrete),
         mu)
     else
       NSGA2Operations.elitism[S, Individual[P]](
         individualFitness[P](fitness),
-        _.genome.values(components, discrete),
+        _.genome.continuousValues,
+        _.genome.discreteValues(discrete),
         mu)
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P])
@@ -120,7 +123,8 @@ object NSGA2Operations:
   def adaptiveBreeding[S, I, G](
     fitness: I => Vector[Double],
     genome: I => G,
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: G => IArray[Double],
+    discreteValues: G => IArray[Int],
     continuousOperator: G => Option[Int],
     discreteOperator: G => Option[Int],
     continuous: Vector[C],
@@ -135,14 +139,16 @@ object NSGA2Operations:
       val ranks =
         if !genomeDiversity
         then paretoRankingMinAndCrowdingDiversity(population, fitness)
-        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(population, fitness, values)
+        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(population, fitness, genome andThen continuousValues, genome andThen discreteValues)
 
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
 
       val breeding: Breeding[S, I, G] = applyDynamicOperators[S, I, G](
         tournament(ranks, tournamentRounds),
-        values,
+        genome,
+        continuousValues,
+        discreteValues,
         continuousOperatorStatistics,
         discreteOperatorStatistics,
         continuous,
@@ -150,31 +156,35 @@ object NSGA2Operations:
         operatorExploration,
         buildGenome)
 
-      breed(breeding, lambda, reject)(s, population, rng)
+      val rejectCloneValue = rejectClone(population, genome, (continuousValues, discreteValues).tupled)
+      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues) && rejectCloneValue
+      breed(breeding, lambda, rejectValue)(s, population, rng)
 
 
   def elitismWithDiversity[S, I](
     fitness: I => Vector[Double],
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: I => IArray[Double],
+    discreteValues: I => IArray[Int],
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
-      val ranks = paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(cloneRemoved, memoizedFitness, values)
+      val noNaN = filterNaN(population, memoizedFitness)
+      val ranks = paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(noNaN, memoizedFitness, continuousValues, discreteValues)
 
-      (s, keepHighestRanked(cloneRemoved, ranks, mu))
+      (s, keepHighestRanked(noNaN, ranks, mu))
 
 
   def elitism[S, I](
     fitness: I => Vector[Double],
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: I => IArray[Double],
+    discreteValues: I => IArray[Int],
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
-      val ranks = paretoRankingMinAndCrowdingDiversity(cloneRemoved, memoizedFitness)
+      val noNaN = filterNaN(population, memoizedFitness)
+      val ranks = paretoRankingMinAndCrowdingDiversity(noNaN, memoizedFitness)
 
-      (s, keepHighestRanked(cloneRemoved, ranks, mu))
+      (s, keepHighestRanked(noNaN, ranks, mu))
 
 //      if cloneRemoved.nonEmpty
 //      then

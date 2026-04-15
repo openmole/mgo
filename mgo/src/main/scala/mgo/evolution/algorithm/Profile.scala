@@ -73,7 +73,8 @@ object Profile:
     NSGA2Operations.adaptiveBreeding[ProfileState, Individual[P], Genome](
       individualFitness(fitness),
       Focus[Individual[P]](_.genome).get,
-      _.genome.values(continuous, discrete),
+      continuousValues(continuous).get,
+      discreteValues(discrete).get,
       continuousOperator.get,
       discreteOperator.get,
       continuous,
@@ -90,7 +91,8 @@ object Profile:
   def elitism[N, P](niche: Niche[Individual[P], N], mu: Int, components: Vector[C], discrete: Vector[D], fitness: P => Vector[Double]): Elitism[ProfileState, Individual[P]] =
     ProfileOperations.elitism[ProfileState, Individual[P], N](
       individualFitness(fitness),
-      i => scaledValues(components, discrete)(i.genome),
+      _.genome.continuousValues,
+      _.genome.discreteValues(discrete),
       niche,
       mu)
 
@@ -134,13 +136,14 @@ object ProfileOperations:
 
   def elitism[S, I, N](
     fitness: I => Vector[Double],
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: I => IArray[Double],
+    discreteValues: I => IArray[Int],
     niche: Niche[I, N],
     muByNiche: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val cloneRemoved = filterNaN(keepFirst(values)(population, candidates), memoizedFitness)
-      def nsga2Elitism(p: Vector[I]) = NSGA2Operations.elitism[S, I](memoizedFitness, values, muByNiche).apply(s, p, Vector.empty, rng)._2
-      val newPopulation = nicheElitism(cloneRemoved, nsga2Elitism, niche)
+      val noNaN = filterNaN(population, memoizedFitness)
+      def nsga2Elitism(p: Vector[I]) = NSGA2Operations.elitism[S, I](memoizedFitness, continuousValues, discreteValues, muByNiche).apply(s, p, Vector.empty, rng)._2
+      val newPopulation = nicheElitism(noNaN, nsga2Elitism, niche)
       (s, newPopulation)
 

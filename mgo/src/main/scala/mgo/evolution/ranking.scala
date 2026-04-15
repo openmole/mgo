@@ -92,34 +92,36 @@ object ranking:
 
     loop(population, List())
 
-  def genomicDiversity[I](population: Vector[I], values: I => (IArray[Double], IArray[Int])) =
+  def genomicDiversity[I](population: Vector[I], continuousValues: I => IArray[Double], discreteValues: I => IArray[Int]) =
     if population.isEmpty
     then Vector()
     else
-      val (cSize, dSize) = 
-        val (c, d) = values(population.head)
+      val (cSize, dSize) =
+        val i = population.head
+        val c = continuousValues(i)
+        val d = discreteValues(i)
         (c.length, d.length)
 
       val continuousDiversity =
         if cSize != 0
-        then CrowdingDistance.normalizedCrowdingDistance(population.map(i => values(i)._1.toVector))
+        then CrowdingDistance.normalizedCrowdingDistance(population.map(i => continuousValues(i).toVector))
         else population.map(_ => 0.0)
 
       val discreteDiversity =
         if dSize != 0
-        then GoodallDistance.averageDiversity(population.map(i => values(i)._2))
+        then GoodallDistance.averageDiversity(population.map(i => discreteValues(i)))
         else population.map(_ => 0.0)
 
       (continuousDiversity zip discreteDiversity).map: (c, d) =>
         (c * cSize + d * dSize) / (cSize + dSize)
 
 
-  def paretoRankingMinAndCrowdingDiversityWithGenomeDiversity[I](population: Vector[I], fitness: I => Vector[Double], values: I => (IArray[Double], IArray[Int])) =
+  def paretoRankingMinAndCrowdingDiversityWithGenomeDiversity[I](population: Vector[I], fitness: I => Vector[Double], continuousValues: I => IArray[Double], discreteValues: I => IArray[Int]) =
     val gDiversity =
       import scala.jdk.CollectionConverters.*
       val map = new util.IdentityHashMap[I, Double]().asScala
       map.addAll:
-        population zip genomicDiversity(population, values)
+        population zip genomicDiversity(population, continuousValues,discreteValues)
       map
 
     def amplifiedFitness(i: I) = fitness(i) ++ Seq(-gDiversity(i))

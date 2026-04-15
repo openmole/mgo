@@ -70,7 +70,8 @@ object NoisyNSGA2 {
     NoisyNSGA2Operations.adaptiveBreeding[S, Individual[P], Genome, P](
       fitness(aggregation),
       Focus[Individual[P]](_.genome).get,
-      _.genome.values(continuous, discrete),
+      continuousValues(continuous).get,
+      discreteValues(discrete).get,
       continuousOperator.get,
       discreteOperator.get,
       continuous,
@@ -87,19 +88,18 @@ object NoisyNSGA2 {
     NoisyIndividual.expression[P](phenotype, continuous, discrete)
 
   def elitism[S, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], discrete: Vector[D], genomeDiversity: Boolean): Elitism[S, Individual[P]] =
-    def individualValues(i: Individual[P]) = scaledVectorValues(components, discrete)(i.genome)
-
     if genomeDiversity
     then
       NoisyNSGA2Operations.elitismWithDiversity[S, Individual[P], P](
         fitness[P](aggregation),
-        _.genome.values(components, discrete),
-        mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
+        _.genome.continuousValues,
+        _.genome.discreteValues(discrete),
+        mergeHistories(_.genome.values(components, discrete), vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
         mu)
     else
       NoisyNSGA2Operations.elitism[S, Individual[P], P](
         fitness[P](aggregation),
-        mergeHistories(individualValues, vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
+        mergeHistories(_.genome.values(components, discrete), vectorPhenotype[P], Focus[Individual[P]](_.historyAge), historySize),
         mu)
 
   def reject[P](nsga2: NoisyNSGA2[P]): Option[Genome => Boolean] = NSGA2.reject(nsga2.reject, nsga2.continuous, nsga2.discrete)
@@ -159,7 +159,8 @@ object NoisyNSGA2Operations:
   def adaptiveBreeding[S, I, G, P](
     fitness: I => Vector[Double],
     genome: I => G,
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: G => IArray[Double],
+    discreteValues: G => IArray[Int],
     continuousOperator: G => Option[Int],
     discreteOperator: G => Option[Int],
     continuous: Vector[C],
@@ -176,14 +177,16 @@ object NoisyNSGA2Operations:
       val ranks =
         if !genomeDiversity
         then paretoRankingMinAndCrowdingDiversity(population, fitness)
-        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(population, fitness, values)
+        else paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(population, fitness, genome andThen continuousValues, genome andThen discreteValues)
 
       val continuousOperatorStatistics = operatorProportions(genome andThen continuousOperator, population)
       val discreteOperatorStatistics = operatorProportions(genome andThen discreteOperator, population)
 
       val breeding = applyDynamicOperators[S, I, G](
         tournament(ranks, tournamentRounds),
-        values,
+        genome,
+        continuousValues,
+        discreteValues,
         continuousOperatorStatistics,
         discreteOperatorStatistics,
         continuous,
@@ -191,18 +194,20 @@ object NoisyNSGA2Operations:
         operatorExploration,
         buildGenome)
 
-      val offspring = breed(breeding, lambda, reject)(s, population, rng)
+      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues)
+      val offspring = breed(breeding, lambda, rejectValue)(s, population, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 
   def elitismWithDiversity[S, I, P](
     fitness: I => Vector[Double],
-    values: I => (IArray[Double], IArray[Int]),
+    continuousValues: I => IArray[Double],
+    discreteValues: I => IArray[Int],
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
       val merged = filterNaN(mergeHistories(population, candidates), memoizedFitness)
-      val ranks = paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(merged, memoizedFitness, values)
+      val ranks = paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(merged, memoizedFitness, continuousValues, discreteValues)
 
       (s, keepHighestRanked(merged, ranks, mu))
 
