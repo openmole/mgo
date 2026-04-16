@@ -260,7 +260,7 @@ object NoisyHDOSEOperations:
 
           breed.filterNot(g => tooCloseFromArchiveOrPromising(value(g)))
 
-      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues)
+      val rejectValue = reject.getOrElse(noRejection) || rejectNaN(continuousValues)
       val offspring = breed(breeding, lambda, rejectValue)(s, population ++ archivedPopulation, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 

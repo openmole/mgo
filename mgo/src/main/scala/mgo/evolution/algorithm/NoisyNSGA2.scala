@@ -194,7 +194,7 @@ object NoisyNSGA2Operations:
         operatorExploration,
         buildGenome)
 
-      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues)
+      val rejectValue = reject.getOrElse(noRejection) || rejectNaN(continuousValues)
       val offspring = breed(breeding, lambda, rejectValue)(s, population, rng)
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 

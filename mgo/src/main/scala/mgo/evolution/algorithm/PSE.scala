@@ -171,7 +171,7 @@ object PSEOperations:
           buildGenome)
 
         val rejectCloneValue = rejectClone(population, genome, (continuousValues, discreteValues).tupled)
-        val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues) && rejectCloneValue
+        val rejectValue = reject.getOrElse(noRejection) || rejectNaN(continuousValues) || rejectCloneValue
         breed(breeding, lambda, rejectValue)(s, population, rng)
 
   def elitism[S, I, P: CanContainNaN](

@@ -178,7 +178,7 @@ object OSEOperation:
           filterAlreadyReached[G](o, reached)(newGs)
 
       val rejectCloneValue = rejectClone(population, genome, (continuousValues, discreteValues).tupled)
-      val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues) && rejectCloneValue
+      val rejectValue = reject.getOrElse(noRejection) || rejectNaN(continuousValues) || rejectCloneValue
       breed(breeding, lambda, rejectValue)(s, population ++ archivedPopulation, rng)
 
   def patternIsReached(fitness: Vector[Double], limit: Vector[Double]): Boolean =

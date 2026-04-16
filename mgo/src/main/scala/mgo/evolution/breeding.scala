@@ -391,4 +391,4 @@ object breeding:
   def noRejection[G]: G => Boolean = _ => false
 
   extension [G](f1: G => Boolean)
-    def &&(f2: G => Boolean) = (g: G) => f1(g) && f2(g)
+    def ||(f2: G => Boolean) = (g: G) => f1(g) || f2(g)

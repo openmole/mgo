@@ -297,7 +297,7 @@ object NSGA3Operations {
     val breededsize = if (lambda == -1) 2 * population.size else lambda
 
     val rejectCloneValue = rejectClone(population, genome, (continuousValues, discreteValues).tupled)
-    val rejectValue = reject.getOrElse(noRejection) && rejectNaN(continuousValues) && rejectCloneValue
+    val rejectValue = reject.getOrElse(noRejection) || rejectNaN(continuousValues) || rejectCloneValue
 
     breed(breedTwo, breededsize, rejectValue)(s, population, rng)
   }

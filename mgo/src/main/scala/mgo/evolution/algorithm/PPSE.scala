@@ -230,7 +230,7 @@ object PPSEOperation:
         case None => sampleUniform
         case Some(gmmValue) if gmmValue.isEmpty => sampleUniform
         case Some(gmmValue) =>
-          val rejectValue = reject.getOrElse(noRejection) && rejectNaN[IArray[Double]](identity)
+          val rejectValue = reject.getOrElse(noRejection) || rejectNaN[IArray[Double]](identity)
           val sampler = gmmToSampler(gmmValue, regularisationEpsilon, rejectValue, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
           val (_, sampled) = RejectionSampler.sampleArray(sampler, lambda, samplerState)
