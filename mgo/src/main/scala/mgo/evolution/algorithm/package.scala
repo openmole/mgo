@@ -287,8 +287,8 @@ object GenomeVectorDouble:
 
 
 object Aggregation:
-  def average(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(o => o.sum / o.size)
-  def median(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(tools.Stats.median)
+  def average(history: Vector[IArray[Double]]): IArray[Double] = IArray.from(history.transpose.map(o => o.sum / o.size))
+  def median(history: Vector[IArray[Double]]): IArray[Double] = IArray.from(history.transpose.map(tools.Stats.median))
 
 def scaleContinuousValues(values: IArray[Double], genomeComponents: Vector[C]): IArray[Double] =
   val size = values.size
@@ -313,7 +313,7 @@ object CDGenome:
   object DeterministicIndividual:
     case class Individual[P](genome: Genome, phenotype: P, generation: Long, initial: Boolean)
 
-    def individualFitness[P](fitness: P => Vector[Double]): Individual[P] => Vector[Double] = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
+    def individualFitness[P](fitness: P => IArray[Double]): Individual[P] => IArray[Double] = Focus[DeterministicIndividual.Individual[P]](_.phenotype).get _ andThen fitness
     def buildIndividual[P](g: Genome, p: P, generation: Long, initial: Boolean): Individual[P] = Individual(g, p, generation, initial)
 
     def expression[P](express: (IArray[Double], IArray[Int]) => P, components: Vector[C], discrete: Vector[D]): (Genome, Long, Boolean) => Individual[P] =
@@ -324,20 +324,21 @@ object CDGenome:
 
   object NoisyIndividual:
 
-    def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D]): (Vector[Double], Vector[Int], Vector[Double], Int) =
+    def aggregate[P](i: Individual[P], aggregation: Vector[P] => IArray[Double], continuous: Vector[C], discrete: Vector[D]): (Vector[Double], Vector[Int], IArray[Double], Int) =
       (
         scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous),
         i.focus(_.genome) andThen discreteVectorValues(discrete) get,
-        aggregation(vectorPhenotype[P].get(i)),
+        aggregation(i.phenotypeHistory.toVector),
         i.focus(_.phenotypeHistory).get.size
       )
 
     case class Individual[P](genome: Genome, phenotypeHistory: IArray[P], historyAge: Long, generation: Long, initial: Boolean)
 
-    def buildIndividual[P: Manifest](g: Genome, f: P, generation: Long, initial: Boolean): Individual[P] = Individual[P](g, IArray(f), 1, generation, initial)
-    def vectorPhenotype[P: Manifest]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso[P]
+    def buildIndividual[P: ClassTag](g: Genome, f: P, generation: Long, initial: Boolean): Individual[P] = Individual[P](g, IArray(f), 1, generation, initial)
+    def vectorPhenotype[P: ClassTag]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso[P]
 
-    def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]): (util.Random, Genome, Long, Boolean) => Individual[P] =
+    
+    def expression[P: ClassTag](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]): (util.Random, Genome, Long, Boolean) => Individual[P] =
       noisy.expression[Genome, Individual[P], P](
         scaledValues(continuous, discrete),
         buildIndividual[P])(fitness)

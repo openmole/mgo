@@ -29,19 +29,18 @@ object niche:
       case InsertionPoint(x) => x - 1
       case Found(x) => x
 
-  def grid(gridSize: Seq[Double])(value: Vector[Double]): Vector[Int] =
-    (value zip gridSize).map: (x, g) =>
+  def grid(gridSize: Seq[Double])(value: IArray[Double]): Vector[Int] =
+    (value.toVector zip gridSize).map: (x, g) =>
       (x / g).toInt
-
-
-  def boundedGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: Vector[Double]): Vector[Int] =
-    (value zip definition zip lowBound zip highBound).map:
+  
+  def boundedGrid(lowBound: Vector[Double], highBound: Vector[Double], definition: Vector[Int])(value: IArray[Double]): Vector[Int] =
+    (value.toVector zip definition zip lowBound zip highBound).map:
       case (((x, d), lb), hb) =>
         val step = (hb - lb) / d
         val p = ((x - lb) / step).floor.toInt
         max(0, min(d, p))
 
-  def irregularGrid[A: scala.math.Ordering](axes: Vector[Vector[A]])(values: Vector[A]): Vector[Int] =
+  def irregularGrid[A: scala.math.Ordering](axes: Vector[Vector[A]])(values: IArray[A]): Vector[Int] =
     axes zip values map { case (axe, v) => findInterval(axe.sorted, v) }
 
   def continuousProfile[G](values: G => Vector[Double], x: Int, nX: Int): Niche[G, Int] =
@@ -49,7 +48,7 @@ object niche:
       val niche = (values(genome)(x) * nX).toInt
       if (niche == nX) niche - 1 else niche
 
-  def boundedContinuousProfile[I](values: I => Vector[Double], x: Int, nX: Int, min: Double, max: Double): Niche[I, Int] =
+  def boundedContinuousProfile[I](values: I => IArray[Double], x: Int, nX: Int, min: Double, max: Double): Niche[I, Int] =
     (i: I) =>
       values(i)(x) match {
         case v if v < min => -1
@@ -60,7 +59,7 @@ object niche:
           if (niche == nX) niche - 1 else niche
       }
 
-  def gridContinuousProfile[I](values: I => Vector[Double], x: Int, intervals: Vector[Double]): Niche[I, Int] =
+  def gridContinuousProfile[I](values: I => IArray[Double], x: Int, intervals: Vector[Double]): Niche[I, Int] =
     (i: I) => findInterval(intervals, values(i)(x))
 
   def discreteProfile[G](values: G => Vector[Int], x: Int): Niche[G, Int] =

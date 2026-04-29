@@ -55,7 +55,7 @@ object HDOSE:
     discrete: Vector[D],
     weightC: Vector[Double],
     weightD: Vector[Double],
-    fitness: P => Vector[Double],
+    fitness: P => IArray[Double],
     reject: Option[Genome => Boolean]): Breeding[HDOSEState[P], Individual[P], Genome] =
     HDOSEOperation.adaptiveBreeding[HDOSEState[P], Individual[P], Genome](
       individualFitness(fitness),
@@ -86,7 +86,7 @@ object HDOSE:
     archiveSize: Int,
     continuous: Vector[C],
     discrete: Vector[D],
-    fitness: P => Vector[Double],
+    fitness: P => IArray[Double],
     precision: Double,
     shuffle: Boolean): Elitism[HDOSEState[P], Individual[P]] =
     HDOSEOperation.elitism[HDOSEState[P], Individual[P], Genome](
@@ -106,9 +106,14 @@ object HDOSE:
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], individual: Individual[P], archive: Boolean)
 
-  def result[P](state: HDOSEState[P], population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => Vector[Double], keepAll: Boolean): Vector[Result[P]] =
+  def result[P](state: HDOSEState[P], population: Vector[Individual[P]], continuous: Vector[C], discrete: Vector[D], fitness: P => IArray[Double], keepAll: Boolean): Vector[Result[P]] =
     def individualToResult(i: Individual[P], archive: Boolean) =
-      Result(scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), i.focus(_.genome) andThen discreteVectorValues(discrete) get, DeterministicIndividual.individualFitness(fitness)(i), i, archive)
+      Result(
+        scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous),
+        i.focus(_.genome) andThen discreteVectorValues(discrete) get,
+        DeterministicIndividual.individualFitness(fitness)(i).toVector,
+        i,
+        archive)
 
     val goodIndividuals =
       if keepAll
@@ -120,8 +125,8 @@ object HDOSE:
 
     archiveIndividuals ++ goodIndividuals
 
-  def result(t: HDOSE, state: HDOSEState[Vector[Double]], population: Vector[Individual[Vector[Double]]]): Vector[Result[Vector[Double]]] =
-    result[Vector[Double]](state = state, continuous = t.continuous, discrete = t.discrete, fitness = identity, population = population, keepAll = false)
+  def result(t: HDOSE, state: HDOSEState[IArray[Double]], population: Vector[Individual[IArray[Double]]]): Vector[Result[IArray[Double]]] =
+    result(state = state, continuous = t.continuous, discrete = t.discrete, fitness = identity, population = population, keepAll = false)
 
   def reject(t: HDOSE): Option[Genome => Boolean] = NSGA2.reject(t.reject, t.continuous, t.discrete)
 
@@ -154,10 +159,10 @@ object HDOSE:
 
     sum < d
 
-  given Algorithm[HDOSE, Individual[Vector[Double]], Genome, HDOSEState[Vector[Double]]] with
+  given Algorithm[HDOSE, Individual[IArray[Double]], Genome, HDOSEState[IArray[Double]]] with
     override def initialState(t: HDOSE, rng: scala.util.Random) = HDOSE.initialState(t.distance)
     override def initialPopulation(t: HDOSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
-      deterministic.initialPopulation[Genome, Individual[Vector[Double]]](
+      deterministic.initialPopulation(
         HDOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
         HDOSE.expression(t.fitness, t.continuous, t.discrete),
         parallel)
@@ -166,18 +171,18 @@ object HDOSE:
       val sC = t.weightC.getOrElse(Vector.fill(t.continuous.size)(1.0))
       val sD = t.weightD.getOrElse(Vector.fill(t.discrete.size)(1.0))
 
-      deterministic.step[HDOSEState[Vector[Double]], Individual[Vector[Double]], Genome](
-        HDOSE.adaptiveBreeding[Vector[Double]](t.lambda, t.operatorExploration, t.continuous, t.discrete, sC, sD, identity, reject(t)),
+      deterministic.step(
+        HDOSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.continuous, t.discrete, sC, sD, identity, reject(t)),
         HDOSE.expression(t.fitness, t.continuous, t.discrete),
         HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, t.discrete, identity, t.distance, shuffle = t.shuffle),
-        Focus[HDOSEState[Vector[Double]]](_.generation),
-        Focus[HDOSEState[Vector[Double]]](_.evaluated))
+        Focus[HDOSEState[IArray[Double]]](_.generation),
+        Focus[HDOSEState[IArray[Double]]](_.evaluated))
 
 
 case class HDOSE(
   mu: Int,
   lambda: Int,
-  fitness: (IArray[Double], IArray[Int]) => Vector[Double],
+  fitness: (IArray[Double], IArray[Int]) => IArray[Double],
   limit: Vector[Double],
   archiveSize: Int = 1000,
   continuous: Vector[C] = Vector.empty,
@@ -281,7 +286,7 @@ object HDOSEOperation:
 
 
   def adaptiveBreeding[S, I, G](
-    fitness: I => Vector[Double],
+    fitness: I => IArray[Double],
     genome: I => G,
     continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
@@ -334,7 +339,7 @@ object HDOSEOperation:
 
 
   def elitism[S, I: ClassTag, G](
-    fitness: I => Vector[Double],
+    fitness: I => IArray[Double],
     limit: Vector[Double],
     mu: Int,
     archive: monocle.Lens[S, Archive[I]],

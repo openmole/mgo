@@ -28,11 +28,11 @@ object NoisyOSE {
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[P: Manifest](
+  def adaptiveBreeding[P: ClassTag](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     continuous: Vector[C],
     discrete: Vector[D],
     origin: (IArray[Double], IArray[Int]) => Vector[Int],
@@ -59,10 +59,10 @@ object NoisyOSE {
       archiveLens.get,
       reachMapLens.get)
 
-  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
+  def expression[P: ClassTag](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     NoisyIndividual.expression[P](fitness, continuous, discrete)
 
-  def elitism[P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], discrete: Vector[D], origin: (IArray[Double], IArray[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] =
+  def elitism[P: ClassTag](mu: Int, historySize: Int, aggregation: Vector[P] => IArray[Double], components: Vector[C], discrete: Vector[D], origin: (IArray[Double], IArray[Int]) => Vector[Int], limit: Vector[Double]): Elitism[OSEState[P], Individual[P]] =
     NoisyOSEOperations.elitism[OSEState[P], Individual[P], P](
       vectorPhenotype[P].get,
       aggregation,
@@ -79,23 +79,23 @@ object NoisyOSE {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P], archive: Boolean)
 
-  def result[P: Manifest](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
+  def result[P](state: OSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => IArray[Double], continuous: Vector[C], discrete: Vector[D], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     def goodIndividuals =
       population.flatMap: i =>
         val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous, discrete)
-        if (keepAll || OSEOperation.patternIsReached(f, limit)) then Some(Result(c, d, f, r, i, false)) else None
+        if (keepAll || OSEOperation.patternIsReached(f, limit)) then Some(Result(c, d, f.toVector, r, i, false)) else None
 
     state.s._1.toVector.map: i =>
       val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous, discrete)
-      Result(c, d, f, r, i, true)
+      Result(c, d, f.toVector, r, i, true)
     ++ goodIndividuals
 
-  def result[P: Manifest](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
+  def result[P](noisyOSE: NoisyOSE[P], state: OSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result[P](state, population, noisyOSE.aggregation, noisyOSE.continuous, noisyOSE.discrete, noisyOSE.limit, keepAll = false)
 
   def reject[P](t: NoisyOSE[P]): Option[Genome => Boolean] = NSGA2.reject(t.reject, t.continuous, t.discrete)
 
-  implicit def isAlgorithm[P: Manifest]: Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] = new Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] {
+  given isAlgorithm[P: ClassTag]: Algorithm[NoisyOSE[P], Individual[P], Genome, OSEState[P]] with
     def initialState(t: NoisyOSE[P], rng: scala.util.Random) = EvolutionState(s = (Archive.empty, Array.empty))
 
     def initialPopulation(t: NoisyOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
@@ -129,7 +129,7 @@ object NoisyOSE {
         Focus[OSEState[P]](_.generation),
         Focus[OSEState[P]](_.evaluated))
 
-  }
+
 
 }
 
@@ -139,7 +139,7 @@ case class NoisyOSE[P](
   fitness: (util.Random, IArray[Double], IArray[Int]) => P,
   limit: Vector[Double],
   origin: (IArray[Double], IArray[Int]) => Vector[Int],
-  aggregation: Vector[P] => Vector[Double],
+  aggregation: Vector[P] => IArray[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
@@ -149,17 +149,17 @@ case class NoisyOSE[P](
 
 object NoisyOSEOperations {
 
-  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double])(i: I): Vector[Double] =
+  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => IArray[Double])(i: I): IArray[Double] =
     aggregation(fitness(i)) ++ Vector(1.0 / fitness(i).size.toDouble)
 
-  def promisingReachMap[I](fitness: I => Vector[Double], limit: Vector[Double], origin: I => Vector[Int], population: Vector[I]): Set[Vector[Int]] = {
+  def promisingReachMap[I](fitness: I => IArray[Double], limit: Vector[Double], origin: I => Vector[Int], population: Vector[I]): Set[Vector[Int]] = {
     val promising = population.filter(i => OSEOperation.patternIsReached(fitness(i), limit))
     promising.map(origin).toSet
   }
 
   def adaptiveBreeding[S, I, G, P](
     history: I => Vector[P],
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     genome: I => G,
     continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
@@ -221,7 +221,7 @@ object NoisyOSEOperations {
 
   def elitism[S, I: ClassTag, P](
     history: I => Vector[P],
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     continuousValues: I => IArray[Double],
     discreteValues: I => IArray[Int],
     continuous: Vector[C],

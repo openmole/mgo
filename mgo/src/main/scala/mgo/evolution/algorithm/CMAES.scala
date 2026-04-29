@@ -51,7 +51,7 @@ object MOCMAES:
       parameters,
       lambda,
       _.genome.x,
-      _.fitness.toVector,
+      _.fitness,
       _.genome.a,
       (g, a, ancestor) => Genome(g, a, Some(ancestor)),
       genomeDiversity = genomeDiversity
@@ -62,13 +62,13 @@ object MOCMAES:
       parameters,
       mu,
       _.genome.x,
-      _.fitness.toVector,
+      _.fitness,
       Focus[Individual](_.genome.ancestor),
       Focus[Individual](_.genome.a),
       genomeDiversity = genomeDiversity
     )
 
-  def expression(express: IArray[Double] => Vector[Double], continuous: Vector[C]): (Genome, Long, Boolean) => Individual =
+  def expression(express: IArray[Double] => IArray[Double], continuous: Vector[C]): (Genome, Long, Boolean) => Individual =
     (ge, g, i) =>
       Individual(ge, IArray.from(express(scaleContinuousValues(ge.x, continuous))), g, i)
 
@@ -100,7 +100,7 @@ object MOCMAES:
   def apply(
    mu: Int,
    lambda: Int,
-   fitness: IArray[Double] => Vector[Double],
+   fitness: IArray[Double] => IArray[Double],
    continuous: Vector[C],
    genomeDiversity: Boolean = false) =
     new MOCMAES(
@@ -116,7 +116,7 @@ object MOCMAES:
 case class MOCMAES(
   mu: Int,
   lambda: Int,
-  fitness: IArray[Double] => Vector[Double],
+  fitness: IArray[Double] => IArray[Double],
   continuous: Vector[C],
   parameters: OnePlusOneCMAESOperation.Parameters,
   genomeDiversity: Boolean)
@@ -125,7 +125,7 @@ case class MOCMAES(
 object MOCMEASOperation:
   import OnePlusOneCMAESOperation.{A, Parameters}
 
-  type Fitness = Vector[Double]
+  type Fitness = IArray[Double]
   case class Ancestor(x: IArray[Double], fitness: Fitness)
 
   def sameKernel(x1: IArray[Double], a1: A, x2: IArray[Double], a2: A) =
@@ -159,7 +159,7 @@ object MOCMEASOperation:
     parameters: Parameters,
     mu: Int,
     x: I => IArray[Double],
-    fitness: I => Vector[Double],
+    fitness: I => IArray[Double],
     ancestor: monocle.Lens[I, Option[Ancestor]],
     a: monocle.Lens[I, A],
     genomeDiversity: Boolean): Elitism[S, I] =

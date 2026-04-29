@@ -27,6 +27,7 @@ import monocle.*
 import monocle.syntax.all.*
 import mgo.tools.*
 
+import scala.reflect.ClassTag
 import scala.util.Random
 
 object NoisyPSE {
@@ -39,20 +40,20 @@ object NoisyPSE {
 
   type Individual[P] = CDGenome.NoisyIndividual.Individual[P]
 
-  def buildIndividual[P: Manifest](genome: Genome, phenotype: P, generation: Long, initial: Boolean) = CDGenome.NoisyIndividual.buildIndividual[P](genome, phenotype, generation, initial)
-  def vectorPhenotype[P: Manifest]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso
+  def buildIndividual[P: ClassTag](genome: Genome, phenotype: P, generation: Long, initial: Boolean) = CDGenome.NoisyIndividual.buildIndividual[P](genome, phenotype, generation, initial)
+  def vectorPhenotype[P: ClassTag]: PLens[Individual[P], Individual[P], Vector[P], Vector[P]] = Focus[Individual[P]](_.phenotypeHistory) andThen arrayToVectorIso
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[P: Manifest](
+  def adaptiveBreeding[P: ClassTag](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     continuous: Vector[C],
     discrete: Vector[D],
-    pattern: Vector[Double] => Vector[Int],
+    pattern: IArray[Double] => Vector[Int],
     maxRareSample: Int,
     reject: Option[Genome => Boolean]): Breeding[PSEState, Individual[P], Genome] =
     NoisyPSEOperations.adaptiveBreeding[PSEState, Individual[P], Genome](
@@ -73,9 +74,9 @@ object NoisyPSE {
       maxRareSample,
       (s, rng) => NoisyPSE.initialGenomes(s, continuous, discrete, reject, rng))
 
-  def elitism[P: {CanContainNaN, Manifest}](
-    pattern: Vector[Double] => Vector[Int],
-    aggregation: Vector[P] => Vector[Double],
+  def elitism[P: {CanContainNaN, ClassTag}](
+    pattern: IArray[Double] => Vector[Int],
+    aggregation: Vector[P] => IArray[Double],
     historySize: Int,
     continuous: Vector[C],
     discrete: Vector[D]): Elitism[PSEState, Individual[P]] =
@@ -88,37 +89,37 @@ object NoisyPSE {
       historySize,
       Focus[EvolutionState[HitMap]](_.s))
 
-  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
+  def expression[P: ClassTag](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     noisy.expression[Genome, Individual[P], P](
       scaledValues(continuous, discrete),
       buildIndividual[P])(fitness)
 
-  def aggregate[P: Manifest](i: Individual[P], aggregation: Vector[P] => Vector[Double], pattern: Vector[Double] => Vector[Int], continuous: Vector[C], discrete: Vector[D]): (IArray[Double], IArray[Int], Vector[Double], Vector[Int], Int) =
+  def aggregate[P: ClassTag](i: Individual[P], aggregation: Vector[P] => IArray[Double], pattern: IArray[Double] => Vector[Int], continuous: Vector[C], discrete: Vector[D]): (IArray[Double], IArray[Int], Vector[Double], Vector[Int], Int) =
     (
       scaleContinuousValues(continuousValues(continuous).get(i.genome), continuous),
       i.focus(_.genome) andThen discreteValues(discrete) get,
-      aggregation(vectorPhenotype[P].get(i)),
+      aggregation(vectorPhenotype[P].get(i)).toVector,
       (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),
       i.phenotypeHistory.size)
 
   case class Result[P](continuous: IArray[Double], discrete: IArray[Int], aggregation: Vector[Double], pattern: Vector[Int], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](
+  def result[P: ClassTag](
     population: Vector[Individual[P]],
-    aggregation: Vector[P] => Vector[Double],
-    pattern: Vector[Double] => Vector[Int],
+    aggregation: Vector[P] => IArray[Double],
+    pattern: IArray[Double] => Vector[Int],
     continuous: Vector[C],
     discrete: Vector[D]): Vector[Result[P]] =
     population.map: i =>
       val (c, d, f, p, r) = aggregate[P](i, aggregation, pattern, continuous, discrete)
       Result[P](c, d, f, p, r, i)
 
-  def result[P: Manifest](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
+  def result[P: ClassTag](pse: NoisyPSE[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result(population, pse.aggregation, pse.pattern, pse.continuous, pse.discrete)
 
   def reject[P](pse: NoisyPSE[P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
-  given isAlgorithm[P: {Manifest, CanContainNaN}]: Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] with {
+  given isAlgorithm[P: {ClassTag, CanContainNaN}]: Algorithm[NoisyPSE[P], Individual[P], Genome, PSEState] with
     def initialState(t: NoisyPSE[P], rng: util.Random) = PSEState()
 
     def initialPopulation(t: NoisyPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
@@ -150,14 +151,14 @@ object NoisyPSE {
         Focus[PSEState](_.generation),
         Focus[PSEState](_.evaluated))
 
-  }
+
 }
 
 case class NoisyPSE[P](
   lambda: Int,
   phenotype: (util.Random, IArray[Double], IArray[Int]) => P,
-  pattern: Vector[Double] => Vector[Int],
-  aggregation: Vector[P] => Vector[Double],
+  pattern: IArray[Double] => Vector[Int],
+  aggregation: Vector[P] => IArray[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   maxRareSample: Int = 10,
@@ -208,8 +209,8 @@ object NoisyPSEOperations:
   def elitism[S, I, P: CanContainNaN](
     values: I => (IArray[Double], IArray[Int]),
     history: monocle.Lens[I, Vector[P]],
-    aggregation: Vector[P] => Vector[Double],
-    pattern: Vector[Double] => Vector[Int],
+    aggregation: Vector[P] => IArray[Double],
+    pattern: IArray[Double] => Vector[Int],
     historyAge: monocle.Lens[I, Long],
     historySize: Int,
     hitmap: monocle.Lens[S, HitMap]): Elitism[S, I] =

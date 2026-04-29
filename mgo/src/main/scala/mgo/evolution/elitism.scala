@@ -58,7 +58,7 @@ object elitism:
     val niches = population.groupBy(niche).toVector
     niches.flatMap { case (_, individuals) => keep(individuals) }
 
-  def keepFirstFront[I](population: Vector[I], fitness: I => Vector[Double]): Vector[I] =
+  def keepFirstFront[I](population: Vector[I], fitness: I => IArray[Double]): Vector[I] =
     if population.isEmpty
     then population
     else
@@ -66,10 +66,10 @@ object elitism:
       val minDominating = dominating.map(_.value).min
       (population zip dominating).filter((_, d) => d.value == minDominating).map(_._1)
 
-  def keepOnFirstFront[I](population: Vector[I], fitness: I => Vector[Double], mu: Int, random: scala.util.Random): Vector[I] =
+  def keepOnFirstFront[I](population: Vector[I], fitness: I => IArray[Double], mu: Int, random: scala.util.Random): Vector[I] =
     import mgo.tools.metric.CrowdingDistance
     val first = keepFirstFront(population, fitness)
-    val crowding = CrowdingDistance(first.map(fitness))
+    val crowding = CrowdingDistance(first.map(fitness andThen (_.toVector)))
     val res = keepHighestRanked(first, crowding, mu)
     res
 

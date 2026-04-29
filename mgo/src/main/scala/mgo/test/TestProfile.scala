@@ -49,9 +49,9 @@ object NoisySphereProfile extends App {
 
   import algorithm._
 
-  def aggregation(history: Vector[Vector[Double]]): Vector[Double] = history.transpose.map(h => h.sum / h.size)
+  def aggregation(history: Vector[IArray[Double]]): IArray[Double] = IArray.from(history.transpose.map(h => h.sum / h.size))
 
-  val algo: NoisyProfile[Int, Vector[Double]] = NoisyProfile(
+  val algo = NoisyProfile(
     muByNiche = 20,
     lambda = 100,
     fitness = noisyDiscreteSphere.compute,

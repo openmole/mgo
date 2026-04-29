@@ -16,18 +16,18 @@
  */
 package mgo.evolution.algorithm
 
-import cats.implicits._
-import mgo.evolution._
-import mgo.evolution.algorithm.GenomeVectorDouble._
-import mgo.evolution.breeding._
-import mgo.evolution.elitism._
-import mgo.evolution.ranking._
-import mgo.tools._
-
-import monocle._
-import monocle.syntax.all._
+import cats.implicits.*
+import mgo.evolution.*
+import mgo.evolution.algorithm.GenomeVectorDouble.*
+import mgo.evolution.breeding.*
+import mgo.evolution.elitism.*
+import mgo.evolution.ranking.*
+import mgo.tools.*
+import monocle.*
+import monocle.syntax.all.*
 
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 object NoisyNSGA2 {
 
@@ -38,31 +38,31 @@ object NoisyNSGA2 {
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P])
 
-  def result[P: Manifest](population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D], keepAll: Boolean): Vector[Result[P]] =
+  def result[P](population: Vector[Individual[P]], aggregation: Vector[P] => IArray[Double], continuous: Vector[C], discrete: Vector[D], keepAll: Boolean): Vector[Result[P]] =
     val individuals = if (keepAll) population else keepFirstFront(population, fitness(aggregation))
 
     individuals.map: i =>
       val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous, discrete)
-      Result(c, d, f, r, i)
+      Result(c, d, f.toVector, r, i)
 
 
-  def result[P: Manifest](nsga2: NoisyNSGA2[P], population: Vector[Individual[P]]): Vector[Result[P]] =
+  def result[P](nsga2: NoisyNSGA2[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result[P](population, nsga2.aggregation, nsga2.continuous, nsga2.discrete, keepAll = false)
 
-  def fitness[P: Manifest](aggregation: Vector[P] => Vector[Double]): Individual[P] => Vector[Double] =
+  def fitness[P](aggregation: Vector[P] => IArray[Double]): Individual[P] => IArray[Double] =
     NoisyNSGA2Operations.aggregated[Individual[P], P](
-      vectorPhenotype[P].get,
+      _.phenotypeHistory.toVector,
       aggregation,
       _.phenotypeHistory.size)(_)
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[S, P: Manifest](
+  def adaptiveBreeding[S, P](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     continuous: Vector[C],
     discrete: Vector[D],
     reject: Option[Genome => Boolean],
@@ -84,10 +84,10 @@ object NoisyNSGA2 {
       cloneProbability,
       genomeDiversity = genomeDiversity)
 
-  def expression[P: Manifest](phenotype: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
+  def expression[P: ClassTag](phenotype: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     NoisyIndividual.expression[P](phenotype, continuous, discrete)
 
-  def elitism[S, P: Manifest](mu: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], discrete: Vector[D], genomeDiversity: Boolean): Elitism[S, Individual[P]] =
+  def elitism[S, P: ClassTag](mu: Int, historySize: Int, aggregation: Vector[P] => IArray[Double], components: Vector[C], discrete: Vector[D], genomeDiversity: Boolean): Elitism[S, Individual[P]] =
     if genomeDiversity
     then
       NoisyNSGA2Operations.elitismWithDiversity[S, Individual[P], P](
@@ -104,7 +104,7 @@ object NoisyNSGA2 {
 
   def reject[P](nsga2: NoisyNSGA2[P]): Option[Genome => Boolean] = NSGA2.reject(nsga2.reject, nsga2.continuous, nsga2.discrete)
 
-  given isAlgorithm[P: Manifest]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] with
+  given isAlgorithm[P: ClassTag]: Algorithm[NoisyNSGA2[P], Individual[P], Genome, NSGA2State] with
     def initialState(t: NoisyNSGA2[P], rng: scala.util.Random) = EvolutionState(s = ())
 
     def initialPopulation(t: NoisyNSGA2[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
@@ -142,7 +142,7 @@ case class NoisyNSGA2[P](
   mu: Int,
   lambda: Int,
   fitness: (util.Random, IArray[Double], IArray[Int]) => P,
-  aggregation: Vector[P] => Vector[Double],
+  aggregation: Vector[P] => IArray[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   historySize: Int = 100,
@@ -153,11 +153,11 @@ case class NoisyNSGA2[P](
 
 object NoisyNSGA2Operations:
 
-  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => Vector[Double], accuracy: I => Double)(i: I): Vector[Double] =
-    Vector(-accuracy(i)) ++ aggregation(fitness(i))
+  def aggregated[I, P](fitness: I => Vector[P], aggregation: Vector[P] => IArray[Double], accuracy: I => Double)(i: I): IArray[Double] =
+    IArray(-accuracy(i)) ++ aggregation(fitness(i))
 
   def adaptiveBreeding[S, I, G, P](
-    fitness: I => Vector[Double],
+    fitness: I => IArray[Double],
     genome: I => G,
     continuousValues: G => IArray[Double],
     discreteValues: G => IArray[Int],
@@ -199,7 +199,7 @@ object NoisyNSGA2Operations:
       clonesReplace(cloneProbability, population, genome, tournament(ranks, tournamentRounds))(s, offspring, rng)
 
   def elitismWithDiversity[S, I, P](
-    fitness: I => Vector[Double],
+    fitness: I => IArray[Double],
     continuousValues: I => IArray[Double],
     discreteValues: I => IArray[Int],
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
@@ -212,7 +212,7 @@ object NoisyNSGA2Operations:
       (s, keepHighestRanked(merged, ranks, mu))
 
   def elitism[S, I, P](
-    fitness: I => Vector[Double],
+    fitness: I => IArray[Double],
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>

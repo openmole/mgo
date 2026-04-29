@@ -17,16 +17,16 @@
 
 package mgo.evolution
 
-import cats.implicits._
-import mgo.evolution.algorithm._
-import mgo.evolution.stop._
-import mgo.tools.execution._
-import org.apache.commons.math3.random._
-
-import monocle._
-import monocle.syntax.all._
+import cats.implicits.*
+import mgo.evolution.algorithm.*
+import mgo.evolution.stop.*
+import mgo.tools.execution.*
+import org.apache.commons.math3.random.*
+import monocle.*
+import monocle.syntax.all.*
 
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 /*------------- Running the EA ------------------*/
 
@@ -79,8 +79,8 @@ implicit class Double2Scalable(d: Double):
   def scale(s: C): Double = scale(s.low, s.high)
   //def unscale(min: Double, max: Double) = changeScale(d, min, max, 0, 1)
 
-def arrayToVectorIso[A: Manifest]: Iso[IArray[A], Vector[A]] = monocle.Iso[IArray[A], Vector[A]](_.toVector)(v => IArray.from(v))
-def array2ToVectorLens[A: Manifest]: Iso[Array[Array[A]], Vector[Vector[A]]] = monocle.Iso[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => v.map(_.toArray).toArray)
+def arrayToVectorIso[A: ClassTag]: Iso[IArray[A], Vector[A]] = monocle.Iso[IArray[A], Vector[A]](_.toVector)(v => IArray.from(v))
+def array2ToVectorLens[A: ClassTag]: Iso[Array[Array[A]], Vector[Vector[A]]] = monocle.Iso[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => v.map(_.toArray).toArray)
 
 def intToUnsignedIntOption: Iso[Int, Option[Int]] =
   monocle.Iso[Int, Option[Int]]( i =>

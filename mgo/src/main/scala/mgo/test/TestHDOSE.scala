@@ -38,7 +38,7 @@ object NoisyRastriginHDOSE extends App:
   val hdose = NoisyHDOSE(
     mu = 100,
     lambda = 100,
-    fitness = (rng, x, _) => Vector(rastrigin.compute(x) + rng.nextGaussian() * 0.25),
+    fitness = (rng, x, _) => IArray(rastrigin.compute(x) + rng.nextGaussian() * 0.25),
     aggregation = Aggregation.average,
     limit = Vector(10.0),
     archiveSize = 10,

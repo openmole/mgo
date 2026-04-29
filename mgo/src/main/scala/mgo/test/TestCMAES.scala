@@ -80,7 +80,7 @@ object ShpereMOCMAES extends App:
   val cmaes = MOCMAES(
     mu = 100,
     lambda = 100,
-    fitness = v => Vector(sphere.compute(v)),
+    fitness = v => IArray(sphere.compute(v)),
     continuous = sphere.genome(2)
   )
 
@@ -102,7 +102,7 @@ object RastriginMOCMAES extends App:
   val cmaes = MOCMAES(
     mu = 100,
     lambda = 100,
-    fitness = x => Vector(rastrigin.compute(x)),
+    fitness = x => IArray(rastrigin.compute(x)),
     continuous = rastrigin.continuous(10)
   )
 
@@ -123,7 +123,7 @@ object RosenbrockMOCMAES extends App:
   val cmaes = MOCMAES(
     mu = 100,
     lambda = 100,
-    fitness = x => Vector(rosenbrock.compute(x)),
+    fitness = x => IArray(rosenbrock.compute(x)),
     continuous = rosenbrock.continuous(20),
     genomeDiversity = true
   )

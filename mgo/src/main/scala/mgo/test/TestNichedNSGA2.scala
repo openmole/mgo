@@ -8,14 +8,14 @@ object NichedNSGAII extends App {
 
   case class Phenotype(diversity: Double, optimisation: Double)
 
-  val nsga2: Profile[Seq[Int]] = Profile(
+  val nsga2 = Profile(
     lambda = 100,
     fitness = discreteSphere.compute,
     continuous = discreteSphere.continuous(6),
     discrete = discreteSphere.discrete(3),
     niche = i => CDGenome.discreteValues(discreteSphere.discrete(3)).get(i.genome).take(2).toSeq)
 
-  def evolution: RunAlgorithm[Profile[Seq[Int]], CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, Profile.ProfileState] =
+  def evolution =
     nsga2.
       until(afterGeneration(100)).
       trace((s, is) => println(s.generation))

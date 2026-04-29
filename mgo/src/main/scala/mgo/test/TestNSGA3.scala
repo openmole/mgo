@@ -56,7 +56,7 @@ object FunctionNSGA3 extends App {
 
   //def fitness(cont: Vector[Double], discr: Vector[Int]): Vector[Double] = Vector(rastrigin.compute(cont), rastrigin.compute(cont.map { _ + 0.5 }))
   // ! dimension must be correct with reference points
-  def fitness(cont: Vector[Double], discr: Vector[Int]): Vector[Double] = ManyObjective.maf1(12)(cont)
+  def fitness(cont: Vector[Double], discr: Vector[Int]): IArray[Double] = IArray.from(ManyObjective.maf1(12)(cont))
 
   //val ref = NSGA3Operations.ReferencePoints(40, 2)
   val ref: NSGA3Operations.ReferencePoints = NSGA3Operations.ReferencePoints(50, 3)
@@ -64,7 +64,7 @@ object FunctionNSGA3 extends App {
   //val genome = rastrigin.continuous(4)
   val genome: Vector[C] = Vector.fill(13)(C(0.0, 1.0))
 
-  def write(gen: Long, pop: Vector[Individual[Vector[Double]]]): Unit = {
+  def write(gen: Long, pop: Vector[Individual[IArray[Double]]]): Unit = {
     val w = new BufferedWriter(new FileWriter(new File("test/pop" + gen + ".csv")))
     w.write(pop.map(i => fitness(i.genome.continuousValues.toVector, Vector.empty)).map(_.mkString(";")).mkString("\n"))
     w.close()
@@ -76,7 +76,7 @@ object FunctionNSGA3 extends App {
     fitness = fitness,
     continuous = genome)
 
-  def evolution: RunAlgorithm[NSGA3, Individual[Vector[Double]], Genome, EvolutionState[Unit]] =
+  def evolution =
     nsga3.until(afterGeneration(1000)).
       trace { (s, individuals) =>
         println("\n====================\ngen: " + s.generation)
@@ -85,7 +85,7 @@ object FunctionNSGA3 extends App {
 
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
 
-  val res: Vector[NSGA3.Result[Vector[Double]]] = NSGA3.result(nsga3, finalPopulation)
+  val res = NSGA3.result(nsga3, finalPopulation)
   println(res.mkString("\n"))
   val fitnesses: Array[Array[Double]] = res.map(_.fitness.toArray).toArray
   val w = new BufferedWriter(new FileWriter(new File("test/functionNSGA3.csv")))
@@ -100,10 +100,10 @@ object TestNoisyNSGA3 extends App {
 
   import algorithm._
 
-  def fitness(rng: util.Random, cont: Vector[Double], discr: Vector[Int]): Vector[Double] = {
+  def fitness(rng: util.Random, cont: Vector[Double], discr: Vector[Int]): IArray[Double] = {
     val res = ManyObjective.maf1(12)(cont).map(_ + 0.1 * rng.nextGaussian())
     //println(res.size)
-    res
+    IArray.from(res)
   }
   // ! for noisy, ref points must be dim + 1
   val ref: NSGA3Operations.ReferencePoints = NSGA3Operations.ReferencePoints(50, 4)
@@ -114,10 +114,10 @@ object TestNoisyNSGA3 extends App {
     referencePoints = ref,
     fitness = fitness,
     // ! take average across repetitions and not within each ! => add assert that dim ref = dim extended obj?
-    aggregation = pop => pop.transpose.map(x => x.sum / x.length),
+    aggregation = pop => IArray.from(pop.transpose.map(x => x.sum / x.length)),
     continuous = genome)
 
-  def evolution: RunAlgorithm[NoisyNSGA3[Vector[Double]], NoisyIndividual.Individual[Vector[Double]], Genome, NoisyNSGA3.NSGA3State] =
+  def evolution =
     nsga3.until(afterGeneration(10)).
       trace { (s, individuals) =>
         println("\n====================\ngen: " + s.generation)

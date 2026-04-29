@@ -30,21 +30,21 @@ package object test {
   def average(s: Seq[Double]): Double = s.sum / s.size
 
   object sphere {
-    def compute(i: Vector[Double]): Double = i.map(x => x * x).sum
+    def compute(i: IArray[Double]): Double = i.map(x => x * x).sum
     def genome(size: Int): Vector[C] = Vector.fill(size)(C(-2, 2))
   }
 
   object discreteSphere {
-    def compute(x: Vector[Double], i: Vector[Int]): Vector[Double] = Vector(x.map(x => x * x).sum + i.map(math.abs).sum)
+    def compute(x: IArray[Double], i: IArray[Int]): IArray[Double] = IArray(x.map(x => x * x).sum + i.map(math.abs).sum)
     def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-2, 2))
     def discrete(size: Int): Vector[D] = Vector.fill(size)(D(-2, 2))
   }
 
   object noisyDiscreteSphere {
-    def compute(rng: Random, v: Vector[Double], i: Vector[Int]): Vector[Double] = {
+    def compute(rng: Random, v: IArray[Double], i: IArray[Int]): IArray[Double] = {
       val res = v.map(x => x * x).sum + i.map(math.abs).sum
       val noise = rng.nextGaussian() * 0.5 * res
-      Vector(res + noise)
+      IArray(res + noise)
     }
     def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-2, 2))
     def discrete(size: Int): Vector[D] = Vector.fill(size)(D(-2, 2))
@@ -52,7 +52,7 @@ package object test {
 
   object rastrigin:
     def continuous(size: Int): Vector[C] = Vector.fill(size)(C(-5.12, 5.12))
-    def compute(i: Vector[Double]): Double =
+    def compute(i: IArray[Double]): Double =
       10 * i.size + i.map(x => (x * x) - 10 * math.cos(2 * Pi * x)).sum
 
   def himmelblau(x: Double, y: Double): Double = {
@@ -62,13 +62,13 @@ package object test {
     z(x.scale(-4.5, 4.5), y.scale(-4.5, 4.5))
   }
 
-  def griewangk(g: Vector[Double]): Double = {
+  def griewangk(g: IArray[Double]): Double = {
     val values = g.map(_.scale(-600, 600))
     1.0 + values.map(x => math.pow(x, 2.0) / 4000).sum - values.zipWithIndex.map { case (x, i) => x / math.sqrt(i + 1.0) }.map(math.cos).reduce(_ * _)
   }
 
   object rosenbrock:
-    def compute(x: Vector[Double]): Double =
+    def compute(x: IArray[Double]): Double =
       require(x.length >= 2, "Rosenbrock function requires at least 2 dimensions.")
       (0 until x.length - 1).map: i =>
         val xi = x(i)
@@ -98,7 +98,7 @@ package object test {
     def continuous(size: Int): Vector[C] = Vector.fill(size)(C(0.0, 5.0))
     def discrete = Vector.empty
 
-    def compute(genome: Vector[Double], d: Vector[Int]): Vector[Double] = {
+    def compute(genome: IArray[Double], d: Vector[Int]): IArray[Double] = {
       val genomeSize = genome.size
 
       def g(x: Seq[Double]) = 1 + 10 * (genomeSize - 1) + x.map { i => pow(i, 2) - 10 * cos(4 * Pi * i) }.sum
@@ -108,7 +108,7 @@ package object test {
         gx * (1 - sqrt(genome(0) / gx))
       }
 
-      Vector(genome(0), f(genome.tail))
+      IArray(genome(0), f(genome.tail))
     }
 
   }

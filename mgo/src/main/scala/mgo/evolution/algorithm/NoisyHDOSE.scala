@@ -48,11 +48,11 @@ object NoisyHDOSE:
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
 
-  def adaptiveBreeding[P: Manifest](
+  def adaptiveBreeding[P: ClassTag](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     continuous: Vector[C],
     discrete: Vector[D],
     weightC: Vector[Double],
@@ -81,13 +81,13 @@ object NoisyHDOSE:
       limit,
       archiveLens.get)
 
-  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
+  def expression[P: ClassTag](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     NoisyIndividual.expression[P](fitness, continuous, discrete)
 
-  def elitism[P: Manifest](
+  def elitism[P: ClassTag](
     mu: Int,
     historySize: Int,
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     continuous: Vector[C],
     discrete: Vector[D],
     weightC: Vector[Double],
@@ -117,25 +117,25 @@ object NoisyHDOSE:
 
   case class Result[P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], replications: Int, individual: Individual[P], archive: Boolean)
 
-  def result[P: Manifest](state: HDOSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => Vector[Double], continuous: Vector[C], discrete: Vector[D], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
+  def result[P: ClassTag](state: HDOSEState[P], population: Vector[Individual[P]], aggregation: Vector[P] => IArray[Double], continuous: Vector[C], discrete: Vector[D], limit: Vector[Double], keepAll: Boolean): Vector[Result[P]] =
     def goodIndividuals =
       population.flatMap: i =>
         val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous, discrete)
         if keepAll || OSEOperation.patternIsReached(f, limit)
-        then Some(Result(c, d, f, r, i, false))
+        then Some(Result(c, d, f.toVector, r, i, false))
         else None
 
     state.s.archive.toVector.map: i =>
       val (c, d, f, r) = NoisyIndividual.aggregate(i, aggregation, continuous, discrete)
-      Result(c, d, f, r, i, true)
+      Result(c, d, f.toVector, r, i, true)
     ++ goodIndividuals
 
-  def result[P: Manifest](noisyHDOSE: NoisyHDOSE[P], state: HDOSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
+  def result[P: ClassTag](noisyHDOSE: NoisyHDOSE[P], state: HDOSEState[P], population: Vector[Individual[P]]): Vector[Result[P]] =
     result[P](state, population, noisyHDOSE.aggregation, noisyHDOSE.continuous, noisyHDOSE.discrete, noisyHDOSE.limit, keepAll = false)
 
   def reject[P](t: NoisyHDOSE[P]): Option[Genome => Boolean] = NSGA2.reject(t.reject, t.continuous, t.discrete)
 
-  given [P: Manifest]: Algorithm[NoisyHDOSE[P], Individual[P], Genome, HDOSEState[P]] with
+  given [P: ClassTag]: Algorithm[NoisyHDOSE[P], Individual[P], Genome, HDOSEState[P]] with
     def initialState(t: NoisyHDOSE[P], rng: scala.util.Random) = NoisyHDOSE.initialState(t.distance)
     
     def initialPopulation(t: NoisyHDOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
@@ -186,7 +186,7 @@ case class NoisyHDOSE[P](
   fitness: (util.Random, IArray[Double], IArray[Int]) => P,
   limit: Vector[Double],
   archiveSize: Int,
-  aggregation: Vector[P] => Vector[Double],
+  aggregation: Vector[P] => IArray[Double],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
   weightC: Option[Vector[Double]] = None,
@@ -203,7 +203,7 @@ object NoisyHDOSEOperations:
 
   def adaptiveBreeding[S, I: ClassTag, G, P](
     history: I => Vector[P],
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     genome: I => G,
     continuousValues: G => IArray[Double],
     continuousOperator: G => Option[Int],
@@ -268,7 +268,7 @@ object NoisyHDOSEOperations:
   def elitism[S, I: ClassTag, P, G](
     genome: I => G,
     history: I => Vector[P],
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     continuousValues: G => IArray[Double],
     discreteValues: G => IArray[Int],
     limit: Vector[Double],

@@ -26,7 +26,7 @@ object SphereNSGAII extends App {
   val nsga2: NSGA2 = NSGA2(
     mu = 100,
     lambda = 100,
-    fitness = (v, _) => Vector(sphere.compute(v)),
+    fitness = (v, _) => IArray(sphere.compute(v)),
     continuous = sphere.genome(6)
   )
 
@@ -52,7 +52,7 @@ object DiscreteNSGAII extends App {
     continuous = discreteSphere.continuous(6),
     discrete = discreteSphere.discrete(3))
 
-  def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -67,7 +67,7 @@ object NoisySphereNSGAII extends App {
 
   import algorithm._
 
-  val nsga2: NoisyNSGA2[Vector[Double]] =
+  val nsga2 =
     NoisyNSGA2(
       mu = 100,
       lambda = 100,
@@ -76,7 +76,7 @@ object NoisySphereNSGAII extends App {
       continuous = noisyDiscreteSphere.continuous(2),
       discrete = noisyDiscreteSphere.discrete(2))
 
-  def evolution: RunAlgorithm[NoisyNSGA2[Vector[Double]], CDGenome.NoisyIndividual.Individual[Vector[Double]], CDGenome.Genome, NoisyNSGA2.NSGA2State] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -98,7 +98,7 @@ object ZDT4NSGAII extends App:
       fitness = zdt4.compute,
       continuous = zdt4.continuous(10))
 
-  def evolution: RunAlgorithm[NSGA2, CDGenome.DeterministicIndividual.Individual[Vector[Double]], CDGenome.Genome, EvolutionState[Unit]] =
+  def evolution =
     nsga2.
       until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
@@ -115,7 +115,7 @@ object RastriginNSGAII extends App:
   val nsga2: NSGA2 = NSGA2(
     mu = 100,
     lambda = 100,
-    fitness = (x, _) => Vector(rastrigin.compute(x)),
+    fitness = (x, _) => IArray(rastrigin.compute(x)),
     continuous = rastrigin.continuous(40),
     genomeDiversity = true)
 
@@ -136,7 +136,7 @@ object RosenbrockNSGAII extends App:
   val nsga2: NSGA2 = NSGA2(
     mu = 100,
     lambda = 100,
-    fitness = (x, _) => Vector(rosenbrock.compute(x)),
+    fitness = (x, _) => IArray(rosenbrock.compute(x)),
     continuous = rosenbrock.continuous(10),
     genomeDiversity = true)
 

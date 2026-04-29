@@ -16,18 +16,18 @@
  */
 package mgo.evolution.algorithm
 
-import cats.implicits._
-import mgo.evolution._
-import mgo.evolution.algorithm.GenomeVectorDouble._
-import mgo.evolution.breeding._
-import mgo.evolution.elitism._
-import mgo.evolution.niche._
+import cats.implicits.*
+import mgo.evolution.*
+import mgo.evolution.algorithm.GenomeVectorDouble.*
+import mgo.evolution.breeding.*
+import mgo.evolution.elitism.*
+import mgo.evolution.niche.*
 import mgo.tools.*
-
-import monocle._
-import monocle.syntax.all._
+import monocle.*
+import monocle.syntax.all.*
 
 import scala.language.higherKinds
+import scala.reflect.ClassTag
 
 object NoisyProfile:
 
@@ -36,14 +36,14 @@ object NoisyProfile:
 
   type ProfileState = EvolutionState[Unit]
 
-  def aggregatedFitness[N, P: Manifest](aggregation: Vector[P] => Vector[Double]): Individual[P] => Vector[Double] =
-    NoisyNSGA2Operations.aggregated[Individual[P], P](vectorPhenotype[P].get, aggregation, _.phenotypeHistory.size)(_)
+  def aggregatedFitness[N, P](aggregation: Vector[P] => IArray[Double]): Individual[P] => IArray[Double] =
+    i => NoisyNSGA2Operations.aggregated[Individual[P], P](_.phenotypeHistory.toVector, aggregation, _.phenotypeHistory.size)(i)
 
   case class Result[N, P](continuous: Vector[Double], discrete: Vector[Int], fitness: Vector[Double], niche: N, replications: Int, individual: Individual[P])
 
-  def result[N, P: Manifest](
+  def result[N, P](
     population: Vector[Individual[P]],
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     niche: Individual[P] => N,
     continuous: Vector[C],
     discrete: Vector[D],
@@ -64,10 +64,10 @@ object NoisyProfile:
 
     individuals.map: i =>
       val (c, d, f, r) = NoisyIndividual.aggregate[P](i, aggregation, continuous, discrete)
-      Result(c, d, f, niche(i), r, i)
+      Result(c, d, f.toVector, niche(i), r, i)
 
-  def result[N, P: Manifest](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = true): Vector[Result[N, P]] =
-    result[N, P](population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, noisyProfile.discrete, onlyOldest, keepAll = false)
+  def result[N, P](noisyProfile: NoisyProfile[N, P], population: Vector[Individual[P]], onlyOldest: Boolean = true): Vector[Result[N, P]] =
+    result(population, noisyProfile.aggregation, noisyProfile.niche, noisyProfile.continuous, noisyProfile.discrete, onlyOldest, keepAll = false)
 
   def continuousProfile[P](continuous: Vector[C], x: Int, nX: Int): Niche[Individual[P], Int] =
     mgo.evolution.niche.continuousProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen continuousVectorValues(continuous)).get, x, nX)
@@ -76,22 +76,22 @@ object NoisyProfile:
     mgo.evolution.niche.discreteProfile[Individual[P]]((Focus[Individual[P]](_.genome) andThen discreteVectorValues(discrete)).get, x)
 
   def boundedContinuousProfile[P](continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
-    mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), x, nX, min, max)
+    mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousValues(continuousValues(continuous).get(i.genome), continuous), x, nX, min, max)
 
   def gridContinuousProfile[P](continuous: Vector[C], x: Int, intervals: Vector[Double]): Niche[Individual[P], Int] =
-    mgo.evolution.niche.gridContinuousProfile[Individual[P]](i => scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous), x, intervals)
+    mgo.evolution.niche.gridContinuousProfile[Individual[P]](i => scaleContinuousValues(continuousValues(continuous).get(i.genome), continuous), x, intervals)
 
-  def boundedObjectiveProfile[P: Manifest](aggregation: Vector[P] => Vector[Double], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
+  def boundedObjectiveProfile[P: ClassTag](aggregation: Vector[P] => IArray[Double], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
     mgo.evolution.niche.boundedContinuousProfile[Individual[P]](aggregatedFitness(aggregation), x, nX, min, max)
 
-  def gridObjectiveProfile[P: Manifest](aggregation: Vector[P] => Vector[Double], x: Int, intervals: Vector[Double]): Niche[Individual[P], Int] =
+  def gridObjectiveProfile[P: ClassTag](aggregation: Vector[P] => IArray[Double], x: Int, intervals: Vector[Double]): Niche[Individual[P], Int] =
     mgo.evolution.niche.gridContinuousProfile[Individual[P]](aggregatedFitness(aggregation), x, intervals)
 
-  def adaptiveBreeding[P: Manifest](
+  def adaptiveBreeding[P: ClassTag](
     lambda: Int,
     operatorExploration: Double,
     cloneProbability: Double,
-    aggregation: Vector[P] => Vector[Double],
+    aggregation: Vector[P] => IArray[Double],
     continuous: Vector[C],
     discrete: Vector[D],
     reject: Option[Genome => Boolean]): Breeding[ProfileState, Individual[P], Genome] =
@@ -111,7 +111,7 @@ object NoisyProfile:
       operatorExploration,
       cloneProbability)
 
-  def elitism[N, P: Manifest](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => Vector[Double], components: Vector[C], discrete: Vector[D]): Elitism[ProfileState, Individual[P]] =
+  def elitism[N, P: ClassTag](niche: Niche[Individual[P], N], muByNiche: Int, historySize: Int, aggregation: Vector[P] => IArray[Double], components: Vector[C], discrete: Vector[D]): Elitism[ProfileState, Individual[P]] =
 
     def individualValues(i: Individual[P]) = scaledValues(components, discrete)(i.genome)
 
@@ -124,7 +124,7 @@ object NoisyProfile:
         muByNiche)(s, population, candidates, rng)
 
 
-  def expression[P: Manifest](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
+  def expression[P: ClassTag](fitness: (util.Random, IArray[Double], IArray[Int]) => P, continuous: Vector[C], discrete: Vector[D]) =
     NoisyIndividual.expression[P](fitness, continuous, discrete)
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
@@ -132,7 +132,7 @@ object NoisyProfile:
 
   def reject[N, P](pse: NoisyProfile[N, P]): Option[Genome => Boolean] = NSGA2.reject(pse.reject, pse.continuous, pse.discrete)
 
-  given isAlgorithm[N, P: Manifest]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] with
+  given isAlgorithm[N, P: ClassTag]: Algorithm[NoisyProfile[N, P], Individual[P], Genome, ProfileState] with
     override def initialState(t: NoisyProfile[N, P], rng: scala.util.Random) = EvolutionState(s = ())
 
     def initialPopulation(t: NoisyProfile[N, P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
@@ -168,7 +168,7 @@ case class NoisyProfile[N, P](
   muByNiche: Int,
   lambda: Int,
   fitness: (util.Random, IArray[Double], IArray[Int]) => P,
-  aggregation: Vector[P] => Vector[Double],
+  aggregation: Vector[P] => IArray[Double],
   niche: Niche[CDGenome.NoisyIndividual.Individual[P], N],
   continuous: Vector[C] = Vector.empty,
   discrete: Vector[D] = Vector.empty,
@@ -180,7 +180,7 @@ case class NoisyProfile[N, P](
 object NoisyProfileOperations:
 
   def elitism[S, I, N, P](
-    fitness: I => Vector[Double],
+    fitness: I => IArray[Double],
     mergeHistories: (Vector[I], Vector[I]) => Vector[I],
     values: I => (IArray[Double], IArray[Int]),
     niche: Niche[I, N],

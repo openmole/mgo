@@ -43,7 +43,7 @@ object ranking:
 
     (ranksValue zip byFitness.unzip._2).sortBy { case (_, r) => r }.unzip._1.toVector
 
-  def numberOfDominating[I](fitness: I => Vector[Double], values: Vector[I], dominance: Dominance = nonStrictDominance): Vector[Later[Int]] =
+  def numberOfDominating[I](fitness: I => IArray[Double], values: Vector[I], dominance: Dominance = nonStrictDominance): Vector[Later[Int]] =
     val fitnesses = values.map(i => fitness(i)).toArray
     def ranks =
       fitnesses.zipWithIndex.map: (v1, vi) =>
@@ -71,14 +71,14 @@ object ranking:
 
   /**** Generic functions on rankings ****/
 
-  def paretoRanking[I](population: Vector[I], fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Vector[Eval[Int]] =
+  def paretoRanking[I](population: Vector[I], fitness: I => IArray[Double], dominance: Dominance = nonStrictDominance): Vector[Eval[Int]] =
     numberOfDominating(fitness, population, dominance).map(_.map(x => -x))
 
-  def paretoRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => Vector[Double]): Vector[(Eval[Int], Double)] =
+  def paretoRankingMinAndCrowdingDiversity[I](population: Vector[I], fitness: I => IArray[Double]): Vector[(Eval[Int], Double)] =
     import mgo.tools.metric.CrowdingDistance
-    paretoRanking(population, fitness) zip CrowdingDistance(population.map(fitness))
+    paretoRanking(population, fitness) zip CrowdingDistance(population.map(fitness andThen (_.toVector)))
 
-  def paretoFronts[I](population: Vector[I], fitness: I => Vector[Double], dominance: Dominance = nonStrictDominance): Vector[Vector[I]] =
+  def paretoFronts[I](population: Vector[I], fitness: I => IArray[Double], dominance: Dominance = nonStrictDominance): Vector[Vector[I]] =
     @annotation.tailrec def loop(pool: Vector[I], acc: List[Vector[I]]): Vector[Vector[I]] =
       if pool.isEmpty
       then acc.toVector.reverse
@@ -116,7 +116,7 @@ object ranking:
         (c * cSize + d * dSize) / (cSize + dSize)
 
 
-  def paretoRankingMinAndCrowdingDiversityWithGenomeDiversity[I](population: Vector[I], fitness: I => Vector[Double], continuousValues: I => IArray[Double], discreteValues: I => IArray[Int]) =
+  def paretoRankingMinAndCrowdingDiversityWithGenomeDiversity[I](population: Vector[I], fitness: I => IArray[Double], continuousValues: I => IArray[Double], discreteValues: I => IArray[Int]) =
     val gDiversity =
       import scala.jdk.CollectionConverters.*
       val map = new util.IdentityHashMap[I, Double]().asScala
