@@ -173,7 +173,7 @@ object NSGA2Operations:
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val noNaN = filterNaN(population, memoizedFitness)
+      val noNaN = population ++ filterNaN(candidates, memoizedFitness)
       val ranks = paretoRankingMinAndCrowdingDiversityWithGenomeDiversity(noNaN, memoizedFitness, continuousValues, discreteValues)
 
       (s, keepHighestRanked(noNaN, ranks, mu))
