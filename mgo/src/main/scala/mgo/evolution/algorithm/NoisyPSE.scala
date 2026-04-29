@@ -64,7 +64,7 @@ object NoisyPSE {
       discreteOperator.get,
       continuous,
       discrete,
-      vectorPhenotype[P].get _ andThen aggregation andThen pattern,
+      vectorPhenotype[P].get andThen aggregation andThen pattern,
       buildGenome(discrete),
       lambda,
       reject,
@@ -97,7 +97,7 @@ object NoisyPSE {
   def aggregate[P: ClassTag](i: Individual[P], aggregation: Vector[P] => IArray[Double], pattern: IArray[Double] => Vector[Int], continuous: Vector[C], discrete: Vector[D]): (IArray[Double], IArray[Int], Vector[Double], Vector[Int], Int) =
     (
       scaleContinuousValues(continuousValues(continuous).get(i.genome), continuous),
-      i.focus(_.genome) andThen discreteValues(discrete) get,
+      (i.focus(_.genome) andThen discreteValues(discrete)).get,
       aggregation(vectorPhenotype[P].get(i)).toVector,
       (vectorPhenotype[P].get _ andThen aggregation andThen pattern)(i),
       i.phenotypeHistory.size)

@@ -46,7 +46,7 @@ object PSE:
     population.map: i =>
       Result(
         scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous),
-        i.focus(_.genome) andThen discreteVectorValues(discrete) get,
+        (i.focus(_.genome) andThen discreteVectorValues(discrete)).get,
         pattern(i.phenotype),
         i.phenotype,
         i)

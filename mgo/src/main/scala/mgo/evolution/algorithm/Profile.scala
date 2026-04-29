@@ -43,16 +43,16 @@ object Profile:
     individuals.map: i =>
       Result(
         scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous),
-        i.focus(_.genome) andThen discreteVectorValues(discrete) get,
+        (i.focus(_.genome) andThen discreteVectorValues(discrete)).get,
         individualFitness(fitness)(i).toVector,
         niche(i),
         i)
 
   def continuousProfile[P](continuous: Vector[C], x: Int, nX: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.continuousProfile[Individual[P]](_.focus(_.genome) andThen continuousVectorValues(continuous) get, x, nX)
+    mgo.evolution.niche.continuousProfile[Individual[P]](i => (i.focus(_.genome) andThen continuousVectorValues(continuous)).get, x, nX)
 
   def discreteProfile[P](discrete: Vector[D], x: Int): Niche[Individual[P], Int] =
-    mgo.evolution.niche.discreteProfile[Individual[P]](_.focus(_.genome) andThen discreteVectorValues(discrete) get, x)
+    mgo.evolution.niche.discreteProfile[Individual[P]](i => (i.focus(_.genome) andThen discreteVectorValues(discrete)).get, x)
 
   def boundedContinuousProfile[P](continuous: Vector[C], x: Int, nX: Int, min: Double, max: Double): Niche[Individual[P], Int] =
     mgo.evolution.niche.boundedContinuousProfile[Individual[P]](i => scaleContinuousValues(continuousValues(continuous).get(i.genome), continuous), x, nX, min, max)

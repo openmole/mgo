@@ -110,7 +110,7 @@ object HDOSE:
     def individualToResult(i: Individual[P], archive: Boolean) =
       Result(
         scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous),
-        i.focus(_.genome) andThen discreteVectorValues(discrete) get,
+        (i.focus(_.genome) andThen discreteVectorValues(discrete)).get,
         DeterministicIndividual.individualFitness(fitness)(i).toVector,
         i,
         archive)

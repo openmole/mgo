@@ -327,7 +327,7 @@ object CDGenome:
     def aggregate[P](i: Individual[P], aggregation: Vector[P] => IArray[Double], continuous: Vector[C], discrete: Vector[D]): (Vector[Double], Vector[Int], IArray[Double], Int) =
       (
         scaleContinuousVectorValues(continuousVectorValues(continuous).get(i.genome), continuous),
-        i.focus(_.genome) andThen discreteVectorValues(discrete) get,
+        (i.focus(_.genome) andThen discreteVectorValues(discrete)).get,
         aggregation(i.phenotypeHistory.toVector),
         i.focus(_.phenotypeHistory).get.size
       )

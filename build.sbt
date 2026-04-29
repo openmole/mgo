@@ -1,16 +1,15 @@
 
 name := "mgo"
 ThisBuild / organization := "org.openmole"
-ThisBuild / scalaVersion := "3.7.2"
+ThisBuild / scalaVersion := "3.8.3"
 
-val monocleVersion = "3.2.0"
+val monocleVersion = "3.3.0"
 
 lazy val settings: Seq[Setting[_]] = Seq(
   //addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
   resolvers += "jitpack" at "https://jitpack.io",
-  javacOptions ++= Seq("-source", "11", "-target", "11"),
-  scalacOptions ++= Seq("-Xtarget:11", "-language:higherKinds"),
-  scalacOptions ++= Seq("-language:postfixOps", "-source:3.7")
+  javacOptions ++= Seq("-source", "17", "-target", "17"),
+  scalacOptions ++= Seq("-Xtarget:17"),
 )
 
 lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
