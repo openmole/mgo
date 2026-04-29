@@ -26,19 +26,44 @@ object dominance:
   /**
    * A point dominates another if the other is not better on any objective
    */
-  lazy val nonStrictDominance: Dominance = (p1, p2) =>
+  lazy val nonStrictDominance: Dominance =
+    (p1: IArray[Double], p2: IArray[Double]) =>
+      import scala.util.boundary
+
       val dominated =
-        import scala.util.boundary
+        var i = 0
         var equal = true
+        val len = p1.length
+
         boundary[Boolean]:
-          for (g1, g2) <- p1 lazyZip p2
-            do
-              if g1 < g2 then boundary.break(false)
-              if g1 != g2 then equal = false
+          while i < len
+          do
+            val g1 = p1(i)
+            val g2 = p2(i)
+
+            if g1 < g2 then boundary.break(false)
+            if g1 != g2 then equal = false
+
+            i += 1
+
 
           !equal
 
       dominated
+
+//  lazy val nonStrictDominance: Dominance = (p1, p2) =>
+//      val dominated =
+//        import scala.util.boundary
+//        var equal = true
+//        boundary[Boolean]:
+//          for (g1, g2) <- p1 lazyZip p2
+//            do
+//              if g1 < g2 then boundary.break(false)
+//              if g1 != g2 then equal = false
+//
+//          !equal
+//
+//      dominated
 
 
   /**
