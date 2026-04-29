@@ -142,7 +142,7 @@ object ProfileOperations:
     muByNiche: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val noNaN = filterNaN(population, memoizedFitness)
+      val noNaN = population ++ filterNaN(candidates, memoizedFitness)
       def nsga2Elitism(p: Vector[I]) = NSGA2Operations.elitism[S, I](memoizedFitness, continuousValues, discreteValues, muByNiche).apply(s, p, Vector.empty, rng)._2
       val newPopulation = nicheElitism(noNaN, nsga2Elitism, niche)
       (s, newPopulation)

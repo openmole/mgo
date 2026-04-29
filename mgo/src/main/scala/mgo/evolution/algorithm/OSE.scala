@@ -201,7 +201,7 @@ object OSEOperation:
     reachMap: monocle.Lens[S, ReachMap]): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val noNaN = filterNaN(population, memoizedFitness)
+      val noNaN = population ++ filterNaN(candidates, memoizedFitness)
 
       def o(i: I) = origin(scaleContinuousValues(continuousValues(i), continuous), discreteValues(i))
       val reached = reachMap.get(s).toSet

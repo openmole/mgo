@@ -178,7 +178,6 @@ object NSGA2Operations:
 
       (s, keepHighestRanked(noNaN, ranks, mu))
 
-
   def elitism[S, I](
     fitness: I => IArray[Double],
     continuousValues: I => IArray[Double],
@@ -186,7 +185,7 @@ object NSGA2Operations:
     mu: Int): Elitism[S, I] =
     (s, population, candidates, rng) =>
       val memoizedFitness = fitness.memoized
-      val noNaN = filterNaN(population, memoizedFitness)
+      val noNaN = population ++ filterNaN(candidates, memoizedFitness)
       val ranks = paretoRankingMinAndCrowdingDiversity(noNaN, memoizedFitness)
 
       (s, keepHighestRanked(noNaN, ranks, mu))

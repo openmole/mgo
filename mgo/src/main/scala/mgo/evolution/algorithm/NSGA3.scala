@@ -332,7 +332,7 @@ object NSGA3Operations {
     mu: Int): Elitism[S, I] =
     val vectorFitness = fitness andThen (_.toVector)
     (s, population, candidates, rng) =>
-      (s, eliteWithReference[S, I](filterNaN(population, vectorFitness), vectorFitness, references, mu)(rng))
+      (s, eliteWithReference[S, I](population ++ filterNaN(candidates, vectorFitness), vectorFitness, references, mu)(rng))
 
   /**
    * Exact successive fronts computation
