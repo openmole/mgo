@@ -403,7 +403,7 @@ object PPSEOperation:
     iterations: Int,
     tolerance: Double,
     minClusterSize: Int) =
-    def clusterize(x: Array[Array[Double]], minPoints: Int): (Array[Array[Double]], Array[Array[Array[Double]]]) =
+    def clusterize(x: Array[Array[Double]], minPoints: Int) =
       def covariance(x: Array[Array[Double]]) =
         import org.apache.commons.math3.stat.correlation.Covariance
         new Covariance(x).getCovarianceMatrix.getData
@@ -411,20 +411,22 @@ object PPSEOperation:
       def computeCentroid(points: Array[Array[Double]]) =
         points.transpose.map(x => x.sum / x.length)
 
-      val clusters = HDBScan.clusterize(x, minPoints)
-      val centroids = clusters.map(computeCentroid)
-      val covariances = clusters.map(covariance)
-      (centroids, covariances)
+      HDBScan.clusterize(x, minPoints).map: clusters =>
+        val centroids = clusters.map(computeCentroid)
+        val covariances = clusters.map(covariance)
+        (centroids, covariances)
 
-    val (clusterMeans, clusterCovariances) = clusterize(points, minClusterSize)
-    val clusterWeights = Array.fill(clusterMeans.length)(1.0 / clusterMeans.length)
+    clusterize(points, minClusterSize) match
+      case Some((clusterMeans, clusterCovariances)) =>
+        val clusterWeights = Array.fill(clusterMeans.length)(1.0 / clusterMeans.length)
 
-    EMGMM.fit(
-      components = clusterMeans.length,
-      iterations = iterations,
-      tolerance = tolerance,
-      x = points,
-      means = clusterMeans,
-      covariances = clusterCovariances,
-      weights = clusterWeights,
-      regularisationEpsilon = regularisationEpsilon)._1
+        EMGMM.fit(
+          components = clusterMeans.length,
+          iterations = iterations,
+          tolerance = tolerance,
+          x = points,
+          means = clusterMeans,
+          covariances = clusterCovariances,
+          weights = clusterWeights,
+          regularisationEpsilon = regularisationEpsilon)._1
+      case None => GMM.empty

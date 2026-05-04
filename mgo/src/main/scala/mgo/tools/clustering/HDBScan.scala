@@ -14,8 +14,8 @@ import org.apache.commons.math3.stat.correlation.Covariance
  */
 object HDBScan:
 
-  def clusterize(x: Array[Array[Double]], minPoints: Int): Array[Array[Array[Double]]] =
-    def buildSingleCluster(): Array[Array[Array[Double]]] = Array(x)
+  def clusterize(x: Array[Array[Double]], minPoints: Int): Option[Array[Array[Array[Double]]]] =
+    //def buildSingleCluster(): Array[Array[Array[Double]]] = Array(x)
 
     val hdbScan = new HDBSCAN
     /*
@@ -26,7 +26,7 @@ object HDBScan:
     hdbScan.setMinClusterSize(minPoints)
 
     if x.length <= hdbScan.getMinPoints
-    then buildSingleCluster()
+    then None
     else
       val dataSet =
         val dataPoints =
@@ -39,9 +39,10 @@ object HDBScan:
 
       if !clusters.isEmpty
       then
-        clusters.map: cluster =>
-          cluster.map(_.getNumericalValues.arrayCopy())
-      else buildSingleCluster()
+        Some:
+          clusters.map: cluster =>
+            cluster.map(_.getNumericalValues.arrayCopy())
+      else None
 
 
 
