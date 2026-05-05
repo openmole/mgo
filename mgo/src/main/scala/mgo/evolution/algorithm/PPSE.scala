@@ -110,7 +110,8 @@ object PPSE:
     lambda: Int,
     reject: Option[IArray[Double] => Boolean],
     warmupSampler: Int,
-    regularisationEpsilon: Double): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
+    regularisationEpsilon: Double,
+    averageEstimation: Option[Int]): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
     PPSEOperation.breeding(
       continuous,
       Genome.apply,
@@ -118,7 +119,8 @@ object PPSE:
       reject,
       _.s.gmm,
       warmupSampler,
-      regularisationEpsilon)
+      regularisationEpsilon,
+      averageEstimation)
 
   def elitism[P: CanContainNaN](
     pattern: P => Vector[Int],
@@ -163,7 +165,7 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       deterministic.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, t.reject, t.warmupSampler, t.regularisationEpsilon),
+        PPSE.breeding(t.continuous, t.lambda, t.reject, t.warmupSampler, t.regularisationEpsilon, t.averageEstimation),
         PPSE.expression(t.phenotype, t.continuous),
         PPSE.elitism(t.pattern, t.continuous, t.reject, t.density, t.iterations, t.tolerance, t.dilation, t.minClusterSize, t.warmupSampler, t.maxRareSample),
         Focus[EvolutionState[PPSEState]](_.generation),
@@ -184,7 +186,8 @@ case class PPSE[P](
   dilation: Double = 4.0,
   maxRareSample: Int = 10,
   minClusterSize: Int = 10,
-  regularisationEpsilon: Double = 10e-6)
+  regularisationEpsilon: Double = 10e-6,
+  averageEstimation: Option[Int] = Some(1000))
 
 object PPSEOperation:
   def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
@@ -198,13 +201,27 @@ object PPSEOperation:
 
     new RejectionSampler(sample, acceptFunction)
 
-  def gmmToSampler(gmm: GMM, regularisationEpsilon: Double, reject: IArray[Double] => Boolean, continuous: Vector[C], rng: Random) =
+  def gmmToSampler(gmm: GMM, regularisationEpsilon: Double, averageEstimation: Option[Int], reject: IArray[Double] => Boolean, continuous: Vector[C], rng: Random) =
     import mgo.tools.clustering.GMM
     val distribution = GMM.toDistribution(gmm, regularisationEpsilon, rng)
 
+    lazy val averageDensity =
+      averageEstimation.map: averageEstimation =>
+        (0 until averageEstimation).map: _ =>
+          val sample = distribution.sample
+          distribution.density(sample)
+        .sum / averageEstimation
+      .getOrElse(1.0)
+
     def sample() =
       val x = distribution.sample()
-      (IArray.unsafeFromArray(x), Lazy(distribution.density(x)))
+      val density =
+        Lazy:
+          if averageDensity > 0.0
+          then distribution.density(x) / averageDensity
+          else distribution.density(x)
+
+      (IArray.unsafeFromArray(x), Lazy(distribution.density(x) / averageDensity))
 
     toSampler(sample, reject, continuous, rng)
 
@@ -215,7 +232,8 @@ object PPSEOperation:
     reject: Option[IArray[Double] => Boolean],
     gmm: S => Option[GMM],
     warmupSampler: Int,
-    regularisationEpsilon: Double): Breeding[S, I, G] =
+    regularisationEpsilon: Double,
+    averageEstimation: Option[Int]): Breeding[S, I, G] =
     (s, population, rng) =>
 
       def sampleUniform: Vector[G] =
@@ -231,7 +249,7 @@ object PPSEOperation:
         case Some(gmmValue) if gmmValue.isEmpty => sampleUniform
         case Some(gmmValue) =>
           val rejectValue = reject.getOrElse(noRejection) || rejectNaN[IArray[Double]](identity)
-          val sampler = gmmToSampler(gmmValue, regularisationEpsilon, rejectValue, continuous, rng)
+          val sampler = gmmToSampler(gmmValue, regularisationEpsilon, averageEstimation, rejectValue, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
           val (_, sampled) = RejectionSampler.sampleArray(sampler, lambda, samplerState)
           val breed = sampled.toVector.map(s => buildGenome(s._1, Some(s._2)))
