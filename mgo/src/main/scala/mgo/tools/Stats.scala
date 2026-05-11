@@ -68,3 +68,7 @@ object Stats:
       else sorted(size / 2)
     else Double.NaN
 
+  def quantile(data: Seq[Double], quantile: Double): Double =
+    val sortedData = data.sorted
+    val index = math.ceil(quantile * sortedData.length).toInt - 1
+    sortedData(index)
