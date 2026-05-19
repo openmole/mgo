@@ -157,7 +157,7 @@ object PPSE:
     val sc = scaleContinuousValues(Genome.values(genome), continuous)
     Individual(genome, phenotype(sc), generation, initial)
 
-  given [P: CanContainNaN]:Algorithm[PPSE[P], Individual[P], Genome, EvolutionState[PPSEState]] with
+  given [P: CanContainNaN]: Algorithm[PPSE[P], Individual[P], Genome, EvolutionState[PPSEState]] with
     def initialState(t: PPSE[P], rng: util.Random) = EvolutionState[PPSEState](s = PPSEState())
 
     override def initialPopulation(t: PPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =

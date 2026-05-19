@@ -128,12 +128,18 @@ object EMGMM:
   def compute_log_likelihood(x: Array[Array[Double]], means: Array[Array[Double]], covariances: Array[Array[Array[Double]]], weights: Array[Double], regularisationEpsilon: Double): Array[Array[Double]] =
     val res =
       weights.zipWithIndex.map: (prior, k) =>
-        val distributionTry = Try(new MultivariateNormalDistribution(means(k), covariances(k)))
         val distribution =
-          distributionTry match
+          Try(new MultivariateNormalDistribution(means(k), covariances(k))) match
             case Success(v) => v
             case Failure(e) =>
-              new MultivariateNormalDistribution(means(k), regularize(covariances(k), regularisationEpsilon))
+              Try(new MultivariateNormalDistribution(means(k), regularize(covariances(k), regularisationEpsilon))) match
+                case Success(v) => v
+                case Failure(e) =>
+                  val id =
+                    Array.tabulate(means(k).length, means(k).length): (i, j) =>
+                      if i == j then regularisationEpsilon else 0.0
+                  new MultivariateNormalDistribution(means(k), id)
+
 
         x.map: x =>
           distribution.density(x) * prior
@@ -150,7 +156,6 @@ object EMGMM:
     matrix.zipWithIndex.map: (array, i) =>
       array.zipWithIndex.map: (value, j) =>
         if i == j then value + v else value
-
 
   /**
    * M-step, update parameters.

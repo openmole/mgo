@@ -18,6 +18,7 @@
 package mgo.tools
 
 object CanContainNaN:
+  given CanContainNaN[Int] = _ => false
   given CanContainNaN[Double] = _.isNaN
   given [T](using cbn: CanContainNaN[T]): CanContainNaN[Vector[T]] = _.exists(cbn.containsNaN)
   given [T](using cbn: CanContainNaN[T]): CanContainNaN[IArray[T]] = _.exists(cbn.containsNaN)
