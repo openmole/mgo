@@ -153,23 +153,26 @@ object PPSE:
       regularisationEpsilon = regularisationEpsilon,
       density = density)
 
-  def expression[P](phenotype: IArray[Double] => P, continuous: Vector[C]) = (genome: Genome, generation: Long, initial: Boolean) =>
+  def expression[P](phenotype: (util.Random, IArray[Double]) => P, continuous: Vector[C]) = (random: util.Random, genome: Genome, generation: Long, initial: Boolean) =>
     val sc = scaleContinuousValues(Genome.values(genome), continuous)
-    Individual(genome, phenotype(sc), generation, initial)
+    Individual(genome, phenotype(random, sc), generation, initial)
 
   given [P: CanContainNaN]: Algorithm[PPSE[P], Individual[P], Genome, EvolutionState[PPSEState]] with
     def initialState(t: PPSE[P], rng: util.Random) = EvolutionState[PPSEState](s = PPSEState())
 
     override def initialPopulation(t: PPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
-      deterministic.initialPopulation[Genome, Individual[P]](
+      noisy.initialPopulation[Genome, Individual[P]](
         PPSE.initialGenomes(t.lambda, t.continuous, t.reject, t.warmupSampler, rng),
-        PPSE.expression(t.phenotype, t.continuous), parallel)
+        PPSE.expression(t.phenotype, t.continuous),
+        rng,
+        parallel
+      )
 
     def step(t: PPSE[P]) =
-      deterministic.step[EvolutionState[PPSEState], Individual[P], Genome](
+      noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
         PPSE.breeding(t.continuous, t.lambda, t.reject, t.warmupSampler, t.minDensityQuantile, t.densitySample, t.regularisationEpsilon),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, t.reject, t.density, t.iterations, t.tolerance, t.dilation, t.minClusterSize, t.warmupSampler, t.maxRareSample),
+        PPSE.elitism(t.pattern, t.continuous, t.reject, t.density, t.iterations, t.tolerance, t.dilation, t.minClusterSize, t.maxRareSample, t.warmupSampler),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -177,19 +180,19 @@ object PPSE:
 
 case class PPSE[P](
   lambda: Int,
-  phenotype: IArray[Double] => P,
+  phenotype: (util.Random, IArray[Double]) => P,
   pattern: P => Vector[Int],
   continuous: Vector[C],
   reject: Option[IArray[Double] => Boolean] = None,
   density: Option[IArray[Double] => Double] = None,
   iterations: Int = 1000,
   tolerance: Double = 0.0001,
-  warmupSampler: Int = 10000,
-  minDensityQuantile: Double = 0.05,
+  warmupSampler: Int = 1000,
+  minDensityQuantile: Double = 0.2,
   densitySample: Int = 1000,
   dilation: Double = 4.0,
-  maxRareSample: Int = 10,
-  minClusterSize: Int = 10,
+  maxRareSample: Int = 5,
+  minClusterSize: Int = 5,
   regularisationEpsilon: Double = 10e-6)
 
 object PPSEOperation:

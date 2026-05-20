@@ -76,7 +76,7 @@ object PatternSquare:
 
 
   val oneSquare = PatternSquare(
-    PatternSquare.Square(Vector(0.5, 0.5), 1.0, 50)
+    PatternSquare.Square(Vector(0.5, 0.5), 1.0, 20)
   )
 
 case class PatternSquare(squares: PatternSquare.Square*)
@@ -88,20 +88,23 @@ object SquarePPSE extends App:
   import algorithm.*
   import algorithm.PPSE.*
 
-
-  val inputsDistribution = new MultivariateNormalDistribution(Array(0.80, 0.80), Array(Array(0.001, 0.0), Array(0.0, 0.001)))
+  val inputsDistribution = new MultivariateNormalDistribution(Array(0.50, 0.50), Array(Array(0.001, 0.0), Array(0.0, 0.001)))
 
   val ppse = PPSE(
-    lambda = 1,
-    phenotype = c => PatternSquare.pattern(PatternSquare.oneSquare, c),
+    lambda = 10,
+    phenotype =
+      (rng, c) =>
+        val noise = IArray.fill(2)(rng.nextGaussian() * 0.1)
+        val v = (c zip noise).map(_ + _)
+        PatternSquare.pattern(PatternSquare.oneSquare, v),
     pattern = identity,
-    continuous = Vector.fill(2)(C(0, 1)),
+    continuous = Vector.fill(2)(C(0.3, 0.7)),
     density = Some(x => inputsDistribution.density(x.toArray))
   )
 
   def evolution =
     ppse.
-      until(afterGeneration(1000)).
+      until(afterGeneration(500)).
       trace((s, is) => println(s.generation))
 
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
