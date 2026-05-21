@@ -104,7 +104,7 @@ object SquarePPSE extends App:
 
   def evolution =
     ppse.
-      until(afterGeneration(500)).
+      until(afterGeneration(1000)).
       trace((s, is) => println(s.generation))
 
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))

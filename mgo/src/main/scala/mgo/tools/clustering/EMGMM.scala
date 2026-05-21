@@ -157,19 +157,26 @@ object EMGMM:
       array.zipWithIndex.map: (value, j) =>
         if i == j then value + v else value
 
+
+  def diagonal(size: Int, value: Double) =
+    Array.tabulate(size, size)((i, j) => if i == j then value else 0.0)
+
   /**
    * M-step, update parameters.
    * @param X data points
    */
   def mStep(X: Array[Array[Double]], resp: Array[Array[Double]], components: Int, epsilon: Double): (Array[Double], Array[Array[Double]], Array[Array[Array[Double]]]) =
     // sum the columns to get total responsibility assigned to each cluster, N^{soft}
-    val resp_weights = Array.tabulate(components)(i => resp.map(_ (i)).sum)
+    val resp_weights =
+      Array.tabulate(components): i =>
+        val res = resp.map(_(i)).sum
+        math.max(res, epsilon)
+
     // normalized weights
     val weights = resp_weights.map(_ / X.length)
     // means
     val weighted_sum = dot(resp.transpose, X)
-    val means = weighted_sum.zip(resp_weights).map { case (array, w) => array.map(_ / w) }
-
+    val means = (weighted_sum zip resp_weights).map { case (array, w) => array.map(_ / w) }
 
     // covariance
     val resp_t = resp.transpose
