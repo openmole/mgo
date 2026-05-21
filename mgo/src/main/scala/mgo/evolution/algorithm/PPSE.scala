@@ -58,7 +58,7 @@ object PPSE:
     gmm: Option[GMM] = None,
     likelihoodRatioMap: SamplingWeightMap = PatternMap.empty)
 
-  case class Result[P](continuous: Vector[Double], pattern: Vector[Int], density: Double, phenotype: P, individual: Individual[P])
+  case class Result[P](continuous: Vector[Double], pattern: Vector[Int], density: Double, hit: Int, phenotype: P, individual: Individual[P])
 
   def result[P](
     population: Vector[Individual[P]],
@@ -71,6 +71,7 @@ object PPSE:
       likelihoodRatioMap.toMap.map((p, density) => (p, density / totalDensity))
 
     val densityMap = computePDF(state.s.likelihoodRatioMap)
+    val hitMap = state.s.hitmap
 
     population.map: i =>
       val pa = pattern(i.phenotype)
@@ -79,6 +80,7 @@ object PPSE:
         scaleContinuousValues(Genome.values(i.genome), continuous).toVector,
         pa,
         densityMap.getOrElse(pa, 0.0),
+        hitMap.getOrElse(pa, 0),
         i.phenotype,
         i)
 
