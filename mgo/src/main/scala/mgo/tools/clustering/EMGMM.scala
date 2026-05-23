@@ -128,21 +128,32 @@ object EMGMM:
   def compute_log_likelihood(x: Array[Array[Double]], means: Array[Array[Double]], covariances: Array[Array[Array[Double]]], weights: Array[Double], regularisationEpsilon: Double): Array[Array[Double]] =
     val res =
       weights.zipWithIndex.map: (prior, k) =>
-        val distribution =
-          Try(new MultivariateNormalDistribution(means(k), covariances(k))) match
-            case Success(v) => v
-            case Failure(e) =>
-              Try(new MultivariateNormalDistribution(means(k), regularize(covariances(k), regularisationEpsilon))) match
-                case Success(v) => v
-                case Failure(e) =>
-                  val id =
-                    Array.tabulate(means(k).length, means(k).length): (i, j) =>
-                      if i == j then regularisationEpsilon else 0.0
-                  new MultivariateNormalDistribution(means(k), id)
 
+        def regularizedDistribution = new MultivariateNormalDistribution(means(k), regularize(covariances(k), regularisationEpsilon))
+        def epsilonDistribution =
+          val id =
+            Array.tabulate(means(k).length, means(k).length): (i, j) =>
+              if i == j then regularisationEpsilon else 0.0
+          new MultivariateNormalDistribution(means(k), id)
 
-        x.map: x =>
-          distribution.density(x) * prior
+        def densities(distribution: MultivariateNormalDistribution) =
+          x.map: x =>
+            val d = distribution.density(x)
+            val r = d * prior
+            if !r.isFinite then throw RuntimeException(s"Invalid density: d=$d prior=$prior k=$k")
+            r
+
+        Try:
+          densities(new MultivariateNormalDistribution(means(k), covariances(k)))
+        match
+          case Success(v) => v
+          case Failure(e) =>
+            Try:
+              densities(regularizedDistribution)
+            match
+              case Success(v) => v
+              case Failure(e) =>
+                densities(epsilonDistribution)
 
     res.transpose
 
