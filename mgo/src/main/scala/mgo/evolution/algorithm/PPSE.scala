@@ -116,7 +116,8 @@ object PPSE:
     warmupSampler: Int,
     minDensityQuantile: Double,
     densitySample: Int,
-    regularisationEpsilon: Double): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
+    regularisationEpsilon: Double,
+    density: Option[IArray[Double] => Double]): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
     PPSEOperation.breeding(
       continuous,
       Genome.apply,
@@ -126,13 +127,13 @@ object PPSE:
       warmupSampler,
       minDensityQuantile,
       densitySample,
-      regularisationEpsilon)
+      regularisationEpsilon,
+      density)
 
   def elitism[P: CanContainNaN](
     pattern: P => Vector[Int],
     continuous: Vector[C],
     reject: Option[IArray[Double] => Boolean],
-    density: Option[IArray[Double] => Double],
     iterations: Int,
     tolerance: Double,
     dilation: Double,
@@ -157,8 +158,7 @@ object PPSE:
       maxRareSample = maxRareSample,
       minClusterSize = minClusterSize,
       bootstrapGeneration = bootstrapGeneration,
-      regularisationEpsilon = regularisationEpsilon,
-      density = density)
+      regularisationEpsilon = regularisationEpsilon)
 
   def expression[P](phenotype: (util.Random, IArray[Double]) => P, continuous: Vector[C]) = (random: util.Random, genome: Genome, generation: Long, initial: Boolean) =>
     val sc = scaleContinuousValues(Genome.values(genome), continuous)
@@ -177,9 +177,9 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, minDensityQuantile = t.minDensityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon),
+        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, minDensityQuantile = t.minDensityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, t.reject, t.density, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrapGeneration = t.bootstrapGeneration, regularisationEpsilon = t.regularisationEpsilon),
+        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrapGeneration = t.bootstrapGeneration, regularisationEpsilon = t.regularisationEpsilon),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -234,7 +234,8 @@ object PPSEOperation:
     warmupSampler: Int,
     minDensityQuantile: Double,
     densitySample: Int,
-    regularisationEpsilon: Double): Breeding[S, I, G] =
+    regularisationEpsilon: Double,
+    density: Option[IArray[Double] => Double]): Breeding[S, I, G] =
     (s, population, rng) =>
 
       def sampleUniform: Vector[G] =
@@ -250,6 +251,16 @@ object PPSEOperation:
         case None => sampleUniform
         case Some(gmmValue) if gmmValue.isEmpty => sampleUniform
         case Some(gmmValue) =>
+
+          def inverseDensity(x: IArray[Double], densityValue: Double) =
+            val xDensity =
+              density.map: df =>
+                val scaled = scaleContinuousValues(x, continuous)
+                df(scaled)
+              .getOrElse(1.0)
+
+            xDensity / densityValue
+
           val floorDensity =
             val dist = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
             def densitySamples = (0 until densitySample).map(_ => dist.density(dist.sample()))
@@ -263,7 +274,10 @@ object PPSEOperation:
           val sampler = gmmToSampler(gmmValue, regularisationEpsilon, rejectValue, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
           val (_, sampled) = RejectionSampler.sampleArray(sampler, lambda, samplerState)
-          val breed = sampled.toVector.map(s => buildGenome(s._1, Some(s._2)))
+          val breed =
+            sampled.toVector.map: s =>
+              val id = inverseDensity(s._1, s._2)
+              buildGenome(s._1, Some(id))
           breed
 
   def elitism[S, I, P: CanContainNaN](
@@ -283,8 +297,7 @@ object PPSEOperation:
     maxRareSample: Int,
     minClusterSize: Int,
     bootstrapGeneration: Int,
-    regularisationEpsilon: Double,
-    density: Option[IArray[Double] => Double]): Elitism[S, I] =  (state, population, candidates, rng) =>
+    regularisationEpsilon: Double): Elitism[S, I] =  (state, population, candidates, rng) =>
 
     val offSpringWithNoNan = filterNaN(candidates, phenotype)
 
@@ -319,7 +332,6 @@ object PPSEOperation:
           minClusterSize = minClusterSize,
           maxRareSample = maxRareSample,
           regularisationEpsilon = regularisationEpsilon,
-          inputDensity = density,
           continuous = continuous,
           random = rng)
 
@@ -382,7 +394,6 @@ object PPSEOperation:
     tolerance: Double,
     dilation: Double,
     minClusterSize: Int,
-    inputDensity: Option[IArray[Double] => Double],
     continuous: Vector[C],
     random: Random): (HitMap, PPSE.SamplingWeightMap, Option[GMM]) =
 
@@ -399,14 +410,7 @@ object PPSEOperation:
         val groupedGenomes = (offspringGenomes zip offspringPatterns).groupMap(_._2)(_._1)
         groupedGenomes.view.mapValues: v =>
           v.map:
-            case (genome, Some(density)) =>
-              val inputDensityValue =
-                inputDensity.map: df =>
-                  val scaled = scaleContinuousValues(genome, continuous)
-                  df(scaled)
-                .getOrElse(1.0)
-
-              inputDensityValue / density
+            case (genome, Some(inverseDensity)) => inverseDensity
             case (genome, None) => 0.0
           .sum
         .toSeq
