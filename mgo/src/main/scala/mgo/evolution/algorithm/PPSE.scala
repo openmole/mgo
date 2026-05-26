@@ -68,7 +68,9 @@ object PPSE:
 
     def computePDF(likelihoodRatioMap: SamplingWeightMap) =
       val totalDensity = likelihoodRatioMap.values.sum
-      likelihoodRatioMap.toMap.map((p, density) => (p, density / totalDensity))
+      likelihoodRatioMap.toMap.map: (p, density) =>
+        def normalizedDensity = if totalDensity == 0.0 then 0.0 else density / totalDensity
+        (p, normalizedDensity)
 
     val densityMap = computePDF(state.s.likelihoodRatioMap)
     val hitMap = state.s.hitmap
@@ -136,6 +138,7 @@ object PPSE:
     dilation: Double,
     minClusterSize: Int,
     maxRareSample: Int,
+    bootstrapGeneration: Int,
     regularisationEpsilon: Double) =
     PPSEOperation.elitism[EvolutionState[PPSEState], Individual[P], P](
       values = i => Genome.toTuple(i.genome),
@@ -146,12 +149,14 @@ object PPSE:
       likelihoodRatioMap = Focus[EvolutionState[PPSEState]](_.s.likelihoodRatioMap),
       hitmap = Focus[EvolutionState[PPSEState]](_.s.hitmap),
       gmm = Focus[EvolutionState[PPSEState]](_.s.gmm),
-      generation = Focus[Individual[P]](_.generation),
+      generation = _.generation,
+      individualGeneration = Focus[Individual[P]](_.generation),
       iterations = iterations,
       tolerance = tolerance,
       dilation = dilation,
       maxRareSample = maxRareSample,
       minClusterSize = minClusterSize,
+      bootstrapGeneration = bootstrapGeneration,
       regularisationEpsilon = regularisationEpsilon,
       density = density)
 
@@ -172,9 +177,9 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, t.reject, t.warmupSampler, t.minDensityQuantile, t.densitySample, t.regularisationEpsilon),
+        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, minDensityQuantile = t.minDensityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, t.reject, t.density, t.iterations, t.tolerance, t.dilation, t.minClusterSize, t.maxRareSample, t.warmupSampler),
+        PPSE.elitism(t.pattern, t.continuous, t.reject, t.density, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrapGeneration = t.bootstrapGeneration, regularisationEpsilon = t.regularisationEpsilon),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -188,13 +193,14 @@ case class PPSE[P](
   reject: Option[IArray[Double] => Boolean] = None,
   density: Option[IArray[Double] => Double] = None,
   iterations: Int = 1000,
-  tolerance: Double = 0.0001,
+  tolerance: Double = 0.001,
   warmupSampler: Int = 1000,
   minDensityQuantile: Double = 0.2,
   densitySample: Int = 1000,
-  dilation: Double = 4.0,
-  maxRareSample: Int = 5,
+  dilation: Double = 1.5,
+  maxRareSample: Int = 10,
   minClusterSize: Int = 5,
+  bootstrapGeneration: Int = 10,
   regularisationEpsilon: Double = 10e-6)
 
 object PPSEOperation:
@@ -269,155 +275,158 @@ object PPSEOperation:
     likelihoodRatioMap: monocle.Lens[S, PPSE.SamplingWeightMap],
     hitmap: monocle.Lens[S, HitMap],
     gmm: monocle.Lens[S, Option[GMM]],
-    generation: monocle.Lens[I, Long],
+    generation: S => Long,
+    individualGeneration: monocle.Lens[I, Long],
     iterations: Int,
     tolerance: Double,
     dilation: Double,
     maxRareSample: Int,
     minClusterSize: Int,
+    bootstrapGeneration: Int,
     regularisationEpsilon: Double,
     density: Option[IArray[Double] => Double]): Elitism[S, I] =  (state, population, candidates, rng) =>
 
-    def computeGMM(
-      genomes: Array[Array[Double]],
-      patterns: Array[Array[Int]],
-      hitMap: HitMap,
-      maxRareSample: Int,
-      regularisationEpsilon: Double,
-      iterations: Int,
-      tolerance: Double,
-      dilation: Double,
-      minClusterSize: Int,
-      random: Random) =
-
-      val rareIndividuals =
-        (genomes zip patterns).filter: p =>
-          val hits = hitMap.getOrElse(p._2.toVector, 0)
-          hits <= maxRareSample
-        .map(_._1)
-
-      val res =
-        if rareIndividuals.isEmpty
-        then None
-        else
-          Some:
-            def fittedGMM =
-              if rareIndividuals.length < minClusterSize
-              then GMM.empty
-              else
-                fitGMM(
-                  rareIndividuals,
-                  regularisationEpsilon = regularisationEpsilon,
-                  iterations = iterations,
-                  tolerance = tolerance,
-                  minClusterSize = minClusterSize)
-
-            def gmmWithOutliers = EMGMM.integrateOutliers(rareIndividuals, fittedGMM, regularisationEpsilon)
-            GMM.dilate(gmmWithOutliers, dilation)
-
-      res
-
-    def updateState(
-      genomes: Array[Array[Double]],
-      patterns: Array[Array[Int]],
-      offspringGenomes: Array[(IArray[Double], Option[Double])],
-      offspringPatterns: Array[Array[Int]],
-      likelihoodRatioMap: PPSE.SamplingWeightMap,
-      hitMap: HitMap,
-      maxRareSample: Int,
-      regularisationEpsilon: Double,
-      iterations: Int,
-      tolerance: Double,
-      dilation: Double,
-      minClusterSize: Int,
-      inputDensity: Option[IArray[Double] => Double],
-      continuous: Vector[C],
-      random: Random): (HitMap, PPSE.SamplingWeightMap, Option[GMM]) =
-      val newHitMap =
-        def updateHits(m: HitMap, p: Vector[Int]) = m.updatedWith(p)(v => Some(v.getOrElse(0) + 1))
-
-        offspringPatterns.foldLeft(hitMap)((m, p) => updateHits(m, p.toVector))
-
-      def newLikelihoodRatioMap =
-        def offSpringDensities =
-          val groupedGenomes = (offspringGenomes zip offspringPatterns).groupMap(_._2)(_._1)
-          groupedGenomes.view.mapValues: v =>
-            v.map:
-              case (genome, Some(density)) =>
-                val inputDensityValue =
-                  inputDensity.map: df =>
-                    val scaled = scaleContinuousValues(genome, continuous)
-                    df(scaled)
-                  .getOrElse(1.0)
-
-                inputDensityValue / density
-              case (genome, None) => 0.0
-            .sum
-          .toSeq
-
-        def updatePatternDensity(map: PPSE.SamplingWeightMap, pattern: Array[Int], density: Double): PPSE.SamplingWeightMap =
-          map.updatedWith(pattern.toVector)(v => Some(v.getOrElse(0.0) + density))
-
-        offSpringDensities.foldLeft(likelihoodRatioMap) { case (map, (pattern, density)) => updatePatternDensity(map, pattern, density) }
-
-      def newGMM =
-        computeGMM(
-          genomes = genomes,
-          patterns = patterns,
-          hitMap = newHitMap,
-          maxRareSample = maxRareSample,
-          regularisationEpsilon = regularisationEpsilon,
-          iterations = iterations,
-          tolerance = tolerance,
-          dilation = dilation,
-          minClusterSize = minClusterSize,
-          random = random
-        )
-
-      (newHitMap, newLikelihoodRatioMap, newGMM)
-
-    def offSpringWithNoNan = filterNaN(candidates, phenotype)
+    val offSpringWithNoNan = filterNaN(candidates, phenotype)
 
     def keepRandom(i: Vector[I]): Vector[I] =
       if i.isEmpty
       then i
       else
-        val first = i.map(generation.get).min
+        val first = i.map(individualGeneration.get).min
         val selected = i(rng.nextInt(i.size))
-        Vector(generation.set(first)(selected))
+        Vector(individualGeneration.set(first)(selected))
 
     val newPopulation = keepNiches(phenotype andThen pattern, keepRandom)(population ++ offSpringWithNoNan)
 
-    def genomes(p: Vector[I]) =
-      import tools.unsafeToArray
-      p.map(values).map(_._1.unsafeToArray).toArray
+    def updatedState =
+      def genomes(p: Vector[I]) =
+        import tools.unsafeToArray
+        p.map(values).map(_._1.unsafeToArray).toArray
 
-    def patterns(p: Vector[I]) = p.map(phenotype andThen pattern andThen (_.toArray)).toArray
+      def patterns(p: Vector[I]) = p.map(phenotype andThen pattern andThen (_.toArray)).toArray
 
-    val (elitedHitMap, elitedDensity, elitedGMM) =
-      updateState(
-        genomes = genomes(newPopulation),
-        patterns = patterns(newPopulation),
-        offspringGenomes = offSpringWithNoNan.map(values).toArray,
-        offspringPatterns = patterns(offSpringWithNoNan),
-        likelihoodRatioMap = likelihoodRatioMap.get(state),
-        hitMap = hitmap.get(state),
-        iterations = iterations,
-        tolerance = tolerance,
-        dilation = dilation,
-        minClusterSize = minClusterSize,
-        maxRareSample = maxRareSample,
-        regularisationEpsilon = regularisationEpsilon,
-        inputDensity = density,
-        continuous = continuous,
-        random = rng)
+      val (elitedHitMap, elitedDensity, elitedGMM) =
+        updateState(
+          genomes = genomes(newPopulation),
+          patterns = patterns(newPopulation),
+          offspringGenomes = offSpringWithNoNan.map(values).toArray,
+          offspringPatterns = patterns(offSpringWithNoNan),
+          likelihoodRatioMap = likelihoodRatioMap.get(state),
+          hitMap = hitmap.get(state),
+          iterations = iterations,
+          tolerance = tolerance,
+          dilation = dilation,
+          minClusterSize = minClusterSize,
+          maxRareSample = maxRareSample,
+          regularisationEpsilon = regularisationEpsilon,
+          inputDensity = density,
+          continuous = continuous,
+          random = rng)
 
-    def state2 =
       (gmm.modify(gmm => elitedGMM orElse gmm) andThen
         likelihoodRatioMap.replace(elitedDensity) andThen
         hitmap.replace(elitedHitMap))(state)
 
-    (state2, newPopulation)
+    if generation(state) < bootstrapGeneration
+    then (state, newPopulation)
+    else (updatedState, newPopulation)
+
+
+  def computeGMM(
+    genomes: Array[Array[Double]],
+    patterns: Array[Array[Int]],
+    hitMap: HitMap,
+    maxRareSample: Int,
+    regularisationEpsilon: Double,
+    iterations: Int,
+    tolerance: Double,
+    dilation: Double,
+    minClusterSize: Int,
+    random: Random) =
+
+    val rareIndividuals =
+      (genomes zip patterns).filter: p =>
+        val hits = hitMap.getOrElse(p._2.toVector, 0)
+        hits <= maxRareSample
+      .map(_._1)
+
+    def fittedGMM =
+      if rareIndividuals.length < minClusterSize
+      then GMM.empty
+      else
+        fitGMM(
+          rareIndividuals,
+          regularisationEpsilon = regularisationEpsilon,
+          iterations = iterations,
+          tolerance = tolerance,
+          minClusterSize = minClusterSize)
+
+    def gmmWithOutliers = EMGMM.integrateOutliers(rareIndividuals, fittedGMM, regularisationEpsilon)
+
+    if rareIndividuals.isEmpty
+    then None
+    else Some(GMM.dilate(gmmWithOutliers, dilation))
+
+
+
+  def updateState(
+    genomes: Array[Array[Double]],
+    patterns: Array[Array[Int]],
+    offspringGenomes: Array[(IArray[Double], Option[Double])],
+    offspringPatterns: Array[Array[Int]],
+    likelihoodRatioMap: PPSE.SamplingWeightMap,
+    hitMap: HitMap,
+    maxRareSample: Int,
+    regularisationEpsilon: Double,
+    iterations: Int,
+    tolerance: Double,
+    dilation: Double,
+    minClusterSize: Int,
+    inputDensity: Option[IArray[Double] => Double],
+    continuous: Vector[C],
+    random: Random): (HitMap, PPSE.SamplingWeightMap, Option[GMM]) =
+
+    def newHitMap =
+      def updateHits(m: HitMap, p: Vector[Int]) = m.updatedWith(p)(v => Some(v.getOrElse(0) + 1))
+      offspringPatterns.foldLeft(hitMap)((m, p) => updateHits(m, p.toVector))
+
+    def newLikelihoodRatioMap =
+      def offSpringDensities =
+        val groupedGenomes = (offspringGenomes zip offspringPatterns).groupMap(_._2)(_._1)
+        groupedGenomes.view.mapValues: v =>
+          v.map:
+            case (genome, Some(density)) =>
+              val inputDensityValue =
+                inputDensity.map: df =>
+                  val scaled = scaleContinuousValues(genome, continuous)
+                  df(scaled)
+                .getOrElse(1.0)
+
+              inputDensityValue / density
+            case (genome, None) => 0.0
+          .sum
+        .toSeq
+
+      def updatePatternDensity(map: PPSE.SamplingWeightMap, pattern: Array[Int], density: Double): PPSE.SamplingWeightMap =
+        map.updatedWith(pattern.toVector)(v => Some(v.getOrElse(0.0) + density))
+
+      offSpringDensities.foldLeft(likelihoodRatioMap) { case (map, (pattern, density)) => updatePatternDensity(map, pattern, density) }
+
+    def newGMM =
+      computeGMM(
+        genomes = genomes,
+        patterns = patterns,
+        hitMap = newHitMap,
+        maxRareSample = maxRareSample,
+        regularisationEpsilon = regularisationEpsilon,
+        iterations = iterations,
+        tolerance = tolerance,
+        dilation = dilation,
+        minClusterSize = minClusterSize,
+        random = random
+      )
+
+    (newHitMap, newLikelihoodRatioMap, newGMM)
 
 
   def fitGMM(
