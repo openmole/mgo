@@ -251,7 +251,6 @@ object PPSEOperation:
         case None => sampleUniform
         case Some(gmmValue) if gmmValue.isEmpty => sampleUniform
         case Some(gmmValue) =>
-
           def inverseDensity(x: IArray[Double], densityValue: Double) =
             val xDensity =
               density.map: df =>
@@ -261,15 +260,20 @@ object PPSEOperation:
 
             xDensity / densityValue
 
-          val floorDensity =
+          val inverseDensityCeil =
             val dist = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
-            def densitySamples = (0 until densitySample).map(_ => dist.density(dist.sample()))
-            mgo.tools.Stats.quantile(densitySamples, minDensityQuantile)
+            def densitySamples =
+              (0 until densitySample).map: _ =>
+                val s = dist.sample()
+                val d = dist.density(s)
+                inverseDensity(IArray.unsafeFromArray(s), d)
+
+            mgo.tools.Stats.quantile(densitySamples, 1.0 - minDensityQuantile)
 
           def rejectValue(x: IArray[Double], density: Double) =
             reject.getOrElse(noRejection)(x) ||
               rejectNaN[IArray[Double]](identity)(x) ||
-              density < floorDensity
+              inverseDensityCeil > inverseDensity(x, density)
 
           val sampler = gmmToSampler(gmmValue, regularisationEpsilon, rejectValue, continuous, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
