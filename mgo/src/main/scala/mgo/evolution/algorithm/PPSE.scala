@@ -388,7 +388,11 @@ object PPSEOperation:
 
     def newHitMap =
       def updateHits(m: HitMap, p: Vector[Int]) = m.updatedWith(p)(v => Some(v.getOrElse(0) + 1))
-      offspringPatterns.foldLeft(hitMap)((m, p) => updateHits(m, p.toVector))
+      (offspringGenomes zip offspringPatterns).foldLeft(hitMap): (m, gp) =>
+        val (g, p) = gp
+        if g._2.isDefined
+        then updateHits(m, p.toVector)
+        else m
 
     def newLikelihoodRatioMap =
       def offSpringDensities =
