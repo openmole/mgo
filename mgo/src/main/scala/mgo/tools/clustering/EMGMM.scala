@@ -244,9 +244,9 @@ object EMGMM:
 
 object GMM:
   def apply(
-             means: Array[Array[Double]],
-             covariances: Array[Array[Array[Double]]],
-             weights: Array[Double]): GMM =
+    means: Array[Array[Double]],
+    covariances: Array[Array[Array[Double]]],
+    weights: Array[Double]): GMM =
     val components =
       (means zip covariances zip weights).map:
         case ((m, c), w) => Component(m, c, w)
@@ -275,7 +275,7 @@ object GMM:
     new MixtureMultivariateNormalDistribution(mgo.tools.apacheRandom(random), pairs.asJava)
 
   case class Component(mean: Array[Double], covariance: Array[Array[Double]], weight: Double)
-
+  
   def empty: GMM = GMM(Seq.empty)
 
   def punctualCovariance(regularisationEpsilon: Double, size: Int): Array[Array[Double]] =
