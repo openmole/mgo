@@ -233,7 +233,8 @@ object PPSEOperation:
     then randomUnscaledContinuousValues(size, rng)
     else IArray.unsafeFromArray(gmm.sample())
 
-  def defensiveDensity(gmm: MixtureMultivariateNormalDistribution, q: Double, x: IArray[Double]) = gmm.density(x.unsafeToArray) + q
+  def defensiveDensity(gmm: MixtureMultivariateNormalDistribution, q: Double, x: IArray[Double]) =
+    (1 - q) * gmm.density(x.unsafeToArray) + q
 
   def breeding[S, I, G](
     continuous: Vector[C],
