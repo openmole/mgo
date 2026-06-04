@@ -113,8 +113,6 @@ object PPSE:
     lambda: Int,
     reject: Option[IArray[Double] => Boolean],
     warmupSampler: Int,
-    minDensityQuantile: Double,
-    densitySample: Int,
     regularisationEpsilon: Double,
     defensiveDistributionWeight: Double,
     density: Option[IArray[Double] => Double]): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
@@ -125,8 +123,6 @@ object PPSE:
       reject,
       _.s.gmm,
       warmupSampler,
-      minDensityQuantile,
-      densitySample,
       regularisationEpsilon = regularisationEpsilon,
       defensiveDistributionWeight = defensiveDistributionWeight,
       density = density)
@@ -178,7 +174,7 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, minDensityQuantile = t.minDensityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, defensiveDistributionWeight = t.defensiveDistributionWeight, density = t.density),
+        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, regularisationEpsilon = t.regularisationEpsilon, defensiveDistributionWeight = t.defensiveDistributionWeight, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
         PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrapGeneration = t.bootstrapGeneration, regularisationEpsilon = t.regularisationEpsilon),
         Focus[EvolutionState[PPSEState]](_.generation),
@@ -196,8 +192,6 @@ case class PPSE[P](
   iterations: Int = 1000,
   tolerance: Double = 0.001,
   warmupSampler: Int = 1000,
-  minDensityQuantile: Double = 0.2,
-  densitySample: Int = 1000,
   dilation: Double = 1.5,
   maxRareSample: Int = 10,
   minClusterSize: Int = 5,
@@ -243,8 +237,6 @@ object PPSEOperation:
     reject: Option[IArray[Double] => Boolean],
     gmm: S => Option[GMM],
     warmupSampler: Int,
-    minDensityQuantile: Double,
-    densitySample: Int,
     regularisationEpsilon: Double,
     defensiveDistributionWeight: Double,
     density: Option[IArray[Double] => Double]): Breeding[S, I, G] =
@@ -272,20 +264,9 @@ object PPSEOperation:
 
             xDensity / densityValue
 
-          val inverseDensityCeil =
-            val dist = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
-            def densitySamples =
-              (0 until densitySample).map: _ =>
-                val s = defensiveSample(dist, defensiveDistributionWeight, continuous.size, rng)
-                val d = defensiveDensity(dist, defensiveDistributionWeight, s)
-                inverseDensity(s, d)
-
-            mgo.tools.Stats.quantile(densitySamples, 1.0 - minDensityQuantile)
-
           def rejectValue(x: IArray[Double], density: Double) =
             reject.getOrElse(noRejection)(x) ||
-              rejectNaN[IArray[Double]](identity)(x) ||
-              inverseDensityCeil > inverseDensity(x, density)
+              rejectNaN[IArray[Double]](identity)(x)
 
           val sampler = gmmToSampler(gmmValue, regularisationEpsilon, rejectValue, continuous, defensiveDistributionWeight, rng)
           val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
