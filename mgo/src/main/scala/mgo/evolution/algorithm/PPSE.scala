@@ -218,13 +218,8 @@ object PPSEOperation:
 
     new RejectionSampler(sample, acceptFunction)
 
-  def defensiveSample(gmm: MixtureMultivariateNormalDistribution, q: Double, size: Int, rng: Random) =
-    if rng.nextDouble() < q
-    then randomUnscaledContinuousValues(size, rng)
-    else IArray.unsafeFromArray(gmm.sample())
 
-  def defensiveDensity(gmm: MixtureMultivariateNormalDistribution, q: Double, x: IArray[Double]) =
-    (1 - q) * gmm.density(x.unsafeToArray) + q
+
 
   def breeding[S, I, G](
     continuous: Vector[C],
@@ -254,6 +249,8 @@ object PPSEOperation:
         case None => sampleUniform
         case Some(gmmValue) if gmmValue.isEmpty => sampleUniform
         case Some(gmmValue) =>
+          val distribution = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
+
           def inverseDensity(x: IArray[Double], densityValue: Double) =
             val xDensity =
               density.map: df =>
@@ -264,42 +261,44 @@ object PPSEOperation:
             xDensity / densityValue
 
           val inverseDensityCeil =
-            val dist = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
             def densitySamples =
               (0 until densitySample).map: _ =>
-                val s = defensiveSample(dist, defensiveDistributionWeight, continuous.size, rng)
-                val d = defensiveDensity(dist, defensiveDistributionWeight, s)
-                inverseDensity(s, d)
+                val s = distribution.sample()
+                val d = distribution.density(s)
+                inverseDensity(IArray.unsafeFromArray(s), d)
 
             mgo.tools.Stats.quantile(densitySamples, 1.0 - minDensityQuantile)
 
-          import mgo.tools.clustering.GMM
-          val distribution = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
-
-          def rejectValue(x: IArray[Double], density: Double) =
+          def rejectValue(x: IArray[Double]) =
             reject.getOrElse(noRejection)(x) ||
               rejectNaN[IArray[Double]](identity)(x) ||
               inverseDensityCeil > inverseDensity(x, distribution.density(x.unsafeToArray))
 
-          def sampleDensity(x: IArray[Double]) = defensiveDensity(distribution, defensiveDistributionWeight, x)
-
           def rejectionSampler(gmm: MixtureMultivariateNormalDistribution) =
-            def sample() = defensiveSample(gmm, defensiveDistributionWeight, continuous.size, rng)
-            toSampler(sample, x => rejectValue(x, sampleDensity(x)), continuous)
+            def sample() = IArray.unsafeFromArray(gmm.sample())
+            toSampler(sample, rejectValue, continuous)
 
-          val samplerValue = rejectionSampler(distribution)
-          val warmSamplerState = RejectionSampler.warmup(samplerValue, warmupSampler)
 
           @tailrec def sampleArray(sampler: RejectionSampler, n: Int, state: RejectionSampler.State, res: List[(IArray[Double], Double)] = List()): (RejectionSampler.State, IArray[(IArray[Double], Double)]) =
             if n > 0
             then
-              val (newState, newSample) = RejectionSampler.sample(sampler, state)
-              val d = sampleDensity(newSample)
-              val newDensity = RejectionSampler.density(newState, d)
+              val (newState, newSample) =
+                if rng.nextDouble() < defensiveDistributionWeight
+                then (state, randomUnscaledContinuousValues(continuous.size, rng))
+                else RejectionSampler.sample(sampler, state)
+
+              val newDensity =
+                val d = RejectionSampler.density(newState, distribution.density(newSample.unsafeToArray))
+                (1 - defensiveDistributionWeight) * d + defensiveDistributionWeight
+
               sampleArray(sampler, n - 1, newState, (newSample, newDensity) :: res)
             else (state, IArray.unsafeFromArray(res.reverse.toArray))
 
-          val (_, sampled) = sampleArray(samplerValue, lambda, warmSamplerState)
+          val (_, sampled) =
+            val rejectionSamplerValue = rejectionSampler(distribution)
+            val rejectionSamplerState = RejectionSampler.warmup(rejectionSamplerValue, warmupSampler)
+            sampleArray(rejectionSamplerValue, lambda, rejectionSamplerState)
+
           val breed =
             sampled.toVector.map: s =>
               val id = inverseDensity(s._1, s._2)
