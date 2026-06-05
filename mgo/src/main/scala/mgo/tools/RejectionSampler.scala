@@ -30,35 +30,32 @@ object RejectionSampler:
   def warmup(sampler: RejectionSampler, n: Int, state: State = State()): State =
     if n > 0
     then
-      val (x, density) = sampler.sampleFunction()
-      if !sampler.accept(x, density)
+      val x = sampler.sample()
+      if !sampler.accept(x)
       then warmup(sampler, n - 1, RejectionSampler.fail(state))
       else warmup(sampler, n - 1, RejectionSampler.success(state))
     else state
 
   def sampleNoDensity(sampler: RejectionSampler): IArray[Double] =
-    val (x, density) = sampler.sampleFunction()
-    if !sampler.accept(x, density)
+    val x = sampler.sample()
+    if !sampler.accept(x)
     then sampleNoDensity(sampler)
     else x
 
-  def sample(sampler: RejectionSampler, state: State = State()): (State, (IArray[Double], Double)) =
-    val (x, density) = sampler.sampleFunction()
-    if !sampler.accept(x, density)
+  def sample(sampler: RejectionSampler, state: State = State()): (State, IArray[Double]) =
+    val x = sampler.sample()
+    if !sampler.accept(x)
     then sample(sampler, RejectionSampler.fail(state))
     else
       val newState = RejectionSampler.success(state)
-      val inverseProbability = newState.test.toDouble / newState.pass
-      (newState, (x, density / inverseProbability))
+      (newState, x)
 
-  def sampleArray(sampler: RejectionSampler, n: Int, state: State = State(), res: List[(IArray[Double], Double)] = List()): (State, IArray[(IArray[Double], Double)]) =
-    if n > 0
-    then
-      val (newState, newSample) = sample(sampler, state)
-      sampleArray(sampler, n - 1, newState, newSample :: res)
-    else (state, IArray.unsafeFromArray(res.reverse.toArray))
+  def density(state: State, density: Double) =
+    val inverseProbability = state.test.toDouble / state.pass
+    density / inverseProbability
+
 
 case class RejectionSampler(
-  sampleFunction: () => (IArray[Double], Double),
-  accept: (IArray[Double], Double) => Boolean)
+  sample: () => IArray[Double],
+  accept: IArray[Double] => Boolean)
 

@@ -33,6 +33,7 @@ import mgo.tools
 import mgo.tools.clustering.{EMGMM, GMM, HDBScan}
 import org.apache.commons.math3.distribution.MixtureMultivariateNormalDistribution
 
+import scala.annotation.tailrec
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -98,10 +99,10 @@ object PPSE:
   def buildIndividual[P](g: Genome, f: P, generation: Long, initial: Boolean) = Individual(g, f, generation, initial)
 
   def initialGenomes(number: Int, continuous: Vector[C], reject: Option[IArray[Double] => Boolean], warmupSampler: Int, rng: scala.util.Random) =
-    def sample() = (PPSEOperation.randomUnscaledContinuousValues(continuous.size, rng), 1.0)
+    def sample() = PPSEOperation.randomUnscaledContinuousValues(continuous.size, rng)
 
-    def rejectValue(x: IArray[Double], density: Double) = reject.getOrElse(noRejection)(x)
-    val sampler = PPSEOperation.toSampler(sample, rejectValue, continuous, rng)
+    def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x)
+    val sampler = PPSEOperation.toSampler(sample, rejectValue, continuous)
 
     (0 to number).map: _ =>
       val g = RejectionSampler.sampleNoDensity(sampler)
@@ -208,25 +209,14 @@ case class PPSE[P](
 object PPSEOperation:
   def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
 
-  def toSampler(sample: () => (IArray[Double], Double), reject: (IArray[Double], Double) => Boolean, continuous: Vector[C], rng: Random) =
+  def toSampler(sample: () => IArray[Double], reject: IArray[Double] => Boolean, continuous: Vector[C]) =
     def acceptPoint(x: IArray[Double]) = x.forall(_ <= 1.0) && x.forall(_ >= 0.0)
 
-    def acceptFunction(x: IArray[Double], density: Double) =
-      def rejectValue = reject(scaleContinuousValues(x, continuous), density)
+    def acceptFunction(x: IArray[Double]) =
+      def rejectValue = reject(scaleContinuousValues(x, continuous))
       acceptPoint(x) && !rejectValue
 
     new RejectionSampler(sample, acceptFunction)
-
-  def gmmToSampler(gmm: GMM, regularisationEpsilon: Double, reject: (IArray[Double], Double) => Boolean, continuous: Vector[C], q: Double, rng: Random) =
-    import mgo.tools.clustering.GMM
-    val distribution = GMM.toDistribution(gmm, regularisationEpsilon, rng)
-
-    def sample() =
-      val x = defensiveSample(distribution, q, continuous.size, rng)
-      val d = defensiveDensity(distribution, q, x)
-      (x, d)
-
-    toSampler(sample, reject, continuous, rng)
 
   def defensiveSample(gmm: MixtureMultivariateNormalDistribution, q: Double, size: Int, rng: Random) =
     if rng.nextDouble() < q
@@ -251,9 +241,10 @@ object PPSEOperation:
     (s, population, rng) =>
 
       def sampleUniform: Vector[G] =
-        def sample() = (randomUnscaledContinuousValues(continuous.size, rng), 1.0)
-        def rejectValue(x: IArray[Double], density: Double) = reject.getOrElse(noRejection)(x)
-        val sampler = toSampler(sample, rejectValue, continuous, rng)
+        def sample() = randomUnscaledContinuousValues(continuous.size, rng)
+
+        def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x)
+        val sampler = toSampler(sample, rejectValue, continuous)
         (0 to lambda).map: _ =>
           val g = RejectionSampler.sampleNoDensity(sampler)
           buildGenome(g, None)
@@ -282,14 +273,33 @@ object PPSEOperation:
 
             mgo.tools.Stats.quantile(densitySamples, 1.0 - minDensityQuantile)
 
+          import mgo.tools.clustering.GMM
+          val distribution = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
+
           def rejectValue(x: IArray[Double], density: Double) =
             reject.getOrElse(noRejection)(x) ||
               rejectNaN[IArray[Double]](identity)(x) ||
-              inverseDensityCeil > inverseDensity(x, density)
+              inverseDensityCeil > inverseDensity(x, distribution.density(x.unsafeToArray))
 
-          val sampler = gmmToSampler(gmmValue, regularisationEpsilon, rejectValue, continuous, defensiveDistributionWeight, rng)
-          val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
-          val (_, sampled) = RejectionSampler.sampleArray(sampler, lambda, samplerState)
+          def sampleDensity(x: IArray[Double]) = defensiveDensity(distribution, defensiveDistributionWeight, x)
+
+          def rejectionSampler(gmm: MixtureMultivariateNormalDistribution) =
+            def sample() = defensiveSample(gmm, defensiveDistributionWeight, continuous.size, rng)
+            toSampler(sample, x => rejectValue(x, sampleDensity(x)), continuous)
+
+          val samplerValue = rejectionSampler(distribution)
+          val warmSamplerState = RejectionSampler.warmup(samplerValue, warmupSampler)
+
+          @tailrec def sampleArray(sampler: RejectionSampler, n: Int, state: RejectionSampler.State, res: List[(IArray[Double], Double)] = List()): (RejectionSampler.State, IArray[(IArray[Double], Double)]) =
+            if n > 0
+            then
+              val (newState, newSample) = RejectionSampler.sample(sampler, state)
+              val d = sampleDensity(newSample)
+              val newDensity = RejectionSampler.density(newState, d)
+              sampleArray(sampler, n - 1, newState, (newSample, newDensity) :: res)
+            else (state, IArray.unsafeFromArray(res.reverse.toArray))
+
+          val (_, sampled) = sampleArray(samplerValue, lambda, warmSamplerState)
           val breed =
             sampled.toVector.map: s =>
               val id = inverseDensity(s._1, s._2)
