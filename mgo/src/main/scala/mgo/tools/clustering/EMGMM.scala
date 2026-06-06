@@ -186,15 +186,15 @@ object EMGMM:
     // normalized weights
     val weights = resp_weights.map(_ / X.length)
     // means
-    val weighted_sum = dot(resp.transpose, X)
+    val resp_t = resp.transpose
+    val weighted_sum = dot(resp_t, X)
     val means = (weighted_sum zip resp_weights).map { case (array, w) => array.map(_ / w) }
 
     // covariance
-    val resp_t = resp.transpose
     val covariances = Array.tabulate(components): k =>
-      val diff = X.map(x => x.indices.map(i => x(i) - means(k)(i)).toArray).transpose
+      val diff = X.map(x => x.indices.map(i => x(i) - means(k)(i)).toArray)
       val resp_k = resp_t(k)
-      val w_sum = dot(diff.map { l => l.zip(resp_k).map {case (a, b) => a * b }}, diff.transpose)
+      val w_sum = dot(diff.transpose.map { l => l.zip(resp_k).map { case (a, b) => a * b }}, diff)
       regularize(w_sum.map(_.map(_ / resp_weights(k))), epsilon)
 
     assert(resp.flatten.forall(!_.isNaN))
