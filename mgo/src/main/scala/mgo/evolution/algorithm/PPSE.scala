@@ -324,8 +324,6 @@ object PPSEOperation:
     bootstrapGeneration: Int,
     regularisationEpsilon: Double): Elitism[S, I] =  (state, population, candidates, rng) =>
 
-    val offSpringWithNoNan = filterNaN(candidates, phenotype)
-
     def keepRandom(i: Vector[I]): Vector[I] =
       if i.isEmpty
       then i
@@ -334,19 +332,14 @@ object PPSEOperation:
         val selected = i(rng.nextInt(i.size))
         Vector(individualGeneration.set(first)(selected))
 
+    val offSpringWithNoNan = filterNaN(candidates, phenotype)
     val newPopulation = keepNiches(phenotype andThen pattern, keepRandom)(population ++ offSpringWithNoNan)
 
+    def patterns(p: Vector[I]) = p.map(phenotype andThen pattern andThen (_.toArray)).toArray
+
     def updatedState =
-      def genomes(p: Vector[I]) =
-        import tools.unsafeToArray
-        p.map(values).map(_._1.unsafeToArray).toArray
-
-      def patterns(p: Vector[I]) = p.map(phenotype andThen pattern andThen (_.toArray)).toArray
-
-      val (elitedHitMap, elitedDensity, elitedGMM) =
+      val (elitedHitMap, elitedDensity) =
         updateState(
-          genomes = genomes(newPopulation),
-          patterns = patterns(newPopulation),
           offspringGenomes = offSpringWithNoNan.map(values).toArray,
           offspringPatterns = patterns(offSpringWithNoNan),
           likelihoodRatioMap = likelihoodRatioMap.get(state),
@@ -359,6 +352,24 @@ object PPSEOperation:
           regularisationEpsilon = regularisationEpsilon,
           continuous = continuous,
           random = rng)
+      
+      def elitedGMM =
+        def genomes(p: Vector[I]) =
+          import tools.unsafeToArray
+          p.map(values).map(_._1.unsafeToArray).toArray
+
+        computeGMM(
+          genomes = genomes(newPopulation),
+          patterns = patterns(newPopulation),
+          hitMap = elitedHitMap,
+          maxRareSample = maxRareSample,
+          regularisationEpsilon = regularisationEpsilon,
+          iterations = iterations,
+          tolerance = tolerance,
+          dilation = dilation,
+          minClusterSize = minClusterSize,
+          random = rng
+        )
 
       def bootstrapState = gmm.modify(gmm => elitedGMM orElse gmm)(state)
       def evolutionState =
@@ -412,8 +423,6 @@ object PPSEOperation:
 
 
   def updateState(
-    genomes: Array[Array[Double]],
-    patterns: Array[Array[Int]],
     offspringGenomes: Array[(IArray[Double], Option[Double])],
     offspringPatterns: Array[Array[Int]],
     likelihoodRatioMap: PPSE.SamplingWeightMap,
@@ -425,7 +434,7 @@ object PPSEOperation:
     dilation: Double,
     minClusterSize: Int,
     continuous: Vector[C],
-    random: Random): (HitMap, PPSE.SamplingWeightMap, Option[GMM]) =
+    random: Random): (HitMap, PPSE.SamplingWeightMap) =
 
     def newHitMap =
       def updateHits(m: HitMap, p: Vector[Int]) = m.updatedWith(p)(v => Some(v.getOrElse(0) + 1))
@@ -450,21 +459,8 @@ object PPSEOperation:
 
       offSpringDensities.foldLeft(likelihoodRatioMap) { case (map, (pattern, density)) => updatePatternDensity(map, pattern, density) }
 
-    def newGMM =
-      computeGMM(
-        genomes = genomes,
-        patterns = patterns,
-        hitMap = newHitMap,
-        maxRareSample = maxRareSample,
-        regularisationEpsilon = regularisationEpsilon,
-        iterations = iterations,
-        tolerance = tolerance,
-        dilation = dilation,
-        minClusterSize = minClusterSize,
-        random = random
-      )
 
-    (newHitMap, newLikelihoodRatioMap, newGMM)
+    (newHitMap, newLikelihoodRatioMap)
 
 
   def fitGMM(

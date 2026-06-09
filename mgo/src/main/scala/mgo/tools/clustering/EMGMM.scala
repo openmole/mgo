@@ -126,6 +126,7 @@ object EMGMM:
    * @param weights weights of the components (clusters)
    */
   def compute_log_likelihood(x: Array[Array[Double]], means: Array[Array[Double]], covariances: Array[Array[Array[Double]]], weights: Array[Double], regularisationEpsilon: Double): Array[Array[Double]] =
+
     val res =
       weights.zipWithIndex.map: (prior, k) =>
 
@@ -194,7 +195,12 @@ object EMGMM:
     val covariances = Array.tabulate(components): k =>
       val diff = X.map(x => x.indices.map(i => x(i) - means(k)(i)).toArray)
       val resp_k = resp_t(k)
-      val w_sum = dot(diff.transpose.map { l => l.zip(resp_k).map { case (a, b) => a * b }}, diff)
+
+      val w_sum =
+        dot(
+          diff.transpose.map { l => l.zip(resp_k).map { case (a, b) => a * b }},
+          diff
+        )
       regularize(w_sum.map(_.map(_ / resp_weights(k))), epsilon)
 
     assert(resp.flatten.forall(!_.isNaN))
