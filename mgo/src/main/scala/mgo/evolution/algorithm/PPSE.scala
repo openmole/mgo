@@ -117,7 +117,6 @@ object PPSE:
     minDensityQuantile: Double,
     densitySample: Int,
     regularisationEpsilon: Double,
-    defensiveDistributionWeight: Double,
     density: Option[IArray[Double] => Double]): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
     PPSEOperation.breeding(
       continuous,
@@ -129,7 +128,6 @@ object PPSE:
       minDensityQuantile,
       densitySample,
       regularisationEpsilon = regularisationEpsilon,
-      defensiveDistributionWeight = defensiveDistributionWeight,
       density = density)
 
   def elitism[P: CanContainNaN](
@@ -179,7 +177,7 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, minDensityQuantile = t.minDensityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, defensiveDistributionWeight = t.defensiveDistributionWeight, density = t.density),
+        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, minDensityQuantile = t.minDensityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
         PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrapGeneration = t.bootstrapGeneration, regularisationEpsilon = t.regularisationEpsilon),
         Focus[EvolutionState[PPSEState]](_.generation),
@@ -203,8 +201,7 @@ case class PPSE[P](
   maxRareSample: Int = 10,
   minClusterSize: Int = 5,
   bootstrapGeneration: Int = 10,
-  regularisationEpsilon: Double = 10e-6,
-  defensiveDistributionWeight: Double = 0.05)
+  regularisationEpsilon: Double = 10e-6)
 
 object PPSEOperation:
   def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
@@ -231,7 +228,6 @@ object PPSEOperation:
     minDensityQuantile: Double,
     densitySample: Int,
     regularisationEpsilon: Double,
-    defensiveDistributionWeight: Double,
     density: Option[IArray[Double] => Double]): Breeding[S, I, G] =
     (s, population, rng) =>
 
@@ -282,15 +278,8 @@ object PPSEOperation:
           @tailrec def sampleArray(sampler: RejectionSampler, n: Int, state: RejectionSampler.State, res: List[(IArray[Double], Double)] = List()): (RejectionSampler.State, IArray[(IArray[Double], Double)]) =
             if n > 0
             then
-              val (newState, newSample) =
-                if rng.nextDouble() < defensiveDistributionWeight
-                then (state, randomUnscaledContinuousValues(continuous.size, rng))
-                else RejectionSampler.sample(sampler, state)
-
-              val newDensity =
-                val d = RejectionSampler.density(newState, distribution.density(newSample.unsafeToArray))
-                (1 - defensiveDistributionWeight) * d + defensiveDistributionWeight
-
+              val (newState, newSample) = RejectionSampler.sample(sampler, state)
+              val newDensity = RejectionSampler.density(newState, distribution.density(newSample.unsafeToArray))
               sampleArray(sampler, n - 1, newState, (newSample, newDensity) :: res)
             else (state, IArray.unsafeFromArray(res.reverse.toArray))
 
@@ -352,7 +341,7 @@ object PPSEOperation:
           regularisationEpsilon = regularisationEpsilon,
           continuous = continuous,
           random = rng)
-      
+
       def elitedGMM =
         def genomes(p: Vector[I]) =
           import tools.unsafeToArray
