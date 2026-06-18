@@ -139,7 +139,7 @@ object PPSE:
     dilation: Double,
     minClusterSize: Int,
     maxRareSample: Int,
-    bootstrapGeneration: Int,
+    bootstrap: Int,
     regularisationEpsilon: Double) =
     PPSEOperation.elitism[EvolutionState[PPSEState], Individual[P], P](
       values = i => Genome.toTuple(i.genome),
@@ -150,14 +150,14 @@ object PPSE:
       likelihoodRatioMap = Focus[EvolutionState[PPSEState]](_.s.likelihoodRatioMap),
       hitmap = Focus[EvolutionState[PPSEState]](_.s.hitmap),
       gmm = Focus[EvolutionState[PPSEState]](_.s.gmm),
-      generation = _.generation,
+      evaluated = _.evaluated,
       individualGeneration = Focus[Individual[P]](_.generation),
       iterations = iterations,
       tolerance = tolerance,
       dilation = dilation,
       maxRareSample = maxRareSample,
       minClusterSize = minClusterSize,
-      bootstrapGeneration = bootstrapGeneration,
+      bootstrap = bootstrap,
       regularisationEpsilon = regularisationEpsilon)
 
   def expression[P](phenotype: (util.Random, IArray[Double]) => P, continuous: Vector[C]) = (random: util.Random, genome: Genome, generation: Long, initial: Boolean) =>
@@ -179,7 +179,7 @@ object PPSE:
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
         PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, minDensityQuantile = t.minDensityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrapGeneration = t.bootstrapGeneration, regularisationEpsilon = t.regularisationEpsilon),
+        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrap = t.bootstrap, regularisationEpsilon = t.regularisationEpsilon),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -200,7 +200,7 @@ case class PPSE[P](
   dilation: Double = 1.5,
   maxRareSample: Int = 10,
   minClusterSize: Int = 5,
-  bootstrapGeneration: Int = 10,
+  bootstrap: Int = 1000,
   regularisationEpsilon: Double = 10e-6)
 
 object PPSEOperation:
@@ -303,14 +303,14 @@ object PPSEOperation:
     likelihoodRatioMap: monocle.Lens[S, PPSE.SamplingWeightMap],
     hitmap: monocle.Lens[S, HitMap],
     gmm: monocle.Lens[S, Option[GMM]],
-    generation: S => Long,
+    evaluated: S => Long,
     individualGeneration: monocle.Lens[I, Long],
     iterations: Int,
     tolerance: Double,
     dilation: Double,
     maxRareSample: Int,
     minClusterSize: Int,
-    bootstrapGeneration: Int,
+    bootstrap: Int,
     regularisationEpsilon: Double): Elitism[S, I] =  (state, population, candidates, rng) =>
 
     def keepRandom(i: Vector[I]): Vector[I] =
@@ -367,7 +367,7 @@ object PPSEOperation:
           hitmap.replace(elitedHitMap))(state)
 
 
-      if generation(state) < bootstrapGeneration
+      if evaluated(state) < bootstrap
       then bootstrapState
       else evolutionState
 
