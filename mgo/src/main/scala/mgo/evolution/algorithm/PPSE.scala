@@ -48,15 +48,17 @@ object PPSE:
     def density(g: Genome): Option[Double] = g.lastOption.filter(_ >= 0.0)
 
   type Genome = Array[Double]
-
-
   type SamplingWeightMap = PatternMap[Double]
   type HitMap = PatternMap[Int]
+
+  object PPSEState:
+    def empty(reservoirSize: Int) = PPSEState(inverseDensitySamples = ReservoirSampling.empty(reservoirSize))
 
   case class PPSEState(
     hitmap: HitMap = PatternMap.empty,
     gmm: Option[GMM] = None,
-    likelihoodRatioMap: SamplingWeightMap = PatternMap.empty)
+    likelihoodRatioMap: SamplingWeightMap = PatternMap.empty,
+    inverseDensitySamples: ReservoirSampling)
 
   case class Result[P](continuous: Vector[Double], pattern: Vector[Int], density: Double, hit: Int, phenotype: P, individual: Individual[P])
 
@@ -114,8 +116,7 @@ object PPSE:
     lambda: Int,
     reject: Option[IArray[Double] => Boolean],
     warmupSampler: Int,
-    minDensityQuantile: Double,
-    densitySample: Int,
+    densityQuantile: Double,
     regularisationEpsilon: Double,
     density: Option[IArray[Double] => Double]): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
     PPSEOperation.breeding(
@@ -124,9 +125,9 @@ object PPSE:
       lambda,
       reject,
       _.s.gmm,
-      warmupSampler,
-      minDensityQuantile,
-      densitySample,
+      _.s.inverseDensitySamples,
+      warmupSampler = warmupSampler,
+      densityQuantile = densityQuantile,
       regularisationEpsilon = regularisationEpsilon,
       density = density)
 
@@ -134,6 +135,9 @@ object PPSE:
     pattern: P => Vector[Int],
     continuous: Vector[C],
     reject: Option[IArray[Double] => Boolean],
+    lambda: Int,
+    density: Option[IArray[Double] => Double],
+    warmupSampler: Int,
     iterations: Int,
     tolerance: Double,
     dilation: Double,
@@ -158,14 +162,18 @@ object PPSE:
       maxRareSample = maxRareSample,
       minClusterSize = minClusterSize,
       bootstrap = bootstrap,
-      regularisationEpsilon = regularisationEpsilon)
+      regularisationEpsilon = regularisationEpsilon,
+      lambda = lambda,
+      density = density,
+      inverseDensitySamples = Focus[EvolutionState[PPSEState]](_.s.inverseDensitySamples),
+      warmupSampler = warmupSampler)
 
   def expression[P](phenotype: (util.Random, IArray[Double]) => P, continuous: Vector[C]) = (random: util.Random, genome: Genome, generation: Long, initial: Boolean) =>
     val sc = scaleContinuousValues(Genome.values(genome), continuous)
     Individual(genome, phenotype(random, sc), generation, initial)
 
   given [P: CanContainNaN]: Algorithm[PPSE[P], Individual[P], Genome, EvolutionState[PPSEState]] with
-    def initialState(t: PPSE[P], rng: util.Random) = EvolutionState[PPSEState](s = PPSEState())
+    def initialState(t: PPSE[P], rng: util.Random) = EvolutionState[PPSEState](s = PPSEState.empty(t.densitySample))
 
     override def initialPopulation(t: PPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
@@ -177,9 +185,9 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, minDensityQuantile = t.minDensityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
+        PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, densityQuantile = t.densityQuantile, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrap = t.bootstrap, regularisationEpsilon = t.regularisationEpsilon),
+        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrap = t.bootstrap, regularisationEpsilon = t.regularisationEpsilon, lambda =  t.lambda, density = t.density, warmupSampler = t.warmupSampler),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -195,8 +203,8 @@ case class PPSE[P](
   iterations: Int = 1000,
   tolerance: Double = 0.001,
   warmupSampler: Int = 1000,
-  minDensityQuantile: Double = 0.2,
-  densitySample: Int = 1000,
+  densityQuantile: Double = 0.2,
+  densitySample: Int = 10000,
   dilation: Double = 1.5,
   maxRareSample: Int = 10,
   minClusterSize: Int = 5,
@@ -215,8 +223,29 @@ object PPSEOperation:
 
     new RejectionSampler(sample, acceptFunction)
 
+  def fillReservoir(reservoir: IArray[Double], samples: IArray[Double], rng: Random) =
+    val filledReservoir = reservoir.toArray
+    samples.foreach: s =>
+      val index = rng.nextInt(filledReservoir.length)
+      filledReservoir(index) = s
+    IArray.unsafeFromArray(filledReservoir)
 
+  def inverseDensity(continuous: Vector[C], density: Option[IArray[Double] => Double], x: IArray[Double], densityValue: Double) =
+    val xDensity =
+      density.map: df =>
+        val scaled = scaleContinuousValues(x, continuous)
+        df(scaled)
+      .getOrElse(1.0)
 
+    xDensity / densityValue
+
+  @tailrec def sampleArray(sampler: RejectionSampler, n: Int, distribution: MixtureMultivariateNormalDistribution, state: RejectionSampler.State, res: List[(IArray[Double], Double)] = List()): (RejectionSampler.State, IArray[(IArray[Double], Double)]) =
+    if n > 0
+    then
+      val (newState, newSample) = RejectionSampler.sample(sampler, state)
+      val newDensity = RejectionSampler.density(newState, distribution.density(newSample.unsafeToArray))
+      sampleArray(sampler, n - 1, distribution, newState, (newSample, newDensity) :: res)
+    else (state, IArray.unsafeFromArray(res.reverse.toArray))
 
   def breeding[S, I, G](
     continuous: Vector[C],
@@ -224,9 +253,9 @@ object PPSEOperation:
     lambda: Int,
     reject: Option[IArray[Double] => Boolean],
     gmm: S => Option[GMM],
+    inverseDensitySamples: S => ReservoirSampling,
     warmupSampler: Int,
-    minDensityQuantile: Double,
-    densitySample: Int,
+    densityQuantile: Double,
     regularisationEpsilon: Double,
     density: Option[IArray[Double] => Double]): Breeding[S, I, G] =
     (s, population, rng) =>
@@ -247,50 +276,27 @@ object PPSEOperation:
         case Some(gmmValue) =>
           val distribution = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
 
-          def inverseDensity(x: IArray[Double], densityValue: Double) =
-            val xDensity =
-              density.map: df =>
-                val scaled = scaleContinuousValues(x, continuous)
-                df(scaled)
-              .getOrElse(1.0)
-
-            xDensity / densityValue
-
           val inverseDensityCeil =
-            def densitySamples =
-              (0 until densitySample).map: _ =>
-                val s = distribution.sample()
-                val d = distribution.density(s)
-                inverseDensity(IArray.unsafeFromArray(s), d)
-
-            mgo.tools.Stats.quantile(densitySamples, 1.0 - minDensityQuantile)
+            def densitySamples = inverseDensitySamples(s).samples
+            mgo.tools.Stats.quantile(densitySamples, 1.0 - densityQuantile)
 
           def rejectValue(x: IArray[Double]) =
             reject.getOrElse(noRejection)(x) ||
               rejectNaN[IArray[Double]](identity)(x) ||
-              inverseDensityCeil > inverseDensity(x, distribution.density(x.unsafeToArray))
+              inverseDensityCeil > inverseDensity(continuous, density, x, distribution.density(x.unsafeToArray))
 
           def rejectionSampler(gmm: MixtureMultivariateNormalDistribution) =
             def sample() = IArray.unsafeFromArray(gmm.sample())
             toSampler(sample, rejectValue, continuous)
 
-
-          @tailrec def sampleArray(sampler: RejectionSampler, n: Int, state: RejectionSampler.State, res: List[(IArray[Double], Double)] = List()): (RejectionSampler.State, IArray[(IArray[Double], Double)]) =
-            if n > 0
-            then
-              val (newState, newSample) = RejectionSampler.sample(sampler, state)
-              val newDensity = RejectionSampler.density(newState, distribution.density(newSample.unsafeToArray))
-              sampleArray(sampler, n - 1, newState, (newSample, newDensity) :: res)
-            else (state, IArray.unsafeFromArray(res.reverse.toArray))
-
           val (_, sampled) =
             val rejectionSamplerValue = rejectionSampler(distribution)
             val rejectionSamplerState = RejectionSampler.warmup(rejectionSamplerValue, warmupSampler)
-            sampleArray(rejectionSamplerValue, lambda, rejectionSamplerState)
+            sampleArray(rejectionSamplerValue, lambda, distribution, rejectionSamplerState)
 
           val breed =
             sampled.toVector.map: s =>
-              val id = inverseDensity(s._1, s._2)
+              val id = inverseDensity(continuous, density, s._1, s._2)
               buildGenome(s._1, Some(id))
           breed
 
@@ -300,6 +306,10 @@ object PPSEOperation:
     pattern: P => Vector[Int],
     continuous: Vector[C],
     reject: Option[IArray[Double] => Boolean],
+    lambda: Int,
+    density: Option[IArray[Double] => Double],
+    inverseDensitySamples: monocle.Lens[S, ReservoirSampling],
+    warmupSampler: Int,
     likelihoodRatioMap: monocle.Lens[S, PPSE.SamplingWeightMap],
     hitmap: monocle.Lens[S, HitMap],
     gmm: monocle.Lens[S, Option[GMM]],
@@ -360,11 +370,35 @@ object PPSEOperation:
           random = rng
         )
 
-      def bootstrapState = gmm.modify(gmm => elitedGMM orElse gmm)(state)
+      def updateReservoir(gmm: Option[GMM], reservoir: ReservoirSampling) =
+        def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x) || rejectNaN[IArray[Double]](identity)(x)
+        def rejectionSampler(gmm: MixtureMultivariateNormalDistribution) =
+          def sample() = IArray.unsafeFromArray(gmm.sample())
+          toSampler(sample, rejectValue, continuous)
+
+        gmm match
+          case None => reservoir
+          case Some(gmm) =>
+            val distribution = GMM.toDistribution(gmm, regularisationEpsilon, rng)
+            val rejectionSamplerValue = rejectionSampler(distribution)
+            val rejectionSamplerState = RejectionSampler.warmup(rejectionSamplerValue, warmupSampler)
+
+            val samples = (0 until lambda).map: _ =>
+              val sample = rejectionSamplerValue.sample()
+              val d = RejectionSampler.density(rejectionSamplerState, distribution.density(sample.unsafeToArray))
+              inverseDensity(continuous, density, sample, d)
+
+            reservoir.addAll(samples, rng)
+
+      def newGMM = elitedGMM orElse gmm.get(state)
+      def newReservoir = updateReservoir(newGMM, inverseDensitySamples.get(state))
+      def bootstrapState = (gmm.replace(newGMM) andThen inverseDensitySamples.replace(newReservoir))(state)
       def evolutionState =
-        (gmm.modify(gmm => elitedGMM orElse gmm) andThen
+        (gmm.replace(newGMM) andThen
           likelihoodRatioMap.replace(elitedDensity) andThen
-          hitmap.replace(elitedHitMap))(state)
+          hitmap.replace(elitedHitMap)
+          andThen inverseDensitySamples.replace(newReservoir)
+          )(state)
 
 
       if evaluated(state) < bootstrap
