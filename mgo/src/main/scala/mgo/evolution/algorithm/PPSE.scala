@@ -135,7 +135,6 @@ object PPSE:
     pattern: P => Vector[Int],
     continuous: Vector[C],
     reject: Option[IArray[Double] => Boolean],
-    lambda: Int,
     density: Option[IArray[Double] => Double],
     warmupSampler: Int,
     iterations: Int,
@@ -163,7 +162,6 @@ object PPSE:
       minClusterSize = minClusterSize,
       bootstrap = bootstrap,
       regularisationEpsilon = regularisationEpsilon,
-      lambda = lambda,
       density = density,
       inverseDensitySamples = Focus[EvolutionState[PPSEState]](_.s.inverseDensitySamples),
       warmupSampler = warmupSampler)
@@ -187,7 +185,7 @@ object PPSE:
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
         PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, densityQuantile = t.densityQuantile, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrap = t.bootstrap, regularisationEpsilon = t.regularisationEpsilon, lambda =  t.lambda, density = t.density, warmupSampler = t.warmupSampler),
+        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrap = t.bootstrap, regularisationEpsilon = t.regularisationEpsilon, density = t.density, warmupSampler = t.warmupSampler),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -306,7 +304,6 @@ object PPSEOperation:
     pattern: P => Vector[Int],
     continuous: Vector[C],
     reject: Option[IArray[Double] => Boolean],
-    lambda: Int,
     density: Option[IArray[Double] => Double],
     inverseDensitySamples: monocle.Lens[S, ReservoirSampling],
     warmupSampler: Int,
@@ -383,7 +380,7 @@ object PPSEOperation:
             val rejectionSamplerValue = rejectionSampler(distribution)
             val rejectionSamplerState = RejectionSampler.warmup(rejectionSamplerValue, warmupSampler)
 
-            val samples = (0 until lambda).map: _ =>
+            val samples = (0 until candidates.size).map: _ =>
               val sample = rejectionSamplerValue.sample()
               val d = RejectionSampler.density(rejectionSamplerState, distribution.density(sample.unsafeToArray))
               inverseDensity(continuous, density, sample, d)
