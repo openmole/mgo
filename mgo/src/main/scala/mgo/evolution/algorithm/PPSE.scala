@@ -101,8 +101,8 @@ object PPSE:
   def initialGenomes(number: Int, continuous: Vector[C], reject: Option[IArray[Double] => Boolean], warmupSampler: Int, rng: scala.util.Random) =
     def sample() = PPSEOperation.randomUnscaledContinuousValues(continuous.size, rng)
 
-    def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x)
-    val sampler = PPSEOperation.toSampler(sample, rejectValue, continuous)
+    def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(scaleContinuousValues(x, continuous))
+    val sampler = PPSEOperation.toSampler(sample, rejectValue)
 
     (0 to number).map: _ =>
       val g = RejectionSampler.sampleNoDensity(sampler)
@@ -206,17 +206,18 @@ case class PPSE[P](
 object PPSEOperation:
   def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
 
-  def toSampler(sample: () => IArray[Double], reject: IArray[Double] => Boolean, continuous: Vector[C]) =
+  def toSampler(sample: () => IArray[Double], reject: IArray[Double] => Boolean) =
     def acceptPoint(x: IArray[Double]) = x.forall(_ <= 1.0) && x.forall(_ >= 0.0)
 
     def acceptFunction(x: IArray[Double]) =
-      def rejectValue = reject(scaleContinuousValues(x, continuous))
+      def rejectValue = reject(x)
       acceptPoint(x) && !rejectValue
 
     new RejectionSampler(sample, acceptFunction)
 
-
-
+  def rejectionSampler(gmm: MixtureMultivariateNormalDistribution, reject: IArray[Double] => Boolean) =
+    def sample() = IArray.unsafeFromArray(gmm.sample())
+    toSampler(sample, reject)
 
   def breeding[S, I, G](
     continuous: Vector[C],
@@ -235,7 +236,7 @@ object PPSEOperation:
         def sample() = randomUnscaledContinuousValues(continuous.size, rng)
 
         def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x)
-        val sampler = toSampler(sample, rejectValue, continuous)
+        val sampler = toSampler(sample, rejectValue)
         (0 to lambda).map: _ =>
           val g = RejectionSampler.sampleNoDensity(sampler)
           buildGenome(g, None)
@@ -257,41 +258,32 @@ object PPSEOperation:
             xDensity / densityValue
 
           val inverseDensityCeil =
+            def rejection(x: IArray[Double]) = reject.getOrElse(noRejection)(x) || rejectNaN[IArray[Double]](identity)(x)
+            val sampler = rejectionSampler(distribution, rejection)
+
             def densitySamples =
               (0 until densitySample).map: _ =>
-                val s = distribution.sample()
-                val d = distribution.density(s)
-                inverseDensity(IArray.unsafeFromArray(s), d)
+                val s = RejectionSampler.sampleNoDensity(sampler)
+                val d = distribution.density(s.unsafeToArray)
+                inverseDensity(s, d)
 
             mgo.tools.Stats.quantile(densitySamples, 1.0 - minDensityQuantile)
 
           def rejectValue(x: IArray[Double]) =
-            reject.getOrElse(noRejection)(x) ||
-              rejectNaN[IArray[Double]](identity)(x) ||
-               inverseDensity(x, distribution.density(x.unsafeToArray)) > inverseDensityCeil
+            reject.getOrElse(noRejection)(scaleContinuousValues(x, continuous)) ||
+            rejectNaN[IArray[Double]](identity)(x) ||
+             inverseDensity(x, distribution.density(x.unsafeToArray)) > inverseDensityCeil
 
-          def rejectionSampler(gmm: MixtureMultivariateNormalDistribution) =
-            def sample() = IArray.unsafeFromArray(gmm.sample())
-            toSampler(sample, rejectValue, continuous)
+          val rejectionSamplerValue = rejectionSampler(distribution, rejectValue)
+          val rejectionSamplerState = RejectionSampler.warmup(rejectionSamplerValue, warmupSampler)
 
-
-          @tailrec def sampleArray(sampler: RejectionSampler, n: Int, state: RejectionSampler.State, res: List[(IArray[Double], Double)] = List()): (RejectionSampler.State, IArray[(IArray[Double], Double)]) =
-            if n > 0
-            then
-              val (newState, newSample) = RejectionSampler.sample(sampler, state)
-              val newDensity = RejectionSampler.density(newState, distribution.density(newSample.unsafeToArray))
-              sampleArray(sampler, n - 1, newState, (newSample, newDensity) :: res)
-            else (state, IArray.unsafeFromArray(res.reverse.toArray))
-
-          val (_, sampled) =
-            val rejectionSamplerValue = rejectionSampler(distribution)
-            val rejectionSamplerState = RejectionSampler.warmup(rejectionSamplerValue, warmupSampler)
-            sampleArray(rejectionSamplerValue, lambda, rejectionSamplerState)
+          val sampled = (0 until lambda).map(_ => RejectionSampler.sampleNoDensity(rejectionSamplerValue))
 
           val breed =
             sampled.toVector.map: s =>
-              val id = inverseDensity(s._1, s._2)
-              buildGenome(s._1, Some(id))
+              val d = RejectionSampler.density(rejectionSamplerState, distribution.density(s.unsafeToArray))
+              val id = inverseDensity(s, d)
+              buildGenome(s, Some(id))
           breed
 
   def elitism[S, I, P: CanContainNaN](
