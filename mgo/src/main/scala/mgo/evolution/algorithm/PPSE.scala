@@ -142,7 +142,6 @@ object PPSE:
     dilation: Double,
     minClusterSize: Int,
     maxRareSample: Int,
-    bootstrap: Int,
     regularisationEpsilon: Double) =
     PPSEOperation.elitism[EvolutionState[PPSEState], Individual[P], P](
       values = i => Genome.toTuple(i.genome),
@@ -160,7 +159,6 @@ object PPSE:
       dilation = dilation,
       maxRareSample = maxRareSample,
       minClusterSize = minClusterSize,
-      bootstrap = bootstrap,
       regularisationEpsilon = regularisationEpsilon,
       density = density,
       inverseDensitySamples = Focus[EvolutionState[PPSEState]](_.s.inverseDensitySamples),
@@ -185,7 +183,7 @@ object PPSE:
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
         PPSE.breeding(t.continuous, t.lambda, t.reject, warmupSampler =  t.warmupSampler, densityQuantile = t.densityQuantile, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, bootstrap = t.bootstrap, regularisationEpsilon = t.regularisationEpsilon, density = t.density, warmupSampler = t.warmupSampler),
+        PPSE.elitism(t.pattern, t.continuous, t.reject, iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, regularisationEpsilon = t.regularisationEpsilon, density = t.density, warmupSampler = t.warmupSampler),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -202,11 +200,10 @@ case class PPSE[P](
   tolerance: Double = 0.001,
   warmupSampler: Int = 1000,
   densityQuantile: Double = 0.2,
-  densitySample: Int = 10000,
+  densitySample: Int = 1000,
   dilation: Double = 1.5,
   maxRareSample: Int = 10,
   minClusterSize: Int = 5,
-  bootstrap: Int = 1000,
   regularisationEpsilon: Double = 10e-6)
 
 object PPSEOperation:
@@ -275,13 +272,17 @@ object PPSEOperation:
           val distribution = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
 
           val inverseDensityCeil =
-            def densitySamples = inverseDensitySamples(s).samples
-            mgo.tools.Stats.quantile(densitySamples, 1.0 - densityQuantile)
+            val reservoir = inverseDensitySamples(s)
+            if reservoir.isFull
+            then
+              def densitySamples = reservoir.samples
+              mgo.tools.Stats.quantile(densitySamples, 1.0 - densityQuantile)
+            else Double.PositiveInfinity
 
           def rejectValue(x: IArray[Double]) =
             reject.getOrElse(noRejection)(x) ||
               rejectNaN[IArray[Double]](identity)(x) ||
-              inverseDensityCeil > inverseDensity(continuous, density, x, distribution.density(x.unsafeToArray))
+              inverseDensity(continuous, density, x, distribution.density(x.unsafeToArray)) > inverseDensityCeil
 
           def rejectionSampler(gmm: MixtureMultivariateNormalDistribution) =
             def sample() = IArray.unsafeFromArray(gmm.sample())
@@ -317,7 +318,6 @@ object PPSEOperation:
     dilation: Double,
     maxRareSample: Int,
     minClusterSize: Int,
-    bootstrap: Int,
     regularisationEpsilon: Double): Elitism[S, I] =  (state, population, candidates, rng) =>
 
     def keepRandom(i: Vector[I]): Vector[I] =
@@ -387,8 +387,9 @@ object PPSEOperation:
 
             reservoir.addAll(samples, rng)
 
-      def newGMM = elitedGMM orElse gmm.get(state)
-      def newReservoir = updateReservoir(newGMM, inverseDensitySamples.get(state))
+      val newGMM = elitedGMM orElse gmm.get(state)
+      val newReservoir = updateReservoir(newGMM, inverseDensitySamples.get(state))
+
       def bootstrapState = (gmm.replace(newGMM) andThen inverseDensitySamples.replace(newReservoir))(state)
       def evolutionState =
         (gmm.replace(newGMM) andThen
@@ -397,8 +398,7 @@ object PPSEOperation:
           andThen inverseDensitySamples.replace(newReservoir)
           )(state)
 
-
-      if evaluated(state) < bootstrap
+      if newReservoir.isFull
       then bootstrapState
       else evolutionState
 
