@@ -268,7 +268,7 @@ object PPSEOperation:
           def rejectValue(x: IArray[Double]) =
             reject.getOrElse(noRejection)(x) ||
               rejectNaN[IArray[Double]](identity)(x) ||
-              inverseDensityCeil > inverseDensity(x, distribution.density(x.unsafeToArray))
+               inverseDensity(x, distribution.density(x.unsafeToArray)) > inverseDensityCeil
 
           def rejectionSampler(gmm: MixtureMultivariateNormalDistribution) =
             def sample() = IArray.unsafeFromArray(gmm.sample())
