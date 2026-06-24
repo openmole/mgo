@@ -21,6 +21,7 @@ object ReservoirSampling:
   def empty(k: Int) = ReservoirSampling(k, IArray.empty)
 
   extension (reservoir: ReservoirSampling)
+    def isFull = reservoir.data.length >= reservoir.k
     def samples = reservoir.data.map(_._1)
     def merge(other: ReservoirSampling): ReservoirSampling =
       val merged = (reservoir.data ++ other.data).sortBy(_._2).take(reservoir.k)
