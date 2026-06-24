@@ -263,7 +263,7 @@ object PPSEOperation:
       def sampleUniform: Vector[G] =
         def sample() = randomUnscaledContinuousValues(continuous.size, rng)
 
-        def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x)
+        def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(scaleContinuousValues(x, continuous))
         val sampler = toSampler(sample, rejectValue)
         (0 to lambda).map: _ =>
           val g = RejectionSampler.sampleNoDensity(sampler)
@@ -371,7 +371,7 @@ object PPSEOperation:
         )
 
       def updateReservoir(gmm: Option[GMM], reservoir: ReservoirSampling) =
-        def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x) || rejectNaN[IArray[Double]](identity)(x)
+        def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(scaleContinuousValues(x, continuous)) || rejectNaN[IArray[Double]](identity)(x)
         def rejectionSampler(gmm: MixtureMultivariateNormalDistribution) =
           def sample() = IArray.unsafeFromArray(gmm.sample())
           toSampler(sample, rejectValue)
