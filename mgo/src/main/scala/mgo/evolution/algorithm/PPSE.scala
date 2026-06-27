@@ -118,6 +118,7 @@ object PPSE:
     warmupSampler: Int,
     densityQuantile: Double,
     densitySample: Int,
+    ceilAfterHit: Int,
     regularisationEpsilon: Double,
     density: Option[IArray[Double] => Double]): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
     PPSEOperation.breeding(
@@ -130,7 +131,11 @@ object PPSE:
       densityQuantile = densityQuantile,
       densitySample = densitySample,
       regularisationEpsilon = regularisationEpsilon,
-      density = density)
+      density = density,
+      likelihoodRatioMap = _.s.likelihoodRatioMap,
+      hitmap = _.s.hitmap,
+      ceilAfterHit = ceilAfterHit
+    )
 
   def elitism[P: CanContainNaN](
     pattern: P => Vector[Int],
@@ -188,7 +193,7 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, reject(t.reject, t.continuous), warmupSampler =  t.warmupSampler, densityQuantile = t.densityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
+        PPSE.breeding(t.continuous, t.lambda, reject(t.reject, t.continuous), warmupSampler =  t.warmupSampler, densityQuantile = t.densityQuantile, densitySample = t.densitySample, ceilAfterHit = t.ceilAfterHit, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
         PPSE.elitism(t.pattern, t.continuous, reject(t.reject, t.continuous), iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, regularisationEpsilon = t.regularisationEpsilon, bootstrap = t.bootstrap, warmupSampler = t.warmupSampler),
         Focus[EvolutionState[PPSEState]](_.generation),
@@ -211,7 +216,8 @@ case class PPSE[P](
   maxRareSample: Int = 10,
   minClusterSize: Int = 5,
   regularisationEpsilon: Double = 10e-6,
-  bootstrap: Int = 100)
+  bootstrap: Int = 1000,
+  ceilAfterHit: Int = 1000)
 
 object PPSEOperation:
   def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
@@ -264,7 +270,10 @@ object PPSEOperation:
     densityQuantile: Double,
     densitySample: Int,
     regularisationEpsilon: Double,
-    density: Option[IArray[Double] => Double]): Breeding[S, I, G] =
+    density: Option[IArray[Double] => Double],
+    likelihoodRatioMap: S => PPSE.SamplingWeightMap,
+    hitmap: S => HitMap,
+    ceilAfterHit: Int): Breeding[S, I, G] =
     (s, population, rng) =>
 
       def sampleUniform: Vector[G] =
@@ -283,6 +292,14 @@ object PPSEOperation:
         case Some(gmmValue) =>
           val distribution = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
 
+          val maxHitDensity =
+            val totalHit = hitmap(s).values.sum
+            if totalHit > ceilAfterHit
+            then
+              val values = likelihoodRatioMap(s).values
+              if values.nonEmpty then values.max else Double.PositiveInfinity
+            else Double.PositiveInfinity
+
           val inverseDensityCeil =
             def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x)
             val sampler = rejectionSampler(distribution, rejectValue)
@@ -293,7 +310,8 @@ object PPSEOperation:
               val d = RejectionSampler.density(samplerState, distribution.density(s.unsafeToArray))
               inverseDensity(continuous, density, s, d)
 
-            mgo.tools.Stats.quantile(sampled, 1 - densityQuantile)
+            val quantile = mgo.tools.Stats.quantile(sampled, 1 - densityQuantile)
+            math.min(quantile, maxHitDensity)
 
           def rejectValue(x: IArray[Double]) =
             reject.getOrElse(noRejection)(x) || rejectNaN[IArray[Double]](identity)(x) ||
