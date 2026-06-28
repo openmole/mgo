@@ -311,12 +311,13 @@ object PPSEOperation:
             val sampler = rejectionSampler(distribution, rejectValue)
             val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
 
-            val sampled = (0 until lambda).map: _ =>
+            val sampled = (0 until densitySample).map: _ =>
               val s = RejectionSampler.sampleNoDensity(sampler)
               val d = RejectionSampler.density(samplerState, distribution.density(s.unsafeToArray))
               inverseDensity(continuous, density, s, d)
 
             val quantile = mgo.tools.Stats.quantile(sampled, 1 - densityQuantile)
+
             math.min(quantile, maxHitDensity)
 
           def rejectValue(x: IArray[Double]) =
