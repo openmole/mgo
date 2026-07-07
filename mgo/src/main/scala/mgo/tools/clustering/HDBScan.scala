@@ -27,7 +27,7 @@ object HDBScan:
     hdbScan.setMinClusterSize(minPoints)
 
     if x.length <= hdbScan.getMinPoints
-    then Some(buildSingleCluster())
+    then None //Some(buildSingleCluster())
     else
       val dataSet =
         val dataPoints =
@@ -43,7 +43,7 @@ object HDBScan:
         Some:
           clusters.map: cluster =>
             cluster.map(_.getNumericalValues.arrayCopy())
-      else Some(buildSingleCluster())
+      else None //Some(buildSingleCluster())
 
 
 

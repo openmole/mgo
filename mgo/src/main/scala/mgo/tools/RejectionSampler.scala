@@ -51,8 +51,12 @@ object RejectionSampler:
       (newState, x)
 
   def density(state: State, density: Double) =
-    val inverseProbability = state.test.toDouble / state.pass
-    density / inverseProbability
+    val acceptanceRatio =
+      if state.test == 0 || state.pass == 0
+      then 1.0
+      else state.pass.toDouble / state.test.toDouble
+
+    density * acceptanceRatio
 
 
 case class RejectionSampler(

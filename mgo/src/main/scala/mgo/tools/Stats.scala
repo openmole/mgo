@@ -32,6 +32,9 @@ import scala.collection.Searching.search
 
 object Stats:
 
+  def rootSquareError(data: Seq[Double]) = sqrt(data.map(x => pow(x, 2)).sum / data.size)
+
+
   def weightedCovariance(data: RealMatrix, weights: Array[Double]): RealMatrix =
     val n = data.getRowDimension()
     val weightsSum = weights.sum

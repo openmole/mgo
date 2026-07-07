@@ -91,27 +91,32 @@ object SquarePPSE extends App:
   val inputsDistribution = new MultivariateNormalDistribution(Array(0.50, 0.50), Array(Array(0.001, 0.0), Array(0.0, 0.001)))
 
   val ppse = PPSE(
-    lambda = 10,
+    lambda = 100,
     phenotype =
       (rng, c) =>
         val noise = IArray.fill(2)(rng.nextGaussian() * 0.1)
         val v = (c zip noise).map(_ + _)
         PatternSquare.pattern(PatternSquare.oneSquare, v),
     pattern = identity,
+    maxRareSample = 10,
     continuous = Vector.fill(2)(C(0.3, 0.7)),
-    density = Some(x => inputsDistribution.density(x.toArray))
+    density = Some(x => inputsDistribution.density(x.toArray)),
+    bootstrap = 1000
   )
 
   def evolution =
     ppse.
-      until(afterGeneration(1000)).
-      trace((s, is) => println(s.generation))
+      until(afterGeneration(10000)).
+      trace: (s, is) =>
+        val r = result(ppse, is, s)
+        println(mgo.tools.Stats.rootSquareError(r.map(_.density)))
+        println(s.generation)
 
   val (finalState, finalPopulation) = evolution.eval(new util.Random(42))
   val r = result(ppse, finalPopulation, finalState)
 
-  println(r.sortBy(_.density).mkString("\n"))
-
-  import better.files.*
-  File("/tmp/onesquare.csv").writeText:
-    r.map(l => s"${l.continuous.mkString(",")},${l.density}").mkString("\n")
+  //println(r.sortBy(_.density).mkString("\n"))
+//
+//  import better.files.*
+//  File("/tmp/onesquare.csv").writeText:
+//    r.map(l => s"${l.continuous.mkString(",")},${l.density}").mkString("\n")

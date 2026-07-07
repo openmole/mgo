@@ -52,13 +52,12 @@ object PPSE:
   type HitMap = PatternMap[Int]
 
   object PPSEState:
-    def empty(reservoirSize: Int) = PPSEState(inverseDensitySamples = ReservoirSampling.empty(reservoirSize))
+    def empty() = PPSEState()
 
   case class PPSEState(
     hitmap: HitMap = PatternMap.empty,
     gmm: Option[GMM] = None,
-    likelihoodRatioMap: SamplingWeightMap = PatternMap.empty,
-    inverseDensitySamples: ReservoirSampling)
+    likelihoodRatioMap: SamplingWeightMap = PatternMap.empty)
 
   case class Result[P](continuous: Vector[Double], pattern: Vector[Int], density: Double, hit: Int, phenotype: P, individual: Individual[P])
 
@@ -106,7 +105,7 @@ object PPSE:
     def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x)
     val sampler = PPSEOperation.toSampler(sample, rejectValue)
 
-    (0 to number).map: _ =>
+    (0 until number).map: _ =>
       val g = RejectionSampler.sampleNoDensity(sampler)
       Genome(g, None)
     .toVector
@@ -118,8 +117,6 @@ object PPSE:
     warmupSampler: Int,
     densityQuantile: Double,
     densitySample: Int,
-    ceilAfterHit: Int,
-    ceilQuantile: Double,
     regularisationEpsilon: Double,
     density: Option[IArray[Double] => Double]): Breeding[EvolutionState[PPSEState], Individual[P], Genome] =
     PPSEOperation.breeding(
@@ -134,9 +131,7 @@ object PPSE:
       regularisationEpsilon = regularisationEpsilon,
       density = density,
       likelihoodRatioMap = _.s.likelihoodRatioMap,
-      hitmap = _.s.hitmap,
-      ceilAfterHit = ceilAfterHit,
-      ceilQuantile = ceilQuantile
+      hitmap = _.s.hitmap
     )
 
   def elitism[P: CanContainNaN](
@@ -183,7 +178,7 @@ object PPSE:
 
 
   given [P: CanContainNaN]: Algorithm[PPSE[P], Individual[P], Genome, EvolutionState[PPSEState]] with
-    def initialState(t: PPSE[P], rng: util.Random) = EvolutionState[PPSEState](s = PPSEState.empty(t.densitySample))
+    def initialState(t: PPSE[P], rng: util.Random) = EvolutionState[PPSEState](s = PPSEState.empty())
 
     override def initialPopulation(t: PPSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
@@ -195,7 +190,7 @@ object PPSE:
 
     def step(t: PPSE[P]) =
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
-        PPSE.breeding(t.continuous, t.lambda, reject(t.reject, t.continuous), warmupSampler =  t.warmupSampler, densityQuantile = t.densityQuantile, densitySample = t.densitySample, ceilAfterHit = t.ceilAfterHit, ceilQuantile = t.ceilQuantile, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
+        PPSE.breeding(t.continuous, t.lambda, reject(t.reject, t.continuous), warmupSampler =  t.warmupSampler, densityQuantile = t.densityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
         PPSE.elitism(t.pattern, t.continuous, reject(t.reject, t.continuous), iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, regularisationEpsilon = t.regularisationEpsilon, bootstrap = t.bootstrap, warmupSampler = t.warmupSampler),
         Focus[EvolutionState[PPSEState]](_.generation),
@@ -218,9 +213,7 @@ case class PPSE[P](
   maxRareSample: Int = 10,
   minClusterSize: Int = 5,
   regularisationEpsilon: Double = 10e-6,
-  bootstrap: Int = 1000,
-  ceilAfterHit: Int = 1000,
-  ceilQuantile: Double = 0.1)
+  bootstrap: Int = 1000)
 
 object PPSEOperation:
   def randomUnscaledContinuousValues(genomeLength: Int, rng: scala.util.Random) = IArray.fill(genomeLength)(() => rng.nextDouble()).map(_())
@@ -275,9 +268,7 @@ object PPSEOperation:
     regularisationEpsilon: Double,
     density: Option[IArray[Double] => Double],
     likelihoodRatioMap: S => PPSE.SamplingWeightMap,
-    hitmap: S => HitMap,
-    ceilAfterHit: Int,
-    ceilQuantile: Double): Breeding[S, I, G] =
+    hitmap: S => HitMap): Breeding[S, I, G] =
     (s, population, rng) =>
 
       def sampleUniform: Vector[G] =
@@ -296,15 +287,15 @@ object PPSEOperation:
         case Some(gmmValue) =>
           val distribution = GMM.toDistribution(gmmValue, regularisationEpsilon, rng)
 
-          val maxHitDensity =
-            val totalHit = hitmap(s).values.sum
-            if totalHit > ceilAfterHit
-            then
-              val values = likelihoodRatioMap(s).values.toSeq
-              if values.nonEmpty
-              then mgo.tools.Stats.quantile(values, 1 - ceilQuantile)
-              else Double.PositiveInfinity
-            else Double.PositiveInfinity
+//          val maxHitDensity =
+//            val totalHit = hitmap(s).values.sum
+//            if totalHit > ceilAfterHit
+//            then
+//              val values = likelihoodRatioMap(s).values.toSeq
+//              if values.nonEmpty
+//              then mgo.tools.Stats.quantile(values, 1 - ceilQuantile)
+//              else Double.PositiveInfinity
+//            else Double.PositiveInfinity
 
           val inverseDensityCeil =
             def rejectValue(x: IArray[Double]) = reject.getOrElse(noRejection)(x)
@@ -312,13 +303,13 @@ object PPSEOperation:
             val samplerState = RejectionSampler.warmup(sampler, warmupSampler)
 
             val sampled = (0 until densitySample).map: _ =>
-              val s = RejectionSampler.sampleNoDensity(sampler)
-              val d = RejectionSampler.density(samplerState, distribution.density(s.unsafeToArray))
-              inverseDensity(continuous, density, s, d)
+              val x = RejectionSampler.sampleNoDensity(sampler)
+              val d = RejectionSampler.density(samplerState, distribution.density(x.unsafeToArray))
+              inverseDensity(continuous, density, x, d)
 
-            val quantile = mgo.tools.Stats.quantile(sampled, 1 - densityQuantile)
+            mgo.tools.Stats.quantile(sampled, 1 - densityQuantile)
 
-            math.min(quantile, maxHitDensity)
+          println(s"Inverse density ceil: $inverseDensityCeil")
 
           def rejectValue(x: IArray[Double]) =
             reject.getOrElse(noRejection)(x) || rejectNaN[IArray[Double]](identity)(x) ||
