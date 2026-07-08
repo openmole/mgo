@@ -309,8 +309,6 @@ object PPSEOperation:
 
             mgo.tools.Stats.quantile(sampled, 1 - densityQuantile)
 
-          println(s"Inverse density ceil: $inverseDensityCeil")
-
           def rejectValue(x: IArray[Double]) =
             reject.getOrElse(noRejection)(x) || rejectNaN[IArray[Double]](identity)(x) ||
               inverseDensity(continuous, density, x, distribution.density(x.unsafeToArray)) > inverseDensityCeil
