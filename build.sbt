@@ -1,18 +1,16 @@
 
-name := "mgo"
-ThisBuild / organization := "org.openmole"
-ThisBuild / scalaVersion := "3.8.4"
+organization := "org.openmole"
+scalaVersion := "3.8.4"
 
 val monocleVersion = "3.3.0"
 
-lazy val settings: Seq[Setting[_]] = Seq(
   //addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10"),
-  resolvers += "jitpack" at "https://jitpack.io",
-  javacOptions ++= Seq("-source", "17", "-target", "17"),
-  scalacOptions ++= Seq("-Xtarget:17"),
-)
+resolvers += "jitpack" at "https://jitpack.io"
+javacOptions ++= Seq("-source", "17", "-target", "17")
+scalacOptions ++= Seq("-Xtarget:17")
 
-lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) settings (
+lazy val mgo = (project in file("mgo")) settings (
+  name := "mgo",
   libraryDependencies += "org.apache.commons" % "commons-math3" % "3.6.1",
   libraryDependencies += "dev.optics"  %%  "monocle-core" % monocleVersion,
   libraryDependencies += "dev.optics" %% "monocle-macro" % monocleVersion,
@@ -23,12 +21,12 @@ lazy val mgo = Project(id = "mgo", base = file("mgo")) settings(settings: _*) se
   Test / testOptions += Tests.Argument(TestFrameworks.ScalaCheck, "-verbosity", "1")
 )
 
-lazy val root = (project in file(".")).aggregate(mgo).settings (
+lazy val root = project.aggregate(mgo).settings (
   publishArtifact := false
 )
 
 /* Publish */
-ThisBuild / publishMavenStyle := true
+/*ThisBuild / publishMavenStyle := true
 ThisBuild / Test / publishArtifact := false
 //publishArtifact := false
 
@@ -73,4 +71,4 @@ releaseProcess := Seq[ReleaseStep](
   pushChanges
 )
 
-
+*/
