@@ -221,6 +221,5 @@ Algorithms implemented in MGO are also avialiable in the workflow plateform for 
   
 SBT dependency
 ----------------
-```scala
-  libraryDependencies += "fr.iscpif" %% "mgo" % "2.45"  
-```
+
+[![](https://jitpack.io/v/openmole/mgo.svg)](https://jitpack.io/#openmole/mgo)
