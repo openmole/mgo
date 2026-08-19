@@ -7,4 +7,4 @@ before_install:
   - sdk use sbt 2.0.6
 
 install:
-  - sbt -Dsbt.server.autostart=false clean publishM2
+  - sbt --jvm-client clean publishM2
