@@ -7,4 +7,4 @@ before_install:
   - sdk use sbt 2.0.6
 
 install:
-  - sbt --jvm-client clean publishM2
+  - sbt --jvm-client publishM2
