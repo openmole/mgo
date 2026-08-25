@@ -43,7 +43,7 @@ object NoisyHDOSE:
   def archiveLens[P]: Lens[EvolutionState[StateType[P]], Archive[Individual[P]]] = Focus[EvolutionState[StateType[P]]](_.s.archive)
   def distanceLens[P]: Lens[HDOSEState[P], Double] = Focus[HDOSEState[P]](_.s.distance)
 
-  def initialState[P](distance: Double = 1.0): HDOSEState[P] = EvolutionState(s = StateType(Archive.empty, distance))
+  def initialState[P](distance: Double = 0.0): HDOSEState[P] = EvolutionState(s = StateType(Archive.empty, distance))
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -136,7 +136,7 @@ object NoisyHDOSE:
   def reject[P](t: NoisyHDOSE[P]): Option[Genome => Boolean] = NSGA2.reject(t.reject, t.continuous, t.discrete)
 
   given [P: ClassTag]: Algorithm[NoisyHDOSE[P], Individual[P], Genome, HDOSEState[P]] with
-    def initialState(t: NoisyHDOSE[P], rng: scala.util.Random) = NoisyHDOSE.initialState(t.distance)
+    def initialState(t: NoisyHDOSE[P], rng: scala.util.Random) = NoisyHDOSE.initialState()
     
     def initialPopulation(t: NoisyHDOSE[P], rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       noisy.initialPopulation[Genome, Individual[P]](
@@ -172,7 +172,7 @@ object NoisyHDOSE:
           wD,
           t.archiveSize,
           t.limit,
-          t.distance,
+          t.precision,
           shuffle = t.shuffle),
         Focus[HDOSEState[P]](_.generation),
         Focus[HDOSEState[P]](_.evaluated)
@@ -195,7 +195,7 @@ case class NoisyHDOSE[P](
   cloneProbability: Double = 0.2,
   operatorExploration: Double = 0.1,
   reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None,
-  distance: Double = 1.0,
+  precision: Double = 0.1,
   shuffle: Boolean = true)
 
 object NoisyHDOSEOperations:

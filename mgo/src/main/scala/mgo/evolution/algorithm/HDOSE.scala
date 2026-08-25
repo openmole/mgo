@@ -43,7 +43,7 @@ object HDOSE:
   def archiveLens[P]: Lens[HDOSEState[P], Archive[Individual[P]]] = Focus[HDOSEState[P]](_.s.archive)
   def distanceLens[P]: Lens[HDOSEState[P], Double] = Focus[HDOSEState[P]](_.s.distance)
 
-  def initialState[P](distance: Double = 1.0): HDOSEState[P] = EvolutionState(s = StateType(Archive.empty, distance))
+  def initialState[P](distance: Double = 0.0): HDOSEState[P] = EvolutionState(s = StateType(Archive.empty, distance))
 
   def initialGenomes(lambda: Int, continuous: Vector[C], discrete: Vector[D], reject: Option[Genome => Boolean], rng: scala.util.Random): Vector[Genome] =
     CDGenome.initialGenomes(lambda, continuous, discrete, reject, rng)
@@ -160,7 +160,7 @@ object HDOSE:
     sum < d
 
   given Algorithm[HDOSE, Individual[IArray[Double]], Genome, HDOSEState[IArray[Double]]] with
-    override def initialState(t: HDOSE, rng: scala.util.Random) = HDOSE.initialState(t.distance)
+    override def initialState(t: HDOSE, rng: scala.util.Random) = HDOSE.initialState()
     override def initialPopulation(t: HDOSE, rng: scala.util.Random, parallel: Algorithm.ParallelContext) =
       deterministic.initialPopulation(
         HDOSE.initialGenomes(t.lambda, t.continuous, t.discrete, reject(t), rng),
@@ -174,7 +174,7 @@ object HDOSE:
       deterministic.step(
         HDOSE.adaptiveBreeding(t.lambda, t.operatorExploration, t.continuous, t.discrete, sC, sD, identity, reject(t)),
         HDOSE.expression(t.fitness, t.continuous, t.discrete),
-        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, t.discrete, identity, t.distance, shuffle = t.shuffle),
+        HDOSE.elitism(t.mu, t.limit, sC, sD, t.archiveSize, t.continuous, t.discrete, identity, t.precision, shuffle = t.shuffle),
         Focus[HDOSEState[IArray[Double]]](_.generation),
         Focus[HDOSEState[IArray[Double]]](_.evaluated))
 
@@ -191,7 +191,7 @@ case class HDOSE(
   weightD: Option[Vector[Double]] = None,
   operatorExploration: Double = 0.1,
   reject: Option[(IArray[Double], IArray[Int]) => Boolean] = None,
-  distance: Double = 1.0,
+  precision: Double = 0.1,
   shuffle: Boolean = true)
 
 object HDOSEOperation:
@@ -390,7 +390,7 @@ object HDOSEOperation:
           (archive.replace(a3) andThen diversityDistance.replace(newDiversityDistance))(s2)
 
       val filteredPopulation =
-        filterNaN(population, memoizedFitness).filterNot: i =>
+        filterNaN(population ++ candidates, memoizedFitness).filterNot: i =>
           isTooCloseFromArchive(
             distance,
             archive.get(s3),
