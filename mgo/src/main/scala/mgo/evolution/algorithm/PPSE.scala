@@ -431,8 +431,9 @@ object PPSEOperation:
       if rareIndividuals.length < minClusterSize
       then GMM.empty
       else
+        def shuffledIndividuals = random.shuffle(rareIndividuals.toVector).toArray
         fitGMM(
-          rareIndividuals,
+          shuffledIndividuals,
           regularisationEpsilon = regularisationEpsilon,
           iterations = iterations,
           tolerance = tolerance,

@@ -14,45 +14,6 @@ import scala.util.{Failure, Success, Try}
  * Inspired by the work of Maël Fabien: https://github.com/maelfabien/EM_GMM_HMM
  */
 object EMGMM:
-  /**
-   * Full covariance Gaussian Mixture Model, trained using Expectation Maximization.
-   *
-   * @param x data points
-   * @param columns number of data columns
-   */
-  def initializeAndFit(
-    components: Int,
-    iterations: Int,
-    tolerance: Double,
-    regularisationEpsilon: Double,
-    x: Array[Array[Double]],
-    columns: Int,
-    random: Random): (GMM, Seq[Double]) =
-
-    def covariance(x: Array[Array[Double]]) = new Covariance(x).getCovarianceMatrix.getData
-
-    // initialize parameters
-    // chose Random means in data points
-    val means = random.shuffle(x.indices.toArray[Int]).take(components).map(c => x(c)).toArray
-    // set equal weights to all components
-    val weights = Array.fill(components)(1.0 / components)
-    // compute covariances
-    val covariances = Array.fill(components)(covariance(x))
-
-    val (gmm, logLikelihoodTrace) =
-      EMGMM.fit(
-        x = x,
-        means = means,
-        covariances = covariances,
-        weights = weights,
-        components = components,
-        iterations = iterations,
-        tolerance = tolerance,
-        regularisationEpsilon = regularisationEpsilon,
-        trace = IndexedSeq()
-      )
-
-    (gmm, logLikelihoodTrace)
 
   @tailrec
   def fit(
