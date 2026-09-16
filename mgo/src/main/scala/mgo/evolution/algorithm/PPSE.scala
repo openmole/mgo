@@ -145,7 +145,8 @@ object PPSE:
     minClusterSize: Int,
     maxRareSample: Int,
     bootstrap: Int,
-    regularisationEpsilon: Double) =
+    regularisationEpsilon: Double,
+    nicheSize: Int) =
     PPSEOperation.elitism[EvolutionState[PPSEState], Individual[P], P](
       values = i => Genome.toTuple(i.genome),
       phenotype = _.phenotype,
@@ -162,6 +163,7 @@ object PPSE:
       dilation = dilation,
       maxRareSample = maxRareSample,
       minClusterSize = minClusterSize,
+      nicheSize = nicheSize,
       bootstrap = bootstrap,
       regularisationEpsilon = regularisationEpsilon,
       warmupSampler = warmupSampler)
@@ -192,7 +194,7 @@ object PPSE:
       noisy.step[EvolutionState[PPSEState], Individual[P], Genome](
         PPSE.breeding(t.continuous, t.lambda, reject(t.reject, t.continuous), warmupSampler =  t.warmupSampler, densityQuantile = t.densityQuantile, densitySample = t.densitySample, regularisationEpsilon = t.regularisationEpsilon, density = t.density),
         PPSE.expression(t.phenotype, t.continuous),
-        PPSE.elitism(t.pattern, t.continuous, reject(t.reject, t.continuous), iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, regularisationEpsilon = t.regularisationEpsilon, bootstrap = t.bootstrap, warmupSampler = t.warmupSampler),
+        PPSE.elitism(t.pattern, t.continuous, reject(t.reject, t.continuous), iterations = t.iterations, tolerance = t.tolerance, dilation = t.dilation, minClusterSize = t.minClusterSize, maxRareSample =  t.maxRareSample, nicheSize = t.nicheSize, regularisationEpsilon = t.regularisationEpsilon, bootstrap = t.bootstrap, warmupSampler = t.warmupSampler),
         Focus[EvolutionState[PPSEState]](_.generation),
         Focus[EvolutionState[PPSEState]](_.evaluated)
       )
@@ -212,6 +214,7 @@ case class PPSE[P](
   dilation: Double = 1.5,
   maxRareSample: Int = 10,
   minClusterSize: Int = 5,
+  nicheSize: Int = 1,
   regularisationEpsilon: Double = 10e-6,
   bootstrap: Int = 1000)
 
@@ -344,6 +347,7 @@ object PPSEOperation:
     dilation: Double,
     maxRareSample: Int,
     minClusterSize: Int,
+    nicheSize: Int,
     regularisationEpsilon: Double): Elitism[S, I] =  (state, population, candidates, rng) =>
 
     def keepRandom(i: Vector[I]): Vector[I] =
@@ -351,8 +355,8 @@ object PPSEOperation:
       then i
       else
         val first = i.map(individualGeneration.get).min
-        val selected = i(rng.nextInt(i.size))
-        Vector(individualGeneration.set(first)(selected))
+        val selected = rng.shuffle(i).take(nicheSize)
+        selected.map(individualGeneration.set(first))
 
     val offSpringWithNoNan = filterNaN(candidates, phenotype)
     val newPopulation = keepNiches(phenotype andThen pattern, keepRandom)(population ++ offSpringWithNoNan)
